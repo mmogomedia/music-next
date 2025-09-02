@@ -9,7 +9,7 @@ This folder contains the development rules and guidelines for building the Next.
 
 ### 🚀 Phase 1: Foundation & Setup
 - [**01-project-setup.md**](./01-project-setup.md) - Initial project setup, dependencies, and basic structure
-- [**02-authentication-setup.md**](./02-authentication-setup.md) - NextAuth configuration and user management
+- [**02-authentication-setup.md**](./02-authentication-setup.md) - NextAuth.js configuration and user management
 - [**03-database-schema.md**](./03-database-schema.md) - Database models and Prisma setup
 
 ### 🎧 Phase 2: Core Music Features

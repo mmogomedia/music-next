@@ -568,7 +568,7 @@ export interface PlatformLink {
 }
 ```
 
-### 8. Hero UI Provider Setup
+### 8. HeroUI Provider Setup
 
 #### `src/components/providers/HeroUIProvider.tsx`
 ```typescript
@@ -1126,9 +1126,9 @@ export default function Home() {
 
 ### Before Moving to Next Phase:
 1. **Project runs without errors** - `yarn dev` starts successfully
-2. **Homepage displays correctly** - Shows modern Hero UI design with animations
+2. **Homepage displays correctly** - Shows modern HeroUI design with animations
 3. **Theme system working** - Light/dark mode toggle functions properly
-4. **Hero UI components render** - All components display without errors
+4. **HeroUI components render** - All components display without errors
 5. **Mobile responsiveness** - Design adapts to different screen sizes
 6. **TypeScript compilation** - No type errors
 7. **ESLint passes** - `yarn lint` runs without errors
@@ -1187,7 +1187,7 @@ npx tsc --noEmit
 - **Mobile-First**: Responsive design that works on all screen sizes
 
 ### **Component System**
-- **Hero UI Components**: Modern, accessible components with built-in theming
+- **HeroUI Components**: Modern, accessible components with built-in theming
 - **Framer Motion**: Smooth animations and transitions
 - **Responsive Design**: Mobile-first approach with breakpoints
 - **Consistent Spacing**: Standardized spacing and sizing system

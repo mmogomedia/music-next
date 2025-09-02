@@ -39,65 +39,65 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 #### **Primary Colors**
 ```css
 /* Green - Main brand color */
---primary-50: #f0fdf4
---primary-100: #dcfce7
---primary-200: #bbf7d0
---primary-300: #86efac
---primary-400: #4ade80
---primary-500: #22c55e  /* Main primary */
---primary-600: #16a34a
---primary-700: #15803d
---primary-800: #166534
---primary-900: #14532d
---primary-950: #052e16
+--primary-50: #f0fdf4;
+--primary-100: #dcfce7;
+--primary-200: #bbf7d0;
+--primary-300: #86efac;
+--primary-400: #4ade80;
+--primary-500: #22c55e;  /* Main primary */
+--primary-600: #16a34a;
+--primary-700: #15803d;
+--primary-800: #166534;
+--primary-900: #14532d;
+--primary-950: #052e16;
 ```
 
 #### **Secondary Colors**
 ```css
 /* Yellow - Secondary actions */
---secondary-50: #fefce8
---secondary-100: #fef9c3
---secondary-200: #fef08a
---secondary-300: #fde047
---secondary-400: #facc15
---secondary-500: #eab308  /* Main secondary */
---secondary-600: #ca8a04
---secondary-700: #a16207
---secondary-800: #854d0e
---secondary-900: #713f12
---secondary-950: #422006
+--secondary-50: #fefce8;
+--secondary-100: #fef9c3;
+--secondary-200: #fef08a;
+--secondary-300: #fde047;
+--secondary-400: #facc15;
+--secondary-500: #eab308;  /* Main secondary */
+--secondary-600: #ca8a04;
+--secondary-700: #a16207;
+--secondary-800: #854d0e;
+--secondary-900: #713f12;
+--secondary-950: #422006;
 ```
 
 #### **Accent Colors**
 ```css
 /* Blue - Additional variety */
---accent-50: #f0f9ff
---accent-100: #e0f2fe
---accent-200: #bae6fd
---accent-300: #7dd3fc
---accent-400: #38bdf8
---accent-500: #0ea5e9  /* Main accent */
---accent-600: #0284c7
---accent-700: #0369a1
---accent-800: #075985
---accent-900: #0c4a6e
---accent-950: #082f49
+--accent-50: #f0f9ff;
+--accent-100: #e0f2fe;
+--accent-200: #bae6fd;
+--accent-300: #7dd3fc;
+--accent-400: #38bdf8;
+--accent-500: #0ea5e9;  /* Main accent */
+--accent-600: #0284c7;
+--accent-700: #0369a1;
+--accent-800: #075985;
+--accent-900: #0c4a6e;
+--accent-950: #082f49;
 ```
 
 #### **Neutral Colors**
 ```css
 /* Gray scale for text and backgrounds */
---gray-50: #f8fafc
---gray-100: #f1f5f9
---gray-200: #e2e8f0
---gray-300: #cbd5e1
---gray-400: #94a3b8
---gray-500: #64748b
---gray-600: #475569
---gray-700: #334155
---gray-800: #1e293b
---gray-900: #0f172a
---gray-950: #020617
+--gray-50: #f8fafc;
+--gray-100: #f1f5f9;
+--gray-200: #e2e8f0;
+--gray-300: #cbd5e1;
+--gray-400: #94a3b8;
+--gray-500: #64748b;
+--gray-600: #475569;
+--gray-700: #334155;
+--gray-800: #1e293b;
+--gray-900: #0f172a;
+--gray-950: #020617;
 ```
 
 ### **Typography**
@@ -463,7 +463,7 @@ src/
 │   ├── layout.tsx                # Root layout
 │   └── page.tsx                  # Homepage
 ├── components/                   # All React components
-│   ├── ui/                       # Base UI components (Hero UI)
+│   ├── ui/                       # Base UI components (HeroUI)
 │   │   ├── button/
 │   │   │   ├── Button.tsx
 │   │   │   ├── Button.stories.tsx
@@ -664,7 +664,7 @@ components/
 ##### **2. Component Type Grouping**
 ```
 components/
-├── ui/              # Base UI components (Hero UI)
+├── ui/              # Base UI components (HeroUI)
 ├── layout/          # Layout components
 ├── forms/           # Form components
 └── common/          # Shared components
@@ -940,7 +940,7 @@ This design system should be referenced in all phases:
 
 ### **Design Tools**
 - Figma for design mockups
-- Hero UI documentation
+- HeroUI documentation
 - Tailwind CSS documentation
 - Framer Motion examples
 
