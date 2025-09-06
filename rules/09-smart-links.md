@@ -1,9 +1,11 @@
 # Phase 9: Smart Links System
 
 ## 🎯 Objective
+
 Implement a comprehensive smart links system that allows artists to create shareable links for their music across multiple platforms (Spotify, Apple Music, YouTube, etc.) with click tracking, analytics, and customizable landing pages.
 
 ## 📋 Prerequisites
+
 - Phase 1, 2, 3, 4, 5, 6, 7, & 8 completed successfully
 - Artist dashboard functional
 - Analytics system working
@@ -14,6 +16,7 @@ Implement a comprehensive smart links system that allows artists to create share
 ### 1. Smart Link Creation Form
 
 #### `src/app/(dashboard)/artist/smart-links/create/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -23,9 +26,9 @@ import SmartLinkForm from '@/components/smart-links/SmartLinkForm'
 
 async function getArtistTracks(userId: string) {
   const tracks = await prisma.track.findMany({
-    where: { 
+    where: {
       artistId: userId,
-      isPublished: true 
+      isPublished: true
     },
     select: {
       id: true,
@@ -45,7 +48,7 @@ async function getArtistTracks(userId: string) {
 
 export default async function CreateSmartLinkPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || (session.user.role !== 'ARTIST' && session.user.role !== 'ADMIN')) {
     redirect('/login')
   }
@@ -74,17 +77,18 @@ export default async function CreateSmartLinkPage() {
 ### 2. Smart Link Form Component
 
 #### `src/components/smart-links/SmartLinkForm.tsx`
+
 ```typescript
 'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { 
-  PlusIcon, 
-  TrashIcon, 
+import {
+  PlusIcon,
+  TrashIcon,
   LinkIcon,
-  EyeIcon 
+  EyeIcon
 } from '@heroicons/react/24/outline'
 
 interface Track {
@@ -143,7 +147,7 @@ export default function SmartLinkForm({ tracks }: SmartLinkFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!selectedTrack || platformLinks.length === 0) {
       alert('Please select a track and add at least one platform link')
       return
@@ -437,55 +441,47 @@ export default function SmartLinkForm({ tracks }: SmartLinkFormProps) {
 ### 3. Smart Links API Route
 
 #### `src/app/api/smart-links/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
-import { generateUniqueSlug } from '@/lib/smart-link-utils'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { generateUniqueSlug } from '@/lib/smart-link-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { trackId, title, description, platformLinks } = body
+    const body = await request.json();
+    const { trackId, title, description, platformLinks } = body;
 
     // Validate required fields
     if (!trackId || !platformLinks || platformLinks.length === 0) {
       return NextResponse.json(
         { error: 'Track ID and platform links are required' },
         { status: 400 }
-      )
+      );
     }
 
     // Check if user owns the track or is admin
     const track = await prisma.track.findUnique({
-      where: { id: trackId }
-    })
+      where: { id: trackId },
+    });
 
     if (!track) {
-      return NextResponse.json(
-        { error: 'Track not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Track not found' }, { status: 404 });
     }
 
     if (track.artistId !== session.user.id && session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Generate unique slug
-    const slug = await generateUniqueSlug()
+    const slug = await generateUniqueSlug();
 
     // Create smart link with platform links
     const smartLink = await prisma.smartLink.create({
@@ -498,8 +494,8 @@ export async function POST(request: NextRequest) {
           create: platformLinks.map((link: any) => ({
             platform: link.platform,
             url: link.url,
-          }))
-        }
+          })),
+        },
       },
       include: {
         track: {
@@ -507,53 +503,49 @@ export async function POST(request: NextRequest) {
             title: true,
             artist: {
               select: {
-                name: true
-              }
-            }
-          }
+                name: true,
+              },
+            },
+          },
         },
-        platformLinks: true
-      }
-    })
+        platformLinks: true,
+      },
+    });
 
-    return NextResponse.json({
-      message: 'Smart link created successfully',
-      smartLink
-    }, { status: 201 })
-
+    return NextResponse.json(
+      {
+        message: 'Smart link created successfully',
+        smartLink,
+      },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('Error creating smart link:', error)
+    console.error('Error creating smart link:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const artistId = searchParams.get('artistId') || session.user.id
+    const { searchParams } = new URL(request.url);
+    const artistId = searchParams.get('artistId') || session.user.id;
 
     // Check if user can access this data
     if (artistId !== session.user.id && session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const smartLinks = await prisma.smartLink.findMany({
       where: {
-        track: { artistId }
+        track: { artistId },
       },
       include: {
         track: {
@@ -562,29 +554,29 @@ export async function GET(request: NextRequest) {
             coverImageUrl: true,
             artist: {
               select: {
-                name: true
-              }
-            }
-          }
+                name: true,
+              },
+            },
+          },
         },
         platformLinks: {
           select: {
             platform: true,
             url: true,
             clickCount: true,
-          }
-        }
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
-    })
+      orderBy: { createdAt: 'desc' },
+    });
 
-    return NextResponse.json({ smartLinks })
+    return NextResponse.json({ smartLinks });
   } catch (error) {
-    console.error('Error fetching smart links:', error)
+    console.error('Error fetching smart links:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -592,6 +584,7 @@ export async function GET(request: NextRequest) {
 ### 4. Smart Link Landing Page
 
 #### `src/app/link/[slug]/page.tsx`
+
 ```typescript
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
@@ -634,7 +627,7 @@ async function getSmartLinkData(slug: string) {
 
 export default async function SmartLinkPage({ params }: SmartLinkPageProps) {
   const smartLink = await getSmartLinkData(params.slug)
-  
+
   if (!smartLink) {
     notFound()
   }
@@ -646,16 +639,17 @@ export default async function SmartLinkPage({ params }: SmartLinkPageProps) {
 ### 5. Smart Link Landing Component
 
 #### `src/components/smart-links/SmartLinkLanding.tsx`
+
 ```typescript
 'use client'
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  PlayIcon, 
-  HeartIcon, 
+import {
+  PlayIcon,
+  HeartIcon,
   ShareIcon,
-  ExternalLinkIcon 
+  ExternalLinkIcon
 } from '@heroicons/react/24/outline'
 import { useAudioStore } from '@/store/audio-store'
 
@@ -736,7 +730,7 @@ export default function SmartLinkLanding({ smartLink }: SmartLinkLandingProps) {
 
   const handlePlatformClick = async (platform: string, url: string) => {
     setCurrentPlatform(platform)
-    
+
     try {
       // Record the click
       await fetch(`/api/smart-links/${smartLink.id}/click`, {
@@ -790,7 +784,7 @@ export default function SmartLinkLanding({ smartLink }: SmartLinkLandingProps) {
           >
             {smartLink.title || `Listen to ${smartLink.track.title}`}
           </motion.h1>
-          
+
           {smartLink.description && (
             <motion.p
               initial={{ opacity: 0, y: -20 }}
@@ -882,7 +876,7 @@ export default function SmartLinkLanding({ smartLink }: SmartLinkLandingProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {smartLink.platformLinks.map((platformLink) => {
               const platformInfo = PLATFORM_ICONS[platformLink.platform]
-              
+
               return (
                 <motion.button
                   key={platformLink.id}
@@ -932,23 +926,24 @@ export default function SmartLinkLanding({ smartLink }: SmartLinkLandingProps) {
 ### 6. Smart Link Click Tracking API
 
 #### `src/app/api/smart-links/[id]/click/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await request.json()
-    const { platform } = body
+    const body = await request.json();
+    const { platform } = body;
 
     if (!platform) {
       return NextResponse.json(
         { error: 'Platform is required' },
         { status: 400 }
-      )
+      );
     }
 
     // Record the click using a transaction
@@ -958,36 +953,36 @@ export async function POST(
         where: { id: params.id },
         data: {
           clickCount: {
-            increment: 1
-          }
-        }
+            increment: 1,
+          },
+        },
       }),
-      
+
       // Update platform link click count
       prisma.platformLink.updateMany({
         where: {
           smartLinkId: params.id,
-          platform: platform
+          platform: platform,
         },
         data: {
           clickCount: {
-            increment: 1
-          }
-        }
-      })
-    ])
+            increment: 1,
+          },
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       message: 'Click recorded successfully',
       updatedSmartLink,
-      updatedPlatformLink
-    })
+      updatedPlatformLink,
+    });
   } catch (error) {
-    console.error('Error recording click:', error)
+    console.error('Error recording click:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -995,6 +990,7 @@ export async function POST(
 ### 7. Smart Link Management Page
 
 #### `src/app/(dashboard)/artist/smart-links/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -1037,7 +1033,7 @@ async function getArtistSmartLinks(userId: string) {
 
 export default async function SmartLinksPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || (session.user.role !== 'ARTIST' && session.user.role !== 'ADMIN')) {
     redirect('/login')
   }
@@ -1056,7 +1052,7 @@ export default async function SmartLinksPage() {
               Manage your shareable links across all platforms
             </p>
           </div>
-          
+
           <Link
             href="/artist/smart-links/create"
             className="flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
@@ -1076,6 +1072,7 @@ export default async function SmartLinksPage() {
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Smart link creation works** - Can create links with multiple platforms
 2. **Landing pages display correctly** - Smart link pages render properly
 3. **Click tracking functional** - Platform clicks are recorded accurately
@@ -1084,6 +1081,7 @@ export default async function SmartLinksPage() {
 6. **Responsive design** - Works on all device sizes
 
 ### Test Commands:
+
 ```bash
 # Test smart link creation
 # 1. Login as artist
@@ -1101,18 +1099,23 @@ export default async function SmartLinksPage() {
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Smart link creation fails
+
 **Solution**: Check database schema, verify track ownership, validate platform link format
 
 ### Issue: Landing page not loading
+
 **Solution**: Verify slug generation, check database queries, validate route configuration
 
 ### Issue: Click tracking not working
+
 **Solution**: Check API routes, verify database transactions, validate platform data
 
 ### Issue: Platform redirects failing
+
 **Solution**: Validate platform URLs, check CORS settings, verify external link handling
 
 ## 📝 Notes
+
 - Implement proper URL validation for platform links
 - Consider adding link expiration and deactivation features
 - Add analytics for geographic and device data
@@ -1120,4 +1123,5 @@ export default async function SmartLinksPage() {
 - Consider adding QR code generation for smart links
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 10: Subscription System](./10-subscription-system.md)

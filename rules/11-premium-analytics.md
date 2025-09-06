@@ -1,9 +1,11 @@
 # Phase 11: Premium Analytics
 
 ## 🎯 Objective
+
 Implement advanced analytics features exclusively for premium users, including detailed performance metrics, audience insights, trend analysis, and predictive analytics to help artists and users make data-driven decisions.
 
 ## 📋 Prerequisites
+
 - Phase 1, 2, 3, 4, 5, 6, 7, 8, 9, & 10 completed successfully
 - Subscription system functional
 - Basic analytics system working
@@ -14,6 +16,7 @@ Implement advanced analytics features exclusively for premium users, including d
 ### 1. Premium Analytics Dashboard
 
 #### `src/app/(dashboard)/premium-analytics/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -116,11 +119,11 @@ async function getPremiumAnalyticsData(userId: string) {
   // Calculate advanced metrics
   const totalPlays = tracks.reduce((sum, track) => sum + track.playEvents.length, 0)
   const totalLikes = tracks.reduce((sum, track) => sum + track._count.likes, 0)
-  const totalDuration = tracks.reduce((sum, track) => 
+  const totalDuration = tracks.reduce((sum, track) =>
     sum + track.playEvents.reduce((trackSum, event) => trackSum + (event.duration || 0), 0), 0
   )
-  const completionRate = totalPlays > 0 
-    ? (tracks.reduce((sum, track) => 
+  const completionRate = totalPlays > 0
+    ? (tracks.reduce((sum, track) =>
         sum + track.playEvents.filter(event => event.completed).length, 0) / totalPlays) * 100
     : 0
 
@@ -166,7 +169,7 @@ async function getPremiumAnalyticsData(userId: string) {
 
 export default async function PremiumAnalyticsPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session) {
     redirect('/login')
   }
@@ -191,7 +194,7 @@ export default async function PremiumAnalyticsPage() {
                 Advanced insights and detailed metrics for premium users
               </p>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
                 Premium
@@ -210,26 +213,27 @@ export default async function PremiumAnalyticsPage() {
 ### 2. Premium Analytics Dashboard Component
 
 #### `src/components/analytics/PremiumAnalyticsDashboard.tsx`
+
 ```typescript
 'use client'
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
   Cell,
   AreaChart,
   Area,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
   ResponsiveContainer,
   RadarChart,
   PolarGrid,
@@ -237,7 +241,7 @@ import {
   PolarRadiusAxis,
   Radar
 } from 'recharts'
-import { 
+import {
   TrendingUpIcon,
   UsersIcon,
   ClockIcon,
@@ -455,20 +459,20 @@ export default function PremiumAnalyticsDashboard({ data }: PremiumAnalyticsDash
         <ResponsiveContainer width="100%" height={400}>
           <AreaChart data={data.timeAnalytics}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis 
-              dataKey="date" 
+            <XAxis
+              dataKey="date"
               tickFormatter={(value) => new Date(value).toLocaleDateString()}
             />
             <YAxis />
-            <Tooltip 
+            <Tooltip
               labelFormatter={(value) => new Date(value).toLocaleDateString()}
             />
             <Legend />
-            <Area 
-              type="monotone" 
-              dataKey="plays" 
-              stroke="#3B82F6" 
-              fill="#3B82F6" 
+            <Area
+              type="monotone"
+              dataKey="plays"
+              stroke="#3B82F6"
+              fill="#3B82F6"
               fillOpacity={0.3}
             />
           </AreaChart>
@@ -483,7 +487,7 @@ export default function PremiumAnalyticsDashboard({ data }: PremiumAnalyticsDash
             <GlobeAltIcon className="w-5 h-5 mr-2" />
             Geographic Distribution
           </h3>
-          
+
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={data.geographicData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -501,7 +505,7 @@ export default function PremiumAnalyticsDashboard({ data }: PremiumAnalyticsDash
             <DevicePhoneMobileIcon className="w-5 h-5 mr-2" />
             Device Types
           </h3>
-          
+
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -527,7 +531,7 @@ export default function PremiumAnalyticsDashboard({ data }: PremiumAnalyticsDash
       {/* Browser Analytics */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Browser Usage</h3>
-        
+
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={browserChartData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -542,7 +546,7 @@ export default function PremiumAnalyticsDashboard({ data }: PremiumAnalyticsDash
       {/* Trending Tracks Analysis */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Top Performing Tracks</h3>
-        
+
         <div className="space-y-4">
           {data.trendingTracks.map((track, index) => (
             <motion.div
@@ -561,7 +565,7 @@ export default function PremiumAnalyticsDashboard({ data }: PremiumAnalyticsDash
                   <p className="text-sm text-gray-500">{track.plays} plays</p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-6 text-sm">
                 <div className="text-center">
                   <p className="font-medium text-gray-900">{track.likes}</p>
@@ -580,7 +584,7 @@ export default function PremiumAnalyticsDashboard({ data }: PremiumAnalyticsDash
       {/* Performance Radar Chart */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Performance Overview</h3>
-        
+
         <ResponsiveContainer width="100%" height={400}>
           <RadarChart data={[
             {
@@ -626,7 +630,7 @@ export default function PremiumAnalyticsDashboard({ data }: PremiumAnalyticsDash
       {/* Insights and Recommendations */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">AI-Powered Insights</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-blue-50 rounded-lg p-4">
             <h4 className="font-medium text-blue-900 mb-2">Performance Highlights</h4>
@@ -637,7 +641,7 @@ export default function PremiumAnalyticsDashboard({ data }: PremiumAnalyticsDash
               <li>• Average engagement rate is strong</li>
             </ul>
           </div>
-          
+
           <div className="bg-green-50 rounded-lg p-4">
             <h4 className="font-medium text-green-900 mb-2">Growth Opportunities</h4>
             <ul className="text-sm text-green-800 space-y-1">
@@ -657,31 +661,26 @@ export default function PremiumAnalyticsDashboard({ data }: PremiumAnalyticsDash
 ### 3. Advanced Analytics API Routes
 
 #### `src/app/api/analytics/premium/[userId]/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { userId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user can access this data
     if (params.userId !== session.user.id && session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Check if user has premium access
@@ -693,46 +692,54 @@ export async function GET(
         subscription: {
           select: {
             status: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
 
     if (!user?.isPremium && user?.role !== 'ADMIN') {
       return NextResponse.json(
         { error: 'Premium access required' },
         { status: 403 }
-      )
+      );
     }
 
-    const { searchParams } = new URL(request.url)
-    const days = parseInt(searchParams.get('days') || '30')
-    const metric = searchParams.get('metric') || 'plays'
+    const { searchParams } = new URL(request.url);
+    const days = parseInt(searchParams.get('days') || '30');
+    const metric = searchParams.get('metric') || 'plays';
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     // Get advanced analytics data
-    const analytics = await getAdvancedAnalytics(params.userId, startDate, metric)
+    const analytics = await getAdvancedAnalytics(
+      params.userId,
+      startDate,
+      metric
+    );
 
-    return NextResponse.json(analytics)
+    return NextResponse.json(analytics);
   } catch (error) {
-    console.error('Error fetching premium analytics:', error)
+    console.error('Error fetching premium analytics:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
-async function getAdvancedAnalytics(userId: string, startDate: Date, metric: string) {
+async function getAdvancedAnalytics(
+  userId: string,
+  startDate: Date,
+  metric: string
+) {
   // Get user's tracks
   const tracks = await prisma.track.findMany({
     where: { artistId: userId },
     include: {
       playEvents: {
         where: {
-          timestamp: { gte: startDate }
+          timestamp: { gte: startDate },
         },
         select: {
           timestamp: true,
@@ -740,22 +747,31 @@ async function getAdvancedAnalytics(userId: string, startDate: Date, metric: str
           completed: true,
           ipAddress: true,
           userAgent: true,
-        }
+        },
       },
       _count: {
         select: {
           likes: true,
-        }
-      }
-    }
-  })
+        },
+      },
+    },
+  });
 
   // Calculate advanced metrics
-  const totalPlays = tracks.reduce((sum, track) => sum + track.playEvents.length, 0)
-  const totalLikes = tracks.reduce((sum, track) => sum + track._count.likes, 0)
-  const totalDuration = tracks.reduce((sum, track) => 
-    sum + track.playEvents.reduce((trackSum, event) => trackSum + (event.duration || 0), 0), 0
-  )
+  const totalPlays = tracks.reduce(
+    (sum, track) => sum + track.playEvents.length,
+    0
+  );
+  const totalLikes = tracks.reduce((sum, track) => sum + track._count.likes, 0);
+  const totalDuration = tracks.reduce(
+    (sum, track) =>
+      sum +
+      track.playEvents.reduce(
+        (trackSum, event) => trackSum + (event.duration || 0),
+        0
+      ),
+    0
+  );
 
   // Get time-based analytics with more granular data
   const hourlyData = await prisma.$queryRaw`
@@ -770,7 +786,7 @@ async function getAdvancedAnalytics(userId: string, startDate: Date, metric: str
       AND "timestamp" >= ${startDate}
     GROUP BY EXTRACT(HOUR FROM "timestamp")
     ORDER BY hour
-  `
+  `;
 
   // Get weekly trends
   const weeklyData = await prisma.$queryRaw`
@@ -785,22 +801,22 @@ async function getAdvancedAnalytics(userId: string, startDate: Date, metric: str
       AND "timestamp" >= ${startDate}
     GROUP BY DATE_TRUNC('week', "timestamp")
     ORDER BY week
-  `
+  `;
 
   // Get audience insights
   const audienceInsights = await prisma.playEvent.groupBy({
     by: ['ipAddress'],
     where: {
       track: { artistId: userId },
-      timestamp: { gte: startDate }
+      timestamp: { gte: startDate },
     },
     _count: {
-      id: true
+      id: true,
     },
     _sum: {
-      duration: true
-    }
-  })
+      duration: true,
+    },
+  });
 
   // Calculate engagement metrics
   const engagementMetrics = {
@@ -808,16 +824,22 @@ async function getAdvancedAnalytics(userId: string, startDate: Date, metric: str
     totalLikes,
     totalDuration,
     uniqueListeners: audienceInsights.length,
-    completionRate: totalPlays > 0 
-      ? (tracks.reduce((sum, track) => 
-          sum + track.playEvents.filter(event => event.completed).length, 0) / totalPlays) * 100
-      : 0,
+    completionRate:
+      totalPlays > 0
+        ? (tracks.reduce(
+            (sum, track) =>
+              sum + track.playEvents.filter(event => event.completed).length,
+            0
+          ) /
+            totalPlays) *
+          100
+        : 0,
     avgPlayDuration: totalPlays > 0 ? totalDuration / totalPlays : 0,
     listenerRetention: calculateListenerRetention(audienceInsights),
-  }
+  };
 
   // Get predictive analytics
-  const predictions = await getPredictiveAnalytics(tracks, startDate)
+  const predictions = await getPredictiveAnalytics(tracks, startDate);
 
   return {
     summary: engagementMetrics,
@@ -828,53 +850,66 @@ async function getAdvancedAnalytics(userId: string, startDate: Date, metric: str
     audienceInsights,
     predictions,
     recommendations: generateRecommendations(engagementMetrics, tracks),
-  }
+  };
 }
 
 function calculateListenerRetention(audienceInsights: any[]) {
   // Calculate listener retention based on repeat plays
-  const repeatListeners = audienceInsights.filter(insight => insight._count.id > 1).length
-  return audienceInsights.length > 0 ? (repeatListeners / audienceInsights.length) * 100 : 0
+  const repeatListeners = audienceInsights.filter(
+    insight => insight._count.id > 1
+  ).length;
+  return audienceInsights.length > 0
+    ? (repeatListeners / audienceInsights.length) * 100
+    : 0;
 }
 
 async function getPredictiveAnalytics(tracks: any[], startDate: Date) {
   // Simple trend analysis - in production, use ML models
-  const recentPlays = tracks.reduce((sum, track) => 
-    sum + track.playEvents.filter(event => 
-      new Date(event.timestamp) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    ).length, 0
-  )
+  const recentPlays = tracks.reduce(
+    (sum, track) =>
+      sum +
+      track.playEvents.filter(
+        event =>
+          new Date(event.timestamp) >
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      ).length,
+    0
+  );
 
-  const previousWeekPlays = tracks.reduce((sum, track) => 
-    sum + track.playEvents.filter(event => {
-      const eventDate = new Date(event.timestamp)
-      const weekAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
-      const twoWeeksAgo = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000)
-      return eventDate >= twoWeeksAgo && eventDate < weekAgo
-    }).length, 0
-  )
+  const previousWeekPlays = tracks.reduce(
+    (sum, track) =>
+      sum +
+      track.playEvents.filter(event => {
+        const eventDate = new Date(event.timestamp);
+        const weekAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+        const twoWeeksAgo = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000);
+        return eventDate >= twoWeeksAgo && eventDate < weekAgo;
+      }).length,
+    0
+  );
 
-  const growthRate = previousWeekPlays > 0 
-    ? ((recentPlays - previousWeekPlays) / previousWeekPlays) * 100
-    : 0
+  const growthRate =
+    previousWeekPlays > 0
+      ? ((recentPlays - previousWeekPlays) / previousWeekPlays) * 100
+      : 0;
 
   return {
     projectedPlays: Math.round(recentPlays * (1 + growthRate / 100)),
     growthRate: Math.round(growthRate * 100) / 100,
     trend: growthRate > 0 ? 'up' : growthRate < 0 ? 'down' : 'stable',
-  }
+  };
 }
 
 function generateRecommendations(metrics: any, tracks: any[]) {
-  const recommendations = []
+  const recommendations = [];
 
   if (metrics.completionRate < 70) {
     recommendations.push({
       type: 'warning',
       title: 'Low Completion Rate',
       message: 'Consider optimizing track intros and improving audio quality',
-      priority: 'high'
-    })
+      priority: 'high',
+    });
   }
 
   if (metrics.avgPlayDuration < 60) {
@@ -882,35 +917,37 @@ function generateRecommendations(metrics: any, tracks: any[]) {
       type: 'info',
       title: 'Short Play Duration',
       message: 'Focus on creating engaging content that keeps listeners hooked',
-      priority: 'medium'
-    })
+      priority: 'medium',
+    });
   }
 
   if (tracks.length < 5) {
     recommendations.push({
       type: 'success',
       title: 'Content Expansion',
-      message: 'Adding more tracks can increase your overall reach and engagement',
-      priority: 'low'
-    })
+      message:
+        'Adding more tracks can increase your overall reach and engagement',
+      priority: 'low',
+    });
   }
 
-  return recommendations
+  return recommendations;
 }
 ```
 
 ### 4. Premium Feature Access Control
 
 #### `src/components/auth/PremiumGuard.tsx`
+
 ```typescript
 'use client'
 
 import { useSession } from 'next-auth/react'
 import { ReactNode } from 'react'
 import Link from 'next/link'
-import { 
-  StarIcon, 
-  LockClosedIcon 
+import {
+  StarIcon,
+  LockClosedIcon
 } from '@heroicons/react/24/outline'
 
 interface PremiumGuardProps {
@@ -919,10 +956,10 @@ interface PremiumGuardProps {
   showUpgradePrompt?: boolean
 }
 
-export default function PremiumGuard({ 
-  children, 
-  fallback, 
-  showUpgradePrompt = true 
+export default function PremiumGuard({
+  children,
+  fallback,
+  showUpgradePrompt = true
 }: PremiumGuardProps) {
   const { data: session, status } = useSession()
 
@@ -967,7 +1004,7 @@ export default function PremiumGuard({
             Premium Feature
           </h2>
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            This feature is exclusively available to premium subscribers. 
+            This feature is exclusively available to premium subscribers.
             Upgrade your account to unlock advanced analytics and premium features.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
@@ -998,23 +1035,24 @@ export default function PremiumGuard({
 ### 5. Premium Analytics Hooks
 
 #### `src/hooks/usePremiumAnalytics.ts`
+
 ```typescript
-import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface PremiumAnalyticsOptions {
-  userId?: string
-  timeRange?: '7d' | '30d' | '90d'
-  metric?: 'plays' | 'likes' | 'duration'
-  autoRefresh?: boolean
-  refreshInterval?: number
+  userId?: string;
+  timeRange?: '7d' | '30d' | '90d';
+  metric?: 'plays' | 'likes' | 'duration';
+  autoRefresh?: boolean;
+  refreshInterval?: number;
 }
 
 export function usePremiumAnalytics(options: PremiumAnalyticsOptions = {}) {
-  const { data: session } = useSession()
-  const [data, setData] = useState<any>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { data: session } = useSession();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const {
     userId = session?.user?.id,
@@ -1022,73 +1060,73 @@ export function usePremiumAnalytics(options: PremiumAnalyticsOptions = {}) {
     metric = 'plays',
     autoRefresh = false,
     refreshInterval = 300000, // 5 minutes
-  } = options
+  } = options;
 
   const fetchAnalytics = async () => {
-    if (!userId) return
+    if (!userId) return;
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch(
         `/api/analytics/premium/${userId}?days=${timeRange}&metric=${metric}`
-      )
+      );
 
       if (response.ok) {
-        const analyticsData = await response.json()
-        setData(analyticsData)
+        const analyticsData = await response.json();
+        setData(analyticsData);
       } else {
-        const errorData = await response.json()
-        setError(errorData.error || 'Failed to fetch analytics')
+        const errorData = await response.json();
+        setError(errorData.error || 'Failed to fetch analytics');
       }
     } catch (err) {
-      setError('An error occurred while fetching analytics')
+      setError('An error occurred while fetching analytics');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchAnalytics()
-  }, [userId, timeRange, metric])
+    fetchAnalytics();
+  }, [userId, timeRange, metric]);
 
   useEffect(() => {
-    if (!autoRefresh) return
+    if (!autoRefresh) return;
 
-    const interval = setInterval(fetchAnalytics, refreshInterval)
-    return () => clearInterval(interval)
-  }, [autoRefresh, refreshInterval])
+    const interval = setInterval(fetchAnalytics, refreshInterval);
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshInterval]);
 
   const refresh = () => {
-    fetchAnalytics()
-  }
+    fetchAnalytics();
+  };
 
   const exportData = async (format: 'csv' | 'json' = 'json') => {
-    if (!data) return
+    if (!data) return;
 
     if (format === 'json') {
       const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: 'application/json'
-      })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `premium-analytics-${new Date().toISOString().split('T')[0]}.json`
-      a.click()
-      URL.revokeObjectURL(url)
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `premium-analytics-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
     } else if (format === 'csv') {
       // Convert data to CSV format
-      const csvContent = convertToCSV(data)
-      const blob = new Blob([csvContent], { type: 'text/csv' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `premium-analytics-${new Date().toISOString().split('T')[0]}.csv`
-      a.click()
-      URL.revokeObjectURL(url)
+      const csvContent = convertToCSV(data);
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `premium-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
-  }
+  };
 
   return {
     data,
@@ -1096,34 +1134,42 @@ export function usePremiumAnalytics(options: PremiumAnalyticsOptions = {}) {
     error,
     refresh,
     exportData,
-  }
+  };
 }
 
 function convertToCSV(data: any): string {
   // Simple CSV conversion - in production, use a proper CSV library
   const flattenObject = (obj: any, prefix = ''): Record<string, any> => {
-    return Object.keys(obj).reduce((acc, key) => {
-      const pre = prefix.length ? prefix + '.' : ''
-      if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-        Object.assign(acc, flattenObject(obj[key], pre + key))
-      } else {
-        acc[pre + key] = obj[key]
-      }
-      return acc
-    }, {} as Record<string, any>)
-  }
+    return Object.keys(obj).reduce(
+      (acc, key) => {
+        const pre = prefix.length ? prefix + '.' : '';
+        if (
+          typeof obj[key] === 'object' &&
+          obj[key] !== null &&
+          !Array.isArray(obj[key])
+        ) {
+          Object.assign(acc, flattenObject(obj[key], pre + key));
+        } else {
+          acc[pre + key] = obj[key];
+        }
+        return acc;
+      },
+      {} as Record<string, any>
+    );
+  };
 
-  const flattened = flattenObject(data)
-  const headers = Object.keys(flattened)
-  const values = Object.values(flattened)
+  const flattened = flattenObject(data);
+  const headers = Object.keys(flattened);
+  const values = Object.values(flattened);
 
-  return [headers.join(','), values.join(',')].join('\n')
+  return [headers.join(','), values.join(',')].join('\n');
 }
 ```
 
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Premium access control works** - Only premium users can access features
 2. **Advanced analytics display** - Charts and metrics render correctly
 3. **Data accuracy** - Analytics show correct information
@@ -1132,6 +1178,7 @@ function convertToCSV(data: any): string {
 6. **Responsive design** - Works on all device sizes
 
 ### Test Commands:
+
 ```bash
 # Test premium access control
 # 1. Try accessing as non-premium user
@@ -1147,18 +1194,23 @@ function convertToCSV(data: any): string {
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Premium features not accessible
+
 **Solution**: Check subscription status, verify premium flags, check access control logic
 
 ### Issue: Analytics data missing
+
 **Solution**: Verify database queries, check user permissions, validate data relationships
 
 ### Issue: Charts not rendering
+
 **Solution**: Check chart library installation, verify data format, check for JavaScript errors
 
 ### Issue: Performance issues
+
 **Solution**: Implement data caching, optimize database queries, add loading states
 
 ## 📝 Notes
+
 - Implement proper data caching for better performance
 - Consider adding real-time analytics updates
 - Implement data export limits for large datasets
@@ -1166,4 +1218,5 @@ function convertToCSV(data: any): string {
 - Consider implementing ML-powered insights
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 12: Admin Dashboard](./12-admin-dashboard.md)

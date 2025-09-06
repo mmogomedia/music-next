@@ -1,9 +1,11 @@
 # Phase 12: Admin Dashboard
 
 ## 🎯 Objective
+
 Implement a comprehensive admin dashboard that provides system administrators with tools to manage users, moderate content, monitor platform performance, configure system settings, and oversee the entire music streaming platform.
 
 ## 📋 Prerequisites
+
 - Phase 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, & 11 completed successfully
 - Premium analytics system functional
 - User roles and permissions working
@@ -14,6 +16,7 @@ Implement a comprehensive admin dashboard that provides system administrators wi
 ### 1. Admin Dashboard Layout
 
 #### `src/app/(dashboard)/admin/dashboard/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -82,7 +85,7 @@ async function getAdminData() {
   // Get system performance metrics
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  
+
   const todayPlays = await prisma.playEvent.count({
     where: {
       timestamp: {
@@ -126,7 +129,7 @@ async function getAdminData() {
 
 export default async function AdminDashboardPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || session.user.role !== 'ADMIN') {
     redirect('/login')
   }
@@ -147,7 +150,7 @@ export default async function AdminDashboardPage() {
                 System administration and platform oversight
               </p>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
                 Admin Access
@@ -168,7 +171,7 @@ export default async function AdminDashboardPage() {
         {/* Recent Activity */}
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <RecentActivity 
+            <RecentActivity
               recentUsers={adminData.recentUsers}
               recentTracks={adminData.recentTracks}
             />
@@ -239,14 +242,15 @@ export default async function AdminDashboardPage() {
 ### 2. System Stats Component
 
 #### `src/components/admin/SystemStats.tsx`
+
 ```typescript
 'use client'
 
 import { motion } from 'framer-motion'
-import { 
-  UsersIcon, 
-  MusicalNoteIcon, 
-  PlayIcon, 
+import {
+  UsersIcon,
+  MusicalNoteIcon,
+  PlayIcon,
   LinkIcon,
   TrendingUpIcon,
   ExclamationTriangleIcon
@@ -332,11 +336,11 @@ export default function SystemStats({ stats, usersByRole }: SystemStatsProps) {
                 <p className="text-2xl font-semibold text-gray-900">{item.value}</p>
               </div>
             </div>
-            
+
             <div className="mt-4">
               <span className={`text-sm font-medium ${
-                item.changeType === 'positive' ? 'text-green-600' : 
-                item.changeType === 'negative' ? 'text-red-600' : 
+                item.changeType === 'positive' ? 'text-green-600' :
+                item.changeType === 'negative' ? 'text-red-600' :
                 'text-gray-600'
               }`}>
                 {item.change}
@@ -379,6 +383,7 @@ export default function SystemStats({ stats, usersByRole }: SystemStatsProps) {
 ### 3. User Management Page
 
 #### `src/app/(dashboard)/admin/users/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -411,7 +416,7 @@ async function getUsersData() {
 
 export default async function UsersPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || session.user.role !== 'ADMIN') {
     redirect('/login')
   }
@@ -440,13 +445,14 @@ export default async function UsersPage() {
 ### 4. User Management Component
 
 #### `src/components/admin/UserManagement.tsx`
+
 ```typescript
 'use client'
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { 
+import {
   MagnifyingGlassIcon,
   FunnelIcon,
   EyeIcon,
@@ -567,7 +573,7 @@ export default function UserManagement({ users }: UserManagementProps) {
               />
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <FunnelIcon className="w-5 h-5 text-gray-400" />
             <select
@@ -635,13 +641,13 @@ export default function UserManagement({ users }: UserManagementProps) {
                     </div>
                   </div>
                 </td>
-                
+
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleColor(user.role)}`}>
                     {user.role}
                   </span>
                 </td>
-                
+
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-2">
                     {user.isPremium && (
@@ -651,8 +657,8 @@ export default function UserManagement({ users }: UserManagementProps) {
                     )}
                     {user.subscription && (
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.subscription.status === 'ACTIVE' 
-                          ? 'bg-green-100 text-green-800' 
+                        user.subscription.status === 'ACTIVE'
+                          ? 'bg-green-100 text-green-800'
                           : 'bg-gray-100 text-gray-800'
                       }`}>
                         {user.subscription.status}
@@ -660,18 +666,18 @@ export default function UserManagement({ users }: UserManagementProps) {
                     )}
                   </div>
                 </td>
-                
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <div className="space-y-1">
                     <div>{user._count.tracks} tracks</div>
                     <div>{user._count.followers} followers</div>
                   </div>
                 </td>
-                
+
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
-                
+
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end space-x-2">
                     <button
@@ -681,7 +687,7 @@ export default function UserManagement({ users }: UserManagementProps) {
                     >
                       <EyeIcon className="w-4 h-4" />
                     </button>
-                    
+
                     <button
                       onClick={() => {
                         setSelectedUser(user)
@@ -692,7 +698,7 @@ export default function UserManagement({ users }: UserManagementProps) {
                     >
                       <PencilIcon className="w-4 h-4" />
                     </button>
-                    
+
                     {user.role !== 'ADMIN' && (
                       <button
                         onClick={() => handleDeleteUser(user.id)}
@@ -756,7 +762,7 @@ export default function UserManagement({ users }: UserManagementProps) {
                       <option value="ADMIN">Admin</option>
                     </select>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -778,7 +784,7 @@ export default function UserManagement({ users }: UserManagementProps) {
                     <h4 className="font-medium text-gray-900">{selectedUser.name}</h4>
                     <p className="text-gray-600">{selectedUser.email}</p>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm font-medium text-gray-700">Role</p>
@@ -799,7 +805,7 @@ export default function UserManagement({ users }: UserManagementProps) {
                       <p className="text-sm text-gray-900">{selectedUser._count.followers}</p>
                     </div>
                   </div>
-                  
+
                   <div>
                     <p className="text-sm font-medium text-gray-700">Joined</p>
                     <p className="text-sm text-gray-900">
@@ -832,33 +838,28 @@ export default function UserManagement({ users }: UserManagementProps) {
 ### 5. Admin API Routes
 
 #### `src/app/api/admin/users/[id]/role/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { role } = body
+    const body = await request.json();
+    const { role } = body;
 
     if (!role || !['USER', 'ARTIST', 'ADMIN'].includes(role)) {
-      return NextResponse.json(
-        { error: 'Invalid role' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }
 
     // Prevent admin from changing their own role
@@ -866,7 +867,7 @@ export async function PUT(
       return NextResponse.json(
         { error: 'Cannot change your own role' },
         { status: 400 }
-      )
+      );
     }
 
     const updatedUser = await prisma.user.update({
@@ -877,41 +878,39 @@ export async function PUT(
         name: true,
         email: true,
         role: true,
-      }
-    })
+      },
+    });
 
     return NextResponse.json({
       message: 'User role updated successfully',
-      user: updatedUser
-    })
+      user: updatedUser,
+    });
   } catch (error) {
-    console.error('Error updating user role:', error)
+    console.error('Error updating user role:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
 
 #### `src/app/api/admin/users/[id]/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Prevent admin from deleting themselves
@@ -919,42 +918,39 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Cannot delete your own account' },
         { status: 400 }
-      )
+      );
     }
 
     // Check if user exists and is not an admin
     const user = await prisma.user.findUnique({
-      where: { id: params.id }
-    })
+      where: { id: params.id },
+    });
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     if (user.role === 'ADMIN') {
       return NextResponse.json(
         { error: 'Cannot delete admin users' },
         { status: 400 }
-      )
+      );
     }
 
     // Delete user and all associated data
     await prisma.user.delete({
-      where: { id: params.id }
-    })
+      where: { id: params.id },
+    });
 
     return NextResponse.json({
-      message: 'User deleted successfully'
-    })
+      message: 'User deleted successfully',
+    });
   } catch (error) {
-    console.error('Error deleting user:', error)
+    console.error('Error deleting user:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -962,6 +958,7 @@ export async function DELETE(
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Admin access control works** - Only admins can access admin features
 2. **User management functional** - Can view, edit, and delete users
 3. **System stats display** - Dashboard shows accurate platform metrics
@@ -970,6 +967,7 @@ export async function DELETE(
 6. **Responsive design** - Admin dashboard works on all device sizes
 
 ### Test Commands:
+
 ```bash
 # Test admin access control
 # 1. Try accessing as non-admin user
@@ -986,18 +984,23 @@ export async function DELETE(
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Admin access not working
+
 **Solution**: Check user role in database, verify session data, check middleware configuration
 
 ### Issue: User management failing
+
 **Solution**: Check API routes, verify permissions, check database constraints
 
 ### Issue: System stats not accurate
+
 **Solution**: Verify database queries, check data relationships, validate aggregation logic
 
 ### Issue: Role changes not persisting
+
 **Solution**: Check database transactions, verify API responses, check for validation errors
 
 ## 📝 Notes
+
 - Implement proper audit logging for admin actions
 - Add confirmation dialogs for destructive actions
 - Consider implementing admin activity tracking
@@ -1005,4 +1008,5 @@ export async function DELETE(
 - Implement admin notification system
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 13: Content Moderation](./13-content-moderation.md)

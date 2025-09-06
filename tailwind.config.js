@@ -1,4 +1,4 @@
-const { heroui } = require('@heroui/react')
+const { heroui } = require('@heroui/react');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -61,7 +61,7 @@ module.exports = {
         mono: ['JetBrains Mono', 'monospace'],
       },
       boxShadow: {
-        'glow': '0 0 20px rgba(34, 197, 94, 0.3)',
+        glow: '0 0 20px rgba(34, 197, 94, 0.3)',
         'glow-secondary': '0 0 20px rgba(234, 179, 8, 0.3)',
       },
       screens: {
@@ -72,5 +72,4 @@ module.exports = {
   },
   darkMode: 'class',
   plugins: [heroui()],
-}
-
+};

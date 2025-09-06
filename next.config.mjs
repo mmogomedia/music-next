@@ -4,9 +4,17 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: '**.s3.amazonaws.com' },
-      { protocol: 'http', hostname: 'localhost' }
-    ]
-  }
-}
+      { protocol: 'http', hostname: 'localhost' },
+    ],
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/audio.flemoji.com/:path*',
+        destination: 'https://audio.flemoji.com/:path*',
+      },
+    ];
+  },
+};
 
-export default nextConfig
+export default nextConfig;

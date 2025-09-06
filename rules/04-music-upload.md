@@ -1,9 +1,11 @@
 # Phase 4: Music Upload System
 
 ## 🎯 Objective
+
 Implement a comprehensive music upload system that allows artists to upload audio files, manage metadata, and integrate with cloud storage (AWS S3) for scalable file management.
 
 ## 📋 Prerequisites
+
 - Phase 1, 2, & 3 completed successfully
 - Database schema with Track model implemented
 - AWS S3 account and credentials configured
@@ -33,9 +35,15 @@ yarn add mime-types @types/mime-types
 ### 2. AWS S3 Configuration
 
 #### `src/lib/s3.ts`
+
 ```typescript
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION!,
@@ -43,12 +51,12 @@ const s3Client = new S3Client({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
-})
+});
 
 export const s3Config = {
   bucket: process.env.AWS_S3_BUCKET!,
   region: process.env.AWS_REGION!,
-}
+};
 
 export class S3Service {
   // Upload file to S3
@@ -63,10 +71,10 @@ export class S3Service {
       Body: file,
       ContentType: contentType,
       ACL: 'public-read',
-    })
+    });
 
-    await s3Client.send(command)
-    return `https://${s3Config.bucket}.s3.${s3Config.region}.amazonaws.com/${key}`
+    await s3Client.send(command);
+    return `https://${s3Config.bucket}.s3.${s3Config.region}.amazonaws.com/${key}`;
   }
 
   // Delete file from S3
@@ -74,9 +82,9 @@ export class S3Service {
     const command = new DeleteObjectCommand({
       Bucket: s3Config.bucket,
       Key: key,
-    })
+    });
 
-    await s3Client.send(command)
+    await s3Client.send(command);
   }
 
   // Generate presigned URL for direct upload
@@ -89,9 +97,9 @@ export class S3Service {
       Bucket: s3Config.bucket,
       Key: key,
       ContentType: contentType,
-    })
+    });
 
-    return getSignedUrl(s3Client, command, { expiresIn })
+    return getSignedUrl(s3Client, command, { expiresIn });
   }
 
   // Generate presigned URL for file access
@@ -102,9 +110,9 @@ export class S3Service {
     const command = new GetObjectCommand({
       Bucket: s3Config.bucket,
       Key: key,
-    })
+    });
 
-    return getSignedUrl(s3Client, command, { expiresIn })
+    return getSignedUrl(s3Client, command, { expiresIn });
   }
 }
 ```
@@ -112,28 +120,29 @@ export class S3Service {
 ### 3. File Upload Utilities
 
 #### `src/lib/upload-utils.ts`
+
 ```typescript
-import { writeFile, unlink } from 'fs/promises'
-import { join } from 'path'
-import { tmpdir } from 'os'
-import { v4 as uuidv4 } from 'uuid'
-import { getAudioDurationInSeconds } from 'get-audio-duration'
-import { FileTypeResult } from 'file-type'
-import { fileTypeFromBuffer } from 'file-type'
+import { writeFile, unlink } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
+import { v4 as uuidv4 } from 'uuid';
+import { getAudioDurationInSeconds } from 'get-audio-duration';
+import { FileTypeResult } from 'file-type';
+import { fileTypeFromBuffer } from 'file-type';
 
 export interface UploadedFile {
-  originalname: string
-  buffer: Buffer
-  mimetype: string
-  size: number
+  originalname: string;
+  buffer: Buffer;
+  mimetype: string;
+  size: number;
 }
 
 export interface ProcessedAudioFile {
-  filePath: string
-  duration: number
-  fileSize: number
-  mimeType: string
-  originalName: string
+  filePath: string;
+  duration: number;
+  fileSize: number;
+  mimeType: string;
+  originalName: string;
 }
 
 export class UploadUtils {
@@ -146,92 +155,99 @@ export class UploadUtils {
       'audio/flac',
       'audio/aac',
       'audio/ogg',
-      'audio/m4a'
-    ]
+      'audio/m4a',
+    ];
 
     // Check MIME type
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      return false
+      return false;
     }
 
     // Check file extension
-    const fileType: FileTypeResult | undefined = await fileTypeFromBuffer(file.buffer)
+    const fileType: FileTypeResult | undefined = await fileTypeFromBuffer(
+      file.buffer
+    );
     if (!fileType || !allowedMimeTypes.includes(fileType.mime)) {
-      return false
+      return false;
     }
 
-    return true
+    return true;
   }
 
   // Validate file size (max 50MB)
   static validateFileSize(size: number): boolean {
-    const maxSize = 50 * 1024 * 1024 // 50MB
-    return size <= maxSize
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    return size <= maxSize;
   }
 
   // Save file to temporary directory
   static async saveTempFile(file: UploadedFile): Promise<string> {
-    const tempDir = tmpdir()
-    const fileName = `${uuidv4()}-${file.originalname}`
-    const filePath = join(tempDir, fileName)
+    const tempDir = tmpdir();
+    const fileName = `${uuidv4()}-${file.originalname}`;
+    const filePath = join(tempDir, fileName);
 
-    await writeFile(filePath, file.buffer)
-    return filePath
+    await writeFile(filePath, file.buffer);
+    return filePath;
   }
 
   // Get audio duration
   static async getAudioDuration(filePath: string): Promise<number> {
     try {
-      const duration = await getAudioDurationInSeconds(filePath)
-      return Math.round(duration)
+      const duration = await getAudioDurationInSeconds(filePath);
+      return Math.round(duration);
     } catch (error) {
-      console.error('Error getting audio duration:', error)
-      return 0
+      console.error('Error getting audio duration:', error);
+      return 0;
     }
   }
 
   // Generate unique S3 key
   static generateS3Key(originalName: string, userId: string): string {
-    const timestamp = Date.now()
-    const extension = originalName.split('.').pop()
-    const sanitizedName = originalName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
-    
-    return `uploads/${userId}/${timestamp}-${sanitizedName}.${extension}`
+    const timestamp = Date.now();
+    const extension = originalName.split('.').pop();
+    const sanitizedName = originalName
+      .replace(/[^a-zA-Z0-9]/g, '-')
+      .toLowerCase();
+
+    return `uploads/${userId}/${timestamp}-${sanitizedName}.${extension}`;
   }
 
   // Clean up temporary file
   static async cleanupTempFile(filePath: string): Promise<void> {
     try {
-      await unlink(filePath)
+      await unlink(filePath);
     } catch (error) {
-      console.error('Error cleaning up temp file:', error)
+      console.error('Error cleaning up temp file:', error);
     }
   }
 
   // Process uploaded audio file
-  static async processAudioFile(file: UploadedFile, userId: string): Promise<ProcessedAudioFile> {
+  static async processAudioFile(
+    file: UploadedFile,
+    userId: string
+  ): Promise<ProcessedAudioFile> {
     // Validate file
     if (!this.validateAudioFile(file)) {
-      throw new Error('Invalid audio file type')
+      throw new Error('Invalid audio file type');
     }
 
     if (!this.validateFileSize(file.size)) {
-      throw new Error('File size too large (max 50MB)')
+      throw new Error('File size too large (max 50MB)');
     }
 
     // Save to temp directory
-    const tempFilePath = await this.saveTempFile(file)
+    const tempFilePath = await this.saveTempFile(file);
 
     // Get audio duration
-    const duration = await this.getAudioDuration(tempFilePath)
+    const duration = await this.getAudioDuration(tempFilePath);
 
     return {
       filePath: tempFilePath,
       duration,
       fileSize: file.size,
       mimeType: file.mimetype,
-      originalName: file.originalname
-    }
+      originalName: file.originalname,
+    };
   }
 }
 ```
@@ -239,26 +255,24 @@ export class UploadUtils {
 ### 4. Upload API Route
 
 #### `src/app/api/upload/track/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
-import { S3Service } from '@/lib/s3'
-import { UploadUtils } from '@/lib/upload-utils'
-import { trackSchema } from '@/lib/validations'
-import formidable from 'formidable'
-import { readFileSync } from 'fs'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { S3Service } from '@/lib/s3';
+import { UploadUtils } from '@/lib/upload-utils';
+import { trackSchema } from '@/lib/validations';
+import formidable from 'formidable';
+import { readFileSync } from 'fs';
 
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user is artist or admin
@@ -266,20 +280,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Only artists can upload tracks' },
         { status: 403 }
-      )
+      );
     }
 
     // Parse form data
     const form = formidable({
       maxFileSize: 50 * 1024 * 1024, // 50MB
       allowEmptyFiles: false,
-      filter: (part) => {
-        return part.mimetype?.includes('audio/') || part.mimetype?.includes('image/')
-      }
-    })
+      filter: part => {
+        return (
+          part.mimetype?.includes('audio/') || part.mimetype?.includes('image/')
+        );
+      },
+    });
 
-    const [fields, files] = await form.parse(request)
-    
+    const [fields, files] = await form.parse(request);
+
     // Extract metadata
     const metadata = {
       title: fields.title?.[0] || '',
@@ -287,26 +303,28 @@ export async function POST(request: NextRequest) {
       album: fields.album?.[0] || '',
       description: fields.description?.[0] || '',
       isExplicit: fields.isExplicit?.[0] === 'true',
-      releaseDate: fields.releaseDate?.[0] ? new Date(fields.releaseDate[0]) : null,
-    }
+      releaseDate: fields.releaseDate?.[0]
+        ? new Date(fields.releaseDate[0])
+        : null,
+    };
 
     // Validate metadata
-    const validatedMetadata = trackSchema.parse(metadata)
+    const validatedMetadata = trackSchema.parse(metadata);
 
     // Get audio file
-    const audioFile = files.audio?.[0]
+    const audioFile = files.audio?.[0];
     if (!audioFile) {
       return NextResponse.json(
         { error: 'Audio file is required' },
         { status: 400 }
-      )
+      );
     }
 
     // Get cover image (optional)
-    const coverImage = files.coverImage?.[0]
+    const coverImage = files.coverImage?.[0];
 
     // Process audio file
-    const audioBuffer = readFileSync(audioFile.filepath)
+    const audioBuffer = readFileSync(audioFile.filepath);
     const processedAudio = await UploadUtils.processAudioFile(
       {
         originalname: audioFile.originalFilename || 'audio.mp3',
@@ -315,32 +333,32 @@ export async function POST(request: NextRequest) {
         size: audioFile.size || 0,
       },
       session.user.id
-    )
+    );
 
     // Upload audio to S3
     const audioKey = UploadUtils.generateS3Key(
       processedAudio.originalName,
       session.user.id
-    )
+    );
     const audioUrl = await S3Service.uploadFile(
       audioBuffer,
       audioKey,
       processedAudio.mimeType
-    )
+    );
 
     // Upload cover image if provided
-    let coverImageUrl: string | undefined
+    let coverImageUrl: string | undefined;
     if (coverImage) {
-      const coverBuffer = readFileSync(coverImage.filepath)
+      const coverBuffer = readFileSync(coverImage.filepath);
       const coverKey = UploadUtils.generateS3Key(
         coverImage.originalFilename || 'cover.jpg',
         session.user.id
-      )
+      );
       coverImageUrl = await S3Service.uploadFile(
         coverBuffer,
         coverKey,
         coverImage.mimetype || 'image/jpeg'
-      )
+      );
     }
 
     // Create track in database
@@ -363,50 +381,43 @@ export async function POST(request: NextRequest) {
             id: true,
             name: true,
             image: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
 
     // Clean up temp files
-    await UploadUtils.cleanupTempFile(processedAudio.filePath)
+    await UploadUtils.cleanupTempFile(processedAudio.filePath);
     if (coverImage) {
-      await UploadUtils.cleanupTempFile(coverImage.filepath)
+      await UploadUtils.cleanupTempFile(coverImage.filepath);
     }
 
     return NextResponse.json(
-      { 
+      {
         message: 'Track uploaded successfully',
-        track 
+        track,
       },
       { status: 201 }
-    )
-
+    );
   } catch (error) {
-    console.error('Upload error:', error)
-    
+    console.error('Upload error:', error);
+
     if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user's tracks
@@ -419,18 +430,18 @@ export async function GET(request: NextRequest) {
             id: true,
             name: true,
             image: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
 
-    return NextResponse.json({ tracks })
+    return NextResponse.json({ tracks });
   } catch (error) {
-    console.error('Error fetching tracks:', error)
+    console.error('Error fetching tracks:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -438,13 +449,14 @@ export async function GET(request: NextRequest) {
 ### 5. Track Management API
 
 #### `src/app/api/tracks/[id]/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
-import { S3Service } from '@/lib/s3'
-import { trackSchema } from '@/lib/validations'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { S3Service } from '@/lib/s3';
+import { trackSchema } from '@/lib/validations';
 
 // Get track by ID
 export async function GET(
@@ -460,25 +472,22 @@ export async function GET(
             id: true,
             name: true,
             image: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
 
     if (!track) {
-      return NextResponse.json(
-        { error: 'Track not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Track not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ track })
+    return NextResponse.json({ track });
   } catch (error) {
-    console.error('Error fetching track:', error)
+    console.error('Error fetching track:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -488,35 +497,26 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user owns the track or is admin
     const track = await prisma.track.findUnique({
-      where: { id: params.id }
-    })
+      where: { id: params.id },
+    });
 
     if (!track) {
-      return NextResponse.json(
-        { error: 'Track not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Track not found' }, { status: 404 });
     }
 
     if (track.artistId !== session.user.id && session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const body = await request.json()
-    const validatedData = trackSchema.parse(body)
+    const body = await request.json();
+    const validatedData = trackSchema.parse(body);
 
     const updatedTrack = await prisma.track.update({
       where: { id: params.id },
@@ -527,26 +527,23 @@ export async function PUT(
             id: true,
             name: true,
             image: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
 
-    return NextResponse.json({ track: updatedTrack })
+    return NextResponse.json({ track: updatedTrack });
   } catch (error) {
-    console.error('Error updating track:', error)
-    
+    console.error('Error updating track:', error);
+
     if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -556,62 +553,51 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user owns the track or is admin
     const track = await prisma.track.findUnique({
-      where: { id: params.id }
-    })
+      where: { id: params.id },
+    });
 
     if (!track) {
-      return NextResponse.json(
-        { error: 'Track not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Track not found' }, { status: 404 });
     }
 
     if (track.artistId !== session.user.id && session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Delete from S3
     if (track.fileUrl) {
-      const key = track.fileUrl.split('/').pop()
+      const key = track.fileUrl.split('/').pop();
       if (key) {
-        await S3Service.deleteFile(key)
+        await S3Service.deleteFile(key);
       }
     }
 
     if (track.coverImageUrl) {
-      const key = track.coverImageUrl.split('/').pop()
+      const key = track.coverImageUrl.split('/').pop();
       if (key) {
-        await S3Service.deleteFile(key)
+        await S3Service.deleteFile(key);
       }
     }
 
     // Delete from database
     await prisma.track.delete({
-      where: { id: params.id }
-    })
+      where: { id: params.id },
+    });
 
-    return NextResponse.json(
-      { message: 'Track deleted successfully' }
-    )
+    return NextResponse.json({ message: 'Track deleted successfully' });
   } catch (error) {
-    console.error('Error deleting track:', error)
+    console.error('Error deleting track:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -619,6 +605,7 @@ export async function DELETE(
 ### 6. Upload Form Component
 
 #### `src/components/forms/UploadTrackForm.tsx`
+
 ```typescript
 'use client'
 
@@ -651,7 +638,7 @@ export default function UploadTrackForm() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [error, setError] = useState('')
-  
+
   const audioInputRef = useRef<HTMLInputElement>(null)
   const coverInputRef = useRef<HTMLInputElement>(null)
 
@@ -671,13 +658,13 @@ export default function UploadTrackForm() {
         setError('Please select a valid audio file')
         return
       }
-      
+
       // Validate file size (50MB max)
       if (file.size > 50 * 1024 * 1024) {
         setError('File size must be less than 50MB')
         return
       }
-      
+
       setAudioFile(file)
       setError('')
     }
@@ -690,12 +677,12 @@ export default function UploadTrackForm() {
         setError('Please select a valid image file')
         return
       }
-      
+
       if (file.size > 5 * 1024 * 1024) { // 5MB max
         setError('Cover image must be less than 5MB')
         return
       }
-      
+
       setCoverImage(file)
       setError('')
     }
@@ -703,7 +690,7 @@ export default function UploadTrackForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!audioFile) {
       setError('Please select an audio file')
       return
@@ -719,14 +706,14 @@ export default function UploadTrackForm() {
 
     try {
       const formDataToSend = new FormData()
-      
+
       // Add metadata
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== '') {
           formDataToSend.append(key, value.toString())
         }
       })
-      
+
       // Add files
       formDataToSend.append('audio', audioFile)
       if (coverImage) {
@@ -944,7 +931,7 @@ export default function UploadTrackForm() {
         {/* Upload Progress */}
         {isUploading && (
           <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div 
+            <div
               className="bg-primary-600 h-2.5 rounded-full transition-all duration-300"
               style={{ width: `${uploadProgress}%` }}
             ></div>
@@ -960,7 +947,7 @@ export default function UploadTrackForm() {
           >
             {isUploading ? 'Uploading...' : 'Upload Track'}
           </button>
-          
+
           <button
             type="button"
             onClick={resetForm}
@@ -979,6 +966,7 @@ export default function UploadTrackForm() {
 ### 7. Track List Component
 
 #### `src/components/music/TrackList.tsx`
+
 ```typescript
 'use client'
 
@@ -1012,11 +1000,11 @@ interface TrackListProps {
   onTrackDelete?: (trackId: string) => void
 }
 
-export default function TrackList({ 
-  tracks, 
+export default function TrackList({
+  tracks,
   showActions = false,
   onTrackUpdate,
-  onTrackDelete 
+  onTrackDelete
 }: TrackListProps) {
   const { data: session } = useSession()
   const [editingTrack, setEditingTrack] = useState<string | null>(null)
@@ -1111,11 +1099,11 @@ export default function TrackList({
                   </span>
                 )}
               </div>
-              
+
               <p className="text-sm text-gray-600">
                 by {track.artist.name}
               </p>
-              
+
               <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
                 <span>{track.genre}</span>
                 {track.album && <span>• {track.album}</span>}
@@ -1126,7 +1114,7 @@ export default function TrackList({
             </div>
 
             {/* Actions */}
-            {showActions && session?.user && 
+            {showActions && session?.user &&
              (session.user.id === track.artist.id || session.user.role === 'ADMIN') && (
               <div className="flex items-center space-x-2">
                 {editingTrack === track.id ? (
@@ -1197,6 +1185,7 @@ export default function TrackList({
 ### 8. Upload Page
 
 #### `src/app/(dashboard)/artist/upload/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -1205,7 +1194,7 @@ import UploadTrackForm from '@/components/forms/UploadTrackForm'
 
 export default async function UploadPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || (session.user.role !== 'ARTIST' && session.user.role !== 'ADMIN')) {
     redirect('/login')
   }
@@ -1221,7 +1210,7 @@ export default async function UploadPage() {
             Share your music with the world. Upload your track and add all the details.
           </p>
         </div>
-        
+
         <UploadTrackForm />
       </div>
     </div>
@@ -1232,6 +1221,7 @@ export default async function UploadPage() {
 ### 9. Environment Variables Update
 
 Add to `.env.local`:
+
 ```bash
 # AWS S3 Configuration
 AWS_ACCESS_KEY_ID=your_access_key_here
@@ -1248,6 +1238,7 @@ ALLOWED_IMAGE_TYPES=image/jpeg,image/png,image/webp
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **File upload works** - Can upload audio files successfully
 2. **S3 integration functional** - Files stored in cloud storage
 3. **Metadata management** - Track information saved correctly
@@ -1257,6 +1248,7 @@ ALLOWED_IMAGE_TYPES=image/jpeg,image/png,image/webp
 7. **File cleanup** - Temporary files removed after upload
 
 ### Test Commands:
+
 ```bash
 # Test file upload
 # 1. Login as artist
@@ -1277,18 +1269,23 @@ ALLOWED_IMAGE_TYPES=image/jpeg,image/png,image/webp
 ## 🚨 Common Issues & Solutions
 
 ### Issue: File upload fails
+
 **Solution**: Check AWS credentials, verify S3 bucket permissions, ensure file size limits
 
 ### Issue: Audio duration not detected
+
 **Solution**: Install ffmpeg, verify audio file format support
 
 ### Issue: S3 upload errors
+
 **Solution**: Verify bucket CORS settings, check IAM permissions
 
 ### Issue: Form validation errors
+
 **Solution**: Ensure all required fields are filled, check file type validation
 
 ## 📝 Notes
+
 - Implement proper error handling for large file uploads
 - Consider implementing chunked uploads for very large files
 - Add progress indicators for better user experience
@@ -1296,4 +1293,5 @@ ALLOWED_IMAGE_TYPES=image/jpeg,image/png,image/webp
 - Consider adding audio format conversion for better compatibility
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 5: Music Streaming Interface](./05-music-streaming.md)

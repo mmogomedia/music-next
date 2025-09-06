@@ -72,7 +72,7 @@ model Track {
   title         String
   artistId      String
   artist        User      @relation(fields: [artistId], references: [id], onDelete: Cascade)
-  fileUrl       String
+  filePath      String    // Store only the file path, not full URL
   coverImageUrl String?
   genre         String
   album         String?

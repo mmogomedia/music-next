@@ -1,9 +1,11 @@
 # Phase 10: Subscription System
 
 ## 🎯 Objective
+
 Implement a comprehensive subscription system using Stripe that allows users to upgrade to premium features, manage their subscriptions, and access advanced analytics and platform features.
 
 ## 📋 Prerequisites
+
 - Phase 1, 2, 3, 4, 5, 6, 7, 8, & 9 completed successfully
 - Smart links system functional
 - Analytics system working
@@ -26,18 +28,19 @@ yarn add @stripe/react-stripe-js
 ### 2. Stripe Configuration
 
 #### `src/lib/stripe.ts`
+
 ```typescript
-import Stripe from 'stripe'
+import Stripe from 'stripe';
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
   typescript: true,
-})
+});
 
 export const stripeConfig = {
   publishableKey: process.env.STRIPE_PUBLISHABLE_KEY!,
   webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-}
+};
 
 export const subscriptionPlans = [
   {
@@ -48,9 +51,9 @@ export const subscriptionPlans = [
       'Stream unlimited music',
       'Basic analytics',
       'Create playlists',
-      'Follow artists'
+      'Follow artists',
     ],
-    stripePriceId: null
+    stripePriceId: null,
   },
   {
     id: 'premium',
@@ -63,9 +66,9 @@ export const subscriptionPlans = [
       'Ad-free experience',
       'High-quality streaming',
       'Download tracks',
-      'Exclusive artist content'
+      'Exclusive artist content',
     ],
-    stripePriceId: process.env.STRIPE_PREMIUM_PRICE_ID
+    stripePriceId: process.env.STRIPE_PREMIUM_PRICE_ID,
   },
   {
     id: 'artist-pro',
@@ -78,49 +81,57 @@ export const subscriptionPlans = [
       'Priority support',
       'Featured placement',
       'Revenue sharing',
-      'Marketing tools'
+      'Marketing tools',
     ],
-    stripePriceId: process.env.STRIPE_ARTIST_PRO_PRICE_ID
-  }
-]
+    stripePriceId: process.env.STRIPE_ARTIST_PRO_PRICE_ID,
+  },
+];
 
 export const getPlanById = (id: string) => {
-  return subscriptionPlans.find(plan => plan.id === id)
-}
+  return subscriptionPlans.find(plan => plan.id === id);
+};
 
 export const getPlanByStripePriceId = (stripePriceId: string) => {
-  return subscriptionPlans.find(plan => plan.stripePriceId === stripePriceId)
-}
+  return subscriptionPlans.find(plan => plan.stripePriceId === stripePriceId);
+};
 ```
 
 ### 3. Subscription Management Store
 
 #### `src/store/subscription-store.ts`
+
 ```typescript
-import { create } from 'zustand'
-import { immer } from 'zustand/middleware/immer'
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
 
 export interface Subscription {
-  id: string
-  status: 'active' | 'past_due' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'trialing' | 'unpaid'
-  currentPeriodStart: string
-  currentPeriodEnd: string
-  cancelAtPeriodEnd: boolean
-  plan: string
+  id: string;
+  status:
+    | 'active'
+    | 'past_due'
+    | 'canceled'
+    | 'incomplete'
+    | 'incomplete_expired'
+    | 'trialing'
+    | 'unpaid';
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  plan: string;
 }
 
 export interface SubscriptionState {
-  subscription: Subscription | null
-  isLoading: boolean
-  error: string | null
-  
+  subscription: Subscription | null;
+  isLoading: boolean;
+  error: string | null;
+
   // Actions
-  setSubscription: (subscription: Subscription | null) => void
-  setLoading: (loading: boolean) => void
-  setError: (error: string | null) => void
-  refreshSubscription: () => Promise<void>
-  cancelSubscription: () => Promise<void>
-  reactivateSubscription: () => Promise<void>
+  setSubscription: (subscription: Subscription | null) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  refreshSubscription: () => Promise<void>;
+  cancelSubscription: () => Promise<void>;
+  reactivateSubscription: () => Promise<void>;
 }
 
 export const useSubscriptionStore = create<SubscriptionState>()(
@@ -129,115 +140,116 @@ export const useSubscriptionStore = create<SubscriptionState>()(
     isLoading: false,
     error: null,
 
-    setSubscription: (subscription) => {
-      set((state) => {
-        state.subscription = subscription
-      })
+    setSubscription: subscription => {
+      set(state => {
+        state.subscription = subscription;
+      });
     },
 
-    setLoading: (loading) => {
-      set((state) => {
-        state.isLoading = loading
-      })
+    setLoading: loading => {
+      set(state => {
+        state.isLoading = loading;
+      });
     },
 
-    setError: (error) => {
-      set((state) => {
-        state.error = error
-      })
+    setError: error => {
+      set(state => {
+        state.error = error;
+      });
     },
 
     refreshSubscription: async () => {
-      set((state) => {
-        state.isLoading = true
-        state.error = null
-      })
+      set(state => {
+        state.isLoading = true;
+        state.error = null;
+      });
 
       try {
-        const response = await fetch('/api/subscription/current')
+        const response = await fetch('/api/subscription/current');
         if (response.ok) {
-          const data = await response.json()
-          set((state) => {
-            state.subscription = data.subscription
-          })
+          const data = await response.json();
+          set(state => {
+            state.subscription = data.subscription;
+          });
         }
       } catch (error) {
-        set((state) => {
-          state.error = 'Failed to refresh subscription'
-        })
+        set(state => {
+          state.error = 'Failed to refresh subscription';
+        });
       } finally {
-        set((state) => {
-          state.isLoading = false
-        })
+        set(state => {
+          state.isLoading = false;
+        });
       }
     },
 
     cancelSubscription: async () => {
-      set((state) => {
-        state.isLoading = true
-        state.error = null
-      })
+      set(state => {
+        state.isLoading = true;
+        state.error = null;
+      });
 
       try {
         const response = await fetch('/api/subscription/cancel', {
-          method: 'POST'
-        })
-        
+          method: 'POST',
+        });
+
         if (response.ok) {
-          await get().refreshSubscription()
+          await get().refreshSubscription();
         } else {
-          const error = await response.json()
-          set((state) => {
-            state.error = error.message || 'Failed to cancel subscription'
-          })
+          const error = await response.json();
+          set(state => {
+            state.error = error.message || 'Failed to cancel subscription';
+          });
         }
       } catch (error) {
-        set((state) => {
-          state.error = 'Failed to cancel subscription'
-        })
+        set(state => {
+          state.error = 'Failed to cancel subscription';
+        });
       } finally {
-        set((state) => {
-          state.isLoading = false
-        })
+        set(state => {
+          state.isLoading = false;
+        });
       }
     },
 
     reactivateSubscription: async () => {
-      set((state) => {
-        state.isLoading = true
-        state.error = null
-      })
+      set(state => {
+        state.isLoading = true;
+        state.error = null;
+      });
 
       try {
         const response = await fetch('/api/subscription/reactivate', {
-          method: 'POST'
-        })
-        
+          method: 'POST',
+        });
+
         if (response.ok) {
-          await get().refreshSubscription()
+          await get().refreshSubscription();
         } else {
-          const error = await response.json()
-          set((state) => {
-            state.error = error.message || 'Failed to reactivate subscription'
-          })
+          const error = await response.json();
+          set(state => {
+            state.error = error.message || 'Failed to reactivate subscription';
+          });
         }
       } catch (error) {
-        set((state) => {
-          state.error = 'Failed to reactivate subscription'
-        })
+        set(state => {
+          state.error = 'Failed to reactivate subscription';
+        });
       } finally {
-        set((state) => {
-          state.isLoading = false
-        })
+        set(state => {
+          state.isLoading = false;
+        });
       }
     },
   }))
-)
+);
 ```
 
 ### 4. Pricing Page
 
 #### `src/app/pricing/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -257,7 +269,7 @@ export default async function PricingPage() {
             Choose Your Plan
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Unlock premium features and take your music experience to the next level. 
+            Unlock premium features and take your music experience to the next level.
             Choose the plan that best fits your needs.
           </p>
         </div>
@@ -270,7 +282,7 @@ export default async function PricingPage() {
           <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">
             Frequently Asked Questions
           </h2>
-          
+
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -331,6 +343,7 @@ export default async function PricingPage() {
 ### 5. Pricing Cards Component
 
 #### `src/components/subscription/PricingCards.tsx`
+
 ```typescript
 'use client'
 
@@ -494,43 +507,38 @@ export default function PricingCards({ plans, user }: PricingCardsProps) {
 ### 6. Stripe Checkout API
 
 #### `src/app/api/subscription/create-checkout/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { stripe, getPlanById } from '@/lib/stripe'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { stripe, getPlanById } from '@/lib/stripe';
+import { prisma } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { planId, successUrl, cancelUrl } = body
+    const body = await request.json();
+    const { planId, successUrl, cancelUrl } = body;
 
     if (!planId || !successUrl || !cancelUrl) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
-      )
+      );
     }
 
-    const plan = getPlanById(planId)
+    const plan = getPlanById(planId);
     if (!plan || !plan.stripePriceId) {
-      return NextResponse.json(
-        { error: 'Invalid plan' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 });
     }
 
     // Get or create Stripe customer
-    let customerId = session.user.stripeCustomerId
+    let customerId = session.user.stripeCustomerId;
 
     if (!customerId) {
       const customer = await stripe.customers.create({
@@ -539,15 +547,15 @@ export async function POST(request: NextRequest) {
         metadata: {
           userId: session.user.id,
         },
-      })
+      });
 
-      customerId = customer.id
+      customerId = customer.id;
 
       // Update user with Stripe customer ID
       await prisma.user.update({
         where: { id: session.user.id },
-        data: { stripeCustomerId: customerId }
-      })
+        data: { stripeCustomerId: customerId },
+      });
     }
 
     // Create checkout session
@@ -573,15 +581,15 @@ export async function POST(request: NextRequest) {
           planId: planId,
         },
       },
-    })
+    });
 
-    return NextResponse.json({ url: session.url })
+    return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error('Error creating checkout session:', error)
+    console.error('Error creating checkout session:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -589,96 +597,91 @@ export async function POST(request: NextRequest) {
 ### 7. Stripe Webhook Handler
 
 #### `src/app/api/webhooks/stripe/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { stripe, stripeConfig } from '@/lib/stripe'
-import { prisma } from '@/lib/db'
-import { headers } from 'next/headers'
+import { NextRequest, NextResponse } from 'next/server';
+import { stripe, stripeConfig } from '@/lib/stripe';
+import { prisma } from '@/lib/db';
+import { headers } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.text()
-    const signature = headers().get('stripe-signature')
+    const body = await request.text();
+    const signature = headers().get('stripe-signature');
 
     if (!signature) {
-      return NextResponse.json(
-        { error: 'Missing signature' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
     }
 
-    let event: any
+    let event: any;
 
     try {
       event = stripe.webhooks.constructEvent(
         body,
         signature,
         stripeConfig.webhookSecret
-      )
+      );
     } catch (err) {
-      console.error('Webhook signature verification failed:', err)
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 400 }
-      )
+      console.error('Webhook signature verification failed:', err);
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
     // Handle the event
     switch (event.type) {
       case 'checkout.session.completed':
-        await handleCheckoutCompleted(event.data.object)
-        break
-      
+        await handleCheckoutCompleted(event.data.object);
+        break;
+
       case 'customer.subscription.created':
-        await handleSubscriptionCreated(event.data.object)
-        break
-      
+        await handleSubscriptionCreated(event.data.object);
+        break;
+
       case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(event.data.object)
-        break
-      
+        await handleSubscriptionUpdated(event.data.object);
+        break;
+
       case 'customer.subscription.deleted':
-        await handleSubscriptionDeleted(event.data.object)
-        break
-      
+        await handleSubscriptionDeleted(event.data.object);
+        break;
+
       case 'invoice.payment_succeeded':
-        await handlePaymentSucceeded(event.data.object)
-        break
-      
+        await handlePaymentSucceeded(event.data.object);
+        break;
+
       case 'invoice.payment_failed':
-        await handlePaymentFailed(event.data.object)
-        break
-      
+        await handlePaymentFailed(event.data.object);
+        break;
+
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        console.log(`Unhandled event type: ${event.type}`);
     }
 
-    return NextResponse.json({ received: true })
+    return NextResponse.json({ received: true });
   } catch (error) {
-    console.error('Webhook error:', error)
+    console.error('Webhook error:', error);
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }
-    )
+    );
   }
 }
 
 async function handleCheckoutCompleted(session: any) {
-  const { userId, planId } = session.metadata
-  
+  const { userId, planId } = session.metadata;
+
   // Update user's subscription status
   await prisma.user.update({
     where: { id: userId },
-    data: { 
+    data: {
       isPremium: true,
       // Add other premium flags based on plan
-    }
-  })
+    },
+  });
 }
 
 async function handleSubscriptionCreated(subscription: any) {
-  const { userId, planId } = subscription.metadata
-  
+  const { userId, planId } = subscription.metadata;
+
   // Create subscription record
   await prisma.subscription.create({
     data: {
@@ -690,8 +693,8 @@ async function handleSubscriptionCreated(subscription: any) {
       currentPeriodStart: new Date(subscription.current_period_start * 1000),
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    }
-  })
+    },
+  });
 }
 
 async function handleSubscriptionUpdated(subscription: any) {
@@ -703,40 +706,41 @@ async function handleSubscriptionUpdated(subscription: any) {
       currentPeriodStart: new Date(subscription.current_period_start * 1000),
       currentPeriodEnd: new Date(subscription.current_period_end * 1000),
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    }
-  })
+    },
+  });
 }
 
 async function handleSubscriptionDeleted(subscription: any) {
-  const { userId } = subscription.metadata
-  
+  const { userId } = subscription.metadata;
+
   // Update user's premium status
   await prisma.user.update({
     where: { id: userId },
-    data: { isPremium: false }
-  })
-  
+    data: { isPremium: false },
+  });
+
   // Update subscription record
   await prisma.subscription.update({
     where: { stripeSubscriptionId: subscription.id },
-    data: { status: 'CANCELED' }
-  })
+    data: { status: 'CANCELED' },
+  });
 }
 
 async function handlePaymentSucceeded(invoice: any) {
   // Handle successful payment
-  console.log('Payment succeeded:', invoice.id)
+  console.log('Payment succeeded:', invoice.id);
 }
 
 async function handlePaymentFailed(invoice: any) {
   // Handle failed payment
-  console.log('Payment failed:', invoice.id)
+  console.log('Payment failed:', invoice.id);
 }
 ```
 
 ### 8. Subscription Management Page
 
 #### `src/app/(dashboard)/subscription/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -764,7 +768,7 @@ async function getSubscriptionData(userId: string) {
 
 export default async function SubscriptionPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session) {
     redirect('/login')
   }
@@ -796,6 +800,7 @@ export default async function SubscriptionPage() {
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Subscription creation works** - Can create Stripe checkout sessions
 2. **Webhook handling functional** - Subscription events are processed correctly
 3. **Premium features accessible** - Users can access premium content after subscription
@@ -804,6 +809,7 @@ export default async function SubscriptionPage() {
 6. **Subscription lifecycle** - Can cancel, reactivate, and upgrade subscriptions
 
 ### Test Commands:
+
 ```bash
 # Test subscription flow
 # 1. Create test subscription
@@ -821,18 +827,23 @@ export default async function SubscriptionPage() {
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Stripe checkout not working
+
 **Solution**: Verify API keys, check webhook configuration, validate price IDs
 
 ### Issue: Webhooks not processing
+
 **Solution**: Check webhook endpoint, verify signature validation, test with Stripe CLI
 
 ### Issue: Premium features not accessible
+
 **Solution**: Check subscription status, verify user premium flags, check database updates
 
 ### Issue: Payment failures
+
 **Solution**: Verify Stripe account status, check payment method validation, test with valid cards
 
 ## 📝 Notes
+
 - Use Stripe test mode for development
 - Implement proper error handling for payment failures
 - Consider adding subscription tiers and upgrades
@@ -840,4 +851,5 @@ export default async function SubscriptionPage() {
 - Add proper logging for webhook events
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 11: Premium Analytics](./11-premium-analytics.md)

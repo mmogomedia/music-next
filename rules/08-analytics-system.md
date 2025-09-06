@@ -1,9 +1,11 @@
 # Phase 8: Analytics System
 
 ## 🎯 Objective
+
 Implement a comprehensive analytics system that provides detailed insights into music performance, user engagement, and platform usage with interactive charts, data visualization, and actionable insights.
 
 ## 📋 Prerequisites
+
 - Phase 1, 2, 3, 4, 5, 6, & 7 completed successfully
 - Artist dashboard functional
 - Database with play events and analytics data
@@ -14,25 +16,26 @@ Implement a comprehensive analytics system that provides detailed insights into 
 ### 1. Analytics Dashboard Component
 
 #### `src/components/dashboard/AnalyticsDashboard.tsx`
+
 ```typescript
 'use client'
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
   Cell,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
 } from 'recharts'
 import { formatDuration } from '@/lib/utils'
 
@@ -82,7 +85,7 @@ export default function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
   }))
 
   // Calculate engagement rate
-  const engagementRate = data.summary.totalPlays > 0 
+  const engagementRate = data.summary.totalPlays > 0
     ? ((data.summary.totalLikes / data.summary.totalPlays) * 100).toFixed(1)
     : '0'
 
@@ -207,10 +210,10 @@ export default function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Line 
-              type="monotone" 
-              dataKey="plays" 
-              stroke="#3B82F6" 
+            <Line
+              type="monotone"
+              dataKey="plays"
+              stroke="#3B82F6"
               strokeWidth={2}
               dot={{ fill: '#3B82F6', strokeWidth: 2, r: 4 }}
               activeDot={{ r: 6 }}
@@ -289,7 +292,7 @@ export default function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
             <tbody className="bg-white divide-y divide-gray-200">
               {data.topTracks.map((track, index) => {
                 const engagement = track.plays > 0 ? ((track.likes / track.plays) * 100).toFixed(1) : '0'
-                
+
                 return (
                   <tr key={track.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -327,7 +330,7 @@ export default function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
               <li>• Average play duration is {formatDuration(avgPlayDuration)}</li>
             </ul>
           </div>
-          
+
           <div className="bg-green-50 rounded-lg p-4">
             <h4 className="font-medium text-green-900 mb-2">Growth Opportunities</h4>
             <ul className="text-sm text-green-800 space-y-1">
@@ -346,31 +349,29 @@ export default function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
 ### 2. Advanced Analytics API Routes
 
 #### `src/app/api/analytics/tracks/[id]/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const days = parseInt(searchParams.get('days') || '30')
-    const groupBy = searchParams.get('groupBy') || 'day'
+    const { searchParams } = new URL(request.url);
+    const days = parseInt(searchParams.get('days') || '30');
+    const groupBy = searchParams.get('groupBy') || 'day';
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     // Get track details
     const track = await prisma.track.findUnique({
@@ -380,29 +381,23 @@ export async function GET(
           select: {
             id: true,
             name: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
 
     if (!track) {
-      return NextResponse.json(
-        { error: 'Track not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Track not found' }, { status: 404 });
     }
 
     // Check if user owns the track or is admin
     if (track.artistId !== session.user.id && session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Get play events with time grouping
-    let playsByTime: any[] = []
-    
+    let playsByTime: any[] = [];
+
     if (groupBy === 'hour') {
       playsByTime = await prisma.$queryRaw`
         SELECT 
@@ -415,7 +410,7 @@ export async function GET(
           AND "timestamp" >= ${startDate}
         GROUP BY DATE_TRUNC('hour', "timestamp")
         ORDER BY time_group
-      `
+      `;
     } else if (groupBy === 'day') {
       playsByTime = await prisma.$queryRaw`
         SELECT 
@@ -428,7 +423,7 @@ export async function GET(
           AND "timestamp" >= ${startDate}
         GROUP BY DATE_TRUNC('day', "timestamp")
         ORDER BY time_group
-      `
+      `;
     } else if (groupBy === 'week') {
       playsByTime = await prisma.$queryRaw`
         SELECT 
@@ -441,7 +436,7 @@ export async function GET(
           AND "timestamp" >= ${startDate}
         GROUP BY DATE_TRUNC('week', "timestamp")
         ORDER BY time_group
-      `
+      `;
     }
 
     // Get geographic data (if available)
@@ -449,29 +444,43 @@ export async function GET(
       by: ['ipAddress'],
       where: {
         trackId: params.id,
-        timestamp: { gte: startDate }
+        timestamp: { gte: startDate },
       },
       _count: {
-        id: true
-      }
-    })
+        id: true,
+      },
+    });
 
     // Get device/browser data
     const deviceData = await prisma.playEvent.groupBy({
       by: ['userAgent'],
       where: {
         trackId: params.id,
-        timestamp: { gte: startDate }
+        timestamp: { gte: startDate },
       },
       _count: {
-        id: true
-      }
-    })
+        id: true,
+      },
+    });
 
     // Calculate summary statistics
-    const totalPlays = playsByTime.reduce((sum, item) => sum + parseInt(item.plays), 0)
-    const totalDuration = playsByTime.reduce((sum, item) => sum + (parseFloat(item.avg_duration) * parseInt(item.plays)), 0)
-    const completionRate = totalPlays > 0 ? (playsByTime.reduce((sum, item) => sum + parseInt(item.completed_plays), 0) / totalPlays) * 100 : 0
+    const totalPlays = playsByTime.reduce(
+      (sum, item) => sum + parseInt(item.plays),
+      0
+    );
+    const totalDuration = playsByTime.reduce(
+      (sum, item) => sum + parseFloat(item.avg_duration) * parseInt(item.plays),
+      0
+    );
+    const completionRate =
+      totalPlays > 0
+        ? (playsByTime.reduce(
+            (sum, item) => sum + parseInt(item.completed_plays),
+            0
+          ) /
+            totalPlays) *
+          100
+        : 0;
 
     return NextResponse.json({
       track,
@@ -479,7 +488,8 @@ export async function GET(
         totalPlays,
         totalDuration,
         completionRate: Math.round(completionRate * 100) / 100,
-        avgDuration: totalPlays > 0 ? Math.round(totalDuration / totalPlays) : 0,
+        avgDuration:
+          totalPlays > 0 ? Math.round(totalDuration / totalPlays) : 0,
       },
       playsByTime: playsByTime.map(item => ({
         time: item.time_group,
@@ -489,13 +499,13 @@ export async function GET(
       })),
       geographicData: geographicData.slice(0, 10), // Top 10 locations
       deviceData: deviceData.slice(0, 10), // Top 10 devices
-    })
+    });
   } catch (error) {
-    console.error('Error fetching track analytics:', error)
+    console.error('Error fetching track analytics:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -503,36 +513,31 @@ export async function GET(
 ### 3. Artist Analytics API Route
 
 #### `src/app/api/analytics/artist/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Only artists and admins can access artist analytics
     if (session.user.role !== 'ARTIST' && session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const days = parseInt(searchParams.get('days') || '30')
-    const artistId = searchParams.get('artistId') || session.user.id
+    const { searchParams } = new URL(request.url);
+    const days = parseInt(searchParams.get('days') || '30');
+    const artistId = searchParams.get('artistId') || session.user.id;
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
 
     // Get artist's tracks with play data
     const tracks = await prisma.track.findMany({
@@ -540,7 +545,7 @@ export async function GET(request: NextRequest) {
       include: {
         playEvents: {
           where: {
-            timestamp: { gte: startDate }
+            timestamp: { gte: startDate },
           },
           select: {
             timestamp: true,
@@ -548,34 +553,46 @@ export async function GET(request: NextRequest) {
             completed: true,
             ipAddress: true,
             userAgent: true,
-          }
+          },
         },
         _count: {
           select: {
             likes: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
 
     // Calculate overall statistics
-    const totalPlays = tracks.reduce((sum, track) => sum + track.playEvents.length, 0)
-    const totalLikes = tracks.reduce((sum, track) => sum + track._count.likes, 0)
-    const totalDuration = tracks.reduce((sum, track) => 
-      sum + track.playEvents.reduce((trackSum, event) => trackSum + (event.duration || 0), 0), 0
-    )
+    const totalPlays = tracks.reduce(
+      (sum, track) => sum + track.playEvents.length,
+      0
+    );
+    const totalLikes = tracks.reduce(
+      (sum, track) => sum + track._count.likes,
+      0
+    );
+    const totalDuration = tracks.reduce(
+      (sum, track) =>
+        sum +
+        track.playEvents.reduce(
+          (trackSum, event) => trackSum + (event.duration || 0),
+          0
+        ),
+      0
+    );
 
     // Group plays by date
     const playsByDate = await prisma.playEvent.groupBy({
       by: ['timestamp'],
       where: {
         track: { artistId },
-        timestamp: { gte: startDate }
+        timestamp: { gte: startDate },
       },
       _count: {
-        id: true
-      }
-    })
+        id: true,
+      },
+    });
 
     // Get top performing tracks
     const topTracks = tracks
@@ -588,7 +605,7 @@ export async function GET(request: NextRequest) {
         likes: track._count.likes,
         duration: track.duration,
         playCount: track.playCount,
-      }))
+      }));
 
     // Get genre performance
     const genrePerformance = await prisma.track.groupBy({
@@ -599,39 +616,40 @@ export async function GET(request: NextRequest) {
         likeCount: true,
       },
       _count: {
-        id: true
-      }
-    })
+        id: true,
+      },
+    });
 
     // Get audience insights
     const audienceInsights = await prisma.playEvent.groupBy({
       by: ['ipAddress'],
       where: {
         track: { artistId },
-        timestamp: { gte: startDate }
+        timestamp: { gte: startDate },
       },
       _count: {
-        id: true
-      }
-    })
+        id: true,
+      },
+    });
 
     // Calculate growth metrics
-    const previousPeriodStart = new Date(startDate)
-    previousPeriodStart.setDate(previousPeriodStart.getDate() - days)
-    
+    const previousPeriodStart = new Date(startDate);
+    previousPeriodStart.setDate(previousPeriodStart.getDate() - days);
+
     const previousPeriodPlays = await prisma.playEvent.count({
       where: {
         track: { artistId },
         timestamp: {
           gte: previousPeriodStart,
-          lt: startDate
-        }
-      }
-    })
+          lt: startDate,
+        },
+      },
+    });
 
-    const growthRate = previousPeriodPlays > 0 
-      ? ((totalPlays - previousPeriodPlays) / previousPeriodPlays) * 100
-      : 0
+    const growthRate =
+      previousPeriodPlays > 0
+        ? ((totalPlays - previousPeriodPlays) / previousPeriodPlays) * 100
+        : 0;
 
     return NextResponse.json({
       summary: {
@@ -660,14 +678,14 @@ export async function GET(request: NextRequest) {
         start: startDate,
         end: new Date(),
         days,
-      }
-    })
+      },
+    });
   } catch (error) {
-    console.error('Error fetching artist analytics:', error)
+    console.error('Error fetching artist analytics:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -675,6 +693,7 @@ export async function GET(request: NextRequest) {
 ### 4. Real-time Analytics Updates
 
 #### `src/components/analytics/RealTimeAnalytics.tsx`
+
 ```typescript
 'use client'
 
@@ -722,7 +741,7 @@ export default function RealTimeAnalytics() {
           artistName: 'Sample Artist',
           timestamp: new Date().toLocaleTimeString(),
         }
-        
+
         setRealTimeData(prev => ({
           ...prev,
           recentPlays: [newPlay, ...prev.recentPlays.slice(0, 4)]
@@ -787,7 +806,7 @@ export default function RealTimeAnalytics() {
                 </motion.div>
               ))}
             </AnimatePresence>
-            
+
             {realTimeData.recentPlays.length === 0 && (
               <div className="text-gray-400 text-sm">No recent activity</div>
             )}
@@ -827,15 +846,16 @@ export default function RealTimeAnalytics() {
 ### 5. Analytics Export Functionality
 
 #### `src/components/analytics/ExportAnalytics.tsx`
+
 ```typescript
 'use client'
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  DocumentArrowDownIcon, 
-  TableCellsIcon, 
-  ChartBarIcon 
+import {
+  DocumentArrowDownIcon,
+  TableCellsIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline'
 
 interface ExportAnalyticsProps {
@@ -900,7 +920,7 @@ export default function ExportAnalytics({ data, artistName }: ExportAnalyticsPro
 
   const handleExport = async () => {
     setExporting(true)
-    
+
     try {
       const timestamp = new Date().toISOString().split('T')[0]
       const filename = `${artistName}_analytics_${timestamp}.${exportFormat}`
@@ -924,7 +944,7 @@ export default function ExportAnalytics({ data, artistName }: ExportAnalyticsPro
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Export Analytics</h3>
-      
+
       <div className="space-y-4">
         {/* Format Selection */}
         <div>
@@ -984,6 +1004,7 @@ export default function ExportAnalytics({ data, artistName }: ExportAnalyticsPro
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Analytics dashboard loads** - All charts and data display correctly
 2. **Real-time updates work** - Live data updates function properly
 3. **Export functionality** - Can export data in different formats
@@ -992,6 +1013,7 @@ export default function ExportAnalytics({ data, artistName }: ExportAnalyticsPro
 6. **Performance acceptable** - Dashboard loads within reasonable time
 
 ### Test Commands:
+
 ```bash
 # Test analytics dashboard
 # 1. Login as artist
@@ -1008,18 +1030,23 @@ export default function ExportAnalytics({ data, artistName }: ExportAnalyticsPro
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Charts not rendering
+
 **Solution**: Check chart library installation, verify data format, check for JavaScript errors
 
 ### Issue: Real-time updates not working
+
 **Solution**: Verify WebSocket connection, check server-side event handling, validate data flow
 
 ### Issue: Export functionality failing
+
 **Solution**: Check file permissions, verify data structure, test with smaller datasets
 
 ### Issue: Performance issues
+
 **Solution**: Implement data pagination, optimize database queries, add caching layers
 
 ## 📝 Notes
+
 - Consider implementing data caching for better performance
 - Add error boundaries for chart rendering failures
 - Implement progressive loading for large datasets
@@ -1027,4 +1054,5 @@ export default function ExportAnalytics({ data, artistName }: ExportAnalyticsPro
 - Implement data retention policies for analytics data
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 9: Smart Links System](./09-smart-links.md)

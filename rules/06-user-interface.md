@@ -1,9 +1,11 @@
 # Phase 6: User Interface & Experience
 
 ## 🎯 Objective
+
 Implement a comprehensive user interface for music browsing, search functionality, user interactions (likes, follows), and create an engaging user experience that encourages music discovery and engagement.
 
 ## 📋 Prerequisites
+
 - Phase 1, 2, 3, 4, & 5 completed successfully
 - Music streaming interface functional
 - Database with tracks and user data available
@@ -34,6 +36,7 @@ yarn add chart.js react-chartjs-2
 ### 2. Enhanced Homepage with Featured Content
 
 #### `src/app/page.tsx`
+
 ```typescript
 import { Suspense } from 'react'
 import Link from 'next/link'
@@ -142,10 +145,10 @@ export default async function Home() {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto mb-12 leading-relaxed">
-              Discover and stream music from independent artists. Upload your music, 
+              Discover and stream music from independent artists. Upload your music,
               share it with the world, and track your success across all platforms.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
               <Link
                 href="/browse"
@@ -154,7 +157,7 @@ export default async function Home() {
                 <span className="relative z-10">Start Listening</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-primary-600 to-primary-700 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
               </Link>
-              
+
               <Link
                 href="/register"
                 className="group relative px-8 py-4 bg-secondary-500 text-white text-lg font-semibold rounded-full hover:bg-secondary-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -200,7 +203,7 @@ export default async function Home() {
               Discover the most popular music on our platform
             </p>
           </div>
-          
+
           <Suspense fallback={<LoadingSpinner />}>
             <FeaturedTracks tracks={featuredTracks} />
           </Suspense>
@@ -218,7 +221,7 @@ export default async function Home() {
               Follow your favorite artists and discover new ones
             </p>
           </div>
-          
+
           <Suspense fallback={<LoadingSpinner />}>
             <TrendingArtists artists={trendingArtists} />
           </Suspense>
@@ -236,7 +239,7 @@ export default async function Home() {
               Find your perfect sound across different musical styles
             </p>
           </div>
-          
+
           <Suspense fallback={<LoadingSpinner />}>
             <GenreHighlights genres={genreStats} />
           </Suspense>
@@ -268,6 +271,7 @@ export default async function Home() {
 ### 3. Featured Tracks Component
 
 #### `src/components/music/FeaturedTracks.tsx`
+
 ```typescript
 'use client'
 
@@ -333,8 +337,8 @@ export default function FeaturedTracks({ tracks }: FeaturedTracksProps) {
             whileHover={{ y: -5 }}
             className="h-full"
           >
-            <TrackCard 
-              track={track} 
+            <TrackCard
+              track={track}
               showActions={true}
               compact={true}
             />
@@ -360,6 +364,7 @@ export default function FeaturedTracks({ tracks }: FeaturedTracksProps) {
 ### 4. Trending Artists Component
 
 #### `src/components/music/TrendingArtists.tsx`
+
 ```typescript
 'use client'
 
@@ -447,7 +452,7 @@ export default function TrendingArtists({ artists }: TrendingArtistsProps) {
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               {artist.name}
             </h3>
-            
+
             {artist.bio && (
               <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                 {artist.bio}
@@ -468,7 +473,7 @@ export default function TrendingArtists({ artists }: TrendingArtistsProps) {
               >
                 View Profile
               </Link>
-              
+
               {session && session.user.id !== artist.id && (
                 <button
                   onClick={() => handleFollow(artist.id)}
@@ -503,6 +508,7 @@ export default function TrendingArtists({ artists }: TrendingArtistsProps) {
 ### 5. Genre Highlights Component
 
 #### `src/components/music/GenreHighlights.tsx`
+
 ```typescript
 'use client'
 
@@ -539,7 +545,7 @@ export default function GenreHighlights({ genres }: GenreHighlightsProps) {
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
       {genres.map((genreStat, index) => {
         const colorClass = genreColors[genreStat.genre as keyof typeof genreColors] || 'from-gray-400 to-slate-400'
-        
+
         return (
           <motion.div
             key={genreStat.genre}
@@ -558,7 +564,7 @@ export default function GenreHighlights({ genres }: GenreHighlightsProps) {
                   {genreStat._count.id}
                 </p>
                 <p className="text-sm opacity-90">tracks</p>
-                
+
                 {/* Hover effect */}
                 <div className="absolute inset-0 bg-black bg-opacity-20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
@@ -574,6 +580,7 @@ export default function GenreHighlights({ genres }: GenreHighlightsProps) {
 ### 6. Enhanced Track List with Virtualization
 
 #### `src/components/music/VirtualizedTrackList.tsx`
+
 ```typescript
 'use client'
 
@@ -605,10 +612,10 @@ interface VirtualizedTrackListProps {
   itemHeight?: number
 }
 
-export default function VirtualizedTrackList({ 
-  tracks, 
-  height = 600, 
-  itemHeight = 120 
+export default function VirtualizedTrackList({
+  tracks,
+  height = 600,
+  itemHeight = 120
 }: VirtualizedTrackListProps) {
   const [selectedTrack, setSelectedTrack] = useState<string | null>(null)
 
@@ -654,6 +661,7 @@ export default function VirtualizedTrackList({
 ### 7. User Profile Page
 
 #### `src/app/user/[id]/page.tsx`
+
 ```typescript
 import { notFound } from 'next/navigation'
 import { getServerSession } from 'next-auth'
@@ -717,7 +725,7 @@ async function getUserData(userId: string) {
 
 export default async function UserPage({ params }: UserPageProps) {
   const user = await getUserData(params.id)
-  
+
   if (!user) {
     notFound()
   }
@@ -729,7 +737,7 @@ export default async function UserPage({ params }: UserPageProps) {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <UserProfile user={user} isOwnProfile={isOwnProfile} />
-        
+
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
           <UserTracks tracks={user.tracks} />
           <UserPlaylists playlists={user.playlists} />
@@ -743,33 +751,31 @@ export default async function UserPage({ params }: UserPageProps) {
 ### 8. Follow/Unfollow API Route
 
 #### `src/app/api/users/[id]/follow/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const followerId = session.user.id
-    const followingId = params.id
+    const followerId = session.user.id;
+    const followingId = params.id;
 
     if (followerId === followingId) {
       return NextResponse.json(
         { error: 'Cannot follow yourself' },
         { status: 400 }
-      )
+      );
     }
 
     // Check if already following
@@ -778,15 +784,15 @@ export async function POST(
         followerId_followingId: {
           followerId,
           followingId,
-        }
-      }
-    })
+        },
+      },
+    });
 
     if (existingFollow) {
       return NextResponse.json(
         { error: 'Already following this user' },
         { status: 400 }
-      )
+      );
     }
 
     // Create follow relationship
@@ -794,19 +800,19 @@ export async function POST(
       data: {
         followerId,
         followingId,
-      }
-    })
+      },
+    });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Successfully followed user',
-      follow 
-    })
+      follow,
+    });
   } catch (error) {
-    console.error('Error following user:', error)
+    console.error('Error following user:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -815,16 +821,13 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const followerId = session.user.id
-    const followingId = params.id
+    const followerId = session.user.id;
+    const followingId = params.id;
 
     // Delete follow relationship
     await prisma.follow.delete({
@@ -832,19 +835,19 @@ export async function DELETE(
         followerId_followingId: {
           followerId,
           followingId,
-        }
-      }
-    })
+        },
+      },
+    });
 
-    return NextResponse.json({ 
-      message: 'Successfully unfollowed user'
-    })
+    return NextResponse.json({
+      message: 'Successfully unfollowed user',
+    });
   } catch (error) {
-    console.error('Error unfollowing user:', error)
+    console.error('Error unfollowing user:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -852,6 +855,7 @@ export async function DELETE(
 ### 9. Enhanced Search with Filters
 
 #### `src/app/search/page.tsx`
+
 ```typescript
 import { Suspense } from 'react'
 import { prisma } from '@/lib/db'
@@ -955,8 +959,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           {/* Search Results */}
           <div className="flex-1">
             <Suspense fallback={<LoadingSpinner />}>
-              <SearchResults 
-                tracks={tracks} 
+              <SearchResults
+                tracks={tracks}
                 query={query}
                 page={page}
                 totalPages={totalPages}
@@ -974,6 +978,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Homepage displays correctly** - Featured content loads and displays
 2. **Search functionality works** - Can search tracks and filter results
 3. **User interactions functional** - Likes, follows, and playlists work
@@ -982,6 +987,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 6. **Navigation smooth** - User can browse between different sections
 
 ### Test Commands:
+
 ```bash
 # Test homepage features
 # 1. Load homepage and verify featured content
@@ -997,18 +1003,23 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Featured content not loading
+
 **Solution**: Check database queries, verify data exists, check for errors in console
 
 ### Issue: Search results empty
+
 **Solution**: Verify search query parameters, check database indexes, test search logic
 
 ### Issue: User interactions failing
+
 **Solution**: Check authentication state, verify API routes, check database permissions
 
 ### Issue: Performance issues
+
 **Solution**: Implement virtualization for large lists, optimize database queries, add caching
 
 ## 📝 Notes
+
 - Implement proper loading states for better UX
 - Add error boundaries for graceful error handling
 - Consider implementing infinite scroll for large result sets
@@ -1016,4 +1027,5 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 - Implement proper SEO meta tags for search pages
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 7: Artist Dashboard](./07-artist-dashboard.md)

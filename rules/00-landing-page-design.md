@@ -1,6 +1,7 @@
 # Landing Page Design & Layout Architecture
 
 ## 🎯 Objective
+
 Document the modern, professional music streaming interface design and layout architecture implemented for Flemoji, including responsive navigation, authentication-aware components, and user experience patterns.
 
 ## 📱 Layout Architecture
@@ -8,6 +9,7 @@ Document the modern, professional music streaming interface design and layout ar
 ### **Responsive Layout System**
 
 #### **Desktop Layout (≥1024px)**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │ [Fixed Sidebar] │ [Main Content Area]           │
@@ -31,6 +33,7 @@ Document the modern, professional music streaming interface design and layout ar
 ```
 
 #### **Mobile Layout (<1024px)**
+
 ```
 ┌─────────────────────────────────────────────────┐
 │ [Mobile Header]                                 │
@@ -50,6 +53,7 @@ Document the modern, professional music streaming interface design and layout ar
 ### **Component Hierarchy**
 
 #### **AppLayout Component**
+
 - **Purpose**: Main layout wrapper that handles responsive behavior
 - **Responsibilities**:
   - Detects screen size (mobile vs desktop)
@@ -58,6 +62,7 @@ Document the modern, professional music streaming interface design and layout ar
   - Always renders music player
 
 #### **Sidebar Component (Desktop)**
+
 - **Position**: Fixed left sidebar (256px width)
 - **Z-index**: 30 (below music player)
 - **Content**:
@@ -68,6 +73,7 @@ Document the modern, professional music streaming interface design and layout ar
 - **Bottom Padding**: 80px (to account for music player)
 
 #### **MobileHeader Component (Mobile)**
+
 - **Position**: Fixed top header (64px height)
 - **Content**:
   - Logo and branding
@@ -77,6 +83,7 @@ Document the modern, professional music streaming interface design and layout ar
 - **Behavior**: Collapsible menu with full navigation
 
 #### **MusicPlayer Component**
+
 - **Position**: Fixed bottom (always visible)
 - **Z-index**: 40 (above sidebar)
 - **Height**: 80px
@@ -89,6 +96,7 @@ Document the modern, professional music streaming interface design and layout ar
 ## 🎨 Design System Updates
 
 ### **Color Palette (Updated)**
+
 ```css
 /* Primary - Blue theme for modern look */
 --primary-50: #eff6ff;
@@ -96,7 +104,7 @@ Document the modern, professional music streaming interface design and layout ar
 --primary-200: #bfdbfe;
 --primary-300: #93c5fd;
 --primary-400: #60a5fa;
---primary-500: #3b82f6;  /* Main primary */
+--primary-500: #3b82f6; /* Main primary */
 --primary-600: #2563eb;
 --primary-700: #1d4ed8;
 --primary-800: #1e40af;
@@ -118,18 +126,21 @@ Document the modern, professional music streaming interface design and layout ar
 ```
 
 ### **Typography**
+
 - **Primary Font**: Inter (clean, modern)
 - **Headings**: Bold weights (600-800)
 - **Body Text**: Regular weight (400-500)
 - **Small Text**: 12-14px for captions and metadata
 
 ### **Spacing System**
+
 - **Component Padding**: 16px (p-4)
 - **Section Spacing**: 32px (space-y-8)
 - **Card Padding**: 24px (p-6)
 - **Button Padding**: 12px vertical, 16px horizontal
 
 ### **Border Radius**
+
 - **Cards**: 12px (rounded-xl)
 - **Buttons**: 8px (rounded-lg)
 - **Small Elements**: 4px (rounded)
@@ -139,12 +150,14 @@ Document the modern, professional music streaming interface design and layout ar
 ### **Navigation Behavior**
 
 #### **Non-Authenticated Users**
+
 - **Sidebar**: Shows MENU and ACCOUNT sections
 - **ACCOUNT Section**: Login and Sign Up buttons
 - **User Profile**: Not visible
 - **Music Player**: Always visible (read-only mode)
 
 #### **Authenticated Users**
+
 - **Sidebar**: Shows MENU section only
 - **User Profile**: Shows at bottom of sidebar
   - User avatar and name
@@ -152,6 +165,7 @@ Document the modern, professional music streaming interface design and layout ar
 - **Music Player**: Full functionality available
 
 ### **Theme Switching**
+
 - **Location**: Subtle button next to logo
 - **Icon**: Sun/Moon icon that changes based on current theme
 - **Behavior**: Toggles between light and dark modes
@@ -160,6 +174,7 @@ Document the modern, professional music streaming interface design and layout ar
 ## 🎵 Music Streaming Interface
 
 ### **Main Content Layout**
+
 - **Search Bar**: Prominent at top of main content
 - **Content Grid**: 2/3 main content, 1/3 sidebar on desktop
 - **Sections**:
@@ -169,6 +184,7 @@ Document the modern, professional music streaming interface design and layout ar
   - Recently Played (user's listening history)
 
 ### **Music Player Features**
+
 - **Track Information**: Title, artist, album art
 - **Controls**: Play/pause, previous, next, shuffle, repeat
 - **Progress Bar**: Visual progress with time display
@@ -178,6 +194,7 @@ Document the modern, professional music streaming interface design and layout ar
 ## 📱 Responsive Breakpoints
 
 ### **Mobile First Approach**
+
 ```css
 /* Mobile: < 640px */
 - Single column layout
@@ -197,6 +214,7 @@ Document the modern, professional music streaming interface design and layout ar
 ```
 
 ### **Layout Transitions**
+
 - **Smooth Transitions**: 200-300ms duration
 - **Hover Effects**: Scale and color changes
 - **Loading States**: Skeleton screens and spinners
@@ -205,18 +223,21 @@ Document the modern, professional music streaming interface design and layout ar
 ## 🎯 User Experience Patterns
 
 ### **Navigation Patterns**
+
 - **Active States**: Blue accent color with dot indicator
 - **Hover States**: Subtle background color changes
 - **Focus States**: Clear focus indicators for accessibility
 - **Loading States**: Skeleton screens during data fetching
 
 ### **Content Discovery**
+
 - **Search**: Prominent search bar with autocomplete
 - **Categories**: Clear section headers and organization
 - **Recommendations**: Personalized content based on user behavior
 - **Trending**: Popular content prominently displayed
 
 ### **Interaction Feedback**
+
 - **Immediate Response**: Buttons respond instantly to clicks
 - **Visual Feedback**: Loading states and success indicators
 - **Error Handling**: Clear error messages with recovery options
@@ -225,6 +246,7 @@ Document the modern, professional music streaming interface design and layout ar
 ## 🔧 Implementation Guidelines
 
 ### **Component Structure**
+
 ```
 src/components/
 ├── layout/
@@ -239,12 +261,14 @@ src/components/
 ```
 
 ### **State Management**
+
 - **Authentication**: NextAuth.js session management
 - **Theme**: next-themes for dark/light mode
 - **Responsive**: Custom hook for screen size detection
 - **Music Player**: Local state for playback controls
 
 ### **Performance Considerations**
+
 - **Lazy Loading**: Components loaded on demand
 - **Image Optimization**: Next.js Image component
 - **Bundle Splitting**: Route-based code splitting
@@ -253,12 +277,14 @@ src/components/
 ## 📊 Analytics & Tracking
 
 ### **User Behavior Tracking**
+
 - **Page Views**: Track navigation patterns
 - **Music Plays**: Track listening behavior (anonymous and authenticated)
 - **Search Queries**: Track search patterns
 - **Feature Usage**: Track which features are used most
 
 ### **Performance Metrics**
+
 - **Page Load Times**: Monitor Core Web Vitals
 - **User Engagement**: Time spent on platform
 - **Conversion Rates**: Anonymous to authenticated user conversion
@@ -267,6 +293,7 @@ src/components/
 ## 🚀 Future Enhancements
 
 ### **Planned Features**
+
 - **Keyboard Shortcuts**: Global keyboard controls
 - **Voice Search**: Voice-activated search functionality
 - **Offline Support**: Progressive Web App capabilities
@@ -274,6 +301,7 @@ src/components/
 - **Social Features**: Sharing and collaboration tools
 
 ### **Accessibility Improvements**
+
 - **Screen Reader**: Enhanced screen reader support
 - **Keyboard Navigation**: Full keyboard accessibility
 - **High Contrast**: High contrast mode support

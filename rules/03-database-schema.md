@@ -1,9 +1,11 @@
 # Phase 3: Database Schema & Models
 
 ## 🎯 Objective
+
 Complete the database schema setup, create additional models for the music platform, implement database operations, and ensure proper relationships between all entities.
 
 ## 📋 Prerequisites
+
 - Phase 1 & 2 completed successfully
 - Prisma installed and configured
 - Database connection working
@@ -14,6 +16,7 @@ Complete the database schema setup, create additional models for the music platf
 ### 1. Enhanced Database Schema
 
 #### Update `prisma/schema.prisma`
+
 ```prisma
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
@@ -308,9 +311,10 @@ npx prisma migrate dev --name enhanced_schema
 ### 3. Database Utility Functions
 
 #### `src/lib/db-operations.ts`
+
 ```typescript
-import { prisma } from './db'
-import { Track, User, PlayEvent, SmartLink } from '@prisma/client'
+import { prisma } from './db';
+import { Track, User, PlayEvent, SmartLink } from '@prisma/client';
 
 // Track operations
 export const trackOperations = {
@@ -324,10 +328,10 @@ export const trackOperations = {
             id: true,
             name: true,
             image: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
   },
 
   // Get tracks by artist
@@ -335,7 +339,7 @@ export const trackOperations = {
     return prisma.track.findMany({
       where: {
         artistId,
-        ...(publishedOnly && { isPublished: true })
+        ...(publishedOnly && { isPublished: true }),
       },
       orderBy: { createdAt: 'desc' },
       include: {
@@ -344,10 +348,10 @@ export const trackOperations = {
             id: true,
             name: true,
             image: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
   },
 
   // Get tracks by genre
@@ -355,7 +359,7 @@ export const trackOperations = {
     return prisma.track.findMany({
       where: {
         genre,
-        isPublished: true
+        isPublished: true,
       },
       orderBy: { playCount: 'desc' },
       take: limit,
@@ -365,10 +369,10 @@ export const trackOperations = {
             id: true,
             name: true,
             image: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
   },
 
   // Search tracks
@@ -380,7 +384,7 @@ export const trackOperations = {
           { artist: { name: { contains: query, mode: 'insensitive' } } },
           { album: { contains: query, mode: 'insensitive' } },
         ],
-        isPublished: true
+        isPublished: true,
       },
       orderBy: { playCount: 'desc' },
       take: limit,
@@ -390,10 +394,10 @@ export const trackOperations = {
             id: true,
             name: true,
             image: true,
-          }
-        }
-      }
-    })
+          },
+        },
+      },
+    });
   },
 
   // Increment play count
@@ -402,16 +406,16 @@ export const trackOperations = {
       where: { id: trackId },
       data: {
         playCount: {
-          increment: 1
-        }
-      }
-    })
+          increment: 1,
+        },
+      },
+    });
   },
 
   // Get trending tracks
   async getTrendingTracks(limit: number = 10, days: number = 7) {
-    const date = new Date()
-    date.setDate(date.getDate() - days)
+    const date = new Date();
+    date.setDate(date.getDate() - days);
 
     return prisma.track.findMany({
       where: {
@@ -419,10 +423,10 @@ export const trackOperations = {
         playEvents: {
           some: {
             timestamp: {
-              gte: date
-            }
-          }
-        }
+              gte: date,
+            },
+          },
+        },
       },
       orderBy: { playCount: 'desc' },
       take: limit,
@@ -432,12 +436,12 @@ export const trackOperations = {
             id: true,
             name: true,
             image: true,
-          }
-        }
-      }
-    })
-  }
-}
+          },
+        },
+      },
+    });
+  },
+};
 
 // User operations
 export const userOperations = {
@@ -460,19 +464,19 @@ export const userOperations = {
           select: {
             tracks: true,
             followers: true,
-            following: true
-          }
-        }
-      }
-    })
+            following: true,
+          },
+        },
+      },
+    });
   },
 
   // Get artist profile
   async getArtistProfile(artistId: string) {
     return prisma.user.findUnique({
-      where: { 
+      where: {
         id: artistId,
-        role: { in: ['ARTIST', 'ADMIN'] }
+        role: { in: ['ARTIST', 'ADMIN'] },
       },
       select: {
         id: true,
@@ -491,18 +495,18 @@ export const userOperations = {
             title: true,
             coverImageUrl: true,
             playCount: true,
-            duration: true
-          }
+            duration: true,
+          },
         },
         _count: {
           select: {
             tracks: true,
             followers: true,
-            following: true
-          }
-        }
-      }
-    })
+            following: true,
+          },
+        },
+      },
+    });
   },
 
   // Follow user
@@ -510,9 +514,9 @@ export const userOperations = {
     return prisma.follow.create({
       data: {
         followerId,
-        followingId
-      }
-    })
+        followingId,
+      },
+    });
   },
 
   // Unfollow user
@@ -521,10 +525,10 @@ export const userOperations = {
       where: {
         followerId_followingId: {
           followerId,
-          followingId
-        }
-      }
-    })
+          followingId,
+        },
+      },
+    });
   },
 
   // Check if following
@@ -533,24 +537,24 @@ export const userOperations = {
       where: {
         followerId_followingId: {
           followerId,
-          followingId
-        }
-      }
-    })
-    return !!follow
-  }
-}
+          followingId,
+        },
+      },
+    });
+    return !!follow;
+  },
+};
 
 // Analytics operations
 export const analyticsOperations = {
   // Record play event
   async recordPlayEvent(data: {
-    trackId: string
-    userId?: string
-    ipAddress?: string
-    userAgent?: string
-    duration?: number
-    completed?: boolean
+    trackId: string;
+    userId?: string;
+    ipAddress?: string;
+    userAgent?: string;
+    duration?: number;
+    completed?: boolean;
   }) {
     const [playEvent, updatedTrack] = await prisma.$transaction([
       prisma.playEvent.create({
@@ -560,59 +564,59 @@ export const analyticsOperations = {
           ipAddress: data.ipAddress,
           userAgent: data.userAgent,
           duration: data.duration,
-          completed: data.completed
-        }
+          completed: data.completed,
+        },
       }),
       prisma.track.update({
         where: { id: data.trackId },
         data: {
           playCount: {
-            increment: 1
-          }
-        }
-      })
-    ])
+            increment: 1,
+          },
+        },
+      }),
+    ]);
 
-    return { playEvent, updatedTrack }
+    return { playEvent, updatedTrack };
   },
 
   // Get track analytics
   async getTrackAnalytics(trackId: string, days: number = 30) {
-    const date = new Date()
-    date.setDate(date.getDate() - days)
+    const date = new Date();
+    date.setDate(date.getDate() - days);
 
     const analytics = await prisma.playEvent.groupBy({
       by: ['timestamp'],
       where: {
         trackId,
         timestamp: {
-          gte: date
-        }
+          gte: date,
+        },
       },
       _count: {
-        id: true
+        id: true,
       },
       _sum: {
-        duration: true
-      }
-    })
+        duration: true,
+      },
+    });
 
     return analytics.map(item => ({
       date: item.timestamp,
       plays: item._count.id,
-      totalDuration: item._sum.duration || 0
-    }))
+      totalDuration: item._sum.duration || 0,
+    }));
   },
 
   // Get artist analytics
   async getArtistAnalytics(artistId: string, days: number = 30) {
-    const date = new Date()
-    date.setDate(date.getDate() - days)
+    const date = new Date();
+    date.setDate(date.getDate() - days);
 
     const tracks = await prisma.track.findMany({
       where: {
         artistId,
-        isPublished: true
+        isPublished: true,
       },
       select: {
         id: true,
@@ -621,21 +625,22 @@ export const analyticsOperations = {
         playEvents: {
           where: {
             timestamp: {
-              gte: date
-            }
+              gte: date,
+            },
           },
           select: {
             timestamp: true,
-            duration: true
-          }
-        }
-      }
-    })
+            duration: true,
+          },
+        },
+      },
+    });
 
-    const totalPlays = tracks.reduce((sum, track) => sum + track.playCount, 0)
-    const recentPlays = tracks.reduce((sum, track) => 
-      sum + track.playEvents.length, 0
-    )
+    const totalPlays = tracks.reduce((sum, track) => sum + track.playCount, 0);
+    const recentPlays = tracks.reduce(
+      (sum, track) => sum + track.playEvents.length,
+      0
+    );
 
     return {
       tracks: tracks.length,
@@ -645,25 +650,25 @@ export const analyticsOperations = {
         id: track.id,
         title: track.title,
         totalPlays: track.playCount,
-        recentPlays: track.playEvents.length
-      }))
-    }
-  }
-}
+        recentPlays: track.playEvents.length,
+      })),
+    };
+  },
+};
 
 // Smart link operations
 export const smartLinkOperations = {
   // Create smart link
   async createSmartLink(data: {
-    trackId: string
-    title?: string
-    description?: string
+    trackId: string;
+    title?: string;
+    description?: string;
     platformLinks: Array<{
-      platform: string
-      url: string
-    }>
+      platform: string;
+      url: string;
+    }>;
   }) {
-    const slug = generateUniqueSlug()
+    const slug = generateUniqueSlug();
 
     return prisma.smartLink.create({
       data: {
@@ -672,8 +677,8 @@ export const smartLinkOperations = {
         description: data.description,
         slug,
         platformLinks: {
-          create: data.platformLinks
-        }
+          create: data.platformLinks,
+        },
       },
       include: {
         track: {
@@ -681,14 +686,14 @@ export const smartLinkOperations = {
             title: true,
             artist: {
               select: {
-                name: true
-              }
-            }
-          }
+                name: true,
+              },
+            },
+          },
         },
-        platformLinks: true
-      }
-    })
+        platformLinks: true,
+      },
+    });
   },
 
   // Get smart link by slug
@@ -704,16 +709,16 @@ export const smartLinkOperations = {
             artist: {
               select: {
                 name: true,
-                image: true
-              }
-            }
-          }
+                image: true,
+              },
+            },
+          },
         },
         platformLinks: {
-          where: { isActive: true }
-        }
-      }
-    })
+          where: { isActive: true },
+        },
+      },
+    });
   },
 
   // Record platform link click
@@ -723,52 +728,54 @@ export const smartLinkOperations = {
         where: { id: smartLinkId },
         data: {
           clickCount: {
-            increment: 1
-          }
-        }
+            increment: 1,
+          },
+        },
       }),
       prisma.platformLink.updateMany({
         where: {
           smartLinkId,
-          platform: platform as any
+          platform: platform as any,
         },
         data: {
           clickCount: {
-            increment: 1
-          }
-        }
-      })
-    ])
+            increment: 1,
+          },
+        },
+      }),
+    ]);
 
-    return { updatedSmartLink, updatedPlatformLink }
-  }
-}
+    return { updatedSmartLink, updatedPlatformLink };
+  },
+};
 
 // Utility function to generate unique slug
 function generateUniqueSlug(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  let result = ''
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
   for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return result
+  return result;
 }
 ```
 
 ### 4. Database Seeding
 
 #### `prisma/seed.ts`
-```typescript
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient()
+```typescript
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
+
+const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seeding...')
+  console.log('🌱 Starting database seeding...');
 
   // Create admin user
-  const adminPassword = await bcrypt.hash('admin123', 12)
+  const adminPassword = await bcrypt.hash('admin123', 12);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@flemoji.com' },
     update: {},
@@ -779,10 +786,10 @@ async function main() {
       role: 'ADMIN',
       isPremium: true,
     },
-  })
+  });
 
   // Create sample artist
-  const artistPassword = await bcrypt.hash('artist123', 12)
+  const artistPassword = await bcrypt.hash('artist123', 12);
   const artist = await prisma.user.upsert({
     where: { email: 'artist@flemoji.com' },
     update: {},
@@ -795,10 +802,10 @@ async function main() {
       website: 'https://sampleartist.com',
       location: 'New York, NY',
     },
-  })
+  });
 
   // Create sample user
-  const userPassword = await bcrypt.hash('user123', 12)
+  const userPassword = await bcrypt.hash('user123', 12);
   const user = await prisma.user.upsert({
     where: { email: 'user@flemoji.com' },
     update: {},
@@ -808,7 +815,7 @@ async function main() {
       password: userPassword,
       role: 'USER',
     },
-  })
+  });
 
   // Create sample tracks
   const track1 = await prisma.track.create({
@@ -824,7 +831,7 @@ async function main() {
       playCount: 150,
       likeCount: 25,
     },
-  })
+  });
 
   const track2 = await prisma.track.create({
     data: {
@@ -839,7 +846,7 @@ async function main() {
       playCount: 89,
       likeCount: 12,
     },
-  })
+  });
 
   // Create sample smart link
   const smartLink = await prisma.smartLink.create({
@@ -865,7 +872,7 @@ async function main() {
         ],
       },
     },
-  })
+  });
 
   // Create sample play events
   await prisma.playEvent.createMany({
@@ -889,7 +896,7 @@ async function main() {
         completed: true,
       },
     ],
-  })
+  });
 
   // Create sample playlist
   const playlist = await prisma.playlist.create({
@@ -911,25 +918,25 @@ async function main() {
         ],
       },
     },
-  })
+  });
 
-  console.log('✅ Database seeding completed!')
-  console.log('👤 Admin user:', admin.email)
-  console.log('🎵 Artist user:', artist.email)
-  console.log('👥 Regular user:', user.email)
-  console.log('🎵 Sample tracks created:', track1.title, track2.title)
-  console.log('🔗 Smart link created:', smartLink.slug)
-  console.log('📝 Playlist created:', playlist.name)
+  console.log('✅ Database seeding completed!');
+  console.log('👤 Admin user:', admin.email);
+  console.log('🎵 Artist user:', artist.email);
+  console.log('👥 Regular user:', user.email);
+  console.log('🎵 Sample tracks created:', track1.title, track2.title);
+  console.log('🔗 Smart link created:', smartLink.slug);
+  console.log('📝 Playlist created:', playlist.name);
 }
 
 main()
-  .catch((e) => {
-    console.error('❌ Seeding error:', e)
-    process.exit(1)
+  .catch(e => {
+    console.error('❌ Seeding error:', e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });
 ```
 
 ### 5. Update Package.json Scripts
@@ -949,18 +956,19 @@ main()
 ### 6. Database Connection Testing
 
 #### `src/lib/db-test.ts`
+
 ```typescript
-import { prisma } from './db'
+import { prisma } from './db';
 
 export async function testDatabaseConnection() {
   try {
     // Test basic connection
-    await prisma.$connect()
-    console.log('✅ Database connection successful')
+    await prisma.$connect();
+    console.log('✅ Database connection successful');
 
     // Test simple query
-    const userCount = await prisma.user.count()
-    console.log(`📊 Users in database: ${userCount}`)
+    const userCount = await prisma.user.count();
+    console.log(`📊 Users in database: ${userCount}`);
 
     // Test complex query
     const tracksWithArtists = await prisma.track.findMany({
@@ -969,19 +977,19 @@ export async function testDatabaseConnection() {
         artist: {
           select: {
             name: true,
-            email: true
-          }
-        }
-      }
-    })
-    console.log(`🎵 Sample tracks: ${tracksWithArtists.length}`)
+            email: true,
+          },
+        },
+      },
+    });
+    console.log(`🎵 Sample tracks: ${tracksWithArtists.length}`);
 
-    return true
+    return true;
   } catch (error) {
-    console.error('❌ Database connection failed:', error)
-    return false
+    console.error('❌ Database connection failed:', error);
+    return false;
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
 ```
@@ -989,6 +997,7 @@ export async function testDatabaseConnection() {
 ### 7. Environment Variables Update
 
 Add to `.env.local`:
+
 ```bash
 # Database connection timeout
 DATABASE_CONNECTION_TIMEOUT=30000
@@ -1001,6 +1010,7 @@ DATABASE_POOL_MAX=10
 ### 8. Database Indexes and Performance
 
 #### `prisma/schema.prisma` (add these indexes)
+
 ```prisma
 model Track {
   // ... existing fields ...
@@ -1033,6 +1043,7 @@ model User {
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Database schema updated** - All new models and relationships created
 2. **Migration successful** - No errors during database push/migration
 3. **Seeding works** - Sample data created successfully
@@ -1041,6 +1052,7 @@ model User {
 6. **Indexes working** - Database performance optimized
 
 ### Test Commands:
+
 ```bash
 # Test database connection
 npx tsx src/lib/db-test.ts
@@ -1061,22 +1073,28 @@ yarn db:studio
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Database migration fails
+
 **Solution**: Check for syntax errors in schema, ensure database is accessible
 
 ### Issue: Seeding fails
+
 **Solution**: Verify all required fields are provided, check for unique constraints
 
 ### Issue: Slow queries
+
 **Solution**: Add appropriate database indexes, optimize query structure
 
 ### Issue: Relationship errors
+
 **Solution**: Verify foreign key relationships, check cascade delete settings
 
 ## 📝 Notes
+
 - Database indexes are crucial for performance with large datasets
 - Use transactions for operations that modify multiple tables
 - Consider implementing database connection pooling for production
 - Regular database backups should be implemented before going live
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 4: Music Upload System](./04-music-upload.md)

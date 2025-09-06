@@ -1,9 +1,11 @@
 # Phase 1: Project Setup & Foundation
 
 ## 🎯 Objective
+
 Set up the foundational Next.js project with all necessary dependencies, configuration, and basic project structure for the music streaming platform.
 
 ## 📋 Prerequisites
+
 - Node.js 18+ installed
 - Git repository initialized
 - Code editor (VS Code recommended)
@@ -96,6 +98,7 @@ src/
 ### 4. Configuration Files
 
 #### Next.js Configuration (`next.config.js`)
+
 ```javascript
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -108,12 +111,13 @@ const nextConfig = {
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
 ```
 
 #### TypeScript Configuration (`tsconfig.json`)
+
 ```json
 {
   "compilerOptions": {
@@ -146,9 +150,10 @@ module.exports = nextConfig
 ```
 
 #### Tailwind Configuration (`tailwind.config.ts`)
+
 ```typescript
-import type { Config } from 'tailwindcss'
-import { heroui } from '@heroui/react'
+import type { Config } from 'tailwindcss';
+import { heroui } from '@heroui/react';
 
 const config: Config = {
   content: [
@@ -220,7 +225,7 @@ const config: Config = {
           800: '#1e293b',
           900: '#0f172a',
           950: '#020617',
-        }
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -233,7 +238,7 @@ const config: Config = {
         'scale-in': 'scaleIn 0.2s ease-out',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'bounce-subtle': 'bounceSubtle 2s infinite',
-        'float': 'float 6s ease-in-out infinite',
+        float: 'float 6s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -265,7 +270,7 @@ const config: Config = {
         xs: '2px',
       },
       screens: {
-        'xs': '475px',
+        xs: '475px',
         '3xl': '1920px',
       },
       spacing: {
@@ -278,167 +283,172 @@ const config: Config = {
         '5xl': '2.5rem',
       },
       boxShadow: {
-        'soft': '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
-        'medium': '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        'large': '0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 2px 10px -2px rgba(0, 0, 0, 0.05)',
-        'glow': '0 0 20px rgba(34, 197, 94, 0.3)',
+        soft: '0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04)',
+        medium:
+          '0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        large:
+          '0 10px 40px -10px rgba(0, 0, 0, 0.15), 0 2px 10px -2px rgba(0, 0, 0, 0.05)',
+        glow: '0 0 20px rgba(34, 197, 94, 0.3)',
         'glow-secondary': '0 0 20px rgba(234, 179, 8, 0.3)',
       },
     },
   },
   darkMode: 'class',
-  plugins: [heroui({
-    themes: {
-      light: {
-        colors: {
-          primary: {
-            50: '#f0fdf4',
-            100: '#dcfce7',
-            200: '#bbf7d0',
-            300: '#86efac',
-            400: '#4ade80',
-            500: '#22c55e',
-            600: '#16a34a',
-            700: '#15803d',
-            800: '#166534',
-            900: '#14532d',
-            950: '#052e16',
-            DEFAULT: '#22c55e',
-            foreground: '#ffffff',
+  plugins: [
+    heroui({
+      themes: {
+        light: {
+          colors: {
+            primary: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              300: '#86efac',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+              950: '#052e16',
+              DEFAULT: '#22c55e',
+              foreground: '#ffffff',
+            },
+            secondary: {
+              50: '#fefce8',
+              100: '#fef9c3',
+              200: '#fef08a',
+              300: '#fde047',
+              400: '#facc15',
+              500: '#eab308',
+              600: '#ca8a04',
+              700: '#a16207',
+              800: '#854d0e',
+              900: '#713f12',
+              950: '#422006',
+              DEFAULT: '#eab308',
+              foreground: '#000000',
+            },
+            accent: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              200: '#bae6fd',
+              300: '#7dd3fc',
+              400: '#38bdf8',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+              950: '#082f49',
+              DEFAULT: '#0ea5e9',
+              foreground: '#ffffff',
+            },
+            background: '#ffffff',
+            foreground: '#0f172a',
+            content1: '#ffffff',
+            content2: '#f8fafc',
+            content3: '#f1f5f9',
+            content4: '#e2e8f0',
+            default: {
+              50: '#f8fafc',
+              100: '#f1f5f9',
+              200: '#e2e8f0',
+              300: '#cbd5e1',
+              400: '#94a3b8',
+              500: '#64748b',
+              600: '#475569',
+              700: '#334155',
+              800: '#1e293b',
+              900: '#0f172a',
+              DEFAULT: '#64748b',
+              foreground: '#ffffff',
+            },
+            focus: '#22c55e',
           },
-          secondary: {
-            50: '#fefce8',
-            100: '#fef9c3',
-            200: '#fef08a',
-            300: '#fde047',
-            400: '#facc15',
-            500: '#eab308',
-            600: '#ca8a04',
-            700: '#a16207',
-            800: '#854d0e',
-            900: '#713f12',
-            950: '#422006',
-            DEFAULT: '#eab308',
-            foreground: '#000000',
-          },
-          accent: {
-            50: '#f0f9ff',
-            100: '#e0f2fe',
-            200: '#bae6fd',
-            300: '#7dd3fc',
-            400: '#38bdf8',
-            500: '#0ea5e9',
-            600: '#0284c7',
-            700: '#0369a1',
-            800: '#075985',
-            900: '#0c4a6e',
-            950: '#082f49',
-            DEFAULT: '#0ea5e9',
-            foreground: '#ffffff',
-          },
-          background: '#ffffff',
-          foreground: '#0f172a',
-          content1: '#ffffff',
-          content2: '#f8fafc',
-          content3: '#f1f5f9',
-          content4: '#e2e8f0',
-          default: {
-            50: '#f8fafc',
-            100: '#f1f5f9',
-            200: '#e2e8f0',
-            300: '#cbd5e1',
-            400: '#94a3b8',
-            500: '#64748b',
-            600: '#475569',
-            700: '#334155',
-            800: '#1e293b',
-            900: '#0f172a',
-            DEFAULT: '#64748b',
-            foreground: '#ffffff',
-          },
-          focus: '#22c55e',
         },
-      },
-      dark: {
-        colors: {
-          primary: {
-            50: '#052e16',
-            100: '#14532d',
-            200: '#15803d',
-            300: '#16a34a',
-            400: '#22c55e',
-            500: '#4ade80',
-            600: '#86efac',
-            700: '#bbf7d0',
-            800: '#dcfce7',
-            900: '#f0fdf4',
-            950: '#f0fdf4',
-            DEFAULT: '#4ade80',
-            foreground: '#052e16',
-          },
-          secondary: {
-            50: '#422006',
-            100: '#713f12',
-            200: '#a16207',
-            300: '#ca8a04',
-            400: '#eab308',
-            500: '#facc15',
-            600: '#fde047',
-            700: '#fef08a',
-            800: '#fef9c3',
-            900: '#fefce8',
-            950: '#fefce8',
-            DEFAULT: '#facc15',
-            foreground: '#422006',
-          },
-          accent: {
-            50: '#082f49',
-            100: '#0c4a6e',
-            200: '#075985',
-            300: '#0369a1',
-            400: '#0284c7',
-            500: '#0ea5e9',
-            600: '#38bdf8',
-            700: '#7dd3fc',
-            800: '#bae6fd',
-            900: '#e0f2fe',
-            950: '#f0f9ff',
-            DEFAULT: '#0ea5e9',
-            foreground: '#082f49',
-          },
-          background: '#0f172a',
-          foreground: '#f8fafc',
-          content1: '#0f172a',
-          content2: '#1e293b',
-          content3: '#334155',
-          content4: '#475569',
-          default: {
-            50: '#0f172a',
-            100: '#1e293b',
-            200: '#334155',
-            300: '#475569',
-            400: '#64748b',
-            500: '#94a3b8',
-            600: '#cbd5e1',
-            700: '#e2e8f0',
-            800: '#f1f5f9',
-            900: '#f8fafc',
-            DEFAULT: '#475569',
+        dark: {
+          colors: {
+            primary: {
+              50: '#052e16',
+              100: '#14532d',
+              200: '#15803d',
+              300: '#16a34a',
+              400: '#22c55e',
+              500: '#4ade80',
+              600: '#86efac',
+              700: '#bbf7d0',
+              800: '#dcfce7',
+              900: '#f0fdf4',
+              950: '#f0fdf4',
+              DEFAULT: '#4ade80',
+              foreground: '#052e16',
+            },
+            secondary: {
+              50: '#422006',
+              100: '#713f12',
+              200: '#a16207',
+              300: '#ca8a04',
+              400: '#eab308',
+              500: '#facc15',
+              600: '#fde047',
+              700: '#fef08a',
+              800: '#fef9c3',
+              900: '#fefce8',
+              950: '#fefce8',
+              DEFAULT: '#facc15',
+              foreground: '#422006',
+            },
+            accent: {
+              50: '#082f49',
+              100: '#0c4a6e',
+              200: '#075985',
+              300: '#0369a1',
+              400: '#0284c7',
+              500: '#0ea5e9',
+              600: '#38bdf8',
+              700: '#7dd3fc',
+              800: '#bae6fd',
+              900: '#e0f2fe',
+              950: '#f0f9ff',
+              DEFAULT: '#0ea5e9',
+              foreground: '#082f49',
+            },
+            background: '#0f172a',
             foreground: '#f8fafc',
+            content1: '#0f172a',
+            content2: '#1e293b',
+            content3: '#334155',
+            content4: '#475569',
+            default: {
+              50: '#0f172a',
+              100: '#1e293b',
+              200: '#334155',
+              300: '#475569',
+              400: '#64748b',
+              500: '#94a3b8',
+              600: '#cbd5e1',
+              700: '#e2e8f0',
+              800: '#f1f5f9',
+              900: '#f8fafc',
+              DEFAULT: '#475569',
+              foreground: '#f8fafc',
+            },
+            focus: '#4ade80',
           },
-          focus: '#4ade80',
         },
       },
-    },
-  })],
-}
+    }),
+  ],
+};
 
-export default config
+export default config;
 ```
 
 ### 5. Environment Variables Setup
 
 Create `.env.local` file:
+
 ```bash
 # Database
 DATABASE_URL="postgresql://username:password@localhost:5432/flemoji_db"
@@ -466,111 +476,115 @@ SPOTIFY_CLIENT_SECRET="your-spotify-client-secret"
 ### 6. Basic Utility Functions
 
 #### `src/lib/utils.ts`
+
 ```typescript
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function formatDuration(seconds: number): string {
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = Math.floor(seconds % 60)
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 ```
 
 #### `src/lib/validations.ts`
+
 ```typescript
-import { z } from "z"
+import { z } from 'z';
 
 export const userSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-})
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+});
 
 export const trackSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  artist: z.string().min(1, "Artist is required"),
-  genre: z.string().min(1, "Genre is required"),
+  title: z.string().min(1, 'Title is required'),
+  artist: z.string().min(1, 'Artist is required'),
+  genre: z.string().min(1, 'Genre is required'),
   album: z.string().optional(),
   description: z.string().optional(),
-})
+});
 
-export type UserFormData = z.infer<typeof userSchema>
-export type TrackFormData = z.infer<typeof trackSchema>
+export type UserFormData = z.infer<typeof userSchema>;
+export type TrackFormData = z.infer<typeof trackSchema>;
 ```
 
 ### 7. Basic Types
 
 #### `src/types/index.ts`
+
 ```typescript
 export interface User {
-  id: string
-  name: string
-  email: string
-  role: 'user' | 'artist' | 'admin'
-  isPremium: boolean
-  createdAt: Date
-  updatedAt: Date
+  id: string;
+  name: string;
+  email: string;
+  role: 'user' | 'artist' | 'admin';
+  isPremium: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Track {
-  id: string
-  title: string
-  artistId: string
-  artist: User
-  fileUrl: string
-  coverImageUrl?: string
-  genre: string
-  album?: string
-  duration: number
-  playCount: number
-  createdAt: Date
-  updatedAt: Date
+  id: string;
+  title: string;
+  artistId: string;
+  artist: User;
+  fileUrl: string;
+  coverImageUrl?: string;
+  genre: string;
+  album?: string;
+  duration: number;
+  playCount: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface PlayEvent {
-  id: string
-  trackId: string
-  userId?: string
-  timestamp: Date
-  ipAddress?: string
-  userAgent?: string
+  id: string;
+  trackId: string;
+  userId?: string;
+  timestamp: Date;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 export interface SmartLink {
-  id: string
-  trackId: string
-  track: Track
-  slug: string
-  platformLinks: PlatformLink[]
-  clickCount: number
-  createdAt: Date
+  id: string;
+  trackId: string;
+  track: Track;
+  slug: string;
+  platformLinks: PlatformLink[];
+  clickCount: number;
+  createdAt: Date;
 }
 
 export interface PlatformLink {
-  id: string
-  smartLinkId: string
-  platform: 'spotify' | 'apple-music' | 'youtube' | 'soundcloud'
-  url: string
-  clickCount: number
+  id: string;
+  smartLinkId: string;
+  platform: 'spotify' | 'apple-music' | 'youtube' | 'soundcloud';
+  url: string;
+  clickCount: number;
 }
 ```
 
 ### 8. HeroUI Provider Setup
 
 #### `src/components/providers/HeroUIProvider.tsx`
+
 ```typescript
 'use client'
 
@@ -600,16 +614,17 @@ export default function HeroUIProviderWrapper({ children }: HeroUIProviderProps)
 ```
 
 #### `src/components/layout/Header.tsx`
+
 ```typescript
 'use client'
 
 import Link from 'next/link'
 import { useSession, signOut } from 'next-auth/react'
-import { 
-  Navbar, 
-  NavbarBrand, 
-  NavbarContent, 
-  NavbarItem, 
+import {
+  Navbar,
+  NavbarBrand,
+  NavbarContent,
+  NavbarItem,
   NavbarMenuToggle,
   NavbarMenu,
   NavbarMenuItem,
@@ -624,8 +639,8 @@ import {
 } from '@heroui/react'
 import { useState } from 'react'
 import { useTheme as useNextTheme } from 'next-themes'
-import { 
-  MusicNoteIcon, 
+import {
+  MusicNoteIcon,
   Bars3Icon,
   SunIcon,
   MoonIcon,
@@ -647,7 +662,7 @@ export default function Header() {
   ]
 
   return (
-    <Navbar 
+    <Navbar
       onMenuOpenChange={setIsMenuOpen}
       className="bg-background/80 backdrop-blur-md border-b border-divider"
       maxWidth="full"
@@ -671,7 +686,7 @@ export default function Header() {
       <NavbarContent className="hidden sm:flex gap-4" justify="center">
         {menuItems.map((item) => (
           <NavbarItem key={item.name}>
-            <Link 
+            <Link
               href={item.href}
               className="text-foreground hover:text-primary transition-colors"
             >
@@ -729,9 +744,9 @@ export default function Header() {
                 <DropdownItem key="settings" startContent={<Cog6ToothIcon className="w-4 h-4" />}>
                   <Link href="/settings">Settings</Link>
                 </DropdownItem>
-                <DropdownItem 
-                  key="logout" 
-                  color="danger" 
+                <DropdownItem
+                  key="logout"
+                  color="danger"
                   startContent={<ArrowRightOnRectangleIcon className="w-4 h-4" />}
                   onPress={() => signOut()}
                 >
@@ -803,6 +818,7 @@ export default function Header() {
 ### 9. Root Layout Update
 
 #### `src/app/layout.tsx`
+
 ```typescript
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
@@ -897,21 +913,22 @@ export default function RootLayout({
 ### 10. Homepage
 
 #### `src/app/page.tsx`
+
 ```typescript
 import Link from 'next/link'
-import { 
-  Button, 
-  Card, 
-  CardBody, 
+import {
+  Button,
+  Card,
+  CardBody,
   CardHeader,
   Chip,
   Divider,
   Image,
   Spacer
 } from '@heroui/react'
-import { 
-  PlayIcon, 
-  MusicalNoteIcon, 
+import {
+  PlayIcon,
+  MusicalNoteIcon,
   UserGroupIcon,
   ChartBarIcon,
   SparklesIcon,
@@ -951,7 +968,7 @@ export default function Home() {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         {/* Background Gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-background to-secondary-50 dark:from-primary-950 dark:via-background dark:to-secondary-950" />
-        
+
         {/* Floating Elements */}
         <div className="absolute top-20 left-10 w-20 h-20 bg-primary-200 dark:bg-primary-800 rounded-full opacity-20 animate-float" />
         <div className="absolute top-40 right-20 w-16 h-16 bg-secondary-200 dark:bg-secondary-800 rounded-full opacity-20 animate-float" style={{ animationDelay: '2s' }} />
@@ -963,26 +980,26 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <Chip 
-              color="primary" 
-              variant="flat" 
+            <Chip
+              color="primary"
+              variant="flat"
               startContent={<SparklesIcon className="w-4 h-4" />}
               className="mb-6"
             >
               Welcome to the Future of Music
             </Chip>
-            
+
             <h1 className="text-5xl sm:text-7xl font-bold mb-6">
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 Flemoji
               </span>
             </h1>
-            
+
             <p className="text-xl sm:text-2xl text-foreground/80 max-w-4xl mx-auto mb-8 leading-relaxed">
-              Discover and stream music from independent artists. Upload your music, 
+              Discover and stream music from independent artists. Upload your music,
               share it with the world, and track your success across all platforms.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
                 as={Link}
@@ -1043,7 +1060,7 @@ export default function Home() {
               Why Choose Flemoji?
             </h2>
             <p className="text-xl text-foreground/60 max-w-2xl mx-auto">
-              Experience the next generation of music streaming with powerful features 
+              Experience the next generation of music streaming with powerful features
               designed for both listeners and artists.
             </p>
           </div>
@@ -1125,6 +1142,7 @@ export default function Home() {
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Project runs without errors** - `yarn dev` starts successfully
 2. **Homepage displays correctly** - Shows modern HeroUI design with animations
 3. **Theme system working** - Light/dark mode toggle functions properly
@@ -1135,6 +1153,7 @@ export default function Home() {
 8. **File structure** - All folders and files created as specified
 
 ### Test Commands:
+
 ```bash
 # Start development server
 yarn dev
@@ -1163,23 +1182,28 @@ npx tsc --noEmit
 ## 🚨 Common Issues & Solutions
 
 ### Issue: TypeScript compilation errors
+
 **Solution**: Ensure all dependencies are properly installed and types are available
 
 ### Issue: Tailwind CSS not working
+
 **Solution**: Check that `globals.css` imports Tailwind directives and `tailwind.config.ts` is properly configured
 
 ### Issue: ESLint errors
+
 **Solution**: Run `yarn lint --fix` to auto-fix formatting issues
 
 ## 🎨 Theme System
 
 ### **Color Palette**
+
 - **Primary**: Green (`#22c55e`) - Main brand color for buttons, links, and accents
 - **Secondary**: Yellow (`#eab308`) - Secondary actions and highlights
 - **Accent**: Blue (`#0ea5e9`) - Additional accent color for variety
 - **Neutral**: Gray scale for text, backgrounds, and borders
 
 ### **Theme Features**
+
 - **Light/Dark Mode**: Automatic theme switching with system preference detection
 - **Consistent Colors**: All components use the same color tokens
 - **Easy Customization**: Change colors in one place (tailwind.config.ts) and entire theme updates
@@ -1187,12 +1211,14 @@ npx tsc --noEmit
 - **Mobile-First**: Responsive design that works on all screen sizes
 
 ### **Component System**
+
 - **HeroUI Components**: Modern, accessible components with built-in theming
 - **Framer Motion**: Smooth animations and transitions
 - **Responsive Design**: Mobile-first approach with breakpoints
 - **Consistent Spacing**: Standardized spacing and sizing system
 
 ## 📝 Notes
+
 - **Color Scheme**: Green and yellow as primary colors per user preferences
 - **Mobile-First**: All components designed for mobile devices first
 - **Theme-Based**: Easy color customization through centralized theme configuration
@@ -1204,4 +1230,5 @@ npx tsc --noEmit
 - **Environment**: Variables should NOT be committed (only `.env.example`)
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 2: Authentication Setup](./02-authentication-setup.md)

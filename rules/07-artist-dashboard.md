@@ -1,9 +1,11 @@
 # Phase 7: Artist Dashboard
 
 ## 🎯 Objective
+
 Implement a comprehensive artist dashboard that allows artists to manage their music, view analytics, create smart links, and control their content on the platform.
 
 ## 📋 Prerequisites
+
 - Phase 1, 2, 3, 4, 5, & 6 completed successfully
 - User interface and experience features working
 - Music upload and streaming systems functional
@@ -14,6 +16,7 @@ Implement a comprehensive artist dashboard that allows artists to manage their m
 ### 1. Artist Dashboard Layout
 
 #### `src/app/(dashboard)/artist/dashboard/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -100,7 +103,7 @@ async function getArtistData(userId: string) {
 
 export default async function ArtistDashboardPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || (session.user.role !== 'ARTIST' && session.user.role !== 'ADMIN')) {
     redirect('/login')
   }
@@ -186,15 +189,16 @@ export default async function ArtistDashboardPage() {
 ### 2. Dashboard Stats Component
 
 #### `src/components/dashboard/DashboardStats.tsx`
+
 ```typescript
 'use client'
 
 import { motion } from 'framer-motion'
-import { 
-  PlayIcon, 
-  HeartIcon, 
-  MusicalNoteIcon, 
-  EyeIcon 
+import {
+  PlayIcon,
+  HeartIcon,
+  MusicalNoteIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline'
 
 interface DashboardStatsProps {
@@ -262,11 +266,11 @@ export default function DashboardStats({ stats }: DashboardStatsProps) {
               <p className="text-2xl font-semibold text-gray-900">{item.value}</p>
             </div>
           </div>
-          
+
           <div className="mt-4">
             <span className={`text-sm font-medium ${
-              item.changeType === 'positive' ? 'text-green-600' : 
-              item.changeType === 'negative' ? 'text-red-600' : 
+              item.changeType === 'positive' ? 'text-green-600' :
+              item.changeType === 'negative' ? 'text-red-600' :
               'text-gray-600'
             }`}>
               {item.change}
@@ -282,16 +286,17 @@ export default function DashboardStats({ stats }: DashboardStatsProps) {
 ### 3. Quick Actions Component
 
 #### `src/components/dashboard/QuickActions.tsx`
+
 ```typescript
 'use client'
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import { 
-  PlusIcon, 
-  LinkIcon, 
-  ChartBarIcon, 
-  CogIcon 
+import {
+  PlusIcon,
+  LinkIcon,
+  ChartBarIcon,
+  CogIcon
 } from '@heroicons/react/24/outline'
 
 export default function QuickActions() {
@@ -348,7 +353,7 @@ export default function QuickActions() {
                   <action.icon className="w-6 h-6 text-white" />
                 </div>
               </div>
-              
+
               <h3 className="text-lg font-semibold mb-2">{action.title}</h3>
               <p className="text-sm opacity-90">{action.description}</p>
             </div>
@@ -363,6 +368,7 @@ export default function QuickActions() {
 ### 4. Track Management Page
 
 #### `src/app/(dashboard)/artist/tracks/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -389,7 +395,7 @@ async function getArtistTracks(userId: string) {
 
 export default async function TracksPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || (session.user.role !== 'ARTIST' && session.user.role !== 'ADMIN')) {
     redirect('/login')
   }
@@ -418,19 +424,20 @@ export default async function TracksPage() {
 ### 5. Track Management Component
 
 #### `src/components/dashboard/TrackManagement.tsx`
+
 ```typescript
 'use client'
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { 
-  PlayIcon, 
-  PauseIcon, 
-  PencilIcon, 
-  TrashIcon, 
-  EyeIcon, 
-  EyeSlashIcon 
+import {
+  PlayIcon,
+  PauseIcon,
+  PencilIcon,
+  TrashIcon,
+  EyeIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline'
 import { formatDuration } from '@/lib/utils'
 
@@ -655,7 +662,7 @@ export default function TrackManagement({ tracks }: TrackManagementProps) {
                     >
                       <PencilIcon className="w-4 h-4" />
                     </button>
-                    
+
                     <button
                       onClick={() => handlePublishToggle(track.id, track.isPublished)}
                       className={`p-2 rounded-md transition-colors ${
@@ -694,7 +701,7 @@ export default function TrackManagement({ tracks }: TrackManagementProps) {
                 }`}>
                   {track.isPublished ? 'Published' : 'Draft'}
                 </span>
-                
+
                 {!track.isPublished && (
                   <span className="text-xs text-gray-500">
                     Only you can see this track
@@ -731,7 +738,7 @@ export default function TrackManagement({ tracks }: TrackManagementProps) {
               <p className="text-gray-600 mb-6">
                 Are you sure you want to delete this track? This action cannot be undone and will remove all associated data.
               </p>
-              
+
               <div className="flex space-x-3">
                 <button
                   onClick={() => setDeletingTrack(null)}
@@ -758,6 +765,7 @@ export default function TrackManagement({ tracks }: TrackManagementProps) {
 ### 6. Analytics Page
 
 #### `src/app/(dashboard)/artist/analytics/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -797,7 +805,7 @@ async function getAnalyticsData(userId: string) {
   // Calculate analytics
   const totalPlays = tracks.reduce((sum, track) => sum + track.playEvents.length, 0)
   const totalLikes = tracks.reduce((sum, track) => sum + track._count.likes, 0)
-  const totalDuration = tracks.reduce((sum, track) => 
+  const totalDuration = tracks.reduce((sum, track) =>
     sum + track.playEvents.reduce((trackSum, event) => trackSum + (event.duration || 0), 0), 0
   )
 
@@ -840,7 +848,7 @@ async function getAnalyticsData(userId: string) {
 
 export default async function AnalyticsPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || (session.user.role !== 'ARTIST' && session.user.role !== 'ADMIN')) {
     redirect('/login')
   }
@@ -869,6 +877,7 @@ export default async function AnalyticsPage() {
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Artist dashboard loads** - All components display correctly
 2. **Track management works** - Can edit, delete, and publish/unpublish tracks
 3. **Analytics display** - Charts and statistics show accurate data
@@ -877,6 +886,7 @@ export default async function AnalyticsPage() {
 6. **Data updates** - Changes reflect immediately in the interface
 
 ### Test Commands:
+
 ```bash
 # Test artist dashboard
 # 1. Login as artist
@@ -894,18 +904,23 @@ export default async function AnalyticsPage() {
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Dashboard not loading
+
 **Solution**: Check authentication, verify user role, check database queries
 
 ### Issue: Analytics data missing
+
 **Solution**: Verify play events exist, check date ranges, validate database relationships
 
 ### Issue: Track actions failing
+
 **Solution**: Check API routes, verify permissions, check for validation errors
 
 ### Issue: Performance issues
+
 **Solution**: Implement pagination, optimize database queries, add loading states
 
 ## 📝 Notes
+
 - Implement proper error handling for all API calls
 - Add loading states for better user experience
 - Consider implementing real-time updates for analytics
@@ -913,4 +928,5 @@ export default async function AnalyticsPage() {
 - Implement proper data validation and sanitization
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 8: Analytics System](./08-analytics-system.md)

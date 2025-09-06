@@ -1,17 +1,20 @@
 # UI/UX Design System & Guidelines
 
 ## 🎯 Objective
+
 Establish a comprehensive design system and UI/UX guidelines that ensure consistency, accessibility, and modern design across all phases of the Flemoji music streaming platform.
 
 ## 📋 Design Principles
 
 ### **1. Mobile-First Approach**
+
 - Design for mobile devices first, then enhance for larger screens
 - Touch-friendly interface with minimum 44px touch targets
 - Optimized for one-handed use on mobile devices
 - Progressive enhancement for desktop features
 
 ### **2. Accessibility First**
+
 - WCAG 2.1 AA compliance for all components
 - High contrast ratios (4.5:1 minimum for normal text)
 - Keyboard navigation support
@@ -19,6 +22,7 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 - Focus indicators and proper ARIA labels
 
 ### **3. Performance Optimized**
+
 - Fast loading times (< 3 seconds on 3G)
 - Smooth animations (60fps)
 - Optimized images and assets
@@ -26,6 +30,7 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 - Minimal bundle size impact
 
 ### **4. User-Centric Design**
+
 - Intuitive navigation and user flows
 - Clear visual hierarchy
 - Consistent interaction patterns
@@ -37,6 +42,7 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 ### **Color Palette**
 
 #### **Primary Colors**
+
 ```css
 /* Green - Main brand color */
 --primary-50: #f0fdf4;
@@ -44,7 +50,7 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 --primary-200: #bbf7d0;
 --primary-300: #86efac;
 --primary-400: #4ade80;
---primary-500: #22c55e;  /* Main primary */
+--primary-500: #22c55e; /* Main primary */
 --primary-600: #16a34a;
 --primary-700: #15803d;
 --primary-800: #166534;
@@ -53,6 +59,7 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 ```
 
 #### **Secondary Colors**
+
 ```css
 /* Yellow - Secondary actions */
 --secondary-50: #fefce8;
@@ -60,7 +67,7 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 --secondary-200: #fef08a;
 --secondary-300: #fde047;
 --secondary-400: #facc15;
---secondary-500: #eab308;  /* Main secondary */
+--secondary-500: #eab308; /* Main secondary */
 --secondary-600: #ca8a04;
 --secondary-700: #a16207;
 --secondary-800: #854d0e;
@@ -69,6 +76,7 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 ```
 
 #### **Accent Colors**
+
 ```css
 /* Blue - Additional variety */
 --accent-50: #f0f9ff;
@@ -76,7 +84,7 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 --accent-200: #bae6fd;
 --accent-300: #7dd3fc;
 --accent-400: #38bdf8;
---accent-500: #0ea5e9;  /* Main accent */
+--accent-500: #0ea5e9; /* Main accent */
 --accent-600: #0284c7;
 --accent-700: #0369a1;
 --accent-800: #075985;
@@ -85,6 +93,7 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 ```
 
 #### **Neutral Colors**
+
 ```css
 /* Gray scale for text and backgrounds */
 --gray-50: #f8fafc;
@@ -103,30 +112,37 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 ### **Typography**
 
 #### **Font Families**
+
 ```css
 /* Primary font - Inter */
-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+font-family:
+  'Inter',
+  system-ui,
+  -apple-system,
+  sans-serif;
 
 /* Monospace font - JetBrains Mono */
 font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ```
 
 #### **Font Scale**
+
 ```css
 /* Headings */
---text-6xl: 3.75rem;    /* 60px - Hero titles */
---text-5xl: 3rem;       /* 48px - Page titles */
---text-4xl: 2.25rem;    /* 36px - Section titles */
---text-3xl: 1.875rem;   /* 30px - Subsection titles */
---text-2xl: 1.5rem;     /* 24px - Card titles */
---text-xl: 1.25rem;     /* 20px - Large text */
---text-lg: 1.125rem;    /* 18px - Body large */
---text-base: 1rem;      /* 16px - Body text */
---text-sm: 0.875rem;    /* 14px - Small text */
---text-xs: 0.75rem;     /* 12px - Caption text */
+--text-6xl: 3.75rem; /* 60px - Hero titles */
+--text-5xl: 3rem; /* 48px - Page titles */
+--text-4xl: 2.25rem; /* 36px - Section titles */
+--text-3xl: 1.875rem; /* 30px - Subsection titles */
+--text-2xl: 1.5rem; /* 24px - Card titles */
+--text-xl: 1.25rem; /* 20px - Large text */
+--text-lg: 1.125rem; /* 18px - Body large */
+--text-base: 1rem; /* 16px - Body text */
+--text-sm: 0.875rem; /* 14px - Small text */
+--text-xs: 0.75rem; /* 12px - Caption text */
 ```
 
 #### **Font Weights**
+
 ```css
 --font-thin: 100;
 --font-light: 300;
@@ -141,35 +157,36 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ### **Spacing System**
 
 #### **Spacing Scale**
+
 ```css
 --space-0: 0;
---space-1: 0.25rem;   /* 4px */
---space-2: 0.5rem;    /* 8px */
---space-3: 0.75rem;   /* 12px */
---space-4: 1rem;      /* 16px */
---space-5: 1.25rem;   /* 20px */
---space-6: 1.5rem;    /* 24px */
---space-8: 2rem;      /* 32px */
---space-10: 2.5rem;   /* 40px */
---space-12: 3rem;     /* 48px */
---space-16: 4rem;     /* 64px */
---space-20: 5rem;     /* 80px */
---space-24: 6rem;     /* 96px */
---space-32: 8rem;     /* 128px */
+--space-1: 0.25rem; /* 4px */
+--space-2: 0.5rem; /* 8px */
+--space-3: 0.75rem; /* 12px */
+--space-4: 1rem; /* 16px */
+--space-5: 1.25rem; /* 20px */
+--space-6: 1.5rem; /* 24px */
+--space-8: 2rem; /* 32px */
+--space-10: 2.5rem; /* 40px */
+--space-12: 3rem; /* 48px */
+--space-16: 4rem; /* 64px */
+--space-20: 5rem; /* 80px */
+--space-24: 6rem; /* 96px */
+--space-32: 8rem; /* 128px */
 ```
 
 ### **Border Radius**
 
 ```css
 --radius-none: 0;
---radius-sm: 0.125rem;   /* 2px */
---radius-base: 0.25rem;  /* 4px */
---radius-md: 0.375rem;   /* 6px */
---radius-lg: 0.5rem;     /* 8px */
---radius-xl: 0.75rem;    /* 12px */
---radius-2xl: 1rem;      /* 16px */
---radius-3xl: 1.5rem;    /* 24px */
---radius-full: 9999px;   /* Fully rounded */
+--radius-sm: 0.125rem; /* 2px */
+--radius-base: 0.25rem; /* 4px */
+--radius-md: 0.375rem; /* 6px */
+--radius-lg: 0.5rem; /* 8px */
+--radius-xl: 0.75rem; /* 12px */
+--radius-2xl: 1rem; /* 16px */
+--radius-3xl: 1.5rem; /* 24px */
+--radius-full: 9999px; /* Fully rounded */
 ```
 
 ### **Shadows**
@@ -177,9 +194,12 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ```css
 --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
---shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
---shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
---shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+--shadow-md:
+  0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+--shadow-lg:
+  0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+--shadow-xl:
+  0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 --shadow-glow: 0 0 20px rgba(34, 197, 94, 0.3);
 --shadow-glow-secondary: 0 0 20px rgba(234, 179, 8, 0.3);
@@ -190,10 +210,11 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ### **Buttons**
 
 #### **Primary Button**
+
 ```typescript
-<Button 
-  color="primary" 
-  size="lg" 
+<Button
+  color="primary"
+  size="lg"
   className="font-semibold"
 >
   Primary Action
@@ -201,10 +222,11 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ```
 
 #### **Secondary Button**
+
 ```typescript
-<Button 
-  color="secondary" 
-  variant="bordered" 
+<Button
+  color="secondary"
+  variant="bordered"
   size="lg"
 >
   Secondary Action
@@ -212,6 +234,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ```
 
 #### **Button Sizes**
+
 - `sm`: 32px height - For compact spaces
 - `md`: 40px height - Default size
 - `lg`: 48px height - Prominent actions
@@ -220,6 +243,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ### **Cards**
 
 #### **Track Card**
+
 ```typescript
 <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
   <CardBody className="p-4">
@@ -246,6 +270,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ### **Navigation**
 
 #### **Desktop Sidebar Navigation**
+
 - Fixed left sidebar (256px width)
 - Authentication-aware content
 - Logo section with theme toggle
@@ -255,6 +280,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 - Bottom padding to account for music player
 
 #### **Mobile Header Navigation**
+
 - Fixed top header (64px height)
 - Hamburger menu for navigation
 - Integrated search bar
@@ -262,6 +288,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 - Collapsible menu with all navigation options
 
 #### **Music Player Navigation**
+
 - Fixed bottom position (80px height)
 - Always visible regardless of authentication
 - Full playback controls
@@ -271,6 +298,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ### **Forms**
 
 #### **Input Fields**
+
 ```typescript
 <Input
   type="email"
@@ -284,6 +312,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ```
 
 #### **Form Validation**
+
 - Real-time validation feedback
 - Clear error messages
 - Success states for completed fields
@@ -292,6 +321,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ### **Loading States**
 
 #### **Skeleton Loading**
+
 ```typescript
 <Skeleton className="rounded-lg">
   <div className="h-4 w-3/5 rounded-lg bg-default-200"></div>
@@ -299,6 +329,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ```
 
 #### **Spinner Loading**
+
 ```typescript
 <Spinner size="lg" color="primary" />
 ```
@@ -306,18 +337,20 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ## 📱 Responsive Design
 
 ### **Breakpoints**
+
 ```css
 /* Mobile First */
---breakpoint-xs: 475px;   /* Small phones */
---breakpoint-sm: 640px;   /* Large phones */
---breakpoint-md: 768px;   /* Tablets */
---breakpoint-lg: 1024px;  /* Small laptops */
---breakpoint-xl: 1280px;  /* Large laptops */
+--breakpoint-xs: 475px; /* Small phones */
+--breakpoint-sm: 640px; /* Large phones */
+--breakpoint-md: 768px; /* Tablets */
+--breakpoint-lg: 1024px; /* Small laptops */
+--breakpoint-xl: 1280px; /* Large laptops */
 --breakpoint-2xl: 1536px; /* Desktops */
 --breakpoint-3xl: 1920px; /* Large screens */
 ```
 
 ### **Grid System**
+
 ```typescript
 // Mobile: 1 column
 <div className="grid grid-cols-1 gap-4">
@@ -330,6 +363,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ```
 
 ### **Container Sizes**
+
 ```typescript
 // Page containers
 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -344,14 +378,16 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ## 🎭 Animation Guidelines
 
 ### **Transition Timing**
+
 ```css
---duration-fast: 150ms;    /* Micro-interactions */
---duration-normal: 300ms;  /* Standard transitions */
---duration-slow: 500ms;    /* Page transitions */
---duration-slower: 800ms;  /* Complex animations */
+--duration-fast: 150ms; /* Micro-interactions */
+--duration-normal: 300ms; /* Standard transitions */
+--duration-slow: 500ms; /* Page transitions */
+--duration-slower: 800ms; /* Complex animations */
 ```
 
 ### **Easing Functions**
+
 ```css
 --ease-linear: linear;
 --ease-in: cubic-bezier(0.4, 0, 1, 1);
@@ -361,6 +397,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ```
 
 ### **Animation Types**
+
 - **Fade In**: For content appearing
 - **Slide Up**: For modals and dropdowns
 - **Scale In**: For buttons and interactive elements
@@ -370,6 +407,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ## 🎵 Music-Specific Components
 
 ### **Audio Player**
+
 - Fixed bottom position on all devices (80px height)
 - Always visible regardless of authentication status
 - Visual feedback for play/pause
@@ -381,6 +419,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 - Z-index 40 to appear above sidebar but below mobile header
 
 ### **Track List**
+
 - Consistent card layout
 - Play button on hover
 - Like/favorite functionality
@@ -389,6 +428,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 - Duration display
 
 ### **Artist Profile**
+
 - Hero section with cover image
 - Bio and social links
 - Track grid layout
@@ -396,6 +436,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 - Statistics display
 
 ### **Playlist Interface**
+
 - Drag and drop reordering
 - Bulk selection
 - Search and filter
@@ -405,12 +446,14 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ## 🌙 Dark Mode Guidelines
 
 ### **Color Adaptations**
+
 - Invert primary colors for better contrast
 - Adjust background colors for readability
 - Maintain brand color relationships
 - Ensure sufficient contrast ratios
 
 ### **Component Adaptations**
+
 - Adjust shadow intensities
 - Modify border colors
 - Update image overlays
@@ -419,18 +462,21 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ## ♿ Accessibility Standards
 
 ### **Color Contrast**
+
 - Normal text: 4.5:1 minimum
 - Large text: 3:1 minimum
 - UI components: 3:1 minimum
 - Focus indicators: 3:1 minimum
 
 ### **Keyboard Navigation**
+
 - Tab order follows visual hierarchy
 - Skip links for main content
 - Escape key closes modals
 - Arrow keys for menu navigation
 
 ### **Screen Reader Support**
+
 - Semantic HTML structure
 - ARIA labels and descriptions
 - Live regions for dynamic content
@@ -439,18 +485,21 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ## 📊 Performance Guidelines
 
 ### **Image Optimization**
+
 - WebP format with fallbacks
 - Responsive images with srcset
 - Lazy loading for below-fold content
 - Optimized file sizes
 
 ### **Animation Performance**
+
 - Use transform and opacity for animations
 - Avoid animating layout properties
 - Respect prefers-reduced-motion
 - Hardware acceleration where possible
 
 ### **Bundle Optimization**
+
 - Code splitting for routes
 - Tree shaking for unused code
 - Dynamic imports for heavy components
@@ -461,6 +510,7 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ### **UI Folder Structure**
 
 #### **Complete Project Structure**
+
 ```
 src/
 ├── app/                          # Next.js App Router pages
@@ -665,6 +715,7 @@ src/
 #### **Component Organization Principles**
 
 ##### **1. Feature-Based Grouping**
+
 ```
 components/
 ├── music/           # All music-related components
@@ -674,6 +725,7 @@ components/
 ```
 
 ##### **2. Component Type Grouping**
+
 ```
 components/
 ├── ui/              # Base UI components (HeroUI)
@@ -683,6 +735,7 @@ components/
 ```
 
 ##### **3. Nested Component Structure**
+
 ```
 components/music/player/
 ├── AudioPlayer.tsx      # Main player component
@@ -698,36 +751,39 @@ components/music/player/
 #### **File Naming Conventions**
 
 ##### **Components**
+
 ```typescript
 // PascalCase for component files
-TrackCard.tsx
-AudioPlayer.tsx
-UserDashboard.tsx
+TrackCard.tsx;
+AudioPlayer.tsx;
+UserDashboard.tsx;
 
 // kebab-case for utility files
-format-duration.ts
-audio-utils.ts
-validation-helpers.ts
+format - duration.ts;
+audio - utils.ts;
+validation - helpers.ts;
 ```
 
 ##### **Index Files**
+
 ```typescript
 // components/music/index.ts
-export { default as TrackCard } from './track/TrackCard'
-export { default as AudioPlayer } from './player/AudioPlayer'
-export { default as ArtistCard } from './artist/ArtistCard'
+export { default as TrackCard } from './track/TrackCard';
+export { default as AudioPlayer } from './player/AudioPlayer';
+export { default as ArtistCard } from './artist/ArtistCard';
 
 // Re-export with barrel exports
-export * from './track'
-export * from './player'
-export * from './artist'
+export * from './track';
+export * from './player';
+export * from './artist';
 ```
 
 ##### **Storybook Files**
+
 ```typescript
 // TrackCard.stories.tsx
-import type { Meta, StoryObj } from '@storybook/react'
-import TrackCard from './TrackCard'
+import type { Meta, StoryObj } from '@storybook/react';
+import TrackCard from './TrackCard';
 
 const meta: Meta<typeof TrackCard> = {
   title: 'Music/TrackCard',
@@ -735,10 +791,10 @@ const meta: Meta<typeof TrackCard> = {
   parameters: {
     layout: 'centered',
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof meta>
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
@@ -749,38 +805,42 @@ export const Default: Story = {
       duration: 180,
     },
   },
-}
+};
 ```
 
 #### **Import/Export Patterns**
 
 ##### **Component Imports**
+
 ```typescript
 // Preferred: Named imports from index files
-import { TrackCard, AudioPlayer, ArtistCard } from '@/components/music'
+import { TrackCard, AudioPlayer, ArtistCard } from '@/components/music';
 
 // Alternative: Direct imports for specific components
-import TrackCard from '@/components/music/track/TrackCard'
-import AudioPlayer from '@/components/music/player/AudioPlayer'
+import TrackCard from '@/components/music/track/TrackCard';
+import AudioPlayer from '@/components/music/player/AudioPlayer';
 ```
 
 ##### **Type Imports**
+
 ```typescript
 // Import types from dedicated type files
-import type { Track, Artist, Playlist } from '@/types/music'
-import type { User, Session } from '@/types/auth'
+import type { Track, Artist, Playlist } from '@/types/music';
+import type { User, Session } from '@/types/auth';
 ```
 
 ##### **Utility Imports**
+
 ```typescript
 // Import utilities from lib folder
-import { formatDuration, formatFileSize } from '@/lib/utils'
-import { useAudio } from '@/lib/hooks/use-audio'
+import { formatDuration, formatFileSize } from '@/lib/utils';
+import { useAudio } from '@/lib/hooks/use-audio';
 ```
 
 #### **Component Structure Template**
 
 ##### **Standard Component File**
+
 ```typescript
 // components/music/track/TrackCard.tsx
 'use client'
@@ -797,11 +857,11 @@ interface TrackCardProps {
   className?: string
 }
 
-export default function TrackCard({ 
-  track, 
-  onPlay, 
-  onLike, 
-  className 
+export default function TrackCard({
+  track,
+  onPlay,
+  onLike,
+  className
 }: TrackCardProps) {
   const [isLiked, setIsLiked] = useState(false)
 
@@ -825,18 +885,20 @@ export default function TrackCard({
 ```
 
 ##### **Index File Pattern**
+
 ```typescript
 // components/music/track/index.ts
-export { default as TrackCard } from './TrackCard'
-export { default as TrackList } from './TrackList'
-export { default as TrackItem } from './TrackItem'
-export { default as TrackGrid } from './TrackGrid'
+export { default as TrackCard } from './TrackCard';
+export { default as TrackList } from './TrackList';
+export { default as TrackItem } from './TrackItem';
+export { default as TrackGrid } from './TrackGrid';
 
 // Export types if needed
-export type { TrackCardProps } from './TrackCard'
+export type { TrackCardProps } from './TrackCard';
 ```
 
 #### **Testing Structure**
+
 ```
 components/
 ├── music/
@@ -852,6 +914,7 @@ components/
 ```
 
 #### **Asset Organization**
+
 ```
 public/
 ├── images/
@@ -877,6 +940,7 @@ public/
 ```
 
 This folder structure ensures:
+
 - **Clear organization** by feature and component type
 - **Easy navigation** and component discovery
 - **Consistent naming** conventions
@@ -886,34 +950,37 @@ This folder structure ensures:
 - **Storybook integration** for component documentation
 
 ### **Naming Conventions**
+
 - Components: PascalCase (`TrackCard.tsx`)
 - Files: kebab-case for utilities (`format-duration.ts`)
 - CSS classes: kebab-case (`track-card`)
 - Variables: camelCase (`isPlaying`)
 
 ### **Props Interface**
+
 ```typescript
 interface ComponentProps {
   // Required props first
-  title: string
-  artist: string
-  
+  title: string;
+  artist: string;
+
   // Optional props with defaults
-  isPlaying?: boolean
-  size?: 'sm' | 'md' | 'lg'
-  
+  isPlaying?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+
   // Event handlers
-  onPlay?: () => void
-  onLike?: () => void
-  
+  onPlay?: () => void;
+  onLike?: () => void;
+
   // Styling
-  className?: string
+  className?: string;
 }
 ```
 
 ## 📝 Usage Examples
 
 ### **Creating a New Component**
+
 1. Follow the component structure guidelines
 2. Use the design system tokens
 3. Implement responsive design
@@ -923,6 +990,7 @@ interface ComponentProps {
 7. Add proper TypeScript types
 
 ### **Theme Customization**
+
 1. Update colors in `tailwind.config.ts`
 2. Test in both light and dark modes
 3. Verify contrast ratios
@@ -932,6 +1000,7 @@ interface ComponentProps {
 ## 🔗 Integration with Phases
 
 This design system should be referenced in all phases:
+
 - **Phase 1**: Project setup with design system
 - **Phase 2**: Authentication forms and layouts
 - **Phase 3**: Database-driven UI components
@@ -951,18 +1020,21 @@ This design system should be referenced in all phases:
 ## 📚 Resources
 
 ### **Design Tools**
+
 - Figma for design mockups
 - HeroUI documentation
 - Tailwind CSS documentation
 - Framer Motion examples
 
 ### **Accessibility Tools**
+
 - axe DevTools
 - WAVE Web Accessibility Evaluator
 - Color contrast checkers
 - Screen reader testing
 
 ### **Performance Tools**
+
 - Lighthouse audits
 - WebPageTest
 - Bundle analyzer

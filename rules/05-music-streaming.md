@@ -1,9 +1,11 @@
 # Phase 5: Music Streaming Interface
 
 ## 🎯 Objective
+
 Implement a comprehensive music streaming interface with an audio player, streaming functionality, playlist management, and seamless user experience for listening to music on the platform.
 
 ## 📋 Prerequisites
+
 - Phase 1, 2, 3, & 4 completed successfully
 - Music upload system functional
 - Database with tracks available
@@ -31,6 +33,7 @@ yarn add immer
 ### 2. Audio Player Store
 
 #### `src/store/audio-store.ts`
+
 ```typescript
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
@@ -61,16 +64,16 @@ export interface AudioState {
   duration: number
   volume: number
   isMuted: boolean
-  
+
   // Playlist
   playlist: Track[]
   currentIndex: number
   shuffle: boolean
   repeat: 'none' | 'one' | 'all'
-  
+
   // Audio instance
   sound: Howl | null
-  
+
   // Actions
   setCurrentTrack: (track: Track) => void
   play: () => void
@@ -330,6 +333,7 @@ export const useAudioStore = create<AudioState>()(
 ### 3. Audio Player Component
 
 #### `src/components/music/AudioPlayer.tsx`
+
 ```typescript
 'use client'
 
@@ -380,26 +384,26 @@ export default function AudioPlayer() {
   // Handle progress bar click
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!progressBarRef.current) return
-    
+
     const rect = progressBarRef.current.getBoundingClientRect()
     const clickX = e.clientX - rect.left
     const width = rect.width
     const percentage = clickX / width
     const newTime = percentage * duration
-    
+
     seek(newTime)
   }
 
   // Handle volume slider click
   const handleVolumeClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!volumeSliderRef.current) return
-    
+
     const rect = volumeSliderRef.current.getBoundingClientRect()
     const clickY = e.clientY - rect.top
     const height = rect.height
     const percentage = 1 - (clickY / height) // Invert Y axis
     const newVolume = Math.max(0, Math.min(1, percentage))
-    
+
     setVolume(newVolume)
   }
 
@@ -440,7 +444,7 @@ export default function AudioPlayer() {
                 <span className="text-gray-400 text-xs">No Cover</span>
               </div>
             )}
-            
+
             <div className="min-w-0 flex-1">
               <h3 className="text-sm font-medium text-gray-900 truncate">
                 {currentTrack.title}
@@ -529,7 +533,7 @@ export default function AudioPlayer() {
               <span className="text-xs text-gray-500 w-12 text-right">
                 {formatDuration(currentTime)}
               </span>
-              
+
               <div
                 ref={progressBarRef}
                 className="flex-1 h-2 bg-gray-200 rounded-full cursor-pointer relative"
@@ -544,7 +548,7 @@ export default function AudioPlayer() {
                   style={{ left: `${progressPercentage}%` }}
                 />
               </div>
-              
+
               <span className="text-xs text-gray-500 w-12">
                 {formatDuration(duration)}
               </span>
@@ -567,7 +571,7 @@ export default function AudioPlayer() {
                   <SpeakerWaveIcon className="w-5 h-5" />
                 )}
               </button>
-              
+
               {showVolumeSlider && (
                 <div
                   ref={volumeSliderRef}
@@ -642,6 +646,7 @@ export default function AudioPlayer() {
 ### 4. Track Card Component
 
 #### `src/components/music/TrackCard.tsx`
+
 ```typescript
 'use client'
 
@@ -749,7 +754,7 @@ export default function TrackCard({
               <span className="text-gray-400 text-xs">No Cover</span>
             </div>
           )}
-          
+
           {/* Play/Pause Overlay */}
           <button
             onClick={handlePlayPause}
@@ -768,11 +773,11 @@ export default function TrackCard({
           <h3 className="text-lg font-medium text-gray-900 truncate">
             {track.title}
           </h3>
-          
+
           <p className="text-sm text-gray-600 truncate">
             by {track.artist.name}
           </p>
-          
+
           <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
             <span>{track.genre}</span>
             {track.album && <span>• {track.album}</span>}
@@ -798,7 +803,7 @@ export default function TrackCard({
                 <HeartIcon className="w-5 h-5" />
               )}
             </button>
-            
+
             {/* Like Count */}
             <span className="text-sm text-gray-500 min-w-[2rem]">
               {likeCount}
@@ -835,6 +840,7 @@ export default function TrackCard({
 ### 5. Music Browse Page
 
 #### `src/app/browse/page.tsx`
+
 ```typescript
 import { Suspense } from 'react'
 import { prisma } from '@/lib/db'
@@ -940,7 +946,7 @@ export default async function BrowsePage({
                   Previous
                 </a>
               )}
-              
+
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
                 <a
                   key={pageNum}
@@ -954,7 +960,7 @@ export default async function BrowsePage({
                   {pageNum}
                 </a>
               ))}
-              
+
               {page < totalPages && (
                 <a
                   href={`/browse?page=${page + 1}${searchParams.search ? `&search=${searchParams.search}` : ''}${searchParams.genre ? `&genre=${searchParams.genre}` : ''}`}
@@ -975,6 +981,7 @@ export default async function BrowsePage({
 ### 6. Search and Filter Components
 
 #### `src/components/music/SearchBar.tsx`
+
 ```typescript
 'use client'
 
@@ -989,7 +996,7 @@ export default function SearchBar() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     const params = new URLSearchParams(searchParams)
     if (searchTerm.trim()) {
       params.set('search', searchTerm.trim())
@@ -997,7 +1004,7 @@ export default function SearchBar() {
       params.delete('search')
     }
     params.delete('page') // Reset to first page
-    
+
     router.push(`/browse?${params.toString()}`)
   }
 
@@ -1021,6 +1028,7 @@ export default function SearchBar() {
 ```
 
 #### `src/components/music/GenreFilter.tsx`
+
 ```typescript
 'use client'
 
@@ -1048,14 +1056,14 @@ export default function GenreFilter() {
 
   const handleGenreChange = (genre: string) => {
     const params = new URLSearchParams(searchParams)
-    
+
     if (genre === 'All') {
       params.delete('genre')
     } else {
       params.set('genre', genre)
     }
     params.delete('page') // Reset to first page
-    
+
     router.push(`/browse?${params.toString()}`)
   }
 
@@ -1082,6 +1090,7 @@ export default function GenreFilter() {
 ### 7. Update Root Layout with Audio Player
 
 #### `src/app/layout.tsx`
+
 ```typescript
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
@@ -1121,26 +1130,28 @@ export default function RootLayout({
 ### 8. Track Play API Route
 
 #### `src/app/api/tracks/[id]/play/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    const body = await request.json()
-    const { duration, completed = false } = body
+    const session = await getServerSession(authOptions);
+    const body = await request.json();
+    const { duration, completed = false } = body;
 
     // Get client IP and user agent
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     'unknown'
-    const userAgent = request.headers.get('user-agent') || 'unknown'
+    const ipAddress =
+      request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // Create play event
     const playEvent = await prisma.playEvent.create({
@@ -1151,29 +1162,29 @@ export async function POST(
         userAgent,
         duration,
         completed,
-      }
-    })
+      },
+    });
 
     // Increment track play count
     await prisma.track.update({
       where: { id: params.id },
       data: {
         playCount: {
-          increment: 1
-        }
-      }
-    })
+          increment: 1,
+        },
+      },
+    });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: 'Play event recorded',
-      playEvent 
-    })
+      playEvent,
+    });
   } catch (error) {
-    console.error('Error recording play event:', error)
+    console.error('Error recording play event:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -1181,6 +1192,7 @@ export async function POST(
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Audio player functional** - Can play, pause, stop, seek tracks
 2. **Streaming works** - Audio files play without errors
 3. **Playlist management** - Can add/remove tracks, navigate between them
@@ -1190,6 +1202,7 @@ export async function POST(
 7. **Responsive design** - Player works on mobile and desktop
 
 ### Test Commands:
+
 ```bash
 # Test audio playback
 # 1. Upload a track
@@ -1211,18 +1224,23 @@ export async function POST(
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Audio not playing
+
 **Solution**: Check S3 file URLs, verify CORS settings, ensure audio format support
 
 ### Issue: Player not appearing
+
 **Solution**: Verify AudioPlayer component is imported in layout, check zustand store
 
 ### Issue: Play count not updating
+
 **Solution**: Check API route, verify database connection, check for errors in console
 
 ### Issue: Volume control not working
+
 **Solution**: Ensure Howler.js is properly initialized, check volume slider event handlers
 
 ## 📝 Notes
+
 - Audio player persists across page navigation
 - Play events are recorded for analytics
 - Responsive design ensures mobile compatibility
@@ -1230,4 +1248,5 @@ export async function POST(
 - Consider implementing audio quality selection for different network conditions
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 6: User Interface & Experience](./06-user-interface.md)

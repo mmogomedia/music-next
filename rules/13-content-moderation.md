@@ -1,9 +1,11 @@
 # Phase 13: Content Moderation
 
 ## 🎯 Objective
+
 Implement a comprehensive content moderation system that allows users to report inappropriate content, provides admin tools for reviewing and managing reported content, and includes automated moderation features to maintain platform safety and compliance.
 
 ## 📋 Prerequisites
+
 - Phase 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, & 12 completed successfully
 - Admin dashboard functional
 - User management system working
@@ -14,6 +16,7 @@ Implement a comprehensive content moderation system that allows users to report 
 ### 1. Content Moderation Dashboard
 
 #### `src/app/(dashboard)/admin/moderation/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -115,7 +118,7 @@ async function getModerationData() {
 
 export default async function ModerationPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || session.user.role !== 'ADMIN') {
     redirect('/login')
   }
@@ -145,12 +148,13 @@ export default async function ModerationPage() {
 ### 2. Moderation Dashboard Component
 
 #### `src/components/moderation/ModerationDashboard.tsx`
+
 ```typescript
 'use client'
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
+import {
   ExclamationTriangleIcon,
   CheckCircleIcon,
   XCircleIcon,
@@ -304,21 +308,21 @@ export default function ModerationDashboard({ data }: ModerationDashboardProps) 
 
         <div className="p-6">
           {activeTab === 'pending' && (
-            <ReportList 
-              reports={data.pendingReports} 
+            <ReportList
+              reports={data.pendingReports}
               status="pending"
             />
           )}
-          
+
           {activeTab === 'resolved' && (
-            <ReportList 
-              reports={data.resolvedReports} 
+            <ReportList
+              reports={data.resolvedReports}
               status="resolved"
             />
           )}
-          
+
           {activeTab === 'stats' && (
-            <ModerationStats 
+            <ModerationStats
               reportsByType={data.reportsByType}
               reportsByStatus={data.reportsByStatus}
             />
@@ -333,13 +337,14 @@ export default function ModerationDashboard({ data }: ModerationDashboardProps) 
 ### 3. Report List Component
 
 #### `src/components/moderation/ReportList.tsx`
+
 ```typescript
 'use client'
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { 
+import {
   EyeIcon,
   CheckIcon,
   XMarkIcon,
@@ -382,7 +387,7 @@ export default function ReportList({ reports, status }: ReportListProps) {
 
   const handleResolve = async (reportId: string, action: 'resolve' | 'reject') => {
     setIsProcessing(true)
-    
+
     try {
       const response = await fetch(`/api/admin/reports/${reportId}`, {
         method: 'PUT',
@@ -446,8 +451,8 @@ export default function ReportList({ reports, status }: ReportListProps) {
           No {status} reports
         </h3>
         <p className="text-gray-500">
-          {status === 'pending' 
-            ? 'All reports have been processed.' 
+          {status === 'pending'
+            ? 'All reports have been processed.'
             : 'No reports have been resolved yet.'
           }
         </p>
@@ -474,7 +479,7 @@ export default function ReportList({ reports, status }: ReportListProps) {
                   <UserIcon className="w-6 h-6 text-red-500" />
                 )}
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-1">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getReasonColor(report.reason)}`}>
@@ -484,17 +489,17 @@ export default function ReportList({ reports, status }: ReportListProps) {
                     {report.status}
                   </span>
                 </div>
-                
+
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {report.track ? `Track: ${report.track.title}` : `User: ${report.reportedUser?.name}`}
                 </p>
-                
+
                 <p className="text-sm text-gray-500">
                   Reported by {report.reporter.name} • {new Date(report.createdAt).toLocaleDateString()}
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <button
                 onClick={(e) => {
@@ -618,7 +623,7 @@ export default function ReportList({ reports, status }: ReportListProps) {
                     >
                       Cancel
                     </button>
-                    
+
                     <button
                       onClick={() => handleResolve(selectedReport.id, 'reject')}
                       disabled={isProcessing}
@@ -626,7 +631,7 @@ export default function ReportList({ reports, status }: ReportListProps) {
                     >
                       {isProcessing ? 'Processing...' : 'Reject Report'}
                     </button>
-                    
+
                     <button
                       onClick={() => handleResolve(selectedReport.id, 'resolve')}
                       disabled={isProcessing}
@@ -649,30 +654,28 @@ export default function ReportList({ reports, status }: ReportListProps) {
 ### 4. Report API Routes
 
 #### `src/app/api/reports/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { reason, description, reportedUserId, trackId } = body
+    const body = await request.json();
+    const { reason, description, reportedUserId, trackId } = body;
 
     if (!reason || !description) {
       return NextResponse.json(
         { error: 'Reason and description are required' },
         { status: 400 }
-      )
+      );
     }
 
     // Validate reason
@@ -681,14 +684,11 @@ export async function POST(request: NextRequest) {
       'INAPPROPRIATE_CONTENT',
       'SPAM',
       'HARASSMENT',
-      'OTHER'
-    ]
+      'OTHER',
+    ];
 
     if (!validReasons.includes(reason)) {
-      return NextResponse.json(
-        { error: 'Invalid reason' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid reason' }, { status: 400 });
     }
 
     // Prevent self-reporting
@@ -696,7 +696,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Cannot report yourself' },
         { status: 400 }
-      )
+      );
     }
 
     // Check if user has already reported this content
@@ -705,15 +705,15 @@ export async function POST(request: NextRequest) {
         reporterId: session.user.id,
         reportedUserId: reportedUserId || null,
         trackId: trackId || null,
-        status: 'PENDING'
-      }
-    })
+        status: 'PENDING',
+      },
+    });
 
     if (existingReport) {
       return NextResponse.json(
         { error: 'You have already reported this content' },
         { status: 400 }
-      )
+      );
     }
 
     // Create report
@@ -724,20 +724,20 @@ export async function POST(request: NextRequest) {
         reporterId: session.user.id,
         reportedUserId,
         trackId,
-        status: 'PENDING'
+        status: 'PENDING',
       },
       include: {
         reporter: {
           select: {
             name: true,
             email: true,
-          }
+          },
         },
         reportedUser: {
           select: {
             name: true,
             email: true,
-          }
+          },
         },
         track: {
           select: {
@@ -745,53 +745,49 @@ export async function POST(request: NextRequest) {
             artist: {
               select: {
                 name: true,
-              }
-            }
-          }
-        }
-      }
-    })
+              },
+            },
+          },
+        },
+      },
+    });
 
-    return NextResponse.json({
-      message: 'Report submitted successfully',
-      report
-    }, { status: 201 })
-
+    return NextResponse.json(
+      {
+        message: 'Report submitted successfully',
+        report,
+      },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('Error creating report:', error)
+    console.error('Error creating report:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get('status')
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '10')
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
 
     // Only admins can view all reports
     if (session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const where: any = {}
+    const where: any = {};
     if (status) {
-      where.status = status.toUpperCase()
+      where.status = status.toUpperCase();
     }
 
     const reports = await prisma.report.findMany({
@@ -804,13 +800,13 @@ export async function GET(request: NextRequest) {
           select: {
             name: true,
             email: true,
-          }
+          },
         },
         reportedUser: {
           select: {
             name: true,
             email: true,
-          }
+          },
         },
         track: {
           select: {
@@ -818,14 +814,14 @@ export async function GET(request: NextRequest) {
             artist: {
               select: {
                 name: true,
-              }
-            }
-          }
-        }
-      }
-    })
+              },
+            },
+          },
+        },
+      },
+    });
 
-    const total = await prisma.report.count({ where })
+    const total = await prisma.report.count({ where });
 
     return NextResponse.json({
       reports,
@@ -833,16 +829,15 @@ export async function GET(request: NextRequest) {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
-      }
-    })
-
+        pages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
-    console.error('Error fetching reports:', error)
+    console.error('Error fetching reports:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -850,33 +845,31 @@ export async function GET(request: NextRequest) {
 ### 5. Admin Report Management API
 
 #### `src/app/api/admin/reports/[id]/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { action, status, adminNotes } = body
+    const body = await request.json();
+    const { action, status, adminNotes } = body;
 
     if (!action || !status) {
       return NextResponse.json(
         { error: 'Action and status are required' },
         { status: 400 }
-      )
+      );
     }
 
     // Get the report
@@ -885,14 +878,11 @@ export async function PUT(
       include: {
         reportedUser: true,
         track: true,
-      }
-    })
+      },
+    });
 
     if (!report) {
-      return NextResponse.json(
-        { error: 'Report not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 });
     }
 
     // Update report status
@@ -903,8 +893,8 @@ export async function PUT(
         adminNotes,
         resolvedAt: new Date(),
         resolvedBy: session.user.id,
-      }
-    })
+      },
+    });
 
     // Take action based on the report
     if (action === 'resolve') {
@@ -912,14 +902,14 @@ export async function PUT(
         // Remove track if it's a track report
         await prisma.track.update({
           where: { id: report.trackId },
-          data: { isPublished: false }
-        })
+          data: { isPublished: false },
+        });
       } else if (report.reportedUserId) {
         // Suspend user if it's a user report
         await prisma.user.update({
           where: { id: report.reportedUserId },
-          data: { isSuspended: true }
-        })
+          data: { isSuspended: true },
+        });
       }
     }
 
@@ -932,20 +922,19 @@ export async function PUT(
         targetType: report.trackId ? 'TRACK' : 'USER',
         targetId: report.trackId || report.reportedUserId,
         notes: adminNotes,
-      }
-    })
+      },
+    });
 
     return NextResponse.json({
       message: 'Report processed successfully',
-      report: updatedReport
-    })
-
+      report: updatedReport,
+    });
   } catch (error) {
-    console.error('Error processing report:', error)
+    console.error('Error processing report:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -954,12 +943,9 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions);
     if (!session || session.user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const report = await prisma.report.findUnique({
@@ -969,13 +955,13 @@ export async function GET(
           select: {
             name: true,
             email: true,
-          }
+          },
         },
         reportedUser: {
           select: {
             name: true,
             email: true,
-          }
+          },
         },
         track: {
           select: {
@@ -983,38 +969,34 @@ export async function GET(
             artist: {
               select: {
                 name: true,
-              }
-            }
-          }
+              },
+            },
+          },
         },
         moderationLogs: {
           include: {
             admin: {
               select: {
                 name: true,
-              }
-            }
+              },
+            },
           },
-          orderBy: { createdAt: 'desc' }
-        }
-      }
-    })
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
 
     if (!report) {
-      return NextResponse.json(
-        { error: 'Report not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Report not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ report })
-
+    return NextResponse.json({ report });
   } catch (error) {
-    console.error('Error fetching report:', error)
+    console.error('Error fetching report:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -1022,6 +1004,7 @@ export async function GET(
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Report creation works** - Users can submit reports successfully
 2. **Admin review functional** - Admins can view and process reports
 3. **Content moderation works** - Reports trigger appropriate actions
@@ -1030,6 +1013,7 @@ export async function GET(
 6. **Audit logging** - Moderation actions are logged properly
 
 ### Test Commands:
+
 ```bash
 # Test report submission
 # 1. Submit reports as different users
@@ -1046,18 +1030,23 @@ export async function GET(
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Reports not submitting
+
 **Solution**: Check form validation, verify database schema, check user permissions
 
 ### Issue: Admin access not working
+
 **Solution**: Verify admin role, check session data, validate route protection
 
 ### Issue: Content actions not triggering
+
 **Solution**: Check action logic, verify database updates, validate target content
 
 ### Issue: Audit logging failing
+
 **Solution**: Check moderation log schema, verify admin user data, validate log creation
 
 ## 📝 Notes
+
 - Implement automated content filtering for common violations
 - Add report analytics and trend analysis
 - Consider implementing appeal process for rejected reports
@@ -1065,4 +1054,5 @@ export async function GET(
 - Implement content warning system for borderline cases
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 14: Testing & QA](./14-testing-qa.md)

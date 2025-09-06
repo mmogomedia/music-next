@@ -1,9 +1,11 @@
 # Phase 15: Deployment
 
 ## 🎯 Objective
+
 Implement production-ready deployment infrastructure including Docker containerization, cloud deployment (AWS/Vercel), monitoring, logging, and production optimizations to ensure the platform is scalable, secure, and maintainable in production.
 
 ## 📋 Prerequisites
+
 - Phase 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, & 14 completed successfully
 - All tests passing
 - Code quality standards met
@@ -14,6 +16,7 @@ Implement production-ready deployment infrastructure including Docker containeri
 ### 1. Production Environment Configuration
 
 #### `.env.production`
+
 ```bash
 # Database
 DATABASE_URL="postgresql://username:password@production-host:5432/flemoji_prod"
@@ -57,6 +60,7 @@ RATE_LIMIT_WINDOW_MS=900000
 ### 2. Docker Configuration
 
 #### `Dockerfile`
+
 ```dockerfile
 # Use Node.js 18 Alpine for smaller image size
 FROM node:18-alpine AS base
@@ -121,6 +125,7 @@ CMD ["node", "server.js"]
 ```
 
 #### `Dockerfile.dev`
+
 ```dockerfile
 FROM node:18-alpine
 
@@ -141,6 +146,7 @@ CMD ["yarn", "dev"]
 ```
 
 #### `docker-compose.yml`
+
 ```yaml
 version: '3.8'
 
@@ -150,7 +156,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://flemoji:password@db:5432/flemoji_prod
@@ -172,7 +178,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./prisma/init.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5432:5432"
+      - '5432:5432'
     restart: unless-stopped
     networks:
       - flemoji-network
@@ -180,7 +186,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -190,8 +196,8 @@ services:
   nginx:
     image: nginx:alpine
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/ssl:/etc/nginx/ssl
@@ -214,6 +220,7 @@ networks:
 ### 3. Nginx Configuration
 
 #### `nginx/nginx.conf`
+
 ```nginx
 events {
     worker_connections 1024;
@@ -307,7 +314,7 @@ http {
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
-            
+
             # WebSocket support for real-time features
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
@@ -327,27 +334,25 @@ http {
 ### 4. Production Next.js Configuration
 
 #### `next.config.js` (Production)
+
 ```javascript
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client', 'bcryptjs'],
   },
-  
+
   // Production optimizations
   compress: true,
   poweredByHeader: false,
-  
+
   // Image optimization
   images: {
-    domains: [
-      'your-s3-bucket.s3.amazonaws.com',
-      'your-cdn-domain.com',
-    ],
+    domains: ['your-s3-bucket.s3.amazonaws.com', 'your-cdn-domain.com'],
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
   },
-  
+
   // Security headers
   async headers() {
     return [
@@ -356,53 +361,53 @@ const nextConfig = {
         headers: [
           {
             key: 'X-DNS-Prefetch-Control',
-            value: 'on'
+            value: 'on',
           },
           {
             key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload'
+            value: 'max-age=63072000; includeSubDomains; preload',
           },
           {
             key: 'X-XSS-Protection',
-            value: '1; mode=block'
+            value: '1; mode=block',
           },
           {
             key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
+            value: 'SAMEORIGIN',
           },
           {
             key: 'X-Content-Type-Options',
-            value: 'nosniff'
+            value: 'nosniff',
           },
           {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
-          }
-        ]
-      }
-    ]
+            value: 'origin-when-cross-origin',
+          },
+        ],
+      },
+    ];
   },
-  
+
   // Bundle analyzer (only in production builds)
   ...(process.env.ANALYZE === 'true' && {
-    webpack: (config) => {
+    webpack: config => {
       config.plugins.push(
         new (require('@next/bundle-analyzer'))({
           enabled: true,
         })
-      )
-      return config
+      );
+      return config;
     },
   }),
-  
+
   // Output standalone for Docker
   output: 'standalone',
-  
+
   // Environment variables
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-  
+
   // Redirects
   async redirects() {
     return [
@@ -411,9 +416,9 @@ const nextConfig = {
         destination: '/new-path',
         permanent: true,
       },
-    ]
+    ];
   },
-  
+
   // Rewrites
   async rewrites() {
     return [
@@ -421,33 +426,34 @@ const nextConfig = {
         source: '/api/health',
         destination: '/api/health-check',
       },
-    ]
+    ];
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
 ```
 
 ### 5. Health Check API
 
 #### `src/app/api/health/route.ts`
+
 ```typescript
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
 
 export async function GET() {
   try {
     // Check database connection
-    await prisma.$queryRaw`SELECT 1`
-    
+    await prisma.$queryRaw`SELECT 1`;
+
     // Check Redis connection (if using Redis)
     // const redis = new Redis(process.env.REDIS_URL!)
     // await redis.ping()
-    
+
     // Check S3 connection (if using S3)
     // const s3 = new AWS.S3()
     // await s3.headBucket({ Bucket: process.env.AWS_S3_BUCKET! }).promise()
-    
+
     return NextResponse.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
@@ -458,21 +464,24 @@ export async function GET() {
         database: 'healthy',
         redis: 'healthy',
         s3: 'healthy',
-      }
-    })
+      },
+    });
   } catch (error) {
-    console.error('Health check failed:', error)
-    
-    return NextResponse.json({
-      status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : 'Unknown error',
-      services: {
-        database: 'unhealthy',
-        redis: 'unhealthy',
-        s3: 'unhealthy',
-      }
-    }, { status: 503 })
+    console.error('Health check failed:', error);
+
+    return NextResponse.json(
+      {
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error',
+        services: {
+          database: 'unhealthy',
+          redis: 'unhealthy',
+          s3: 'unhealthy',
+        },
+      },
+      { status: 503 }
+    );
   }
 }
 ```
@@ -480,8 +489,9 @@ export async function GET() {
 ### 6. Monitoring and Logging
 
 #### `src/lib/monitoring.ts`
+
 ```typescript
-import * as Sentry from '@sentry/nextjs'
+import * as Sentry from '@sentry/nextjs';
 
 export const initMonitoring = () => {
   if (process.env.NODE_ENV === 'production') {
@@ -494,40 +504,44 @@ export const initMonitoring = () => {
           tracePropagationTargets: ['localhost', 'yourdomain.com'],
         }),
       ],
-    })
+    });
   }
-}
+};
 
 export const captureException = (error: Error, context?: any) => {
   if (process.env.NODE_ENV === 'production') {
     Sentry.captureException(error, {
       extra: context,
-    })
+    });
   }
-  console.error('Error:', error, context)
-}
+  console.error('Error:', error, context);
+};
 
-export const captureMessage = (message: string, level: Sentry.SeverityLevel = 'info') => {
+export const captureMessage = (
+  message: string,
+  level: Sentry.SeverityLevel = 'info'
+) => {
   if (process.env.NODE_ENV === 'production') {
-    Sentry.captureMessage(message, level)
+    Sentry.captureMessage(message, level);
   }
-  console.log(`[${level.toUpperCase()}]:`, message)
-}
+  console.log(`[${level.toUpperCase()}]:`, message);
+};
 
 export const startTransaction = (name: string, operation: string) => {
   if (process.env.NODE_ENV === 'production') {
     return Sentry.startTransaction({
       name,
       op: operation,
-    })
+    });
   }
-  return null
-}
+  return null;
+};
 ```
 
 #### `src/lib/logger.ts`
+
 ```typescript
-import winston from 'winston'
+import winston from 'winston';
 
 const logLevels = {
   error: 0,
@@ -535,7 +549,7 @@ const logLevels = {
   info: 2,
   http: 3,
   debug: 4,
-}
+};
 
 const logColors = {
   error: 'red',
@@ -543,17 +557,17 @@ const logColors = {
   info: 'green',
   http: 'magenta',
   debug: 'white',
-}
+};
 
-winston.addColors(logColors)
+winston.addColors(logColors);
 
 const format = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.colorize({ all: true }),
   winston.format.printf(
-    (info) => `${info.timestamp} ${info.level}: ${info.message}`,
-  ),
-)
+    info => `${info.timestamp} ${info.level}: ${info.message}`
+  )
+);
 
 const transports = [
   new winston.transports.Console(),
@@ -562,30 +576,31 @@ const transports = [
     level: 'error',
   }),
   new winston.transports.File({ filename: 'logs/all.log' }),
-]
+];
 
 export const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
   levels: logLevels,
   format,
   transports,
-})
+});
 
 export const logRequest = (req: any, res: any, next: any) => {
-  const start = Date.now()
-  
+  const start = Date.now();
+
   res.on('finish', () => {
-    const duration = Date.now() - start
-    logger.http(`${req.method} ${req.url} ${res.statusCode} - ${duration}ms`)
-  })
-  
-  next()
-}
+    const duration = Date.now() - start;
+    logger.http(`${req.method} ${req.url} ${res.statusCode} - ${duration}ms`);
+  });
+
+  next();
+};
 ```
 
 ### 7. AWS Deployment Scripts
 
 #### `scripts/deploy-aws.sh`
+
 ```bash
 #!/bin/bash
 
@@ -680,6 +695,7 @@ echo "🌐 Service URL: https://yourdomain.com"
 ### 8. Vercel Deployment Configuration
 
 #### `vercel.json`
+
 ```json
 {
   "version": 2,
@@ -732,95 +748,97 @@ echo "🌐 Service URL: https://yourdomain.com"
 ### 9. GitHub Actions Deployment
 
 #### `.github/workflows/deploy.yml`
+
 ```yaml
 name: Deploy to Production
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'yarn'
-    
-    - name: Install dependencies
-      run: yarn install --frozen-lockfile
-    
-    - name: Run tests
-      run: yarn test:ci
-    
-    - name: Run E2E tests
-      run: yarn test:e2e
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Run tests
+        run: yarn test:ci
+
+      - name: Run E2E tests
+        run: yarn test:e2e
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
-    
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-    
-    - name: Build, tag, and push image to Amazon ECR
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: flemoji
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-    
-    - name: Deploy to ECS
-      run: |
-        aws ecs update-service \
-          --cluster flemoji-cluster \
-          --service flemoji-service \
-          --force-new-deployment
-    
-    - name: Wait for deployment to complete
-      run: |
-        aws ecs wait services-stable \
-          --cluster flemoji-cluster \
-          --services flemoji-service
+      - uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: flemoji
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster flemoji-cluster \
+            --service flemoji-service \
+            --force-new-deployment
+
+      - name: Wait for deployment to complete
+        run: |
+          aws ecs wait services-stable \
+            --cluster flemoji-cluster \
+            --services flemoji-service
 
   deploy-vercel:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Deploy to Vercel
-      uses: amondnet/vercel-action@v25
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        vercel-args: '--prod'
+      - uses: actions/checkout@v3
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
 ```
 
 ### 10. Production Monitoring Dashboard
 
 #### `src/app/admin/monitoring/page.tsx`
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -829,7 +847,7 @@ import MonitoringDashboard from '@/components/admin/MonitoringDashboard'
 
 export default async function MonitoringPage() {
   const session = await getServerSession(authOptions)
-  
+
   if (!session || session.user.role !== 'ADMIN') {
     redirect('/login')
   }
@@ -856,6 +874,7 @@ export default async function MonitoringPage() {
 ## ✅ Deployment Requirements
 
 ### Before Going Live:
+
 1. **All tests passing** - Unit, integration, and E2E tests succeed
 2. **Performance benchmarks met** - Lighthouse scores above 90
 3. **Security audit passed** - No critical vulnerabilities
@@ -866,6 +885,7 @@ export default async function MonitoringPage() {
 8. **Rate limiting** - API protection implemented
 
 ### Deployment Commands:
+
 ```bash
 # Docker deployment
 docker-compose up -d
@@ -883,18 +903,23 @@ curl https://yourdomain.com/api/health
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Docker build failing
+
 **Solution**: Check Dockerfile syntax, verify dependencies, check build context
 
 ### Issue: Database connection failing
+
 **Solution**: Verify connection strings, check network access, validate credentials
 
 ### Issue: SSL certificate errors
+
 **Solution**: Check certificate validity, verify domain configuration, test SSL setup
 
 ### Issue: Performance degradation
+
 **Solution**: Enable caching, optimize database queries, implement CDN
 
 ## 📝 Notes
+
 - Implement blue-green deployment for zero-downtime updates
 - Set up automated backups and disaster recovery
 - Configure alerting for critical system issues
@@ -906,6 +931,7 @@ curl https://yourdomain.com/api/health
 Congratulations! You have successfully completed all 15 phases of building your Next.js music streaming platform. Your platform now includes:
 
 ### **Complete Feature Set**
+
 - ✅ User authentication and management
 - ✅ Music upload and streaming
 - ✅ Artist dashboard and analytics
@@ -917,6 +943,7 @@ Congratulations! You have successfully completed all 15 phases of building your 
 - ✅ Production deployment infrastructure
 
 ### **Production Ready**
+
 - 🚀 Scalable architecture
 - 🔒 Security best practices
 - 📊 Monitoring and logging
@@ -926,6 +953,7 @@ Congratulations! You have successfully completed all 15 phases of building your 
 - ⚡ Performance optimized
 
 ### **Next Steps**
+
 1. **Deploy to production** using the provided configurations
 2. **Monitor performance** and user feedback
 3. **Iterate and improve** based on real-world usage

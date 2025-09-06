@@ -1,9 +1,11 @@
 # Phase 2: Authentication Setup & User Management
 
 ## 🎯 Objective
+
 Implement NextAuth.js authentication system with user registration, login, role-based access control, and session management for the music streaming platform.
 
 ## 📋 Prerequisites
+
 - Phase 1 completed successfully
 - Next.js project running without errors
 - Database connection ready (Prisma configured)
@@ -14,6 +16,7 @@ Implement NextAuth.js authentication system with user registration, login, role-
 ### 1. Database Schema Setup
 
 #### `prisma/schema.prisma`
+
 ```prisma
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
@@ -173,44 +176,45 @@ npx prisma migrate dev --name init
 ### 3. NextAuth Configuration
 
 #### `src/lib/auth.ts`
+
 ```typescript
-import { NextAuthOptions } from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import CredentialsProvider from "next-auth/providers/credentials"
-import { prisma } from "@/lib/db"
-import bcrypt from "bcryptjs"
+import { NextAuthOptions } from 'next-auth';
+import { PrismaAdapter } from '@auth/prisma-adapter';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { prisma } from '@/lib/db';
+import bcrypt from 'bcryptjs';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      name: 'credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null
+          return null;
         }
 
         const user = await prisma.user.findUnique({
           where: {
-            email: credentials.email
-          }
-        })
+            email: credentials.email,
+          },
+        });
 
         if (!user || !user.password) {
-          return null
+          return null;
         }
 
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
           user.password
-        )
+        );
 
         if (!isPasswordValid) {
-          return null
+          return null;
         }
 
         return {
@@ -219,68 +223,71 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           isPremium: user.isPremium,
-        }
-      }
-    })
+        };
+      },
+    }),
   ],
   session: {
-    strategy: "jwt"
+    strategy: 'jwt',
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = user.role
-        token.isPremium = user.isPremium
+        token.role = user.role;
+        token.isPremium = user.isPremium;
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub!
-        session.user.role = token.role as string
-        session.user.isPremium = token.isPremium as boolean
+        session.user.id = token.sub!;
+        session.user.role = token.role as string;
+        session.user.isPremium = token.isPremium as boolean;
       }
-      return session
-    }
+      return session;
+    },
   },
   pages: {
     signIn: '/login',
     signUp: '/register',
   },
   secret: process.env.NEXTAUTH_SECRET,
-}
+};
 ```
 
 ### 4. Database Connection
 
 #### `src/lib/db.ts`
+
 ```typescript
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined
-}
+  prisma: PrismaClient | undefined;
+};
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient()
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 ```
 
 ### 5. NextAuth API Route
 
 #### `src/app/api/auth/[...nextauth]/route.ts`
+
 ```typescript
-import NextAuth from "next-auth"
-import { authOptions } from "@/lib/auth"
+import NextAuth from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
-const handler = NextAuth(authOptions)
+const handler = NextAuth(authOptions);
 
-export { handler as GET, handler as POST }
+export { handler as GET, handler as POST };
 ```
 
 ### 6. Session Provider Setup
 
 #### `src/components/providers/SessionProvider.tsx`
+
 ```typescript
 'use client'
 
@@ -303,6 +310,7 @@ export default function SessionProvider({ children }: SessionProviderProps) {
 ### 7. Update Root Layout with Session Provider
 
 #### `src/app/layout.tsx`
+
 ```typescript
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
@@ -340,6 +348,7 @@ export default function RootLayout({
 ### 8. Authentication Forms
 
 #### `src/components/forms/LoginForm.tsx`
+
 ```typescript
 'use client'
 
@@ -454,6 +463,7 @@ export default function LoginForm() {
 ```
 
 #### `src/components/forms/RegisterForm.tsx`
+
 ```typescript
 'use client'
 
@@ -639,34 +649,35 @@ export default function RegisterForm() {
 ### 9. Registration API Route
 
 #### `src/app/api/auth/register/route.ts`
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import bcrypt from 'bcryptjs'
-import { userSchema } from '@/lib/validations'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/db';
+import bcrypt from 'bcryptjs';
+import { userSchema } from '@/lib/validations';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    
+    const body = await request.json();
+
     // Validate input
-    const validatedData = userSchema.parse(body)
-    
+    const validatedData = userSchema.parse(body);
+
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email }
-    })
-    
+      where: { email: validatedData.email },
+    });
+
     if (existingUser) {
       return NextResponse.json(
         { error: 'User with this email already exists' },
         { status: 400 }
-      )
+      );
     }
-    
+
     // Hash password
-    const hashedPassword = await bcrypt.hash(validatedData.password, 12)
-    
+    const hashedPassword = await bcrypt.hash(validatedData.password, 12);
+
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -674,30 +685,27 @@ export async function POST(request: NextRequest) {
         email: validatedData.email,
         password: hashedPassword,
         role: body.role || 'USER',
-      }
-    })
-    
+      },
+    });
+
     // Remove password from response
-    const { password, ...userWithoutPassword } = user
-    
+    const { password, ...userWithoutPassword } = user;
+
     return NextResponse.json(
       { message: 'User created successfully', user: userWithoutPassword },
       { status: 201 }
-    )
+    );
   } catch (error) {
-    console.error('Registration error:', error)
-    
+    console.error('Registration error:', error);
+
     if (error instanceof Error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -705,6 +713,7 @@ export async function POST(request: NextRequest) {
 ### 10. Authentication Pages
 
 #### `src/app/(auth)/login/page.tsx`
+
 ```typescript
 import LoginForm from '@/components/forms/LoginForm'
 
@@ -714,6 +723,7 @@ export default function LoginPage() {
 ```
 
 #### `src/app/(auth)/register/page.tsx`
+
 ```typescript
 import RegisterForm from '@/components/forms/RegisterForm'
 
@@ -725,14 +735,15 @@ export default function RegisterPage() {
 ### 11. Middleware for Route Protection
 
 #### `src/middleware.ts`
+
 ```typescript
-import { withAuth } from "next-auth/middleware"
-import { NextResponse } from "next/server"
+import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
 
 export default withAuth(
   function middleware(req) {
-    const token = req.nextauth.token
-    const path = req.nextUrl.pathname
+    const token = req.nextauth.token;
+    const path = req.nextUrl.pathname;
 
     // Define public routes that don't require authentication
     const publicRoutes = [
@@ -744,14 +755,14 @@ export default withAuth(
       '/genres',
       '/albums',
       '/search',
-      
+
       // Authentication pages
       '/login',
       '/register',
       '/forgot-password',
       '/reset-password',
       '/verify-email',
-      
+
       // Static pages
       '/about',
       '/contact',
@@ -759,7 +770,7 @@ export default withAuth(
       '/terms',
       '/help',
       '/faq',
-      
+
       // Public API endpoints
       '/api/health',
       '/api/tracks',
@@ -770,22 +781,22 @@ export default withAuth(
       '/api/play-events', // For tracking plays (anonymous)
       '/api/smart-links',
       '/api/public',
-      
+
       // Static assets
       '/_next',
       '/favicon.ico',
       '/robots.txt',
       '/sitemap.xml',
-    ]
+    ];
 
     // Check if current path is public
-    const isPublicRoute = publicRoutes.some(route => 
-      path === route || path.startsWith(route + '/')
-    )
+    const isPublicRoute = publicRoutes.some(
+      route => path === route || path.startsWith(route + '/')
+    );
 
     // Allow public routes to pass through
     if (isPublicRoute) {
-      return NextResponse.next()
+      return NextResponse.next();
     }
 
     // All other routes require authentication
@@ -793,33 +804,33 @@ export default withAuth(
       // Redirect to login for protected routes
       if (path.startsWith('/api/')) {
         return NextResponse.json(
-          { error: "Authentication required" },
+          { error: 'Authentication required' },
           { status: 401 }
-        )
+        );
       }
-      return NextResponse.redirect(new URL("/login", req.url))
+      return NextResponse.redirect(new URL('/login', req.url));
     }
 
     // Role-based access control for specific routes
-    if (path.startsWith("/admin")) {
-      if (token.role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/unauthorized", req.url))
+    if (path.startsWith('/admin')) {
+      if (token.role !== 'ADMIN') {
+        return NextResponse.redirect(new URL('/unauthorized', req.url));
       }
     }
 
-    if (path.startsWith("/artist")) {
-      if (token.role !== "ARTIST" && token.role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/unauthorized", req.url))
+    if (path.startsWith('/artist')) {
+      if (token.role !== 'ARTIST' && token.role !== 'ADMIN') {
+        return NextResponse.redirect(new URL('/unauthorized', req.url));
       }
     }
 
-    return NextResponse.next()
+    return NextResponse.next();
   },
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        const path = req.nextUrl.pathname
-        
+        const path = req.nextUrl.pathname;
+
         // Define public routes that don't need authorization
         const publicRoutes = [
           // Main pages
@@ -830,14 +841,14 @@ export default withAuth(
           '/genres',
           '/albums',
           '/search',
-          
+
           // Authentication pages
           '/login',
           '/register',
           '/forgot-password',
           '/reset-password',
           '/verify-email',
-          
+
           // Static pages
           '/about',
           '/contact',
@@ -845,7 +856,7 @@ export default withAuth(
           '/terms',
           '/help',
           '/faq',
-          
+
           // Public API endpoints
           '/api/health',
           '/api/tracks',
@@ -856,57 +867,58 @@ export default withAuth(
           '/api/play-events',
           '/api/smart-links',
           '/api/public',
-          
+
           // Static assets
           '/_next',
           '/favicon.ico',
           '/robots.txt',
           '/sitemap.xml',
-        ]
-        
-        const isPublicRoute = publicRoutes.some(route => 
-          path === route || path.startsWith(route + '/')
-        )
-        
+        ];
+
+        const isPublicRoute = publicRoutes.some(
+          route => path === route || path.startsWith(route + '/')
+        );
+
         // Public routes don't need authorization
         if (isPublicRoute) {
-          return true
+          return true;
         }
-        
+
         // All other routes require authentication
-        return !!token
-      }
+        return !!token;
+      },
     },
   }
-)
+);
 
 export const config = {
   matcher: [
     // Protect all routes except public ones
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
-  ]
-}
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)',
+  ],
+};
 ```
 
 ### 12. Component-Level Authentication & Function Protection
 
 #### `src/hooks/useAuth.ts`
-```typescript
-'use client'
 
-import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+```typescript
+'use client';
+
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export function useAuth(requireAuth: boolean = false) {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
     if (requireAuth && status === 'unauthenticated') {
-      router.push('/login')
+      router.push('/login');
     }
-  }, [requireAuth, status, router])
+  }, [requireAuth, status, router]);
 
   return {
     user: session?.user,
@@ -915,28 +927,34 @@ export function useAuth(requireAuth: boolean = false) {
     isAdmin: session?.user?.role === 'ADMIN',
     isArtist: session?.user?.role === 'ARTIST',
     isPremium: session?.user?.isPremium,
-  }
+  };
 }
 
 export function useRequireAuth() {
-  return useAuth(true)
+  return useAuth(true);
 }
 
 export function useRequireRole(requiredRole: 'ADMIN' | 'ARTIST') {
-  const { user, isAuthenticated, isLoading } = useAuth(true)
-  const router = useRouter()
+  const { user, isAuthenticated, isLoading } = useAuth(true);
+  const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && user?.role !== requiredRole && user?.role !== 'ADMIN') {
-      router.push('/unauthorized')
+    if (
+      !isLoading &&
+      isAuthenticated &&
+      user?.role !== requiredRole &&
+      user?.role !== 'ADMIN'
+    ) {
+      router.push('/unauthorized');
     }
-  }, [isLoading, isAuthenticated, user?.role, requiredRole, router])
+  }, [isLoading, isAuthenticated, user?.role, requiredRole, router]);
 
-  return { user, isAuthenticated, isLoading }
+  return { user, isAuthenticated, isLoading };
 }
 ```
 
 #### `src/components/auth/AuthGuard.tsx`
+
 ```typescript
 'use client'
 
@@ -985,6 +1003,7 @@ export default function AuthGuard({
 ```
 
 #### `src/components/auth/ProtectedButton.tsx`
+
 ```typescript
 'use client'
 
@@ -1041,7 +1060,7 @@ export default function ProtectedButton({
     }
   }
 
-  const isDisabled = disabled || 
+  const isDisabled = disabled ||
     (requireAuth && !session) ||
     (requireRole && session?.user?.role !== requireRole && session?.user?.role !== 'ADMIN') ||
     (requirePremium && !session?.user?.isPremium)
@@ -1060,6 +1079,7 @@ export default function ProtectedButton({
 ```
 
 #### `src/components/music/TrackCard.tsx` (Example with Protected Functions)
+
 ```typescript
 'use client'
 
@@ -1102,7 +1122,7 @@ export default function TrackCard({ track, onPlay, onLike, onAddToPlaylist }: Tr
           alt={track.title}
           className="w-16 h-16 rounded-lg object-cover"
         />
-        
+
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-semibold text-gray-900 truncate">
             {track.title}
@@ -1155,6 +1175,7 @@ export default function TrackCard({ track, onPlay, onLike, onAddToPlaylist }: Tr
 ```
 
 #### `src/components/music/PlayButton.tsx` (Public Play Function)
+
 ```typescript
 'use client'
 
@@ -1212,61 +1233,64 @@ export default function PlayButton({ trackId, onPlay }: PlayButtonProps) {
 ### 13. API Route Protection Examples
 
 #### `src/app/api/play-events/route.ts` (Public Endpoint)
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { analyticsOperations } from '@/lib/db-operations'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { analyticsOperations } from '@/lib/db-operations';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { trackId, duration, completed } = body
+    const body = await request.json();
+    const { trackId, duration, completed } = body;
 
     // Get session if available (optional for anonymous plays)
-    const session = await getServerSession(authOptions)
-    
+    const session = await getServerSession(authOptions);
+
     // Record play event (works for both authenticated and anonymous users)
     await analyticsOperations.recordPlayEvent({
       trackId,
       userId: session?.user?.id, // Will be null for anonymous users
-      ipAddress: request.ip || request.headers.get('x-forwarded-for') || 'unknown',
+      ipAddress:
+        request.ip || request.headers.get('x-forwarded-for') || 'unknown',
       userAgent: request.headers.get('user-agent') || 'unknown',
       duration,
       completed,
-    })
+    });
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Play event error:', error)
+    console.error('Play event error:', error);
     return NextResponse.json(
       { error: 'Failed to record play event' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
 
 #### `src/app/api/likes/route.ts` (Protected Endpoint)
+
 ```typescript
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    
+    const session = await getServerSession(authOptions);
+
     if (!session) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
-      )
+      );
     }
 
-    const body = await request.json()
-    const { trackId } = body
+    const body = await request.json();
+    const { trackId } = body;
 
     // Check if already liked
     const existingLike = await prisma.like.findUnique({
@@ -1276,21 +1300,21 @@ export async function POST(request: NextRequest) {
           trackId,
         },
       },
-    })
+    });
 
     if (existingLike) {
       // Unlike
       await prisma.like.delete({
         where: { id: existingLike.id },
-      })
-      
+      });
+
       // Decrement like count
       await prisma.track.update({
         where: { id: trackId },
         data: { likeCount: { decrement: 1 } },
-      })
+      });
 
-      return NextResponse.json({ liked: false })
+      return NextResponse.json({ liked: false });
     } else {
       // Like
       await prisma.like.create({
@@ -1298,22 +1322,22 @@ export async function POST(request: NextRequest) {
           userId: session.user.id,
           trackId,
         },
-      })
-      
+      });
+
       // Increment like count
       await prisma.track.update({
         where: { id: trackId },
         data: { likeCount: { increment: 1 } },
-      })
+      });
 
-      return NextResponse.json({ liked: true })
+      return NextResponse.json({ liked: true });
     }
   } catch (error) {
-    console.error('Like error:', error)
+    console.error('Like error:', error);
     return NextResponse.json(
       { error: 'Failed to update like status' },
       { status: 500 }
-    )
+    );
   }
 }
 ```
@@ -1332,6 +1356,7 @@ yarn add next-auth
 ## ✅ Testing Requirements
 
 ### Before Moving to Next Phase:
+
 1. **Database migration successful** - Tables created without errors
 2. **User registration works** - Can create new accounts
 3. **User login works** - Can authenticate with credentials
@@ -1346,6 +1371,7 @@ yarn add next-auth
 12. **Middleware coverage** - All routes properly handled by middleware
 
 ### Test Commands:
+
 ```bash
 # Test database connection
 npx prisma studio
@@ -1394,26 +1420,33 @@ npx prisma studio
 ## 🚨 Common Issues & Solutions
 
 ### Issue: Database connection errors
+
 **Solution**: Verify DATABASE_URL in .env.local and ensure database is running
 
 ### Issue: Password hashing errors
+
 **Solution**: Ensure bcryptjs is properly installed and imported
 
 ### Issue: Session not persisting
+
 **Solution**: Check NEXTAUTH_SECRET is set and SessionProvider wraps the app
 
 ### Issue: Route protection not working
+
 **Solution**: Verify middleware.ts is in the correct location and matcher config is correct
 
 ### Issue: Public routes requiring authentication
+
 **Solution**: Check that public routes are properly listed in middleware.ts
 
 ### Issue: Protected functions not working
+
 **Solution**: Ensure ProtectedButton and AuthGuard components are properly implemented
 
 ## 📝 Authentication Strategy
 
 ### **Public Access (No Authentication Required)**
+
 - **Main Pages**: Homepage, browse, tracks, artists, genres, albums, search
 - **Authentication Pages**: Login, register, forgot-password, reset-password, verify-email
 - **Static Pages**: About, contact, privacy, terms, help, FAQ
@@ -1422,6 +1455,7 @@ npx prisma studio
 - **Music Player**: Always visible and functional for all users
 
 ### **Protected Routes (Authentication Required)**
+
 - **User Dashboard** (`/dashboard`) - User dashboard and settings
 - **Artist Dashboard** (`/artist`) - Artist management tools
 - **Admin Panel** (`/admin`) - System administration
@@ -1431,6 +1465,7 @@ npx prisma studio
 - **Premium Features** (`/premium`, `/subscription`)
 
 ### **Function-Level Protection**
+
 - **Play Music** - Always available (public)
 - **Like Tracks** - Requires authentication
 - **Add to Playlist** - Requires authentication
@@ -1443,26 +1478,31 @@ npx prisma studio
 ### **UI Component Behavior Based on Authentication**
 
 #### **Sidebar Navigation**
+
 - **Non-Authenticated**: Shows MENU and ACCOUNT sections
 - **Authenticated**: Shows MENU section and user profile at bottom
 
 #### **User Profile Section**
+
 - **Non-Authenticated**: Not visible
 - **Authenticated**: Shows user avatar, name, and dropdown menu with:
   - Account settings
   - Logout option
 
 #### **Music Player**
+
 - **All Users**: Always visible at bottom of screen
 - **Non-Authenticated**: Full playback controls available
 - **Authenticated**: Full playback controls + personalized features
 
 #### **Theme Switching**
+
 - **All Users**: Available via subtle button next to logo
 - **Location**: Integrated into logo section for easy access
 - **Functionality**: Toggles between light and dark modes
 
 ### **Implementation Benefits**
+
 1. **Better User Experience** - Users can discover and play music without barriers
 2. **Increased Engagement** - Anonymous users can interact with content
 3. **Analytics Tracking** - Play events tracked for both authenticated and anonymous users
@@ -1475,12 +1515,14 @@ npx prisma studio
 ## 📝 Route Protection Strategy
 
 ### **Security by Default Approach**
+
 - **Default State**: All routes are protected by default
 - **Public Routes**: Only explicitly listed routes are publicly accessible
 - **Middleware**: Runs on all routes except static assets
 - **Matcher**: Uses negative lookahead to exclude static assets
 
 ### **Public Route Categories**
+
 1. **Main Content**: Homepage, browse, tracks, artists, genres, albums, search
 2. **Authentication**: Login, register, password reset, email verification
 3. **Static Pages**: About, contact, privacy, terms, help, FAQ
@@ -1488,6 +1530,7 @@ npx prisma studio
 5. **Static Assets**: Next.js assets, favicon, robots.txt, sitemap.xml
 
 ### **Protected Route Categories**
+
 1. **User Features**: Dashboard, account, settings, profile
 2. **Artist Features**: Upload, manage, analytics, artist dashboard
 3. **Admin Features**: Admin panel, user management, system settings
@@ -1495,11 +1538,13 @@ npx prisma studio
 5. **User APIs**: Personal data, playlists, likes, follows
 
 ### **Role-Based Access Control**
+
 - **USER**: Access to user dashboard and personal features
 - **ARTIST**: Access to artist dashboard and upload features
 - **ADMIN**: Access to admin panel and all features
 
 ## 📝 Notes
+
 - Passwords are hashed using bcryptjs with 12 salt rounds
 - User roles are enforced at both middleware and component levels
 - Session data includes user role and premium status for easy access
@@ -1510,4 +1555,5 @@ npx prisma studio
 - Easy to add new routes: they're automatically protected unless added to public list
 
 ## 🔗 Next Phase
+
 Once this phase is complete and tested, proceed to [Phase 3: Database Schema & Models](./03-database-schema.md)
