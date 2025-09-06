@@ -16,7 +16,7 @@ module.exports = {
           200: '#bbf7d0',
           300: '#86efac',
           400: '#4ade80',
-          500: '#22c55e',
+          500: '#22c55e', // Main primary
           600: '#16a34a',
           700: '#15803d',
           800: '#166534',
@@ -31,7 +31,7 @@ module.exports = {
           200: '#fef08a',
           300: '#fde047',
           400: '#facc15',
-          500: '#eab308',
+          500: '#eab308', // Main secondary
           600: '#ca8a04',
           700: '#a16207',
           800: '#854d0e',
@@ -46,7 +46,7 @@ module.exports = {
           200: '#bae6fd',
           300: '#7dd3fc',
           400: '#38bdf8',
-          500: '#0ea5e9',
+          500: '#0ea5e9', // Main accent
           600: '#0284c7',
           700: '#0369a1',
           800: '#075985',
@@ -59,6 +59,10 @@ module.exports = {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
+      },
+      boxShadow: {
+        'glow': '0 0 20px rgba(34, 197, 94, 0.3)',
+        'glow-secondary': '0 0 20px rgba(234, 179, 8, 0.3)',
       },
       screens: {
         xs: '475px',

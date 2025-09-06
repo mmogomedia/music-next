@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import HeroUIProviderWrapper from '@/components/providers/HeroUIProvider'
-import Header from '@/components/layout/Header'
+import SessionProvider from '@/components/providers/SessionProvider'
+import AppLayout from '@/components/layout/AppLayout'
 
 export const metadata: Metadata = {
   title: 'Flemoji Music Streaming Platform',
@@ -14,14 +15,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="dark">
       <body>
-        <HeroUIProviderWrapper>
-          <Header />
-          {children}
-        </HeroUIProviderWrapper>
+        <a href="#content" className="skip-link">Skip to content</a>
+        <SessionProvider>
+          <HeroUIProviderWrapper>
+            <AppLayout>
+              <main id="content">{children}</main>
+            </AppLayout>
+          </HeroUIProviderWrapper>
+        </SessionProvider>
       </body>
     </html>
   )
 }
-

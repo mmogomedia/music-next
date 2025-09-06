@@ -734,24 +734,48 @@ export default withAuth(
     const token = req.nextauth.token
     const path = req.nextUrl.pathname
 
-    // Public routes that don't require authentication
+    // Define public routes that don't require authentication
     const publicRoutes = [
+      // Main pages - all publicly accessible
       '/',
       '/browse',
       '/tracks',
       '/artists',
+      '/genres',
+      '/albums',
       '/search',
+      
+      // Authentication pages
       '/login',
       '/register',
       '/forgot-password',
       '/reset-password',
       '/verify-email',
+      
+      // Static pages
+      '/about',
+      '/contact',
+      '/privacy',
+      '/terms',
+      '/help',
+      '/faq',
+      
+      // Public API endpoints
       '/api/health',
       '/api/tracks',
       '/api/artists',
+      '/api/genres',
+      '/api/albums',
       '/api/search',
-      '/api/play-events', // For tracking plays
+      '/api/play-events', // For tracking plays (anonymous)
       '/api/smart-links',
+      '/api/public',
+      
+      // Static assets
+      '/_next',
+      '/favicon.ico',
+      '/robots.txt',
+      '/sitemap.xml',
     ]
 
     // Check if current path is public
@@ -764,43 +788,28 @@ export default withAuth(
       return NextResponse.next()
     }
 
-    // Protect admin routes
-    if (path.startsWith("/admin")) {
-      if (!token) {
-        return NextResponse.redirect(new URL("/login", req.url))
+    // All other routes require authentication
+    if (!token) {
+      // Redirect to login for protected routes
+      if (path.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: "Authentication required" },
+          { status: 401 }
+        )
       }
+      return NextResponse.redirect(new URL("/login", req.url))
+    }
+
+    // Role-based access control for specific routes
+    if (path.startsWith("/admin")) {
       if (token.role !== "ADMIN") {
         return NextResponse.redirect(new URL("/unauthorized", req.url))
       }
     }
 
-    // Protect artist routes
     if (path.startsWith("/artist")) {
-      if (!token) {
-        return NextResponse.redirect(new URL("/login", req.url))
-      }
       if (token.role !== "ARTIST" && token.role !== "ADMIN") {
         return NextResponse.redirect(new URL("/unauthorized", req.url))
-      }
-    }
-
-    // Protect user dashboard routes
-    if (path.startsWith("/dashboard")) {
-      if (!token) {
-        return NextResponse.redirect(new URL("/login", req.url))
-      }
-    }
-
-    // Protect user-specific API routes
-    if (path.startsWith("/api/users") || 
-        path.startsWith("/api/playlists") || 
-        path.startsWith("/api/likes") ||
-        path.startsWith("/api/follows")) {
-      if (!token) {
-        return NextResponse.json(
-          { error: "Authentication required" },
-          { status: 401 }
-        )
       }
     }
 
@@ -811,30 +820,55 @@ export default withAuth(
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname
         
-        // Public routes don't need authorization
+        // Define public routes that don't need authorization
         const publicRoutes = [
+          // Main pages
           '/',
           '/browse',
           '/tracks',
           '/artists',
+          '/genres',
+          '/albums',
           '/search',
+          
+          // Authentication pages
           '/login',
           '/register',
           '/forgot-password',
           '/reset-password',
           '/verify-email',
+          
+          // Static pages
+          '/about',
+          '/contact',
+          '/privacy',
+          '/terms',
+          '/help',
+          '/faq',
+          
+          // Public API endpoints
           '/api/health',
           '/api/tracks',
           '/api/artists',
+          '/api/genres',
+          '/api/albums',
           '/api/search',
           '/api/play-events',
           '/api/smart-links',
+          '/api/public',
+          
+          // Static assets
+          '/_next',
+          '/favicon.ico',
+          '/robots.txt',
+          '/sitemap.xml',
         ]
         
         const isPublicRoute = publicRoutes.some(route => 
           path === route || path.startsWith(route + '/')
         )
         
+        // Public routes don't need authorization
         if (isPublicRoute) {
           return true
         }
@@ -848,13 +882,8 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/admin/:path*", 
-    "/artist/:path*", 
-    "/dashboard/:path*",
-    "/api/users/:path*",
-    "/api/playlists/:path*",
-    "/api/likes/:path*",
-    "/api/follows/:path*"
+    // Protect all routes except public ones
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
   ]
 }
 ```
@@ -1307,11 +1336,14 @@ yarn add next-auth
 2. **User registration works** - Can create new accounts
 3. **User login works** - Can authenticate with credentials
 4. **Session management** - User stays logged in across page refreshes
-5. **Route protection** - Unauthorized users redirected appropriately
-6. **Role-based access** - Different user types see appropriate content
-7. **Public access** - Anonymous users can browse and play music
-8. **Function-level protection** - Protected buttons redirect to login when needed
-9. **API protection** - Public endpoints work without auth, protected endpoints require auth
+5. **Route protection** - Security by default: all routes protected unless explicitly public
+6. **Public route access** - Anonymous users can access all public routes
+7. **Protected route access** - Unauthorized users redirected to login for protected routes
+8. **Role-based access** - Different user types see appropriate content
+9. **Public access** - Anonymous users can browse and play music
+10. **Function-level protection** - Protected buttons redirect to login when needed
+11. **API protection** - Public endpoints work without auth, protected endpoints require auth
+12. **Middleware coverage** - All routes properly handled by middleware
 
 ### Test Commands:
 ```bash
@@ -1324,16 +1356,20 @@ npx prisma studio
 # 3. Verify session persistence
 # 4. Test logout functionality
 
-# Test public access
-# 1. Visit homepage without login
-# 2. Browse tracks without login
-# 3. Play tracks without login
-# 4. Verify play events are tracked
+# Test public route access
+# 1. Visit homepage without login (should work)
+# 2. Browse tracks without login (should work)
+# 3. Play tracks without login (should work)
+# 4. Search music without login (should work)
+# 5. Visit artist pages without login (should work)
+# 6. Verify play events are tracked
 
-# Test route protection
-# 1. Try accessing /admin without admin role
-# 2. Try accessing /artist without artist role
-# 3. Verify redirects work correctly
+# Test protected route access
+# 1. Try accessing /dashboard without login (should redirect to login)
+# 2. Try accessing /account without login (should redirect to login)
+# 3. Try accessing /upload without login (should redirect to login)
+# 4. Try accessing /admin without admin role (should redirect to unauthorized)
+# 5. Try accessing /artist without artist role (should redirect to unauthorized)
 
 # Test function-level protection
 # 1. Try to like track without login (should redirect to login)
@@ -1341,9 +1377,18 @@ npx prisma studio
 # 3. Verify protected buttons show appropriate tooltips
 
 # Test API endpoints
-# 1. POST /api/play-events without auth (should work)
-# 2. POST /api/likes without auth (should return 401)
-# 3. POST /api/likes with auth (should work)
+# 1. GET /api/tracks without auth (should work)
+# 2. POST /api/play-events without auth (should work)
+# 3. POST /api/likes without auth (should return 401)
+# 4. POST /api/likes with auth (should work)
+# 5. GET /api/users with auth (should work)
+# 6. GET /api/users without auth (should return 401)
+
+# Test middleware coverage
+# 1. Verify all routes are handled by middleware
+# 2. Check that static assets are excluded
+# 3. Verify public routes work without authentication
+# 4. Verify protected routes require authentication
 ```
 
 ## 🚨 Common Issues & Solutions
@@ -1369,19 +1414,21 @@ npx prisma studio
 ## 📝 Authentication Strategy
 
 ### **Public Access (No Authentication Required)**
-- **Homepage** (`/`) - Landing page with featured content
-- **Browse** (`/browse`) - Music discovery and streaming
-- **Tracks** (`/tracks`) - Individual track pages
-- **Artists** (`/artists`) - Artist profiles and pages
-- **Search** (`/search`) - Music search functionality
-- **Play Events** (`/api/play-events`) - Track play analytics (anonymous)
-- **Smart Links** (`/api/smart-links`) - Cross-platform sharing
+- **Main Pages**: Homepage, browse, tracks, artists, genres, albums, search
+- **Authentication Pages**: Login, register, forgot-password, reset-password, verify-email
+- **Static Pages**: About, contact, privacy, terms, help, FAQ
+- **Public APIs**: Health, tracks, artists, genres, albums, search, play-events, smart-links
+- **Static Assets**: Next.js assets, favicon, robots.txt, sitemap.xml
+- **Music Player**: Always visible and functional for all users
 
 ### **Protected Routes (Authentication Required)**
-- **Dashboard** (`/dashboard`) - User dashboard and settings
+- **User Dashboard** (`/dashboard`) - User dashboard and settings
 - **Artist Dashboard** (`/artist`) - Artist management tools
 - **Admin Panel** (`/admin`) - System administration
 - **User APIs** (`/api/users`, `/api/playlists`, `/api/likes`, `/api/follows`)
+- **Account Management** (`/account`, `/settings`, `/profile`)
+- **Upload/Management** (`/upload`, `/manage`, `/analytics`)
+- **Premium Features** (`/premium`, `/subscription`)
 
 ### **Function-Level Protection**
 - **Play Music** - Always available (public)
@@ -1390,6 +1437,30 @@ npx prisma studio
 - **Follow Artists** - Requires authentication
 - **Upload Music** - Requires artist role
 - **Premium Features** - Requires premium subscription
+- **User Profile Access** - Requires authentication
+- **Theme Switching** - Always available (public)
+
+### **UI Component Behavior Based on Authentication**
+
+#### **Sidebar Navigation**
+- **Non-Authenticated**: Shows MENU and ACCOUNT sections
+- **Authenticated**: Shows MENU section and user profile at bottom
+
+#### **User Profile Section**
+- **Non-Authenticated**: Not visible
+- **Authenticated**: Shows user avatar, name, and dropdown menu with:
+  - Account settings
+  - Logout option
+
+#### **Music Player**
+- **All Users**: Always visible at bottom of screen
+- **Non-Authenticated**: Full playback controls available
+- **Authenticated**: Full playback controls + personalized features
+
+#### **Theme Switching**
+- **All Users**: Available via subtle button next to logo
+- **Location**: Integrated into logo section for easy access
+- **Functionality**: Toggles between light and dark modes
 
 ### **Implementation Benefits**
 1. **Better User Experience** - Users can discover and play music without barriers
@@ -1397,6 +1468,36 @@ npx prisma studio
 3. **Analytics Tracking** - Play events tracked for both authenticated and anonymous users
 4. **Gradual Conversion** - Users can experience the platform before signing up
 5. **Flexible Protection** - Granular control over what requires authentication
+6. **Security by Default** - All routes are protected by default, only public routes are explicitly allowed
+7. **Easy Maintenance** - Clear list of public routes makes it easy to manage access
+8. **Scalable Architecture** - Easy to add new routes without worrying about protection
+
+## 📝 Route Protection Strategy
+
+### **Security by Default Approach**
+- **Default State**: All routes are protected by default
+- **Public Routes**: Only explicitly listed routes are publicly accessible
+- **Middleware**: Runs on all routes except static assets
+- **Matcher**: Uses negative lookahead to exclude static assets
+
+### **Public Route Categories**
+1. **Main Content**: Homepage, browse, tracks, artists, genres, albums, search
+2. **Authentication**: Login, register, password reset, email verification
+3. **Static Pages**: About, contact, privacy, terms, help, FAQ
+4. **Public APIs**: Content discovery, search, play tracking, smart links
+5. **Static Assets**: Next.js assets, favicon, robots.txt, sitemap.xml
+
+### **Protected Route Categories**
+1. **User Features**: Dashboard, account, settings, profile
+2. **Artist Features**: Upload, manage, analytics, artist dashboard
+3. **Admin Features**: Admin panel, user management, system settings
+4. **Premium Features**: Subscription, premium content, advanced analytics
+5. **User APIs**: Personal data, playlists, likes, follows
+
+### **Role-Based Access Control**
+- **USER**: Access to user dashboard and personal features
+- **ARTIST**: Access to artist dashboard and upload features
+- **ADMIN**: Access to admin panel and all features
 
 ## 📝 Notes
 - Passwords are hashed using bcryptjs with 12 salt rounds
@@ -1405,6 +1506,8 @@ npx prisma studio
 - Registration allows users to choose between USER and ARTIST roles initially
 - Public routes allow anonymous music streaming and discovery
 - Protected functions provide clear user feedback and redirect to appropriate pages
+- Security by default: all routes protected unless explicitly made public
+- Easy to add new routes: they're automatically protected unless added to public list
 
 ## 🔗 Next Phase
 Once this phase is complete and tested, proceed to [Phase 3: Database Schema & Models](./03-database-schema.md)

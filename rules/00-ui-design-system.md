@@ -245,19 +245,28 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 
 ### **Navigation**
 
-#### **Header Navigation**
-- Sticky positioning for easy access
-- Mobile-first responsive design
-- Clear visual hierarchy
-- Accessible keyboard navigation
-- Theme toggle prominently placed
+#### **Desktop Sidebar Navigation**
+- Fixed left sidebar (256px width)
+- Authentication-aware content
+- Logo section with theme toggle
+- MENU section with navigation items
+- ACCOUNT section for non-authenticated users
+- User profile section for authenticated users
+- Bottom padding to account for music player
 
-#### **Sidebar Navigation** (Dashboard)
-- Collapsible on mobile
-- Active state indicators
-- Icon + text labels
-- Grouped by functionality
-- Consistent spacing
+#### **Mobile Header Navigation**
+- Fixed top header (64px height)
+- Hamburger menu for navigation
+- Integrated search bar
+- Authentication buttons or user avatar
+- Collapsible menu with all navigation options
+
+#### **Music Player Navigation**
+- Fixed bottom position (80px height)
+- Always visible regardless of authentication
+- Full playback controls
+- Track information display
+- Volume and progress controls
 
 ### **Forms**
 
@@ -361,12 +370,15 @@ font-family: 'JetBrains Mono', 'Fira Code', monospace;
 ## 🎵 Music-Specific Components
 
 ### **Audio Player**
-- Fixed bottom position on mobile
-- Collapsible on desktop
+- Fixed bottom position on all devices (80px height)
+- Always visible regardless of authentication status
 - Visual feedback for play/pause
 - Progress bar with seek functionality
-- Volume control
-- Track information display
+- Volume control with mute/unmute
+- Track information display with album art
+- Full playback controls (play, pause, previous, next, shuffle, repeat)
+- Responsive design that adapts to screen size
+- Z-index 40 to appear above sidebar but below mobile header
 
 ### **Track List**
 - Consistent card layout
