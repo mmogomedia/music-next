@@ -1,5 +1,13 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Run lint-staged
-yarn lint-staged
+echo "🔍 Running pre-commit checks..."
+
+# Run lint-staged with better error handling
+if ! yarn lint-staged; then
+  echo "❌ Pre-commit checks failed!"
+  echo "💡 Fix the issues above and try again."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed!"

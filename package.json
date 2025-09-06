@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit",
     "check-all": "yarn typecheck && yarn lint && yarn format:check",
     "fix-all": "yarn lint:fix && yarn format",
+    "test-hooks": "echo 'Testing pre-commit hooks...' && .husky/pre-commit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "dotenv -e .env.local -- prisma migrate dev --name init",
     "db:push": "dotenv -e .env.local -- prisma db push",
@@ -28,7 +29,7 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
+      "eslint --fix --quiet",
       "prettier --write"
     ],
     "*.{json,md,yml,yaml}": [

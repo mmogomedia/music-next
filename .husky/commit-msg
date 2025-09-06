@@ -1,5 +1,17 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Optional: Add commit message linting here if desired
-# For now, we'll keep it simple
+# Basic commit message validation
+commit_regex='^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,50}'
+
+if ! grep -qE "$commit_regex" "$1"; then
+  echo "❌ Invalid commit message format!"
+  echo "💡 Use: type(scope): description (max 50 chars)"
+  echo "📝 Examples:"
+  echo "   feat: add user authentication"
+  echo "   fix(api): resolve upload error"
+  echo "   docs: update README"
+  exit 1
+fi
+
+echo "✅ Commit message format valid!"
