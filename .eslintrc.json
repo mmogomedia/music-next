@@ -80,6 +80,32 @@
       "rules": {
         "no-console": "off"
       }
+    },
+    {
+      "files": [
+        "**/*.test.{js,jsx,ts,tsx}",
+        "**/__tests__/**/*.{js,jsx,ts,tsx}",
+        "jest.setup.js"
+      ],
+      "env": {
+        "jest": true,
+        "node": true
+      },
+      "globals": {
+        "jest": "readonly",
+        "describe": "readonly",
+        "it": "readonly",
+        "test": "readonly",
+        "expect": "readonly",
+        "beforeEach": "readonly",
+        "afterEach": "readonly",
+        "beforeAll": "readonly",
+        "afterAll": "readonly",
+        "Promise": "readonly"
+      },
+      "rules": {
+        "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }]
+      }
     }
   ]
 }

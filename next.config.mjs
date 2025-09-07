@@ -5,6 +5,8 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: '**.s3.amazonaws.com' },
       { protocol: 'http', hostname: 'localhost' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: '**.googleusercontent.com' },
     ],
   },
   async rewrites() {
