@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import Ably from 'ably';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const ably = new Ably.Rest({
   key: process.env.ABLY_API_KEY!,
 });
@@ -14,6 +17,8 @@ export async function GET(request: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const userId = (session.user as any).id;
 
     const { searchParams } = new URL(request.url);
     const jobId = searchParams.get('jobId');
@@ -29,7 +34,7 @@ export async function GET(request: NextRequest) {
     const uploadJob = await prisma.uploadJob.findFirst({
       where: {
         id: jobId,
-        userId: session.user.id,
+        userId: userId,
       },
     });
 
@@ -42,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     // Generate Ably token
     const tokenRequest = await ably.auth.createTokenRequest({
-      clientId: session.user.id,
+      clientId: userId,
       capability: {
         [`upload:${jobId}`]: ['subscribe', 'publish'],
       },
