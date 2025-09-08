@@ -42,6 +42,7 @@ export default function MobileHeader() {
     { name: 'Playlists', href: '/playlists' },
     { name: 'Favorites', href: '/favorites' },
     { name: 'Local', href: '/local' },
+    { name: 'Dashboard', href: '/dashboard' },
   ];
 
   return (

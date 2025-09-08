@@ -2,35 +2,57 @@
 
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { Card, CardBody, Button, Tabs, Tab } from '@heroui/react';
+import { Card, CardBody, Button, Chip, Avatar } from '@heroui/react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import {
-  MusicalNoteIcon,
-  ChartBarIcon,
   PlayIcon,
   PauseIcon,
-  PlusIcon,
-  EyeIcon,
-  ShareIcon,
   PencilIcon,
   TrashIcon,
+  MapPinIcon,
+  GlobeAltIcon,
+  ClockIcon,
+  MusicalNoteIcon,
+  PlusIcon,
+  UserIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
-import {
-  PlayIcon as PlaySolidIcon,
-  HeartIcon as HeartSolidIcon,
-} from '@heroicons/react/24/solid';
+import TrackEditModal from '@/components/track/TrackEditModal';
 import FileUpload from '@/components/upload/FileUpload';
+import ArtistProfileForm from '@/components/artist/ArtistProfileForm';
+import ProfileSection from '@/components/dashboard/ProfileSection';
+import QuickActions from '@/components/dashboard/QuickActions';
+import ProfileURL from '@/components/dashboard/ProfileURL';
+import StatsGrid from '@/components/dashboard/StatsGrid';
+import RecentTracks from '@/components/dashboard/RecentTracks';
+import { useArtistProfile } from '@/hooks/useArtistProfile';
+import {
+  CreateArtistProfileData,
+  UpdateArtistProfileData,
+} from '@/types/artist-profile';
+import { Track } from '@/types/track';
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { playTrack, currentTrack, isPlaying } = useMusicPlayer();
   const [activeTab, setActiveTab] = useState('overview');
-  const [tracks, setTracks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    profile,
+    loading: profileLoading,
+    createProfile,
+    updateProfile,
+  } = useArtistProfile();
+
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [tracks, setTracks] = useState<Track[]>([]);
+  const [, setLoading] = useState(true);
   const [deletingTrack, setDeletingTrack] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(
     null
   );
+  const [editingTrack, setEditingTrack] = useState<Track | null>(null);
+  const [showTrackEdit, setShowTrackEdit] = useState(false);
 
   // Fetch tracks from API
   useEffect(() => {
@@ -57,6 +79,13 @@ export default function DashboardPage() {
     }
   }, [session?.user?.id]);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      window.location.href = '/login';
+    }
+  }, [status]);
+
   // Delete track function
   const deleteTrack = async (trackId: string) => {
     setDeletingTrack(trackId);
@@ -71,7 +100,6 @@ export default function DashboardPage() {
       });
 
       if (response.ok) {
-        // Remove track from local state
         setTracks(prevTracks =>
           prevTracks.filter(track => track.id !== trackId)
         );
@@ -89,603 +117,696 @@ export default function DashboardPage() {
     }
   };
 
-  // Show delete confirmation
   const confirmDelete = (trackId: string) => {
     setShowDeleteConfirm(trackId);
   };
+
+  const handleEditTrack = (track: any) => {
+    setEditingTrack(track);
+    setShowTrackEdit(true);
+  };
+
+  const handleTrackSave = async (trackData: any): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/tracks/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          trackId: editingTrack?.id,
+          ...trackData,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update the track in the list
+        setTracks(prev =>
+          prev.map(track =>
+            track.id === editingTrack?.id ? data.track : track
+          )
+        );
+        setShowTrackEdit(false);
+        setEditingTrack(null);
+        return true;
+      } else {
+        console.error('Failed to update track');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error updating track:', error);
+      return false;
+    }
+  };
+
+  const handleTrackEditClose = () => {
+    setShowTrackEdit(false);
+    setEditingTrack(null);
+  };
+
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className='min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center'>
+        <div className='text-center'>
+          <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4'>
+            <MusicalNoteIcon className='w-5 h-5 text-white' />
+          </div>
+          <p className='text-gray-600 dark:text-gray-400'>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (status === 'unauthenticated') {
+    return null;
+  }
 
   // Calculate stats from real data
   const stats = {
     totalTracks: tracks.length,
     totalPlays: tracks.reduce((sum, track) => sum + (track.playCount || 0), 0),
-    totalLikes: 0, // We don't have likes yet
-    totalRevenue: 0, // We don't have revenue yet
+    totalLikes: 0,
+    totalRevenue: 0,
   };
 
-  // Use real tracks data instead of mock data
-  const recentTracks = tracks.slice(0, 3); // Show first 3 tracks
+  const recentTracks = tracks.slice(0, 5);
 
-  const tabs = [
-    { id: 'overview', name: 'Overview', icon: MusicalNoteIcon },
-    { id: 'upload', name: 'Upload Music', icon: PlusIcon },
-    { id: 'library', name: 'My Music', icon: MusicalNoteIcon },
-    { id: 'analytics', name: 'Analytics', icon: ChartBarIcon },
-  ];
-
-  return (
-    <div className='w-full h-full bg-gray-50 dark:bg-slate-900 overflow-hidden pb-20'>
-      {/* Floating Upload Button - Always Accessible */}
-      <div className='fixed bottom-6 right-6 z-50'>
-        <Button
-          size='lg'
-          className='shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 font-semibold bg-blue-600 hover:bg-blue-700 text-white'
-          startContent={<PlusIcon className='w-5 h-5' />}
-          onClick={() => setActiveTab('upload')}
-        >
-          <span className='hidden sm:block'>Upload Music</span>
-        </Button>
-      </div>
-
-      {/* Header Section */}
-      <section className='w-full px-4 sm:px-6 lg:px-8 py-6'>
-        <div className='flex items-center justify-between mb-8'>
-          <div>
-            <h1 className='text-3xl font-bold text-gray-900 dark:text-white mb-2'>
-              Welcome back,{' '}
-              <span className='text-gradient bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent'>
-                {session?.user?.name || 'Artist'}
-              </span>
-            </h1>
-            <p className='text-gray-500 dark:text-gray-400 text-lg'>
-              Manage your music and track your performance
-            </p>
-          </div>
-          <Button
-            size='lg'
-            className='shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 font-semibold bg-blue-600 hover:bg-blue-700 text-white'
-            startContent={<PlusIcon className='w-5 h-5' />}
-            onClick={() => setActiveTab('upload')}
-          >
-            Upload Music
-          </Button>
-        </div>
-
-        {/* Navigation Tabs */}
-        <Card className='mb-8'>
-          <CardBody className='p-2'>
-            <Tabs
-              selectedKey={activeTab}
-              onSelectionChange={key => setActiveTab(key as string)}
-              className='w-full'
-              classNames={{
-                tabList: 'gap-2 w-full relative rounded-lg p-1 bg-content2',
-                cursor: 'w-full bg-blue-600 shadow-lg',
-                tab: 'max-w-fit px-4 py-3 h-12',
-                tabContent:
-                  'group-data-[selected=true]:text-white text-gray-500 dark:text-gray-400',
-              }}
-            >
-              {tabs.map(tab => {
-                const Icon = tab.icon;
-                return (
-                  <Tab
-                    key={tab.id}
-                    title={
-                      <div className='flex items-center gap-2'>
-                        <Icon className='w-4 h-4' />
-                        {tab.name}
-                      </div>
-                    }
-                  />
-                );
-              })}
-            </Tabs>
-          </CardBody>
-        </Card>
-      </section>
-
-      {/* Main Content */}
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8'>
-        {activeTab === 'overview' && (
-          <div className='space-y-8'>
-            {/* Stats Overview */}
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-              <Card className='glass  transition-all duration-500  group'>
-                <CardBody className='p-6'>
-                  <div className='flex items-center justify-between mb-4'>
-                    <div className='w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300'>
-                      <MusicalNoteIcon className='w-7 h-7 text-white' />
-                    </div>
-                    <div className='flex items-center gap-1 text-blue-600 text-sm font-semibold'>
-                      <span>+12%</span>
-                    </div>
+  // Show profile creation option if no profile exists
+  if (!profileLoading && !profile) {
+    return (
+      <div className='min-h-screen bg-gray-50 dark:bg-slate-900'>
+        {/* Header */}
+        <div className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-40 shadow-sm'>
+          <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+            <div className='flex items-center justify-between h-16'>
+              {/* Left: Logo + Quick Stats */}
+              <div className='flex items-center gap-6'>
+                <div className='flex items-center gap-3'>
+                  <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center'>
+                    <MusicalNoteIcon className='w-5 h-5 text-white' />
                   </div>
-                  <div className='text-4xl font-bold mb-2 group-hover:text-blue-600 transition-colors duration-300'>
-                    {stats.totalTracks}
-                  </div>
-                  <div className='text-foreground/60 text-sm font-medium'>
-                    Total Tracks
-                  </div>
-                  <div className='text-xs text-foreground/40 mt-1'>
-                    +2 this month
-                  </div>
-                </CardBody>
-              </Card>
-
-              <Card className='glass  transition-all duration-500  group'>
-                <CardBody className='p-6'>
-                  <div className='flex items-center justify-between mb-4'>
-                    <div className='w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300'>
-                      <PlaySolidIcon className='w-7 h-7 text-white' />
-                    </div>
-                    <div className='flex items-center gap-1 text-blue-600 text-sm font-semibold'>
-                      <span>+8.3%</span>
-                    </div>
-                  </div>
-                  <div className='text-4xl font-bold mb-2 group-hover:text-blue-600 transition-colors duration-300'>
-                    {stats.totalPlays.toLocaleString()}
-                  </div>
-                  <div className='text-foreground/60 text-sm font-medium'>
-                    Total Plays
-                  </div>
-                  <div className='text-xs text-foreground/40 mt-1'>
-                    15,420 this month
-                  </div>
-                </CardBody>
-              </Card>
-
-              <Card className='glass  transition-all duration-500  group'>
-                <CardBody className='p-6'>
-                  <div className='flex items-center justify-between mb-4'>
-                    <div className='w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300'>
-                      <HeartSolidIcon className='w-7 h-7 text-white' />
-                    </div>
-                    <div className='flex items-center gap-1 text-blue-600 text-sm font-semibold'>
-                      <span>+15.2%</span>
-                    </div>
-                  </div>
-                  <div className='text-4xl font-bold mb-2 group-hover:text-blue-600 transition-colors duration-300'>
-                    {stats.totalLikes.toLocaleString()}
-                  </div>
-                  <div className='text-foreground/60 text-sm font-medium'>
-                    Total Likes
-                  </div>
-                  <div className='text-xs text-foreground/40 mt-1'>
-                    892 this month
-                  </div>
-                </CardBody>
-              </Card>
-
-              <Card className='glass  transition-all duration-500  group'>
-                <CardBody className='p-6'>
-                  <div className='flex items-center justify-between mb-4'>
-                    <div className='w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300'>
-                      <span className='text-white font-bold text-lg'>$</span>
-                    </div>
-                    <div className='flex items-center gap-1 text-blue-600 text-sm font-semibold'>
-                      <span>+24.1%</span>
-                    </div>
-                  </div>
-                  <div className='text-4xl font-bold mb-2 group-hover:text-blue-600 transition-colors duration-300'>
-                    ${stats.totalRevenue.toLocaleString()}
-                  </div>
-                  <div className='text-foreground/60 text-sm font-medium'>
-                    Total Revenue
-                  </div>
-                  <div className='text-xs text-foreground/40 mt-1'>
-                    $247.50 this month
-                  </div>
-                </CardBody>
-              </Card>
-            </div>
-
-            {/* Recent Tracks */}
-            <Card className='glass  transition-all duration-500'>
-              <CardBody className='p-8'>
-                <div className='flex items-center justify-between mb-8'>
-                  <div>
-                    <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
-                      Recent Tracks
-                    </h2>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      Your latest uploads and their performance
-                    </p>
-                  </div>
-                  <Button
-                    variant='light'
-                    className='text-blue-600 hover:text-blue-700 font-medium'
-                    onClick={() => setActiveTab('library')}
-                  >
-                    View All
-                  </Button>
+                  <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
+                    Dashboard
+                  </h1>
                 </div>
+              </div>
 
-                <div className='space-y-4'>
-                  {recentTracks.length > 0 ? (
-                    recentTracks.map(track => (
-                      <div
-                        key={track.id}
-                        className='flex items-center gap-4 p-4 rounded-xl bg-content2 hover:bg-content3 transition-all duration-300 hover:shadow-lg group'
-                      >
-                        <button
-                          onClick={() => playTrack(track)}
-                          className='w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300 hover:bg-blue-700'
-                        >
-                          {currentTrack?.id === track.id && isPlaying ? (
-                            <PauseIcon className='w-7 h-7 text-white' />
-                          ) : (
-                            <PlayIcon className='w-7 h-7 text-white ml-0.5' />
-                          )}
-                        </button>
-                        <div className='flex-1'>
-                          <div className='flex items-center gap-3 mb-1'>
-                            <h3 className='font-bold text-lg group-hover:text-blue-600 transition-colors duration-300'>
-                              {track.title}
-                            </h3>
-                          </div>
-                          <p className='text-sm text-foreground/60 mb-2'>
-                            {session?.user?.name || 'You'}
-                          </p>
-                          <div className='flex items-center gap-6 text-sm text-foreground/60'>
-                            <span className='flex items-center gap-2'>
-                              <PlaySolidIcon className='w-4 h-4' />
-                              {track.playCount?.toLocaleString() || 0} plays
-                            </span>
-                            <span className='flex items-center gap-2'>
-                              <HeartSolidIcon className='w-4 h-4' />0 likes
-                            </span>
-                            <span className='font-medium'>
-                              {Math.floor((track.duration || 0) / 60)}:
-                              {((track.duration || 0) % 60)
-                                .toString()
-                                .padStart(2, '0')}
-                            </span>
-                          </div>
-                        </div>
-                        <div className='flex items-center space-x-2'>
-                          <Button
-                            isIconOnly
-                            variant='light'
-                            size='sm'
-                            className='hover:bg-blue-100 hover:text-blue-600 transition-all duration-300'
-                          >
-                            <EyeIcon className='w-4 h-4' />
-                          </Button>
-                          <Button
-                            isIconOnly
-                            variant='light'
-                            size='sm'
-                            className='hover:bg-blue-100 hover:text-blue-600 transition-all duration-300'
-                          >
-                            <PencilIcon className='w-4 h-4' />
-                          </Button>
-                          <Button
-                            isIconOnly
-                            variant='light'
-                            size='sm'
-                            className='hover:bg-blue-100 hover:text-blue-600 transition-all duration-300'
-                          >
-                            <ShareIcon className='w-4 h-4' />
-                          </Button>
-                          <Button
-                            isIconOnly
-                            variant='light'
-                            size='sm'
-                            isLoading={deletingTrack === track.id}
-                            isDisabled={deletingTrack === track.id}
-                            onClick={() => confirmDelete(track.id)}
-                            className='hover:bg-red-100 hover:text-red-600 transition-all duration-300'
-                          >
-                            <TrashIcon className='w-4 h-4' />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className='text-center py-8'>
-                      <div className='text-gray-500 dark:text-gray-400'>
-                        No tracks uploaded yet
-                      </div>
-                      <Button
-                        className='mt-4 bg-blue-600 hover:bg-blue-700 text-white'
-                        onClick={() => setActiveTab('upload')}
-                      >
-                        Upload Your First Track
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardBody>
-            </Card>
-
-            {/* Quick Actions */}
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-              <Card className='glass  transition-all duration-500 group'>
-                <CardBody className='p-6'>
-                  <div className='flex items-center space-x-4 mb-4'>
-                    <div className='w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300'>
-                      <PlusIcon className='w-7 h-7 text-white' />
-                    </div>
-                    <div>
-                      <h3 className='text-lg font-semibold group-hover:text-blue-600 transition-colors duration-300'>
-                        Upload New Track
-                      </h3>
-                      <p className='text-sm text-foreground/60'>
-                        Share your latest music with the world
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    className='w-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-blue-600 hover:bg-blue-700 text-white'
-                    onClick={() => setActiveTab('upload')}
-                  >
-                    Upload Music
-                  </Button>
-                </CardBody>
-              </Card>
-
-              <Card className='glass  transition-all duration-500 group'>
-                <CardBody className='p-6'>
-                  <div className='flex items-center space-x-4 mb-4'>
-                    <div className='w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300'>
-                      <ChartBarIcon className='w-7 h-7 text-white' />
-                    </div>
-                    <div>
-                      <h3 className='text-lg font-semibold group-hover:text-blue-600 transition-colors duration-300'>
-                        View Analytics
-                      </h3>
-                      <p className='text-sm text-foreground/60'>
-                        Track your performance and growth
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant='bordered'
-                    className='w-full font-semibold border-2 border-blue-500 hover:border-blue-600 hover:bg-blue-500/10 text-blue-600 hover:text-blue-700 transition-all duration-300 hover:scale-105'
-                    onClick={() => setActiveTab('analytics')}
-                  >
-                    View Analytics
-                  </Button>
-                </CardBody>
-              </Card>
-
-              <Card className='glass  transition-all duration-500 group'>
-                <CardBody className='p-6'>
-                  <div className='flex items-center space-x-4 mb-4'>
-                    <div className='w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300'>
-                      <ShareIcon className='w-7 h-7 text-white' />
-                    </div>
-                    <div>
-                      <h3 className='text-lg font-semibold group-hover:text-blue-600 transition-colors duration-300'>
-                        Create Smart Links
-                      </h3>
-                      <p className='text-sm text-foreground/60'>
-                        Generate cross-platform sharing links
-                      </p>
-                    </div>
-                  </div>
-                  <Button className='w-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 bg-blue-600 hover:bg-blue-700 text-white'>
-                    Create Links
-                  </Button>
-                </CardBody>
-              </Card>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'upload' && (
-          <Card className='glass transition-all duration-500'>
-            <CardBody className='p-8'>
-              <h2 className='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
-                Upload New Music
-              </h2>
-              <p className='text-gray-500 dark:text-gray-400 mb-8'>
-                Upload your music files securely through our server to cloud
-                storage.
-              </p>
-              <FileUpload
-                onUploadComplete={async () => {
-                  // Refresh tracks after successful upload
-                  try {
-                    const response = await fetch('/api/tracks');
-                    if (response.ok) {
-                      const data = await response.json();
-                      setTracks(data.tracks || []);
-                      // Switch to library tab to show the new track
-                      setActiveTab('library');
-                    }
-                  } catch (error) {
-                    console.error('Error refreshing tracks:', error);
-                  }
-                }}
-              />
-            </CardBody>
-          </Card>
-        )}
-
-        {activeTab === 'library' && (
-          <Card className='glass  transition-all duration-500'>
-            <CardBody className='p-8'>
-              <div className='flex items-center justify-between mb-8'>
-                <div>
-                  <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
-                    My Music Library
-                  </h2>
-                  <p className='text-gray-500 dark:text-gray-400'>
-                    {tracks.length} track{tracks.length !== 1 ? 's' : ''} in
-                    your library
-                  </p>
-                </div>
+              {/* Right: Actions */}
+              <div className='flex items-center gap-3'>
                 <Button
-                  size='lg'
-                  startContent={<PlusIcon className='w-5 h-5' />}
-                  className='shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 font-semibold bg-blue-600 hover:bg-blue-700 text-white'
-                  onClick={() => setActiveTab('upload')}
+                  size='sm'
+                  color='primary'
+                  className='hidden sm:flex'
+                  startContent={<PlusIcon className='w-4 h-4' />}
+                  onPress={() => (window.location.href = '/profile/select')}
                 >
-                  Upload New
+                  Create Profile
+                </Button>
+                <Button
+                  isIconOnly
+                  size='sm'
+                  color='primary'
+                  className='sm:hidden'
+                  onPress={() => (window.location.href = '/profile/select')}
+                >
+                  <PlusIcon className='w-4 h-4' />
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
 
-              <div className='space-y-4'>
-                {loading ? (
-                  <div className='text-center py-8'>
-                    <div className='text-gray-500 dark:text-gray-400'>
-                      Loading tracks...
-                    </div>
-                  </div>
-                ) : tracks.length === 0 ? (
-                  <div className='text-center py-8'>
-                    <div className='text-gray-500 dark:text-gray-400'>
-                      No tracks uploaded yet
-                    </div>
-                    <Button
-                      className='mt-4 bg-blue-600 hover:bg-blue-700 text-white'
-                      onClick={() => setActiveTab('upload')}
-                    >
-                      Upload Your First Track
-                    </Button>
-                  </div>
-                ) : (
-                  tracks.map(track => (
-                    <div
-                      key={track.id}
-                      className='flex items-center gap-4 p-4 rounded-xl bg-content2 hover:bg-content3 transition-all duration-300 hover:shadow-lg group'
-                    >
-                      <button
-                        onClick={() => playTrack(track)}
-                        className='w-14 h-14 rounded-xl bg-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300 hover:bg-blue-700'
-                      >
-                        {currentTrack?.id === track.id && isPlaying ? (
-                          <PauseIcon className='w-7 h-7 text-white' />
-                        ) : (
-                          <PlayIcon className='w-7 h-7 text-white ml-0.5' />
-                        )}
-                      </button>
-                      <div className='flex-1'>
-                        <h3 className='font-bold text-lg group-hover:text-blue-600 transition-colors duration-300'>
-                          {track.title}
-                        </h3>
-                        <p className='text-sm text-foreground/60 mb-2'>
-                          {session?.user?.name || 'You'}
-                        </p>
-                        <div className='flex items-center gap-6 text-sm text-foreground/60'>
-                          <span className='flex items-center gap-2'>
-                            <PlaySolidIcon className='w-4 h-4' />
-                            {track.playCount.toLocaleString()} plays
-                          </span>
-                          <span className='flex items-center gap-2'>
-                            <HeartSolidIcon className='w-4 h-4' />0 likes
-                          </span>
-                          <span className='font-medium'>
-                            {Math.floor((track.duration || 0) / 60)}:
-                            {((track.duration || 0) % 60)
-                              .toString()
-                              .padStart(2, '0')}
-                          </span>
-                        </div>
-                      </div>
-                      <div className='flex items-center space-x-2'>
-                        <Button
-                          isIconOnly
-                          variant='light'
-                          size='sm'
-                          className='hover:bg-blue-100 hover:text-blue-600 transition-all duration-300'
-                        >
-                          <EyeIcon className='w-4 h-4' />
-                        </Button>
-                        <Button
-                          isIconOnly
-                          variant='light'
-                          size='sm'
-                          className='hover:bg-blue-100 hover:text-blue-600 transition-all duration-300'
-                        >
-                          <PencilIcon className='w-4 h-4' />
-                        </Button>
-                        <Button
-                          isIconOnly
-                          variant='light'
-                          size='sm'
-                          className='hover:bg-blue-100 hover:text-blue-600 transition-all duration-300'
-                        >
-                          <ShareIcon className='w-4 h-4' />
-                        </Button>
-                        <Button
-                          isIconOnly
-                          variant='light'
-                          size='sm'
-                          isLoading={deletingTrack === track.id}
-                          isDisabled={deletingTrack === track.id}
-                          onClick={() => confirmDelete(track.id)}
-                          className='hover:bg-red-100 hover:text-red-600 transition-all duration-300'
-                        >
-                          <TrashIcon className='w-4 h-4' />
-                        </Button>
-                      </div>
-                    </div>
-                  ))
+        {/* Main Content */}
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24'>
+          <div className='min-h-[60vh] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-16 text-center bg-gray-50/50 dark:bg-slate-800/50 flex flex-col justify-center'>
+            <div className='w-32 h-32 bg-blue-100 dark:bg-blue-900/20 rounded-3xl flex items-center justify-center mx-auto mb-8'>
+              <MusicalNoteIcon className='w-16 h-16 text-blue-600' />
+            </div>
+            <h2 className='text-4xl font-bold text-gray-900 dark:text-white mb-6'>
+              Welcome to Your Dashboard
+            </h2>
+            <p className='text-xl text-gray-600 dark:text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed'>
+              Create a profile to start uploading music, managing tracks, and
+              accessing all the features of your artist dashboard. Choose from
+              different profile types to get started.
+            </p>
+            <div className='space-y-6'>
+              <Button
+                color='primary'
+                size='lg'
+                className='w-full max-w-md h-14 text-lg font-semibold'
+                startContent={<MusicalNoteIcon className='w-6 h-6' />}
+                onPress={() => (window.location.href = '/profile/select')}
+              >
+                Create Artist Profile
+              </Button>
+              <p className='text-base text-gray-500 dark:text-gray-400'>
+                Get started with your creative journey
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className='min-h-screen bg-gray-50 dark:bg-slate-900'>
+      {/* Compact Header */}
+      <div className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-40 shadow-sm'>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          <div className='flex items-center justify-between h-16'>
+            {/* Left: Logo + Quick Stats */}
+            <div className='flex items-center gap-6'>
+              <div className='flex items-center gap-3'>
+                <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center'>
+                  <MusicalNoteIcon className='w-5 h-5 text-white' />
+                </div>
+                <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
+                  Dashboard
+                </h1>
+              </div>
+
+              {/* Quick Stats Pills */}
+              <div className='hidden md:flex items-center gap-2'>
+                <Chip size='sm' color='primary' variant='flat'>
+                  {stats.totalTracks} tracks
+                </Chip>
+                <Chip size='sm' color='success' variant='flat'>
+                  {stats.totalPlays.toLocaleString()} plays
+                </Chip>
+                {profile && (
+                  <Chip size='sm' color='secondary' variant='flat'>
+                    {profile.artistName}
+                  </Chip>
                 )}
               </div>
-            </CardBody>
-          </Card>
-        )}
+            </div>
 
-        {activeTab === 'analytics' && (
-          <Card className='glass  transition-all duration-500'>
-            <CardBody className='p-8'>
-              <h2 className='text-2xl font-bold text-gray-900 dark:text-white mb-4'>
-                Analytics Overview
-              </h2>
-              <p className='text-gray-500 dark:text-gray-400 mb-8'>
-                Track your music performance and audience
-              </p>
-              <div className='text-center py-12'>
-                <div className='w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg'>
-                  <ChartBarIcon className='w-10 h-10 text-white' />
-                </div>
-                <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
-                  Analytics Coming Soon
-                </h3>
-                <p className='text-gray-500 dark:text-gray-400 max-w-md mx-auto'>
-                  Detailed charts and metrics will be displayed here to help you
-                  track your music performance
-                </p>
+            {/* Right: Actions */}
+            <div className='flex items-center gap-3'>
+              <Button
+                size='sm'
+                color='primary'
+                className='hidden sm:flex'
+                startContent={<PlusIcon className='w-4 h-4' />}
+                onPress={() => setActiveTab('upload')}
+              >
+                Upload
+              </Button>
+              <Button
+                isIconOnly
+                size='sm'
+                color='primary'
+                className='sm:hidden'
+                onPress={() => setActiveTab('upload')}
+              >
+                <PlusIcon className='w-4 h-4' />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Layout */}
+      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24'>
+        <div className='grid grid-cols-1 lg:grid-cols-4 gap-8'>
+          {/* Left Sidebar - Profile & Quick Actions */}
+          <div className='lg:col-span-1 space-y-4'>
+            <ProfileSection
+              profile={profile}
+              onCreateProfile={() => setActiveTab('profile')}
+              onEditProfile={() => setActiveTab('profile')}
+            />
+
+            <QuickActions
+              onUpload={() => setActiveTab('upload')}
+              onLibrary={() => setActiveTab('library')}
+              onAnalytics={() => setActiveTab('analytics')}
+            />
+
+            {profile?.slug && (
+              <ProfileURL slug={profile.slug} artistName={profile.artistName} />
+            )}
+          </div>
+
+          {/* Main Content Area */}
+          <div className='lg:col-span-3'>
+            {/* Overview Tab */}
+            {activeTab === 'overview' && (
+              <div className='space-y-8'>
+                <StatsGrid stats={stats} />
+
+                <RecentTracks
+                  tracks={recentTracks}
+                  onViewAll={() => setActiveTab('library')}
+                  onPlay={playTrack}
+                />
               </div>
-            </CardBody>
-          </Card>
-        )}
+            )}
+
+            {/* Profile Tab */}
+            {activeTab === 'profile' && (
+              <div className='space-y-6'>
+                {!profile && !isEditingProfile ? (
+                  <Card>
+                    <CardBody className='p-8 text-center'>
+                      <div className='w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4'>
+                        <UserIcon className='w-8 h-8 text-white' />
+                      </div>
+                      <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
+                        Create Your Artist Profile
+                      </h3>
+                      <p className='text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6'>
+                        Set up your artist identity to start sharing your music
+                        with the world
+                      </p>
+                      <Button
+                        color='primary'
+                        size='lg'
+                        className='flex justify-start'
+                        startContent={<UserIcon className='w-5 h-5' />}
+                        onPress={() => {
+                          setProfileError(null);
+                          setIsEditingProfile(true);
+                        }}
+                      >
+                        Create Artist Profile
+                      </Button>
+                    </CardBody>
+                  </Card>
+                ) : isEditingProfile ? (
+                  <Card>
+                    <CardBody className='p-6'>
+                      <div className='flex items-center justify-between mb-6'>
+                        <h3 className='text-xl font-bold text-gray-900 dark:text-white'>
+                          {profile
+                            ? 'Edit Artist Profile'
+                            : 'Create Artist Profile'}
+                        </h3>
+                        <Button
+                          variant='light'
+                          onPress={() => setIsEditingProfile(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                      <ArtistProfileForm
+                        profile={profile || undefined}
+                        onSave={async formData => {
+                          try {
+                            setProfileError(null);
+
+                            if (profile) {
+                              const updateData: UpdateArtistProfileData = {
+                                artistName: formData.artistName
+                                  ? formData.artistName
+                                  : profile.artistName,
+                                bio: formData.bio,
+                                profileImage: formData.profileImage,
+                                coverImage: formData.coverImage,
+                                location: formData.location,
+                                website: formData.website
+                                  ? formData.website.startsWith('http://') ||
+                                    formData.website.startsWith('https://')
+                                    ? formData.website
+                                    : `https://${formData.website}`
+                                  : formData.website,
+                                genre: formData.genre,
+                                slug: formData.slug,
+                              };
+                              const success = await updateProfile(updateData);
+                              if (success) {
+                                setIsEditingProfile(false);
+                              } else {
+                                setProfileError(
+                                  'Failed to update profile. Please try again.'
+                                );
+                              }
+                            } else {
+                              if (!formData.artistName?.trim()) {
+                                setProfileError('Artist name is required.');
+                                return;
+                              }
+
+                              const createData: CreateArtistProfileData = {
+                                artistName: formData.artistName,
+                                bio: formData.bio,
+                                profileImage: formData.profileImage,
+                                coverImage: formData.coverImage,
+                                location: formData.location,
+                                website: formData.website
+                                  ? formData.website.startsWith('http://') ||
+                                    formData.website.startsWith('https://')
+                                    ? formData.website
+                                    : `https://${formData.website}`
+                                  : formData.website,
+                                genre: formData.genre,
+                                slug: formData.slug,
+                              };
+                              const success = await createProfile(createData);
+                              if (success) {
+                                setIsEditingProfile(false);
+                              } else {
+                                setProfileError(
+                                  'Failed to create profile. Please try again.'
+                                );
+                              }
+                            }
+                          } catch (error) {
+                            console.error('Error saving profile:', error);
+                            setProfileError(
+                              'An unexpected error occurred. Please try again.'
+                            );
+                          }
+                        }}
+                        onCancel={() => setIsEditingProfile(false)}
+                        isLoading={profileLoading}
+                      />
+
+                      {profileError && (
+                        <div className='mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg'>
+                          <p className='text-red-600 dark:text-red-400 text-sm'>
+                            {profileError}
+                          </p>
+                        </div>
+                      )}
+                    </CardBody>
+                  </Card>
+                ) : (
+                  <div className='space-y-6'>
+                    <Card>
+                      <CardBody className='p-6'>
+                        <div className='flex items-center justify-between mb-6'>
+                          <div className='flex items-center gap-4'>
+                            <Avatar
+                              src={profile?.profileImage}
+                              name={profile?.artistName}
+                              className='w-16 h-16'
+                            />
+                            <div>
+                              <h3 className='text-2xl font-bold text-gray-900 dark:text-white'>
+                                {profile?.artistName}
+                              </h3>
+                              <p className='text-gray-500 dark:text-gray-400'>
+                                {profile?.genre || 'Artist'}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            color='primary'
+                            className='flex justify-start'
+                            startContent={<PencilIcon className='w-4 h-4' />}
+                            onPress={() => {
+                              setProfileError(null);
+                              setIsEditingProfile(true);
+                            }}
+                          >
+                            Edit Profile
+                          </Button>
+                        </div>
+
+                        {profile?.bio && (
+                          <div className='mb-6'>
+                            <h4 className='text-lg font-medium text-gray-900 dark:text-white mb-2'>
+                              About
+                            </h4>
+                            <p className='text-gray-600 dark:text-gray-300'>
+                              {profile.bio}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                          {profile?.location && (
+                            <div className='flex items-center gap-2 text-gray-600 dark:text-gray-300'>
+                              <MapPinIcon className='w-5 h-5' />
+                              <span>{profile.location}</span>
+                            </div>
+                          )}
+                          {profile?.website && (
+                            <div className='flex items-center gap-2 text-gray-600 dark:text-gray-300'>
+                              <GlobeAltIcon className='w-5 h-5' />
+                              <a
+                                href={profile.website}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='text-blue-600 dark:text-blue-400 hover:underline'
+                              >
+                                Website
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </CardBody>
+                    </Card>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Upload Tab */}
+            {activeTab === 'upload' && (
+              <Card>
+                <CardBody className='p-6'>
+                  <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-6'>
+                    Upload Music
+                  </h3>
+                  <FileUpload
+                    onUploadComplete={_jobId => {
+                      // Refresh tracks after successful upload
+                      const fetchTracks = async () => {
+                        try {
+                          const response = await fetch('/api/tracks');
+                          if (response.ok) {
+                            const data = await response.json();
+                            setTracks(data.tracks || []);
+                          }
+                        } catch (error) {
+                          console.error('Error fetching tracks:', error);
+                        }
+                      };
+                      fetchTracks();
+                    }}
+                    onViewLibrary={() => setActiveTab('library')}
+                    onUploadAnother={() => {
+                      // Reset upload state is handled in the component
+                    }}
+                    onTrackCreated={track => {
+                      // Add new track to the list
+                      setTracks(prev => [track, ...prev]);
+                      // Switch to library tab to show the new track
+                      setActiveTab('library');
+                    }}
+                    onTrackUpdated={track => {
+                      // Update existing track in the list
+                      setTracks(prev =>
+                        prev.map(t => (t.id === track.id ? track : t))
+                      );
+                    }}
+                  />
+                </CardBody>
+              </Card>
+            )}
+
+            {/* Library Tab */}
+            {activeTab === 'library' && (
+              <Card>
+                <CardBody className='p-6'>
+                  <div className='flex items-center justify-between mb-6'>
+                    <h3 className='text-xl font-bold text-gray-900 dark:text-white'>
+                      My Music Library
+                    </h3>
+                    <Button
+                      color='primary'
+                      className='flex justify-start'
+                      startContent={<PlusIcon className='w-4 h-4' />}
+                      onPress={() => setActiveTab('upload')}
+                    >
+                      Upload New Track
+                    </Button>
+                  </div>
+
+                  {tracks.length === 0 ? (
+                    <div className='text-center py-12'>
+                      <div className='w-20 h-20 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4'>
+                        <MusicalNoteIcon className='w-10 h-10 text-gray-400' />
+                      </div>
+                      <h4 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
+                        No tracks yet
+                      </h4>
+                      <p className='text-gray-500 dark:text-gray-400 mb-6'>
+                        Upload your first track to start building your music
+                        library
+                      </p>
+                      <Button
+                        color='primary'
+                        size='lg'
+                        className='flex justify-start'
+                        startContent={<PlusIcon className='w-5 h-5' />}
+                        onPress={() => setActiveTab('upload')}
+                      >
+                        Upload Music
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className='space-y-3'>
+                      {tracks.map(track => (
+                        <div
+                          key={track.id}
+                          className='flex items-center gap-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors'
+                        >
+                          <div className='flex-shrink-0'>
+                            <div className='w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center'>
+                              <PlayIcon className='w-6 h-6 text-white' />
+                            </div>
+                          </div>
+
+                          <div className='flex-1 min-w-0'>
+                            <h4 className='font-medium text-gray-900 dark:text-white truncate'>
+                              {track.title}
+                            </h4>
+                            <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400'>
+                              <span className='flex items-center gap-1'>
+                                <PlayIcon className='w-3 h-3' />
+                                {track.playCount?.toLocaleString() || 0} plays
+                              </span>
+                              <span className='flex items-center gap-1'>
+                                <ClockIcon className='w-3 h-3' />
+                                {track.duration
+                                  ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}`
+                                  : '0:00'}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className='flex items-center gap-2'>
+                            <Button
+                              isIconOnly
+                              size='sm'
+                              color='primary'
+                              onPress={() => playTrack(track)}
+                            >
+                              {currentTrack?.id === track.id && isPlaying ? (
+                                <PauseIcon className='w-4 h-4' />
+                              ) : (
+                                <PlayIcon className='w-4 h-4' />
+                              )}
+                            </Button>
+                            <Button
+                              isIconOnly
+                              size='sm'
+                              color='default'
+                              variant='flat'
+                              onPress={() => handleEditTrack(track)}
+                            >
+                              <PencilIcon className='w-4 h-4' />
+                            </Button>
+                            <Button
+                              isIconOnly
+                              size='sm'
+                              color='danger'
+                              onPress={() => confirmDelete(track.id)}
+                            >
+                              <TrashIcon className='w-4 h-4' />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardBody>
+              </Card>
+            )}
+
+            {/* Analytics Tab */}
+            {activeTab === 'analytics' && (
+              <Card>
+                <CardBody className='p-8 text-center'>
+                  <div className='w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6'>
+                    <ChartBarIcon className='w-10 h-10 text-white' />
+                  </div>
+                  <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
+                    Analytics Coming Soon
+                  </h3>
+                  <p className='text-gray-500 dark:text-gray-400 max-w-md mx-auto'>
+                    Detailed charts and metrics will be displayed here to help
+                    you track your music performance
+                  </p>
+                </CardBody>
+              </Card>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
-          <div className='bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md mx-4'>
-            <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-4'>
-              Delete Track
-            </h3>
-            <p className='text-gray-600 dark:text-gray-400 mb-6'>
-              Are you sure you want to delete this track? This action cannot be
-              undone.
-            </p>
-            <div className='flex gap-3 justify-end'>
-              <Button
-                variant='light'
-                onClick={() => setShowDeleteConfirm(null)}
-                className='text-gray-600 dark:text-gray-400'
-              >
-                Cancel
-              </Button>
-              <Button
-                color='danger'
-                onClick={() => deleteTrack(showDeleteConfirm)}
-                isLoading={deletingTrack === showDeleteConfirm}
-                isDisabled={deletingTrack === showDeleteConfirm}
-              >
+          <Card className='w-full max-w-md mx-4'>
+            <CardBody className='p-6'>
+              <h3 className='text-lg font-medium text-gray-900 dark:text-white mb-4'>
                 Delete Track
-              </Button>
-            </div>
-          </div>
+              </h3>
+              <p className='text-gray-600 dark:text-gray-400 mb-6'>
+                Are you sure you want to delete this track? This action cannot
+                be undone.
+              </p>
+              <div className='flex gap-3 justify-end'>
+                <Button
+                  variant='light'
+                  onPress={() => setShowDeleteConfirm(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  color='danger'
+                  onPress={() => deleteTrack(showDeleteConfirm)}
+                  isLoading={deletingTrack === showDeleteConfirm}
+                >
+                  Delete
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
         </div>
       )}
+
+      {/* Track Edit Modal */}
+      <TrackEditModal
+        isOpen={showTrackEdit}
+        onClose={handleTrackEditClose}
+        onSave={handleTrackSave}
+        mode={editingTrack ? 'edit' : 'create'}
+        track={
+          editingTrack
+            ? {
+                id: editingTrack.id,
+                title: editingTrack.title,
+                artist: editingTrack.artist,
+                album: editingTrack.album,
+                genre: editingTrack.genre,
+                composer: editingTrack.composer,
+                year: editingTrack.year,
+                releaseDate: editingTrack.releaseDate,
+                bpm: editingTrack.bpm,
+                isrc: editingTrack.isrc,
+                description: editingTrack.description,
+                lyrics: editingTrack.lyrics,
+                isPublic: editingTrack.isPublic ?? true,
+                isDownloadable: editingTrack.isDownloadable ?? false,
+                isExplicit: editingTrack.isExplicit ?? false,
+                copyrightInfo: editingTrack.copyrightInfo,
+                licenseType: editingTrack.licenseType,
+                distributionRights: editingTrack.distributionRights,
+                albumArtwork: editingTrack.albumArtwork,
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }

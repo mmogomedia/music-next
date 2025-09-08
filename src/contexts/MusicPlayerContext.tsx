@@ -8,22 +8,7 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
-
-interface Track {
-  id: string;
-  title: string;
-  fileUrl: string; // This will be constructed from filePath by the API
-  filePath?: string; // Optional for backward compatibility
-  artistId: string;
-  playCount?: number;
-  duration?: number;
-  genre?: string;
-  album?: string;
-  description?: string;
-  coverImageUrl?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Track } from '@/types/track';
 
 interface MusicPlayerContextType {
   // State
@@ -129,7 +114,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       audioRef.current.currentTime = 0;
 
       setCurrentTrack(track);
-      audioRef.current.src = track.fileUrl;
+      audioRef.current.src = track.fileUrl || '';
       audioRef.current.volume = volume;
       audioRef.current.play();
     }

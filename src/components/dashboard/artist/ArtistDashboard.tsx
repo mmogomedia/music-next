@@ -12,6 +12,7 @@ import {
   TrashIcon,
   PlayIcon,
   PauseIcon,
+  UserIcon,
 } from '@heroicons/react/24/outline';
 import {
   PlayIcon as PlaySolidIcon,
@@ -19,10 +20,11 @@ import {
 } from '@heroicons/react/24/solid';
 import UploadMusic from './UploadMusic';
 import MusicLibrary from './MusicLibrary';
+import ArtistProfileManager from './ArtistProfileManager';
 
 export default function ArtistDashboard() {
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('profile');
 
   // Mock data - replace with real data from your API
   const stats = {
@@ -66,6 +68,7 @@ export default function ArtistDashboard() {
   ];
 
   const tabs = [
+    { id: 'profile', name: 'Profile', icon: UserIcon },
     { id: 'overview', name: 'Overview', icon: ChartBarIcon },
     { id: 'upload', name: 'Upload Music', icon: PlusIcon },
     { id: 'library', name: 'My Music', icon: MusicalNoteIcon },
@@ -355,6 +358,28 @@ export default function ArtistDashboard() {
 
               <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700 hover:shadow-lg transition-all duration-200 group'>
                 <div className='flex items-center space-x-4 mb-4'>
+                  <div className='w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-200'>
+                    <UserIcon className='w-7 h-7 text-white' />
+                  </div>
+                  <div>
+                    <h3 className='text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-200'>
+                      Manage Profile
+                    </h3>
+                    <p className='text-sm text-gray-500 dark:text-gray-400'>
+                      Customize your artist identity and social links
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveTab('profile')}
+                  className='w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white py-3 px-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105'
+                >
+                  Manage Profile
+                </button>
+              </div>
+
+              <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700 hover:shadow-lg transition-all duration-200 group'>
+                <div className='flex items-center space-x-4 mb-4'>
                   <div className='w-14 h-14 bg-gradient-to-br from-pink-500 to-rose-600 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-200'>
                     <ShareIcon className='w-7 h-7 text-white' />
                   </div>
@@ -374,6 +399,8 @@ export default function ArtistDashboard() {
             </div>
           </div>
         )}
+
+        {activeTab === 'profile' && <ArtistProfileManager />}
 
         {activeTab === 'upload' && <UploadMusic />}
 

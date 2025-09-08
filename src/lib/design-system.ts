@@ -155,25 +155,28 @@ export const designSystem = {
     },
   },
 
-  // Gradients
-  gradients: {
-    primary: 'bg-gradient-to-r from-primary to-secondary',
-    primaryVertical: 'bg-gradient-to-b from-primary to-secondary',
-    hero: 'bg-gradient-to-br from-primary/20 via-transparent to-secondary/20',
-    card: 'bg-gradient-to-br from-white/10 to-white/5',
-    text: 'bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent',
+  // Solid Colors (No Gradients)
+  colors: {
+    primary: 'bg-blue-600',
+    primaryHover: 'hover:bg-blue-700',
+    primaryLight: 'bg-blue-50',
+    primaryDark: 'dark:bg-blue-900/20',
+    primaryBorder: 'border-blue-200',
+    primaryBorderDark: 'dark:border-blue-800',
+    text: 'text-blue-600',
+    textHover: 'hover:text-blue-700',
   },
 } as const;
 
 // Utility functions for using the design system
 export const getSpacing = (size: keyof typeof designSystem.spacing) =>
   designSystem.spacing[size];
-export const getColor = (color: string) =>
+export const getBrandColor = (color: string) =>
   designSystem.brand[color as keyof typeof designSystem.brand] || color;
 export const getShadow = (size: keyof typeof designSystem.shadows) =>
   designSystem.shadows[size];
-export const getGradient = (type: keyof typeof designSystem.gradients) =>
-  designSystem.gradients[type];
+export const getColor = (type: keyof typeof designSystem.colors) =>
+  designSystem.colors[type];
 
 // CSS Custom Properties for dynamic theming
 export const cssVariables = {

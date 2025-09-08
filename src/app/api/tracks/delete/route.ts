@@ -23,7 +23,7 @@ export async function DELETE(request: NextRequest) {
     const track = await prisma.track.findFirst({
       where: {
         id: trackId,
-        artistId: session.user.id,
+        userId: session.user.id,
       },
     });
 

@@ -3,7 +3,6 @@
 import React from 'react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { PlayIcon, PauseIcon } from '@heroicons/react/24/outline';
-import { useSession } from 'next-auth/react';
 
 export default function GlobalMusicPlayer() {
   const {
@@ -16,8 +15,6 @@ export default function GlobalMusicPlayer() {
     seekTo,
     setVolume,
   } = useMusicPlayer();
-
-  const { data: session } = useSession();
 
   if (!currentTrack) return null;
 
@@ -39,7 +36,7 @@ export default function GlobalMusicPlayer() {
                 {currentTrack.title}
               </h4>
               <p className='text-sm text-gray-500 dark:text-gray-400 truncate'>
-                {session?.user?.name || 'You'}
+                {currentTrack.artist || 'Unknown Artist'}
               </p>
             </div>
           </div>

@@ -16,7 +16,15 @@ export async function GET() {
 
     const tracks = await prisma.track.findMany({
       where: {
-        artistId: session.user.id,
+        userId: session.user.id,
+      },
+      include: {
+        artistProfile: {
+          select: {
+            artistName: true,
+            profileImage: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -29,7 +37,10 @@ export async function GET() {
       fileUrl: constructFileUrl(track.filePath),
     }));
 
-    return NextResponse.json({ tracks: tracksWithUrls });
+    return NextResponse.json({
+      tracks: tracksWithUrls,
+      count: tracksWithUrls.length,
+    });
   } catch (error) {
     console.error('Error fetching tracks:', error);
     return NextResponse.json(

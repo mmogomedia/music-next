@@ -25,6 +25,7 @@ This folder contains the development rules and guidelines for building the Next.
 - [**07-artist-dashboard.md**](./07-artist-dashboard.md) - Artist management interface
 - [**08-analytics-system.md**](./08-analytics-system.md) - Play statistics and analytics
 - [**09-smart-links.md**](./09-smart-links.md) - Smart link generation and management
+- [**16-artist-profile-system.md**](./16-artist-profile-system.md) - Multi-profile artist management and social integration
 
 ### 💎 Phase 4: Premium Features
 

@@ -53,19 +53,50 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Get or create artist profile for the user
+    let artistProfile = await prisma.artistProfile.findUnique({
+      where: {
+        userId: session.user.id,
+      },
+    });
+
+    if (!artistProfile) {
+      // Create a default artist profile if none exists
+      artistProfile = await prisma.artistProfile.create({
+        data: {
+          userId: session.user.id,
+          artistName: session.user.name || 'Unknown Artist',
+          bio: 'Music artist on Flemoji',
+        },
+      });
+    }
+
     // Create track record - store only the file path, not full URL
     const filePath = key; // The key already contains the full path
+
+    console.log('Upload complete - key:', key);
+    console.log('Upload complete - filePath:', filePath);
+
+    if (!filePath) {
+      return NextResponse.json(
+        { error: 'File path is missing' },
+        { status: 400 }
+      );
+    }
 
     const track = await prisma.track.create({
       data: {
         title: uploadJob.fileName.replace(/\.[^/.]+$/, ''), // Remove file extension
-        artistId: session.user.id,
+        userId: session.user.id,
+        artistProfileId: artistProfile.id,
         filePath: filePath, // Store only the file path
+        uniqueUrl: `track-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`, // Generate unique URL
         genre: 'Unknown', // Default genre, can be updated later
         album: 'Single', // Default album
         description: `Uploaded on ${new Date().toLocaleDateString()}`,
         duration: 0, // Will be updated when we process the audio
         playCount: 0,
+        likeCount: 0,
       },
     });
 

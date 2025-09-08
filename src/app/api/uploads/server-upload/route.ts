@@ -2,13 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import {
+  handleR2UploadError,
+  handleAuthError,
+  handleValidationError,
+  handleNotFoundError,
+  handleServerError,
+  handleFileUploadError,
+} from '@/lib/api-error-handler';
 
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return handleAuthError();
     }
 
     // Parse form data
@@ -19,14 +27,11 @@ export async function POST(request: NextRequest) {
     const key = formData.get('key') as string;
 
     if (!file) {
-      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+      return handleValidationError('No file provided');
     }
 
     if (!jobId || !uploadUrl || !key) {
-      return NextResponse.json(
-        { error: 'Missing jobId, uploadUrl, or key' },
-        { status: 400 }
-      );
+      return handleValidationError('Missing jobId, uploadUrl, or key');
     }
 
     // Verify the job belongs to the user
@@ -39,10 +44,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!uploadJob) {
-      return NextResponse.json(
-        { error: 'Upload job not found or already processed' },
-        { status: 404 }
-      );
+      return handleNotFoundError('Upload job', jobId);
     }
 
     try {
@@ -60,8 +62,12 @@ export async function POST(request: NextRequest) {
       });
 
       if (!uploadResponse.ok) {
-        throw new Error(
-          `R2 upload failed with status: ${uploadResponse.status}`
+        return handleR2UploadError(
+          uploadResponse,
+          uploadUrl,
+          key,
+          file.size,
+          file.type
         );
       }
 
@@ -78,22 +84,30 @@ export async function POST(request: NextRequest) {
       });
     } catch (uploadError) {
       // Update job status to failed
-      await prisma.uploadJob.update({
-        where: { id: jobId },
-        data: { status: 'FAILED' },
-      });
+      try {
+        await prisma.uploadJob.update({
+          where: { id: jobId },
+          data: { status: 'FAILED' },
+        });
+      } catch (dbError) {
+        console.error('Failed to update job status:', dbError);
+      }
 
-      console.error('R2 upload error:', uploadError);
-      return NextResponse.json(
-        { error: 'Failed to upload to cloud storage' },
-        { status: 500 }
+      return handleFileUploadError(
+        uploadError instanceof Error
+          ? uploadError
+          : new Error(String(uploadError)),
+        {
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+        }
       );
     }
   } catch (error) {
-    console.error('Server upload error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process upload' },
-      { status: 500 }
+    return handleServerError(
+      error instanceof Error ? error : new Error(String(error)),
+      'server upload'
     );
   }
 }

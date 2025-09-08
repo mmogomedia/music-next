@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     // Generate unique key for the file
     const jobId = randomUUID();
     const fileExtension = fileName.split('.').pop();
-    const key = `uploads/${session.user.id}/${jobId}.${fileExtension}`;
+    const key = `audio/${session.user.id}/${jobId}.${fileExtension}`;
 
     // Create upload job in database
     await prisma.uploadJob.create({
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Generate presigned URL for R2 upload
     const command = new PutObjectCommand({
-      Bucket: process.env.R2_AUDIO_BUCKET_NAME!,
+      Bucket: process.env.R2_BUCKET_NAME!,
       Key: key,
       ContentType: fileType,
       ContentLength: fileSize,

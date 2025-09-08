@@ -41,21 +41,23 @@ Establish a comprehensive design system and UI/UX guidelines that ensure consist
 
 ### **Color Palette**
 
+> **Note**: This design system uses **solid colors only** - no gradients are used anywhere in the application to maintain a clean, modern aesthetic.
+
 #### **Primary Colors**
 
 ```css
-/* Green - Main brand color */
---primary-50: #f0fdf4;
---primary-100: #dcfce7;
---primary-200: #bbf7d0;
---primary-300: #86efac;
---primary-400: #4ade80;
---primary-500: #22c55e; /* Main primary */
---primary-600: #16a34a;
---primary-700: #15803d;
---primary-800: #166534;
---primary-900: #14532d;
---primary-950: #052e16;
+/* Blue - Main brand color (Solid, no gradients) */
+--primary-50: #eff6ff;
+--primary-100: #dbeafe;
+--primary-200: #bfdbfe;
+--primary-300: #93c5fd;
+--primary-400: #60a5fa;
+--primary-500: #3b82f6;
+--primary-600: #2563eb; /* Main primary */
+--primary-700: #1d4ed8;
+--primary-800: #1e40af;
+--primary-900: #1e3a8a;
+--primary-950: #172554;
 ```
 
 #### **Secondary Colors**
