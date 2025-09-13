@@ -13,6 +13,7 @@ import {
   PlayIcon,
   PauseIcon,
   UserIcon,
+  QueueListIcon,
 } from '@heroicons/react/24/outline';
 import {
   PlayIcon as PlaySolidIcon,
@@ -21,6 +22,8 @@ import {
 import UploadMusic from './UploadMusic';
 import MusicLibrary from './MusicLibrary';
 import ArtistProfileManager from './ArtistProfileManager';
+import PlaylistSubmissions from './PlaylistSubmissions';
+import TrackArtwork from '@/components/music/TrackArtwork';
 
 export default function ArtistDashboard() {
   const { data: session } = useSession();
@@ -72,6 +75,7 @@ export default function ArtistDashboard() {
     { id: 'overview', name: 'Overview', icon: ChartBarIcon },
     { id: 'upload', name: 'Upload Music', icon: PlusIcon },
     { id: 'library', name: 'My Music', icon: MusicalNoteIcon },
+    { id: 'submissions', name: 'Playlist Submissions', icon: QueueListIcon },
     { id: 'analytics', name: 'Analytics', icon: ChartBarIcon },
   ];
 
@@ -250,8 +254,14 @@ export default function ArtistDashboard() {
                     className='p-6 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors duration-200 group'
                   >
                     <div className='flex items-center space-x-4'>
-                      <div className='flex-shrink-0'>
-                        <div className='w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-200'>
+                      <div className='flex-shrink-0 relative'>
+                        <TrackArtwork
+                          artworkUrl={track.coverImage}
+                          title={track.title}
+                          size='lg'
+                          className='w-14 h-14 rounded-xl shadow-sm group-hover:shadow-md transition-all duration-200'
+                        />
+                        <div className='absolute inset-0 bg-black bg-opacity-50 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'>
                           {track.isPlaying ? (
                             <PauseIcon className='w-7 h-7 text-white' />
                           ) : (
@@ -405,6 +415,8 @@ export default function ArtistDashboard() {
         {activeTab === 'upload' && <UploadMusic />}
 
         {activeTab === 'library' && <MusicLibrary />}
+
+        {activeTab === 'submissions' && <PlaylistSubmissions />}
 
         {activeTab === 'analytics' && (
           <div className='space-y-8'>

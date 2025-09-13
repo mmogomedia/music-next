@@ -10,6 +10,8 @@ Quick links:
 - Design System: `rules/00-ui-design-system.md`
 - Project Setup: `rules/01-project-setup.md`
 - Auth Setup: `rules/02-authentication-setup.md`
+- Admin Dashboard: `rules/12-admin-dashboard.md`
+- Dashboard System: `rules/07-dashboard-system.md`
 
 ## 🔐 NextAuth Secret Key Setup
 
@@ -63,3 +65,32 @@ Notes:
 
 - This repo currently documents the system; application code is not included yet.
 - Follow the phases sequentially as outlined in `rules/README.md`.
+
+## 👤 Admin Login & Role-Based Redirects
+
+The platform features an intelligent role-based redirect system that automatically directs users to the appropriate dashboard based on their role.
+
+### Admin Users
+
+- **Credentials**: `dev@dev.com` / `dev` (development only)
+- **Login Flow**: Automatic redirect to `/admin/dashboard`
+- **No Profile Creation**: Skip profile selection screen entirely
+- **Access**: Full admin panel with user management, content moderation, and system analytics
+
+### Regular Users & Artists
+
+- **Login Flow**: Continue to normal dashboard flow
+- **Profile Creation**: Create appropriate profile type if needed
+- **Access**: Role-appropriate dashboard features
+
+### Quick Admin Setup
+
+```bash
+# Create admin account
+yarn create-admin
+
+# Or use the seed script
+yarn db:seed
+```
+
+For detailed information, see [Admin Dashboard Rules](./rules/12-admin-dashboard.md) and [Authentication Setup](./rules/02-authentication-setup.md).

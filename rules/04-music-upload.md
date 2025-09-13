@@ -967,16 +967,17 @@ export default function UploadTrackForm() {
             required
           >
             <option value="">Select a genre</option>
-            <option value="Pop">Pop</option>
-            <option value="Rock">Rock</option>
-            <option value="Hip-Hop">Hip-Hop</option>
-            <option value="Electronic">Electronic</option>
-            <option value="Jazz">Jazz</option>
-            <option value="Classical">Classical</option>
-            <option value="Country">Country</option>
+            <option value="Amapiano">Amapiano</option>
+            <option value="Gqom">Gqom</option>
+            <option value="Afro House">Afro House</option>
+            <option value="Kwaito">Kwaito</option>
+            <option value="Afro Pop">Afro Pop</option>
+            <option value="Afro Soul">Afro Soul</option>
+            <option value="Deep House">Deep House</option>
+            <option value="Hip Hop">Hip Hop</option>
             <option value="R&B">R&B</option>
-            <option value="Alternative">Alternative</option>
-            <option value="Indie">Indie</option>
+            <option value="Pop">Pop</option>
+            <option value="Electronic">Electronic</option>
             <option value="Other">Other</option>
           </select>
         </div>

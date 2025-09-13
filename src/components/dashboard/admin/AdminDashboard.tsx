@@ -11,15 +11,47 @@ import {
   EyeIcon,
   ShieldCheckIcon,
   BellIcon,
+  QueueListIcon,
+  ClockIcon,
 } from '@heroicons/react/24/outline';
 import {
   UserGroupIcon as UserGroupSolidIcon,
   MusicalNoteIcon as MusicalNoteSolidIcon,
   ChartBarIcon as ChartBarSolidIcon,
 } from '@heroicons/react/24/solid';
+import PlaylistManagement from './PlaylistManagement';
+import PlaylistForm from './PlaylistForm';
+import SubmissionReview from './SubmissionReview';
+import { Playlist } from '@/types/playlist';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [isPlaylistFormOpen, setIsPlaylistFormOpen] = useState(false);
+  const [editingPlaylist, setEditingPlaylist] = useState<
+    Playlist | undefined
+  >();
+
+  const handleCreatePlaylist = () => {
+    setEditingPlaylist(undefined);
+    setIsPlaylistFormOpen(true);
+  };
+
+  const handleEditPlaylist = (playlist: Playlist) => {
+    setEditingPlaylist(playlist);
+    setIsPlaylistFormOpen(true);
+  };
+
+  const handleSavePlaylist = async (_playlistData: Partial<Playlist>) => {
+    // Here you would typically save to your API
+    // console.log('Saving playlist:', playlistData);
+    // For now, just close the form
+    setIsPlaylistFormOpen(false);
+  };
+
+  const handleClosePlaylistForm = () => {
+    setIsPlaylistFormOpen(false);
+    setEditingPlaylist(undefined);
+  };
 
   // Mock data - replace with real data from your API
   const systemMetrics = {
@@ -97,6 +129,8 @@ export default function AdminDashboard() {
     { id: 'overview', name: 'Overview', icon: ChartBarIcon },
     { id: 'users', name: 'Users', icon: UserGroupIcon },
     { id: 'content', name: 'Content', icon: MusicalNoteIcon },
+    { id: 'playlists', name: 'Playlists', icon: QueueListIcon },
+    { id: 'submissions', name: 'Submissions', icon: ClockIcon },
     { id: 'analytics', name: 'Analytics', icon: ChartBarIcon },
     { id: 'settings', name: 'Settings', icon: Cog6ToothIcon },
   ];
@@ -511,6 +545,15 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {activeTab === 'playlists' && (
+          <PlaylistManagement
+            onEditPlaylist={handleEditPlaylist}
+            onCreatePlaylist={handleCreatePlaylist}
+          />
+        )}
+
+        {activeTab === 'submissions' && <SubmissionReview />}
+
         {activeTab === 'analytics' && (
           <div className='space-y-8'>
             <div className='bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700'>
@@ -551,6 +594,14 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+
+      {/* Playlist Form Modal */}
+      <PlaylistForm
+        playlist={editingPlaylist}
+        isOpen={isPlaylistFormOpen}
+        onClose={handleClosePlaylistForm}
+        onSave={handleSavePlaylist}
+      />
     </div>
   );
 }

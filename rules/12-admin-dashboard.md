@@ -11,6 +11,96 @@ Implement a comprehensive admin dashboard that provides system administrators wi
 - User roles and permissions working
 - Database with comprehensive data available
 
+## 🔐 Admin Account Setup
+
+### Quick Setup (Development)
+
+#### **Default Admin Credentials**
+
+- **Email**: `dev@dev.com`
+- **Password**: `dev`
+- **Name**: `Dev`
+- **Role**: `ADMIN`
+
+#### **Setup Commands**
+
+```bash
+# Option 1: Create admin account
+yarn create-admin
+
+# Option 2: Use seed script
+yarn db:seed
+
+# Option 3: Full database setup
+yarn setup-db
+```
+
+#### **Custom Admin Creation**
+
+```bash
+# Interactive mode - prompts for details
+yarn create-admin
+
+# Command line mode - specify details
+yarn create-admin --email admin@yourdomain.com --password securepassword --name "Your Name"
+```
+
+### Admin Login Flow
+
+#### **Automatic Redirect System**
+
+When an admin logs in, they are automatically redirected to the admin dashboard:
+
+1. **Login**: Go to `http://localhost:3000/login`
+2. **Enter credentials**: `dev@dev.com` / `dev`
+3. **Automatic redirect**: System detects admin role and redirects to `/admin/dashboard`
+4. **No profile creation**: Admin users skip the profile selection screen entirely
+
+#### **Role-Based Access Control**
+
+- **Admin users**: Automatically redirected to admin dashboard
+- **Regular users**: Continue to normal profile creation flow
+- **Artists**: Access artist-specific dashboard features
+
+### Security Considerations
+
+#### **Development vs Production**
+
+- **Development**: Use default credentials for quick setup
+- **Production**: Create secure admin accounts with strong passwords
+- **Never use default credentials in production**
+
+#### **Admin Account Features**
+
+Once created, admin accounts have:
+
+- **Full platform access** to all features
+- **Admin dashboard** at `/admin/dashboard`
+- **User management** capabilities
+- **Content moderation** tools
+- **System analytics** and monitoring
+- **Premium features** enabled by default
+
+### Troubleshooting Admin Setup
+
+#### **"Admin account already exists"**
+
+- Use the existing admin account
+- Create a new admin with different email
+- Delete the existing admin and recreate
+
+#### **"Database connection failed"**
+
+- Verify `DATABASE_URL` in `.env.local`
+- Ensure database is running
+- Check database permissions
+
+#### **Admin not redirecting to dashboard**
+
+- Check that user has `role: 'ADMIN'` in database
+- Verify session includes role information
+- Check browser console for errors
+
 ## 🚀 Step-by-Step Implementation
 
 ### 1. Admin Dashboard Layout

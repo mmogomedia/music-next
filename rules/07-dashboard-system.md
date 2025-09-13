@@ -427,9 +427,42 @@ interface SystemMetrics {
 #### **Admin Daily Workflow:**
 
 1. Admin logs in with ADMIN role
-2. System redirects to `/admin/dashboard`
+2. **Automatic redirect** to `/admin/dashboard` (no profile creation screen)
 3. Admin reviews system health and pending actions
 4. Admin manages users, reviews content, checks analytics
+
+#### **Role-Based Redirect System:**
+
+The platform implements an intelligent redirect system that automatically directs users to the appropriate dashboard based on their role:
+
+- **Admin users**: Automatically redirected to admin dashboard after login
+- **Regular users**: Continue to normal dashboard flow
+- **Artists**: Access artist-specific dashboard features
+- **No profile creation required** for admin users
+
+#### **Admin Dashboard Access Flow:**
+
+```
+Admin Login → Role Detection → Automatic Redirect → Admin Dashboard
+```
+
+**Key Features:**
+
+- **Direct Access**: No profile creation screen
+- **Immediate Admin Tools**: Full admin panel access
+- **Streamlined Workflow**: Skip unnecessary steps
+
+#### **User/Artist Dashboard Flow:**
+
+```
+User Login → Role Detection → Profile Check → Dashboard/Profile Creation
+```
+
+**Key Features:**
+
+- **Profile Creation**: When needed for new users
+- **Role-Appropriate Access**: Dashboard features based on user type
+- **Normal User Experience**: Standard onboarding flow
 
 #### **Content Moderation Workflow:**
 

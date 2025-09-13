@@ -21,12 +21,16 @@ import {
   ArrowDownTrayIcon,
   ExclamationTriangleIcon,
   DocumentTextIcon,
+  PhotoIcon,
 } from '@heroicons/react/24/outline';
 import TrackProtectionSettings from './TrackProtectionSettings';
 import {
   ProtectionSettings,
   DEFAULT_PROTECTION_SETTINGS,
 } from '@/lib/file-protection';
+import ImageUpload from '@/components/ui/ImageUpload';
+import { constructFileUrl } from '@/lib/url-utils';
+import { GENRES } from '@/lib/genres';
 
 interface TrackData {
   id?: string;
@@ -59,37 +63,7 @@ interface TrackEditFormProps {
   mode?: 'create' | 'edit';
 }
 
-const GENRES = [
-  'Pop',
-  'Rock',
-  'Hip-Hop',
-  'R&B',
-  'Country',
-  'Electronic',
-  'Jazz',
-  'Classical',
-  'Blues',
-  'Folk',
-  'Reggae',
-  'Punk',
-  'Metal',
-  'Funk',
-  'Soul',
-  'Gospel',
-  'Alternative',
-  'Indie',
-  'Ambient',
-  'Techno',
-  'House',
-  'Trance',
-  'Dubstep',
-  'Trap',
-  'Drill',
-  'Afrobeat',
-  'Latin',
-  'World',
-  'Other',
-];
+// Using South African genres from shared file
 
 const LICENSE_TYPES = [
   'All Rights Reserved',
@@ -134,18 +108,18 @@ export default function TrackEditForm({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingArtwork, setIsUploadingArtwork] = useState(false);
 
   // Auto-generate unique URL when title changes
   useEffect(() => {
     if (formData.title && !track?.id) {
-      const slug = formData.title
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim();
-      // In a real app, you'd check for uniqueness
-      console.log('Generated URL slug:', slug);
+      // In a real app, you'd generate and check for uniqueness
+      // const slug = formData.title
+      //   .toLowerCase()
+      //   .replace(/[^a-z0-9\s-]/g, '')
+      //   .replace(/\s+/g, '-')
+      //   .replace(/-+/g, '-')
+      //   .trim();
     }
   }, [formData.title, track?.id]);
 
@@ -160,6 +134,43 @@ export default function TrackEditForm({
     // Auto-set isDownloadable to false when isPublic is false
     if (field === 'isPublic' && !value) {
       setFormData(prev => ({ ...prev, isDownloadable: false }));
+    }
+  };
+
+  const handleArtworkUpload = async (file: File | null) => {
+    if (!file) {
+      setFormData(prev => ({ ...prev, albumArtwork: '' }));
+      return;
+    }
+
+    setIsUploadingArtwork(true);
+    setErrors(prev => ({ ...prev, artwork: '' }));
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload artwork');
+      }
+
+      const { key } = await response.json();
+      setFormData(prev => ({ ...prev, albumArtwork: key }));
+    } catch (error) {
+      console.error('Artwork upload error:', error);
+      setErrors(prev => ({
+        ...prev,
+        artwork:
+          error instanceof Error ? error.message : 'Failed to upload artwork',
+      }));
+    } finally {
+      setIsUploadingArtwork(false);
     }
   };
 
@@ -278,6 +289,49 @@ export default function TrackEditForm({
               onValueChange={value => handleInputChange('description', value)}
               rows={3}
             />
+          </div>
+
+          <Divider />
+
+          {/* Track Artwork */}
+          <div className='space-y-4'>
+            <h4 className='text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2'>
+              <PhotoIcon className='w-5 h-5' />
+              Track Artwork
+            </h4>
+            <p className='text-sm text-gray-500 dark:text-gray-400'>
+              Upload artwork for your track. Recommended size: 1000x1000px or
+              larger.
+            </p>
+
+            <ImageUpload
+              label='Album Artwork'
+              preview={
+                formData.albumArtwork
+                  ? constructFileUrl(formData.albumArtwork)
+                  : undefined
+              }
+              onImageChange={handleArtworkUpload}
+              onError={error =>
+                setErrors(prev => ({ ...prev, artwork: error }))
+              }
+              disabled={isUploadingArtwork || isSubmitting}
+              aspectRatio={1}
+              minWidth={500}
+              minHeight={500}
+              maxWidth={2000}
+              maxHeight={2000}
+              maxFileSize={5}
+              previewSize='lg'
+              showCropButton={true}
+              showRemoveButton={true}
+            />
+
+            {errors.artwork && (
+              <p className='text-sm text-red-600 dark:text-red-400'>
+                {errors.artwork}
+              </p>
+            )}
           </div>
 
           <Divider />
@@ -514,10 +568,14 @@ export default function TrackEditForm({
             <Button
               type='submit'
               color='primary'
-              isLoading={isSubmitting || isLoading}
-              disabled={!formData.title.trim()}
+              isLoading={isSubmitting || isLoading || isUploadingArtwork}
+              disabled={!formData.title.trim() || isUploadingArtwork}
             >
-              {mode === 'create' ? 'Create Track' : 'Save Changes'}
+              {isUploadingArtwork
+                ? 'Uploading Artwork...'
+                : mode === 'create'
+                  ? 'Create Track'
+                  : 'Save Changes'}
             </Button>
           </div>
         </form>

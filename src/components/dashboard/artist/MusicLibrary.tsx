@@ -17,6 +17,8 @@ import {
   PlayIcon as PlaySolidIcon,
   HeartIcon as HeartSolidIcon,
 } from '@heroicons/react/24/solid';
+import TrackArtwork from '@/components/music/TrackArtwork';
+import { GENRES } from '@/lib/genres';
 
 interface Track {
   id: string;
@@ -134,16 +136,7 @@ export default function MusicLibrary() {
     },
   ];
 
-  const genres = [
-    'All',
-    'Electronic',
-    'Pop',
-    'Hip Hop',
-    'Ambient',
-    'Jazz',
-    'Rock',
-    'Classical',
-  ];
+  const genres = ['All', ...GENRES];
 
   const filteredTracks = tracks.filter(track => {
     const matchesSearch =
@@ -309,10 +302,13 @@ export default function MusicLibrary() {
               className='bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden hover:shadow-lg transition-shadow duration-200'
             >
               {/* Cover Image */}
-              <div className='relative aspect-square bg-gradient-to-br from-blue-500 to-purple-600'>
-                <div className='absolute inset-0 flex items-center justify-center'>
-                  <MusicalNoteIcon className='w-16 h-16 text-white opacity-50' />
-                </div>
+              <div className='relative aspect-square overflow-hidden'>
+                <TrackArtwork
+                  artworkUrl={track.coverImage}
+                  title={track.title}
+                  size='xl'
+                  className='w-full h-full rounded-none'
+                />
                 <div className='absolute top-3 right-3'>
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(track.status)}`}
@@ -395,8 +391,13 @@ export default function MusicLibrary() {
                 className='p-6 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors duration-200'
               >
                 <div className='flex items-center space-x-4'>
-                  <div className='flex-shrink-0'>
-                    <div className='w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center'>
+                  <div className='flex-shrink-0 relative'>
+                    <TrackArtwork
+                      artworkUrl={track.coverImage}
+                      title={track.title}
+                      size='md'
+                    />
+                    <div className='absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity'>
                       {track.isPlaying ? (
                         <PauseIcon className='w-6 h-6 text-white' />
                       ) : (

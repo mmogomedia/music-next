@@ -2,16 +2,23 @@
  * Utility functions for constructing URLs from file paths
  *
  * Required Environment Variables:
- * - R2_PUBLIC_URL: The public domain for accessing files (e.g., "asset.flemoji.com")
+ * - R2_PUBLIC_URL: The public domain for accessing files (server-side, e.g., "asset.flemoji.com")
+ * - NEXT_PUBLIC_R2_PUBLIC_URL: The public domain for accessing files (client-side, e.g., "https://asset.flemoji.com")
  * - R2_BUCKET_NAME: The R2 bucket name for storing files
  */
 
 /**
  * Get the public URL base from environment variables
  * Used for both audio and image files
+ * Works on both server and client side
  */
 export function getPublicUrlBase(): string {
-  // Use R2_PUBLIC_URL for all assets
+  // Try client-side environment variable first (for client components)
+  if (typeof window !== 'undefined' && process.env.NEXT_PUBLIC_R2_PUBLIC_URL) {
+    return process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
+  }
+
+  // Try server-side environment variable (for server components and API routes)
   if (process.env.R2_PUBLIC_URL) {
     const url = process.env.R2_PUBLIC_URL;
     // Ensure it's an absolute URL
@@ -23,9 +30,14 @@ export function getPublicUrlBase(): string {
     }
   }
 
+  // Fallback for development - you can hardcode this temporarily
+  if (process.env.NODE_ENV === 'development') {
+    return 'https://asset.flemoji.com';
+  }
+
   // Throw error if R2_PUBLIC_URL is not set
   throw new Error(
-    'R2_PUBLIC_URL environment variable is not configured. Please set it to your R2 public domain (e.g., "asset.flemoji.com")'
+    'R2_PUBLIC_URL or NEXT_PUBLIC_R2_PUBLIC_URL environment variable is not configured. Please set it to your R2 public domain (e.g., "asset.flemoji.com")'
   );
 }
 

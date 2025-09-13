@@ -1,5 +1,3 @@
-// Prisma schema aligned with rules/02-authentication-setup.md
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,15 +13,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -37,25 +34,28 @@ model Session {
 }
 
 model User {
-  id               String    @id @default(cuid())
-  name             String?
-  email            String    @unique
-  emailVerified    DateTime?
-  image            String?
-  password         String?
-  role             UserRole  @default(USER)
-  isPremium        Boolean   @default(false)
-  stripeCustomerId String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-
-  accounts       Account[]
-  sessions       Session[]
-  tracks         Track[]
-  playEvents     PlayEvent[]
-  smartLinks     SmartLink[]
-  uploadJobs     UploadJob[]
-  artistProfile  ArtistProfile?
+  id                  String               @id @default(cuid())
+  name                String?
+  email               String               @unique
+  emailVerified       DateTime?
+  image               String?
+  password            String?
+  role                UserRole             @default(USER)
+  isPremium           Boolean              @default(false)
+  stripeCustomerId    String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  accounts            Account[]
+  sessions            Session[]
+  artistProfile       ArtistProfile?
+  playEvents          PlayEvent[]
+  playlistSubmissions PlaylistSubmission[] @relation("PlaylistSubmissions")
+  reviewedSubmissions PlaylistSubmission[] @relation("PlaylistSubmissionReviewedBy")
+  addedPlaylistTracks PlaylistTrack[]      @relation("PlaylistTrackAddedBy")
+  createdPlaylists    Playlist[]           @relation("PlaylistCreatedBy")
+  smartLinks          SmartLink[]
+  tracks              Track[]
+  uploadJobs          UploadJob[]
 
   @@map("users")
 }
@@ -69,102 +69,76 @@ model VerificationToken {
 }
 
 model ArtistProfile {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  // Core Profile Information
-  artistName      String    @unique
-  bio             String?   @db.Text
-  profileImage    String?
-  coverImage      String?
-  location        String?
-  website         String?
-  genre           String?
-  slug            String?   @unique
-  
-  // Social Media & Streaming Platforms
-  socialLinks     Json?
-  streamingLinks  Json?
-  
-  // Profile Settings
-  isPublic        Boolean   @default(true)
-  isVerified      Boolean   @default(false)
-  isActive        Boolean   @default(true)
-  
-  // Analytics & Stats
-  totalPlays      Int       @default(0)
-  totalLikes      Int       @default(0)
-  totalFollowers  Int       @default(0)
-  profileViews    Int       @default(0)
-  
-  // Timestamps
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
-  // Relationships
-  tracks          Track[]
-  
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  artistName     String   @unique
+  bio            String?
+  profileImage   String?
+  coverImage     String?
+  location       String?
+  website        String?
+  genre          String?
+  slug           String?  @unique
+  socialLinks    Json?
+  streamingLinks Json?
+  isPublic       Boolean  @default(true)
+  isVerified     Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  totalPlays     Int      @default(0)
+  totalLikes     Int      @default(0)
+  totalFollowers Int      @default(0)
+  profileViews   Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks         Track[]
+
   @@map("artist_profiles")
 }
 
 model Track {
-  id              String    @id @default(cuid())
-  title           String
-  filePath        String    // Store only the file path, not full URL
-  uniqueUrl       String    @unique // Unique URL for each track
-  coverImageUrl   String?
-  albumArtwork    String?   // Album artwork image
-  
-  // Basic Metadata
-  genre           String?
-  album           String?
-  artist          String?   // Can be different from profile artist name
-  composer        String?
-  year            Int?
-  releaseDate     DateTime?
-  bpm             Int?      // Beats per minute
-  isrc            String?   // International Standard Recording Code
-  description     String?   @db.Text
-  lyrics          String?   @db.Text
-  
-  // Technical Details
-  duration        Int?      // Duration in seconds
-  fileSize        Int?      // File size in bytes
-  bitrate         Int?      // Audio bitrate
-  sampleRate      Int?      // Audio sample rate
-  channels        Int?      // Audio channels (1=mono, 2=stereo)
-  
-  // Privacy & Access Control
-  isPublic        Boolean   @default(true)
-  isDownloadable  Boolean   @default(false)
-  isExplicit      Boolean   @default(false)
-  
-  // File Protection
-  watermarkId     String?   // Unique watermark identifier
-  copyrightInfo   String?   @db.Text
-  licenseType     String?   // e.g., "All Rights Reserved", "Creative Commons"
-  distributionRights String? @db.Text
-  
-  // Analytics
-  playCount       Int       @default(0)
-  likeCount       Int       @default(0)
-  downloadCount   Int       @default(0)
-  shareCount      Int       @default(0)
-  
-  // Link to artist profile instead of user
-  artistProfileId String
-  artistProfile   ArtistProfile @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
-  
-  // Keep user relationship for ownership
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  playEvents      PlayEvent[]
-  smartLinks      SmartLink[]
+  id                  String               @id @default(cuid())
+  title               String
+  coverImageUrl       String?
+  genre               String?
+  album               String?
+  description         String?
+  duration            Int?
+  playCount           Int                  @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  filePath            String
+  albumArtwork        String?
+  artist              String?
+  artistProfileId     String
+  bitrate             Int?
+  bpm                 Int?
+  channels            Int?
+  composer            String?
+  copyrightInfo       String?
+  distributionRights  String?
+  downloadCount       Int                  @default(0)
+  fileSize            Int?
+  isDownloadable      Boolean              @default(false)
+  isExplicit          Boolean              @default(false)
+  isPublic            Boolean              @default(true)
+  isrc                String?
+  licenseType         String?
+  likeCount           Int                  @default(0)
+  lyrics              String?
+  releaseDate         DateTime?
+  sampleRate          Int?
+  shareCount          Int                  @default(0)
+  uniqueUrl           String               @unique
+  userId              String
+  watermarkId         String?
+  year                Int?
+  playEvents          PlayEvent[]
+  playlistSubmissions PlaylistSubmission[]
+  playlistTracks      PlaylistTrack[]
+  smartLinks          SmartLink[]
+  artistProfile       ArtistProfile        @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("tracks")
 }
@@ -172,59 +146,132 @@ model Track {
 model PlayEvent {
   id        String   @id @default(cuid())
   trackId   String
-  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
   userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   timestamp DateTime @default(now())
   ipAddress String?
   userAgent String?
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@map("play_events")
 }
 
 model SmartLink {
-  id            String        @id @default(cuid())
+  id            String         @id @default(cuid())
   trackId       String
-  track         Track         @relation(fields: [trackId], references: [id], onDelete: Cascade)
   userId        String
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  slug          String        @unique
-  clickCount    Int           @default(0)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
+  slug          String         @unique
+  clickCount    Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   platformLinks PlatformLink[]
+  track         Track          @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("smart_links")
 }
 
 model PlatformLink {
-  id          String     @id @default(cuid())
+  id          String    @id @default(cuid())
   smartLinkId String
-  smartLink   SmartLink  @relation(fields: [smartLinkId], references: [id], onDelete: Cascade)
   platform    Platform
   url         String
-  clickCount  Int        @default(0)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  clickCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  smartLink   SmartLink @relation(fields: [smartLinkId], references: [id], onDelete: Cascade)
 
   @@map("platform_links")
 }
 
 model UploadJob {
-  id          String        @id @default(cuid())
-  userId      String
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  key         String        @unique
-  status      UploadStatus  @default(PENDING_UPLOAD)
-  fileName    String
-  fileType    String
-  fileSize    Int
-  uploadUrl   String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id        String       @id @default(cuid())
+  userId    String
+  key       String       @unique
+  status    UploadStatus @default(PENDING_UPLOAD)
+  fileName  String
+  fileType  String
+  fileSize  Int
+  uploadUrl String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("upload_jobs")
+}
+
+model Playlist {
+  id                      String               @id @default(cuid())
+  name                    String
+  description             String?
+  type                    PlaylistType
+  coverImage              String
+  maxTracks               Int
+  currentTracks           Int                  @default(0)
+  status                  PlaylistStatus       @default(INACTIVE)
+  submissionStatus        SubmissionStatus     @default(CLOSED)
+  maxSubmissionsPerArtist Int                  @default(1)
+  province                String?
+  createdBy               String
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  order                   Int                  @default(0)
+  analytics               PlaylistAnalytics[]
+  submissions             PlaylistSubmission[]
+  tracks                  PlaylistTrack[]
+  createdByUser           User                 @relation("PlaylistCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@map("playlists")
+}
+
+model PlaylistSubmission {
+  id             String                @id @default(cuid())
+  playlistId     String
+  trackId        String
+  artistId       String
+  status         TrackSubmissionStatus @default(PENDING)
+  submittedAt    DateTime              @default(now())
+  reviewedAt     DateTime?
+  reviewedBy     String?
+  adminComment   String?
+  artistComment  String?
+  artist         User                  @relation("PlaylistSubmissions", fields: [artistId], references: [id], onDelete: Cascade)
+  playlist       Playlist              @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  reviewedByUser User?                 @relation("PlaylistSubmissionReviewedBy", fields: [reviewedBy], references: [id])
+  track          Track                 @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@map("playlist_submissions")
+}
+
+model PlaylistTrack {
+  id           String   @id @default(cuid())
+  playlistId   String
+  trackId      String
+  order        Int
+  addedAt      DateTime @default(now())
+  addedBy      String
+  submissionId String?
+  addedByUser  User     @relation("PlaylistTrackAddedBy", fields: [addedBy], references: [id], onDelete: Cascade)
+  playlist     Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track        Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, trackId])
+  @@map("playlist_tracks")
+}
+
+model PlaylistAnalytics {
+  id              String   @id @default(cuid())
+  playlistId      String
+  date            DateTime @default(now())
+  views           Int      @default(0)
+  plays           Int      @default(0)
+  likes           Int      @default(0)
+  shares          Int      @default(0)
+  uniqueListeners Int      @default(0)
+  playlist        Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@unique([playlistId, date])
+  @@map("playlist_analytics")
 }
 
 enum UserRole {
@@ -246,4 +293,28 @@ enum UploadStatus {
   PROCESSING
   COMPLETED
   FAILED
+}
+
+enum PlaylistType {
+  GENRE
+  FEATURED
+  TOP_TEN
+  PROVINCE
+}
+
+enum PlaylistStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum SubmissionStatus {
+  OPEN
+  CLOSED
+}
+
+enum TrackSubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SHORTLISTED
 }

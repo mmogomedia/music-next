@@ -5,9 +5,9 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminName = 'admin';
-  const adminPassword = 'admin';
-  const adminEmail = 'admin@example.com';
+  const adminName = 'Dev';
+  const adminPassword = 'dev';
+  const adminEmail = 'dev@dev.com';
 
   const existing = await prisma.user.findFirst({
     where: { OR: [{ name: adminName }, { email: adminEmail }] },

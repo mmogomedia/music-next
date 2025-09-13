@@ -3,6 +3,7 @@
 import React from 'react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { PlayIcon, PauseIcon } from '@heroicons/react/24/outline';
+import TrackArtwork from './TrackArtwork';
 
 export default function GlobalMusicPlayer() {
   const {
@@ -24,12 +25,21 @@ export default function GlobalMusicPlayer() {
         <div className='flex items-center gap-4'>
           {/* Track Info */}
           <div className='flex items-center gap-3 min-w-0 flex-1'>
-            <div className='w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0'>
-              {isPlaying ? (
-                <PauseIcon className='w-6 h-6 text-white' />
-              ) : (
-                <PlayIcon className='w-6 h-6 text-white ml-0.5' />
-              )}
+            <div className='relative flex-shrink-0'>
+              <TrackArtwork
+                artworkUrl={
+                  currentTrack.albumArtwork || currentTrack.coverImageUrl
+                }
+                title={currentTrack.title}
+                size='md'
+              />
+              <div className='absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity'>
+                {isPlaying ? (
+                  <PauseIcon className='w-6 h-6 text-white' />
+                ) : (
+                  <PlayIcon className='w-6 h-6 text-white ml-0.5' />
+                )}
+              </div>
             </div>
             <div className='min-w-0 flex-1'>
               <h4 className='font-semibold text-gray-900 dark:text-white truncate'>

@@ -12,6 +12,7 @@ import {
   ChevronRightIcon,
   ArrowUturnLeftIcon,
 } from '@heroicons/react/24/outline';
+import TrackArtwork from './TrackArtwork';
 
 export default function MusicPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -32,9 +33,11 @@ export default function MusicPlayer() {
       <div className='max-w-7xl mx-auto flex items-center justify-between'>
         {/* Track Info */}
         <div className='flex items-center gap-4 flex-1 min-w-0'>
-          <div className='w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex-shrink-0'>
-            {/* Album art placeholder */}
-          </div>
+          <TrackArtwork
+            artworkUrl={undefined} // This would come from props in a real implementation
+            title='Happier Than Ever'
+            size='md'
+          />
           <div className='min-w-0 flex-1'>
             <h4 className='text-white font-medium text-sm truncate'>
               Happier Than Ever

@@ -19,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang='en' suppressHydrationWarning className='dark'>
-      <body>
+      <body suppressHydrationWarning>
         <a href='#content' className='skip-link'>
           Skip to content
         </a>

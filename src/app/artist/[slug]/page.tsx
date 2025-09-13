@@ -19,6 +19,7 @@ import {
 import ArtistProfileCard from '@/components/artist/ArtistProfileCard';
 import { ArtistProfile } from '@/types/artist-profile';
 import Image from 'next/image';
+import TrackArtwork from '@/components/music/TrackArtwork';
 
 export default function PublicArtistProfilePage() {
   const params = useParams();
@@ -282,9 +283,11 @@ export default function PublicArtistProfilePage() {
                         key={track.id}
                         className='flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors'
                       >
-                        <div className='w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0'>
-                          <PlayIcon className='w-4 h-4 text-white' />
-                        </div>
+                        <TrackArtwork
+                          artworkUrl={track.albumArtwork || track.coverImageUrl}
+                          title={track.title}
+                          size='sm'
+                        />
                         <div className='flex-1 min-w-0'>
                           <h4 className='text-sm font-medium text-gray-900 dark:text-white truncate'>
                             {track.title}

@@ -81,15 +81,10 @@ export async function POST(request: NextRequest) {
 
     await s3Client.send(command);
 
-    // Return the public URL (ensure it has https:// protocol)
-    const publicUrl = r2PublicUrl.startsWith('http')
-      ? `${r2PublicUrl}/${key}`
-      : `https://${r2PublicUrl}/${key}`;
-
+    // Return only the key/path for database storage (following the same pattern as music uploads)
     return NextResponse.json({
-      url: publicUrl,
+      key: key, // Return the file path for database storage
       fileName: fileName,
-      key: key, // Return the full path for database storage
       size: file.size,
       type: file.type,
     });

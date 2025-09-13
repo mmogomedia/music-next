@@ -1543,6 +1543,133 @@ npx prisma studio
 - **ARTIST**: Access to artist dashboard and upload features
 - **ADMIN**: Access to admin panel and all features
 
+### **Role-Based Login Flow**
+
+The platform implements an intelligent redirect system that automatically directs users to the appropriate dashboard based on their role, providing a seamless and role-appropriate user experience.
+
+#### **Admin Users**
+
+1. **Login**: Enter admin credentials (`dev@dev.com` / `dev`)
+2. **Role Detection**: System detects `role: 'ADMIN'`
+3. **Automatic Redirect**: Directly redirected to `/admin/dashboard`
+4. **No Profile Creation**: Skip profile selection screen entirely
+5. **Access**: Full admin panel with user management, content moderation, and system analytics
+
+#### **Regular Users & Artists**
+
+1. **Login**: Enter user/artist credentials
+2. **Role Detection**: System detects non-admin role
+3. **Profile Flow**: Continue to profile selection or dashboard
+4. **Profile Creation**: Create appropriate profile type if needed
+5. **Access**: Role-appropriate dashboard features
+
+### **Role-Based Redirect Implementation**
+
+#### **RoleBasedRedirect Component**
+
+Located at `src/components/auth/RoleBasedRedirect.tsx`:
+
+```typescript
+// Checks user role and redirects accordingly
+if (session.user?.role === 'ADMIN') {
+  router.push('/admin/dashboard');
+  return;
+}
+// Continue normal flow for other users
+```
+
+#### **Pages Using Role-Based Redirects**
+
+- `/profile/select` - Profile selection page
+- `/dashboard` - Main user dashboard
+- `/profile/create/artist` - Artist profile creation
+
+#### **Technical Flow**
+
+```
+Login → Role Check → Appropriate Dashboard
+```
+
+**Admin Flow:**
+
+```
+Login → Role: ADMIN → /admin/dashboard (Direct)
+```
+
+**User/Artist Flow:**
+
+```
+Login → Role: USER/ARTIST → Profile Selection → Dashboard
+```
+
+### **Admin Account Setup**
+
+#### **Development Credentials**
+
+- **Email**: `dev@dev.com`
+- **Password**: `dev`
+- **Name**: `Dev`
+- **Role**: `ADMIN`
+
+#### **Quick Admin Setup**
+
+```bash
+# Create admin account
+yarn create-admin
+
+# Or use the seed script
+yarn db:seed
+
+# Or run full database setup
+yarn setup-db
+```
+
+#### **Custom Admin Creation**
+
+```bash
+# Interactive mode - prompts for details
+yarn create-admin
+
+# Command line mode - specify details
+yarn create-admin --email admin@yourdomain.com --password securepassword --name "Your Name"
+```
+
+### **Testing Role-Based Redirects**
+
+#### **Test Admin Redirect**
+
+1. Go to `http://localhost:3000/login`
+2. Login with `dev@dev.com` / `dev`
+3. Should automatically redirect to `/admin/dashboard`
+4. Should NOT see profile creation screen
+
+#### **Test User Flow**
+
+1. Go to `http://localhost:3000/login`
+2. Login with regular user credentials
+3. Should continue to normal dashboard flow
+4. May see profile creation if no profile exists
+
+### **Troubleshooting Role-Based Redirects**
+
+#### **Admin Not Redirecting**
+
+- Check that user has `role: 'ADMIN'` in database
+- Verify session includes role information
+- Check browser console for errors
+
+#### **Profile Creation Screen Showing for Admin**
+
+- Ensure `RoleBasedRedirect` component is properly implemented
+- Check that admin role is correctly detected
+- Verify redirect logic is working
+
+#### **Regular Users Redirected to Admin Dashboard**
+
+- Check user role in database
+- Verify role detection logic
+- Ensure proper role assignment during registration
+
 ## 📝 Notes
 
 - Passwords are hashed using bcryptjs with 12 salt rounds
