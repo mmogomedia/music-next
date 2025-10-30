@@ -148,12 +148,21 @@ export class RouterAgent {
       };
     }
 
+    // Calculate normalized confidence (0 to 1 scale where > 0.3 is good)
+    const calculateConfidence = (score: number) => {
+      // Single keyword match = 0.8, two keywords = 0.95, three+ = 1.0
+      if (score >= 3) return 1.0;
+      if (score === 2) return 0.95;
+      if (score === 1) return 0.8;
+      return 0.5; // Shouldn't happen with maxScore check
+    };
+
     // Priority order: playback > recommendation > discovery
     // Playback has highest priority because it's more action-oriented
     if (playbackScore >= maxScore) {
       return {
         intent: 'playback',
-        confidence: Math.min(playbackScore / playbackKeywords.length, 1),
+        confidence: calculateConfidence(playbackScore),
         agent: 'PlaybackAgent',
       };
     }
@@ -161,10 +170,7 @@ export class RouterAgent {
     if (recommendationScore >= maxScore) {
       return {
         intent: 'recommendation',
-        confidence: Math.min(
-          recommendationScore / recommendationKeywords.length,
-          1
-        ),
+        confidence: calculateConfidence(recommendationScore),
         agent: 'RecommendationAgent',
       };
     }
@@ -172,7 +178,7 @@ export class RouterAgent {
     // Default to discovery
     return {
       intent: 'discovery',
-      confidence: Math.min(discoveryScore / discoveryKeywords.length, 1),
+      confidence: calculateConfidence(discoveryScore),
       agent: 'DiscoveryAgent',
     };
   }
