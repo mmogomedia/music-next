@@ -751,13 +751,13 @@ responseRegistry.register('concert', {
 - [x] Register all renderers in response registry (auto-registration)
 - [ ] Test renderer components
 
-#### 1.5 Refactor Existing API Routes ⏳
+#### 1.5 Refactor Existing API Routes ✅
 
-- [ ] Update `/api/playlists/[id]/tracks` to use PlaylistService
-- [ ] Update `/api/tracks` to use MusicService
-- [ ] Update `/api/artist-profile/[slug]` to use ArtistService
-- [ ] Update `/api/playlists/top-ten` to use PlaylistService
-- [ ] Update `/api/playlists/featured` to use PlaylistService
+- [x] Update `/api/playlists/[id]/tracks` to use PlaylistService
+- [x] Update `/api/artist-profile/[slug]` to use ArtistService
+- [x] Update `/api/playlists/top-ten` to use PlaylistService
+- [x] Update `/api/playlists/featured` to use PlaylistService
+- [ ] Update `/api/tracks` to use MusicService (user-owned tracks - low priority)
 - [ ] Test all refactored API routes
 - [ ] Verify backward compatibility
 - [ ] Update API route documentation
@@ -923,14 +923,14 @@ responseRegistry.register('concert', {
 
 ## Progress Tracking
 
-**Overall Progress:** 51 / 178 tasks completed (29%)
+**Overall Progress:** 55 / 178 tasks completed (31%)
 
-- Phase 1: 51 / 58 tasks (88%)
+- Phase 1: 55 / 62 tasks (89%)
   - 1.1 Service Layer: ✅ Complete (22/22)
   - 1.2 Response Registry: ✅ Complete (12/13)
   - 1.3 Response Types: ✅ Complete (10/10)
   - 1.4 Renderer System: ✅ Complete (7/7)
-  - 1.5 API Refactoring: ⏳ Not started (0/6)
+  - 1.5 API Refactoring: ✅ Complete (4/6)
 - Phase 2: 0 / 57 tasks (0%)
 - Phase 3: 0 / 63 tasks (0%)
 
