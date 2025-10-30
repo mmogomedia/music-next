@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Playlist, PlaylistStatus, SubmissionStatus } from '@/types/playlist';
 import { PlaylistTypeDefinition } from '@/types/dynamic-playlist-types';
+import Image from 'next/image';
 import { constructFileUrl } from '@/lib/url-utils';
 import { api } from '@/lib/api-client';
 import PlaylistFormDynamic from './PlaylistFormDynamic';
@@ -284,10 +285,14 @@ export default function UnifiedPlaylistManagement({
           <div className='px-6 py-4 border-b border-gray-200 dark:border-slate-700'>
             <div className='flex items-center space-x-4'>
               <div className='flex items-center space-x-2'>
-                <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                <label
+                  htmlFor='playlist-filter-select'
+                  className='text-sm font-medium text-gray-700 dark:text-gray-300'
+                >
                   Filter:
                 </label>
                 <select
+                  id='playlist-filter-select'
                   value={playlistFilters.type}
                   onChange={e =>
                     setPlaylistFilters(prev => ({
@@ -408,11 +413,11 @@ function PlaylistSection({
   playlists: Playlist[];
   loading: boolean;
   viewMode: 'grid' | 'table';
-  onEditPlaylist: (playlist: Playlist) => void;
-  getTypeIcon: (playlistTypeId: string) => string;
-  getTypeName: (playlistTypeId: string) => string;
-  getStatusColor: (status: PlaylistStatus) => string;
-  getSubmissionStatusColor: (status: SubmissionStatus) => string;
+  onEditPlaylist: (_playlist: Playlist) => void;
+  getTypeIcon: (_playlistTypeId: string) => string;
+  getTypeName: (_playlistTypeId: string) => string;
+  getStatusColor: (_status: PlaylistStatus) => string;
+  getSubmissionStatusColor: (_status: SubmissionStatus) => string;
 }) {
   if (loading) {
     return (
@@ -446,10 +451,11 @@ function PlaylistSection({
           >
             {/* Cover Image */}
             <div className='aspect-video bg-gray-100 dark:bg-slate-600 relative'>
-              <img
+              <Image
                 src={constructFileUrl(playlist.coverImage)}
                 alt={playlist.name}
-                className='w-full h-full object-cover'
+                fill
+                className='object-cover'
               />
               <div className='absolute top-3 left-3'>
                 <span className='text-2xl'>
@@ -559,11 +565,14 @@ function PlaylistSection({
             >
               <td className='py-3 px-4'>
                 <div className='flex items-center gap-3'>
-                  <img
-                    src={constructFileUrl(playlist.coverImage)}
-                    alt={playlist.name}
-                    className='w-10 h-10 rounded-lg object-cover'
-                  />
+                  <div className='relative w-10 h-10'>
+                    <Image
+                      src={constructFileUrl(playlist.coverImage)}
+                      alt={playlist.name}
+                      fill
+                      className='rounded-lg object-cover'
+                    />
+                  </div>
                   <div>
                     <div className='font-medium text-gray-900 dark:text-white'>
                       {playlist.name}
@@ -642,7 +651,7 @@ function PlaylistTypeSection({
 }: {
   types: PlaylistTypeDefinition[];
   loading: boolean;
-  onEditType: (type: PlaylistTypeDefinition) => void;
+  onEditType: (_type: PlaylistTypeDefinition) => void;
 }) {
   if (loading) {
     return (

@@ -5,7 +5,7 @@ import { Card, CardBody, Button, Chip, Progress } from '@heroui/react';
 import {
   ChartBarIcon,
   TrophyIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
   StarIcon,
   RocketLaunchIcon,
 } from '@heroicons/react/24/outline';
@@ -61,10 +61,6 @@ export default function StrengthScoringDashboard() {
     useState<StrengthScoreBreakdown | null>(null);
   const [calculating, setCalculating] = useState(false);
 
-  useEffect(() => {
-    fetchTopArtists();
-  }, [timeRange, minScore]);
-
   const fetchTopArtists = async () => {
     try {
       setLoading(true);
@@ -82,6 +78,11 @@ export default function StrengthScoringDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchTopArtists();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeRange, minScore]);
 
   const fetchArtistBreakdown = async (artistId: string) => {
     try {
@@ -115,7 +116,6 @@ export default function StrengthScoringDashboard() {
       });
 
       if (response.ok) {
-        const data = await response.json();
         alert(`Batch calculation started for ${timeRange}`);
 
         // Refresh data after a delay
@@ -198,7 +198,7 @@ export default function StrengthScoringDashboard() {
           <Button
             color='secondary'
             onClick={handleBatchCalculate}
-            loading={calculating}
+            isLoading={calculating}
             size='sm'
           >
             Recalculate All
@@ -370,7 +370,7 @@ export default function StrengthScoringDashboard() {
               {/* Growth Breakdown */}
               <div className='space-y-3'>
                 <h4 className='font-semibold text-gray-900 dark:text-white flex items-center gap-2'>
-                  <TrendingUpIcon className='w-5 h-5 text-green-500' />
+                  <ArrowTrendingUpIcon className='w-5 h-5 text-green-500' />
                   Growth
                 </h4>
                 <div className='space-y-2 text-sm'>
