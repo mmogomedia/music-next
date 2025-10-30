@@ -46,7 +46,7 @@
     "react-hooks/exhaustive-deps": "off",
 
     // General JavaScript rules
-    "no-console": "off",
+    "no-console": "error",
     "no-debugger": "error",
     "no-duplicate-imports": "error",
     "no-unused-expressions": "error",
@@ -77,6 +77,12 @@
   "overrides": [
     {
       "files": ["*.config.js", "*.config.mjs"],
+      "rules": {
+        "no-console": "error"
+      }
+    },
+    {
+      "files": ["src/lib/utils/logger.ts"],
       "rules": {
         "no-console": "off"
       }
