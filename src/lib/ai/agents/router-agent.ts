@@ -142,18 +142,23 @@ export class RouterAgent {
       };
     }
 
-    if (playbackScore === maxScore) {
+    // Priority order: playback > recommendation > discovery
+    // Playback has highest priority because it's more action-oriented
+    if (playbackScore >= maxScore) {
       return {
         intent: 'playback',
-        confidence: playbackScore / playbackKeywords.length,
+        confidence: Math.min(playbackScore / playbackKeywords.length, 1),
         agent: 'PlaybackAgent',
       };
     }
 
-    if (recommendationScore === maxScore) {
+    if (recommendationScore >= maxScore) {
       return {
         intent: 'recommendation',
-        confidence: recommendationScore / recommendationKeywords.length,
+        confidence: Math.min(
+          recommendationScore / recommendationKeywords.length,
+          1
+        ),
         agent: 'RecommendationAgent',
       };
     }
@@ -161,7 +166,7 @@ export class RouterAgent {
     // Default to discovery
     return {
       intent: 'discovery',
-      confidence: discoveryScore / discoveryKeywords.length,
+      confidence: Math.min(discoveryScore / discoveryKeywords.length, 1),
       agent: 'DiscoveryAgent',
     };
   }
