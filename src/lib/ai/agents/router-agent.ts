@@ -102,6 +102,9 @@ export class RouterAgent {
       'help me find',
       'best',
       'top',
+      'what else',
+      'else is good',
+      'other good',
     ];
     const recommendationScore = recommendationKeywords.filter(keyword =>
       lowerMessage.includes(keyword)
@@ -121,6 +124,9 @@ export class RouterAgent {
       'artist',
       'album',
       'playlist',
+      'trending',
+      'track',
+      'song',
     ];
     const discoveryScore = discoveryKeywords.filter(keyword =>
       lowerMessage.includes(keyword)
@@ -134,10 +140,10 @@ export class RouterAgent {
     );
 
     if (maxScore === 0) {
-      // No clear intent, default to discovery
+      // No clear intent, default to discovery as fallback
       return {
-        intent: 'unknown',
-        confidence: 0,
+        intent: 'discovery',
+        confidence: 0.1,
         agent: 'DiscoveryAgent',
       };
     }
