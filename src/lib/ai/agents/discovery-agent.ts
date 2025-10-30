@@ -121,8 +121,24 @@ export class DiscoveryAgent extends BaseAgent {
   }
 
   private async handleToolCalls(response: any): Promise<AgentResponse> {
-    // For now, return the text response
-    // In a full implementation, we would execute the tool calls
+    // Check if we have tool calls but no text response
+    const hasText = response.content && response.content.trim().length > 0;
+    
+    // If agent made tool calls without text, provide a helpful message
+    if (!hasText) {
+      // Get the tool names that were called
+      const toolNames = response.tool_calls?.map((tc: any) => tc.name).join(', ') || 'tools';
+      
+      return {
+        message: `I'm searching for music information using ${toolNames}. Let me find the best results for you!`,
+        metadata: {
+          agent: this.name,
+          toolCalls: response.tool_calls,
+        },
+      };
+    }
+    
+    // Return the text response if we have one
     return {
       message: response.content as string,
       metadata: {
