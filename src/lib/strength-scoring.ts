@@ -65,9 +65,11 @@ export class ArtistStrengthCalculator {
     artistId: string,
     timeRange: string
   ): Promise<StrengthScoreResult> {
-    console.log(
-      `Calculating strength score for artist ${artistId} (${timeRange})`
-    );
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(
+        `Calculating strength score for artist ${artistId} (${timeRange})`
+      );
+    }
 
     try {
       // Get artist metrics
@@ -113,10 +115,14 @@ export class ArtistStrengthCalculator {
       // Store the score in database
       await this.storeStrengthScore(artistId, timeRange, result);
 
-      console.log(`Strength score calculated: ${overallScore.toFixed(2)}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`Strength score calculated: ${overallScore.toFixed(2)}`);
+      }
       return result;
     } catch (error) {
-      console.error('Error calculating strength score:', error);
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error calculating strength score:', error);
+      }
       throw error;
     }
   }
@@ -195,7 +201,7 @@ export class ArtistStrengthCalculator {
    */
   private async calculateEngagementScore(
     metrics: ArtistMetrics,
-    timeRange: string
+    _timeRange: string
   ): Promise<number> {
     // Normalize completion rate (0-100% -> 0-1)
     const completionRateScore = Math.min(metrics.avgCompletionRate / 100, 1);
@@ -268,7 +274,7 @@ export class ArtistStrengthCalculator {
    */
   private async calculateQualityScore(
     metrics: ArtistMetrics,
-    timeRange: string
+    _timeRange: string
   ): Promise<number> {
     // Skip rate (inverted - lower skip rate = higher score)
     const skipRateScore = Math.max(1 - metrics.skipRate / 100, 0);
@@ -296,17 +302,17 @@ export class ArtistStrengthCalculator {
    * Calculate Potential Score (10% weight)
    */
   private async calculatePotentialScore(
-    artistId: string,
+    _artistId: string,
     metrics: ArtistMetrics,
-    timeRange: string
+    _timeRange: string
   ): Promise<number> {
     // Viral coefficient
     const viralScore = Math.min(metrics.viralCoefficient, 1);
 
     // Market position (compared to similar artists)
     const marketPositionScore = await this.calculateMarketPosition(
-      artistId,
-      timeRange
+      _artistId,
+      _timeRange
     );
 
     // Demographic appeal (placeholder)
@@ -491,7 +497,7 @@ export class ArtistStrengthCalculator {
     trackIds: string[],
     startDate: Date,
     endDate: Date,
-    timeRange: string
+    _timeRange: string
   ): Promise<ArtistMetrics> {
     // Implementation would query aggregated tables based on timeRange
     // For now, fall back to raw data
@@ -688,17 +694,6 @@ export class ArtistStrengthCalculator {
     // Calculate how many users return to listen to the artist
     const { startDate, endDate } = this.getDateRange(timeRange);
 
-    const uniqueSessions = await prisma.playEvent.findMany({
-      where: {
-        track: {
-          artistProfileId: artistId,
-        },
-        timestamp: { gte: startDate, lte: endDate },
-      },
-      select: { sessionId: true },
-      distinct: ['sessionId'],
-    });
-
     // Count sessions with multiple plays (indicating retention)
     const sessionPlayCounts = await prisma.playEvent.groupBy({
       by: ['sessionId'],
@@ -720,8 +715,8 @@ export class ArtistStrengthCalculator {
   }
 
   private async calculateMarketPosition(
-    artistId: string,
-    timeRange: string
+    _artistId: string,
+    _timeRange: string
   ): Promise<number> {
     // Compare artist performance to similar artists in the same genre
     // This is a placeholder implementation
@@ -752,7 +747,7 @@ export class ArtistStrengthCalculator {
   private getPreviousPeriod(
     startDate: Date,
     endDate: Date,
-    timeRange: string
+    _timeRange: string
   ): {
     startDate: Date;
     endDate: Date;
@@ -807,28 +802,38 @@ export class ArtistStrengthCalculator {
    * Batch calculate scores for all artists
    */
   async batchCalculateScores(timeRange: string): Promise<void> {
-    console.log(`Starting batch calculation for ${timeRange}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Starting batch calculation for ${timeRange}`);
+    }
 
     const artists = await prisma.artistProfile.findMany({
       where: { isActive: true },
       select: { id: true, artistName: true },
     });
 
-    console.log(`Calculating scores for ${artists.length} artists`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Calculating scores for ${artists.length} artists`);
+    }
 
     for (const artist of artists) {
       try {
         await this.calculateArtistStrengthScore(artist.id, timeRange);
-        console.log(`✅ Calculated score for ${artist.artistName}`);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`✅ Calculated score for ${artist.artistName}`);
+        }
       } catch (error) {
-        console.error(
-          `❌ Failed to calculate score for ${artist.artistName}:`,
-          error
-        );
+        if (process.env.NODE_ENV !== 'production') {
+          console.error(
+            `❌ Failed to calculate score for ${artist.artistName}:`,
+            error
+          );
+        }
       }
     }
 
-    console.log(`Batch calculation completed for ${timeRange}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Batch calculation completed for ${timeRange}`);
+    }
   }
 }
 

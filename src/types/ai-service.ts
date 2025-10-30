@@ -33,13 +33,16 @@ export interface AIError {
 }
 
 export interface AIService {
-  chat(messages: AIMessage[], config?: Partial<AIConfig>): Promise<AIResponse>;
+  chat(
+    _messages: AIMessage[],
+    _config?: Partial<AIConfig>
+  ): Promise<AIResponse>;
   isAvailable(): boolean;
   getProvider(): AIProvider;
 }
 
 export interface AIServiceFactory {
-  createService(provider: AIProvider, config?: Partial<AIConfig>): AIService;
+  createService(_provider: AIProvider, _config?: Partial<AIConfig>): AIService;
   getAvailableProviders(): AIProvider[];
-  isProviderAvailable(provider: AIProvider): boolean;
+  isProviderAvailable(_provider: AIProvider): boolean;
 }
