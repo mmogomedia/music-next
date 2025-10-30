@@ -93,10 +93,10 @@ class StatsCollector {
   /**
    * Record a play event (non-blocking)
    */
-  recordPlay(event: Omit<PlayEvent, 'timestamp'>): void {
+  recordPlay(event: Omit<PlayEvent, 'timestamp' | 'eventType'>): void {
     const playEvent: PlayEvent = {
-      eventType: 'play',
       ...event,
+      eventType: 'play',
       timestamp: new Date(),
     };
 
@@ -106,10 +106,10 @@ class StatsCollector {
   /**
    * Record a like event (non-blocking)
    */
-  recordLike(event: Omit<LikeEvent, 'timestamp'>): void {
+  recordLike(event: Omit<LikeEvent, 'timestamp' | 'eventType'>): void {
     const likeEvent: LikeEvent = {
-      eventType: 'like',
       ...event,
+      eventType: 'like',
       timestamp: new Date(),
     };
 
@@ -119,10 +119,10 @@ class StatsCollector {
   /**
    * Record a save event (non-blocking)
    */
-  recordSave(event: Omit<SaveEvent, 'timestamp'>): void {
+  recordSave(event: Omit<SaveEvent, 'timestamp' | 'eventType'>): void {
     const saveEvent: SaveEvent = {
-      eventType: 'save',
       ...event,
+      eventType: 'save',
       timestamp: new Date(),
     };
 
@@ -132,10 +132,10 @@ class StatsCollector {
   /**
    * Record a share event (non-blocking)
    */
-  recordShare(event: Omit<ShareEvent, 'timestamp'>): void {
+  recordShare(event: Omit<ShareEvent, 'timestamp' | 'eventType'>): void {
     const shareEvent: ShareEvent = {
-      eventType: 'share',
       ...event,
+      eventType: 'share',
       timestamp: new Date(),
     };
 
@@ -145,10 +145,10 @@ class StatsCollector {
   /**
    * Record a download event (non-blocking)
    */
-  recordDownload(event: Omit<DownloadEvent, 'timestamp'>): void {
+  recordDownload(event: Omit<DownloadEvent, 'timestamp' | 'eventType'>): void {
     const downloadEvent: DownloadEvent = {
-      eventType: 'download',
       ...event,
+      eventType: 'download',
       timestamp: new Date(),
     };
 

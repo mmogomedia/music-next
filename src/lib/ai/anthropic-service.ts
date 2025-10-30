@@ -1,8 +1,5 @@
 import { ChatAnthropic } from '@langchain/anthropic';
-import {
-  HumanMessage,
-  AIMessage as LangChainMessage,
-} from '@langchain/core/messages';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { BaseAIService } from './base-service';
 import { AIConfig, AIMessage, AIResponse } from '@/types/ai-service';
 
@@ -29,32 +26,17 @@ export class AnthropicService extends BaseAIService {
       const mergedConfig = { ...this.config, ...config };
       const formattedMessages = this.formatMessages(messages);
 
-      // Anthropic requires system message to be separate
-      const systemMessage = formattedMessages.find(
-        msg => msg.role === 'system'
-      );
-      const conversationMessages = formattedMessages.filter(
-        msg => msg.role !== 'system'
-      );
+      // Convert all messages to LangChain format including system messages
+      const langchainMessages = formattedMessages.map(msg => {
+        if (msg.role === 'system') {
+          return new SystemMessage(msg.content);
+        }
+        return new HumanMessage(msg.content);
+      });
 
-      const langchainMessages: LangChainMessage[] = conversationMessages.map(
-        msg => new HumanMessage(msg.content)
-      );
+      const response = await this.client.invoke(langchainMessages);
 
-      // Create a new client instance with system message if provided
-      const clientWithSystem = systemMessage?.content
-        ? new ChatAnthropic({
-            model: mergedConfig.model,
-            temperature: mergedConfig.temperature || 0.7,
-            maxTokens: mergedConfig.maxTokens || 1000,
-            anthropicApiKey: mergedConfig.apiKey,
-            system: systemMessage.content,
-          })
-        : this.client;
-
-      const response = await clientWithSystem.invoke(langchainMessages);
-
-      const usage = response.response_metadata?.tokenUsage;
+      const usage = response.response_metadata?.tokenUsage as any;
 
       return {
         content: response.content as string,

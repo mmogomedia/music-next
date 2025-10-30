@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { BProgress } from '@bprogress/core';
 
-export default function BProgressProvider() {
+function BProgressProviderInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -38,4 +38,12 @@ export default function BProgressProvider() {
   }, [pathname, searchParams]);
 
   return null;
+}
+
+export default function BProgressProvider() {
+  return (
+    <Suspense fallback={null}>
+      <BProgressProviderInner />
+    </Suspense>
+  );
 }

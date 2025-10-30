@@ -22,7 +22,7 @@ import {
 import UploadMusic from './UploadMusic';
 import MusicLibrary from './MusicLibrary';
 import ArtistProfileManager from './ArtistProfileManager';
-import PlaylistSubmissions from './PlaylistSubmissions';
+import PlaylistSubmissions from './PlaylistSubmissionsTab';
 import TrackArtwork from '@/components/music/TrackArtwork';
 
 export default function ArtistDashboard() {

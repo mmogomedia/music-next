@@ -231,17 +231,20 @@ export default function TrackManagement({ onTrackPlay }: TrackManagementProps) {
                 </DropdownTrigger>
                 <DropdownMenu
                   selectedKeys={
-                    selectedGenre ? new Set([selectedGenre]) : new Set()
+                    selectedGenre ? new Set([selectedGenre]) : new Set(['all'])
                   }
                   onSelectionChange={keys => {
                     const selected = Array.from(keys)[0] as string;
                     setSelectedGenre(selected === 'all' ? '' : selected);
                   }}
+                  selectionMode='single'
+                  aria-label='Genre filter'
                 >
-                  <DropdownItem key='all'>All Genres</DropdownItem>
-                  {genres.map(genre => (
-                    <DropdownItem key={genre}>{genre}</DropdownItem>
-                  ))}
+                  {[<DropdownItem key='all'>All Genres</DropdownItem>].concat(
+                    genres.map(genre => (
+                      <DropdownItem key={genre}>{genre}</DropdownItem>
+                    ))
+                  )}
                 </DropdownMenu>
               </Dropdown>
             </div>

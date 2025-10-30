@@ -13,7 +13,7 @@ import type { Track } from '@prisma/client';
 /**
  * Trending track with additional stats
  */
-export interface TrendingTrack extends Track {
+export interface TrendingTrack extends Omit<Track, 'artist'> {
   artist?: string | null;
   stats: {
     playCount: number;

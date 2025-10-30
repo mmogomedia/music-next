@@ -1,9 +1,5 @@
 import { ChatOpenAI } from '@langchain/openai';
-import {
-  HumanMessage,
-  SystemMessage,
-  AIMessage as LangChainMessage,
-} from '@langchain/core/messages';
+import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { BaseAIService } from './base-service';
 import { AIConfig, AIMessage, AIResponse } from '@/types/ai-service';
 
@@ -33,17 +29,15 @@ export class OpenAIService extends BaseAIService {
       const mergedConfig = { ...this.config, ...config };
       const formattedMessages = this.formatMessages(messages);
 
-      const langchainMessages: LangChainMessage[] = formattedMessages.map(
-        msg => {
-          if (msg.role === 'system') {
-            return new SystemMessage(msg.content);
-          }
-          return new HumanMessage(msg.content);
+      const langchainMessages = formattedMessages.map(msg => {
+        if (msg.role === 'system') {
+          return new SystemMessage(msg.content);
         }
-      );
+        return new HumanMessage(msg.content);
+      });
 
       const response = await this.client.invoke(langchainMessages);
-      const usage = response.response_metadata?.tokenUsage;
+      const usage = response.response_metadata?.tokenUsage as any;
 
       return {
         content: response.content as string,

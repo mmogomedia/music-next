@@ -4,6 +4,7 @@
  */
 
 import { prisma } from './db';
+import { logger } from '@/lib/utils/logger';
 
 export interface StrengthScoreResult {
   engagementScore: number;
@@ -65,11 +66,9 @@ export class ArtistStrengthCalculator {
     artistId: string,
     timeRange: string
   ): Promise<StrengthScoreResult> {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(
-        `Calculating strength score for artist ${artistId} (${timeRange})`
-      );
-    }
+    logger.log(
+      `Calculating strength score for artist ${artistId} (${timeRange})`
+    );
 
     try {
       // Get artist metrics
@@ -115,9 +114,7 @@ export class ArtistStrengthCalculator {
       // Store the score in database
       await this.storeStrengthScore(artistId, timeRange, result);
 
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`Strength score calculated: ${overallScore.toFixed(2)}`);
-      }
+      logger.log(`Strength score calculated: ${overallScore.toFixed(2)}`);
       return result;
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') {
@@ -802,25 +799,19 @@ export class ArtistStrengthCalculator {
    * Batch calculate scores for all artists
    */
   async batchCalculateScores(timeRange: string): Promise<void> {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`Starting batch calculation for ${timeRange}`);
-    }
+    logger.log(`Starting batch calculation for ${timeRange}`);
 
     const artists = await prisma.artistProfile.findMany({
       where: { isActive: true },
       select: { id: true, artistName: true },
     });
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`Calculating scores for ${artists.length} artists`);
-    }
+    logger.log(`Calculating scores for ${artists.length} artists`);
 
     for (const artist of artists) {
       try {
         await this.calculateArtistStrengthScore(artist.id, timeRange);
-        if (process.env.NODE_ENV !== 'production') {
-          console.log(`✅ Calculated score for ${artist.artistName}`);
-        }
+        logger.log(`✅ Calculated score for ${artist.artistName}`);
       } catch (error) {
         if (process.env.NODE_ENV !== 'production') {
           console.error(
@@ -831,9 +822,7 @@ export class ArtistStrengthCalculator {
       }
     }
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`Batch calculation completed for ${timeRange}`);
-    }
+    logger.log(`Batch calculation completed for ${timeRange}`);
   }
 }
 
