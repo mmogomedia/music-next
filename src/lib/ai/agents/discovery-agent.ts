@@ -13,6 +13,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import type { AIProvider } from '@/types/ai-service';
+import type { TrackListResponse, PlaylistResponse, PlaylistGridResponse, ArtistResponse, SearchResultsResponse } from '@/types/ai-responses';
 
 const DISCOVERY_SYSTEM_PROMPT = `You are a music discovery assistant for Flemoji, a South African music streaming platform.
 
@@ -179,6 +180,9 @@ export class DiscoveryAgent extends BaseAgent {
         }
       });
 
+      // Convert tool results to structured response format
+      const structuredData = this.convertToolDataToResponse(data);
+
       // Check if we have text response
       const hasText = response.content && response.content.trim().length > 0;
 
@@ -190,7 +194,7 @@ export class DiscoveryAgent extends BaseAgent {
         message: hasText
           ? (response.content as string)
           : `I found results using ${toolNames}! Here's what I discovered:`,
-        data: data.length === 1 ? data[0].data : data,
+        data: structuredData,
         metadata: {
           agent: this.name,
           toolCalls: response.tool_calls,
@@ -207,6 +211,67 @@ export class DiscoveryAgent extends BaseAgent {
           error: error instanceof Error ? error.message : 'Unknown error',
         },
       };
+    }
+  }
+
+  /**
+   * Convert raw tool data to structured AI response format
+   */
+  private convertToolDataToResponse(toolData: any[]): any {
+    if (toolData.length === 0) return null;
+    
+    const firstResult = toolData[0];
+    const resultData = firstResult.data;
+    const toolName = firstResult.tool;
+
+    // Convert based on tool type
+    switch (toolName) {
+      case 'search_tracks':
+      case 'get_tracks_by_genre':
+      case 'get_trending_tracks':
+        return {
+          type: 'track_list',
+          data: {
+            tracks: resultData.tracks || [],
+            metadata: {
+              genre: resultData.genre,
+              total: resultData.count || resultData.tracks?.length || 0,
+            },
+          },
+        };
+
+      case 'get_playlist':
+        return {
+          type: 'playlist',
+          data: resultData,
+        };
+
+      case 'get_top_charts':
+      case 'get_featured_playlists':
+      case 'get_playlists_by_genre':
+      case 'get_playlists_by_province':
+        return {
+          type: 'playlist_grid',
+          data: {
+            playlists: resultData.playlists || [],
+            metadata: {
+              genre: resultData.genre,
+              province: resultData.province,
+              total: resultData.count || resultData.playlists?.length || 0,
+            },
+          },
+        };
+
+      case 'get_artist':
+      case 'search_artists':
+        return {
+          type: 'artist',
+          data: resultData,
+        };
+
+      default:
+        // Return raw data if we don't recognize the tool
+        return resultData;
     }
   }
 }
