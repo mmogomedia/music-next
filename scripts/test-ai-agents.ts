@@ -39,23 +39,37 @@ async function testServiceLayer() {
   console.log('\n🧪 Testing Service Layer\n');
 
   try {
-    // Test track search
-    console.log('Searching for tracks...');
-    const tracks = await MusicService.searchTracks('Amapiano', {
+    // Test track search by genre
+    console.log('1. Searching for Amapiano tracks by genre...');
+    const tracks = await MusicService.searchTracks('', {
+      genre: 'Amapiano',
       limit: 5,
     });
-    console.log(`Found ${tracks.length} tracks\n`);
+    console.log(`   Found ${tracks.length} tracks\n`);
 
     if (tracks.length > 0) {
-      console.log('Sample track:');
-      console.log(`  - Title: ${tracks[0].title}`);
+      console.log('   Sample track:');
+      console.log(`   - Title: ${tracks[0].title}`);
       console.log(
-        `  - Artist: ${tracks[0].artist || tracks[0].artistProfile?.artistName || 'Unknown'}`
+        `   - Artist: ${tracks[0].artist || tracks[0].artistProfile?.artistName || 'Unknown'}`
       );
-      console.log(`  - Genre: ${tracks[0].genre || 'N/A'}`);
-      console.log(`  - Plays: ${tracks[0].playCount}`);
-      console.log('');
+      console.log(`   - Genre: ${tracks[0].genre || 'N/A'}`);
+      console.log(`   - Plays: ${tracks[0].playCount}`);
     }
+
+    // Test general search
+    console.log('\n2. Testing general search for "Caeser"...');
+    const searchTracks = await MusicService.searchTracks('Caeser', {
+      limit: 5,
+    });
+    console.log(`   Found ${searchTracks.length} tracks by search query\n`);
+
+    // Test title search
+    console.log('3. Testing title search for "Awukhuzeki"...');
+    const titleTracks = await MusicService.searchTracks('Awukhuzeki', {
+      limit: 5,
+    });
+    console.log(`   Found ${titleTracks.length} tracks by title\n`);
   } catch (error) {
     console.error('Error testing service layer:', error);
   }
