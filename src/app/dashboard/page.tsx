@@ -332,10 +332,10 @@ export default function DashboardPage() {
                 {/* Quick Stats Pills */}
                 <div className='hidden md:flex items-center gap-2'>
                   <Chip size='sm' color='primary' variant='flat'>
-                    {stats?.totalTracks || 0} tracks
+                    {stats?.overview?.totalTracks || 0} tracks
                   </Chip>
                   <Chip size='sm' color='success' variant='flat'>
-                    {(stats?.totalPlays || 0).toLocaleString()} plays
+                    {(stats?.overview?.totalPlays || 0).toLocaleString()} plays
                   </Chip>
                   {profile && (
                     <Chip size='sm' color='secondary' variant='flat'>
