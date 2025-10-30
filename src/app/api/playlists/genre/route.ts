@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { PlaylistType, PlaylistStatus } from '@/types/playlist';
+import { PlaylistStatus } from '@/types/playlist';
 
 // GET /api/playlists/genre - Get genre playlists
 export async function GET(request: NextRequest) {
@@ -8,9 +8,21 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '6');
 
+    // First find the "genre" playlist type
+    const genreType = await prisma.playlistTypeDefinition.findFirst({
+      where: { slug: 'genre', isActive: true },
+    });
+
+    if (!genreType) {
+      return NextResponse.json(
+        { error: 'Genre playlist type not found' },
+        { status: 404 }
+      );
+    }
+
     const genrePlaylists = await prisma.playlist.findMany({
       where: {
-        type: PlaylistType.GENRE,
+        playlistTypeId: genreType.id,
         status: PlaylistStatus.ACTIVE,
       },
       include: {

@@ -15,6 +15,7 @@ import {
   UpdateArtistProfileData,
 } from '@/types/artist-profile';
 import ImageUpload from '@/components/ui/ImageUpload';
+import { uploadImageToR2 } from '@/lib/image-upload';
 
 interface ArtistProfileFormProps {
   profile?: ArtistProfile;
@@ -181,22 +182,8 @@ export default function ArtistProfileForm({
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('image', file);
-    formData.append('type', 'profile');
-
-    const response = await fetch('/api/upload/image', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to upload image');
-    }
-
-    const data = await response.json();
-    // Return the file path (key) for database storage
-    return data.key || data.url;
+    const key = await uploadImageToR2(file);
+    return key;
   };
 
   const handleImageChange = (file: File | null) => {

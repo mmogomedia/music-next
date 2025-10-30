@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { constructFileUrl } from '@/lib/url-utils';
 
 // GET /api/playlists/[id]/tracks - Get tracks for a specific playlist
 export async function GET(
@@ -20,6 +21,7 @@ export async function GET(
     const playlist = await prisma.playlist.findUnique({
       where: { id: playlistId },
       include: {
+        playlistType: true,
         tracks: {
           include: {
             track: {
@@ -44,17 +46,22 @@ export async function GET(
       );
     }
 
-    const tracks = playlist.tracks.map(pt => ({
-      ...pt.track,
-      artist: pt.track.artistProfile?.artistName || 'Unknown Artist',
-    }));
+    const tracks = playlist.tracks.map(pt => {
+      const imagePath = pt.track.coverImageUrl || pt.track.albumArtwork;
+      return {
+        ...pt.track,
+        artist: pt.track.artistProfile?.artistName || 'Unknown Artist',
+        fileUrl: pt.track.filePath ? constructFileUrl(pt.track.filePath) : null,
+        coverImageUrl: imagePath ? constructFileUrl(imagePath) : null,
+      };
+    });
 
     return NextResponse.json({
       playlist: {
         id: playlist.id,
         name: playlist.name,
         description: playlist.description,
-        type: playlist.type,
+        playlistType: playlist.playlistType,
         status: playlist.status,
       },
       tracks,

@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { HeartIcon, ShareIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { PlayIcon as PlaySolidIcon } from '@heroicons/react/24/solid';
-import { Playlist, PlaylistType } from '@/types/playlist';
+import { Playlist } from '@/types/playlist';
 import { Track } from '@/types/track';
+import { constructFileUrl } from '@/lib/url-utils';
+import { api } from '@/lib/api-client';
 
 interface PlaylistShowcaseProps {
   onPlaylistClick?: (_playlist: Playlist) => void;
@@ -36,21 +38,15 @@ export default function PlaylistShowcase({
   const fetchAllPlaylists = async () => {
     try {
       const [topTenRes, provincesRes, genresRes] = await Promise.all([
-        fetch('/api/playlists/top-ten'),
-        fetch('/api/playlists/province'),
-        fetch('/api/playlists/genre'),
-      ]);
-
-      const [topTenData, provincesData, genresData] = await Promise.all([
-        topTenRes.ok ? topTenRes.json() : { playlist: null },
-        provincesRes.ok ? provincesRes.json() : { playlists: [] },
-        genresRes.ok ? genresRes.json() : { playlists: [] },
+        api.playlists.getTopTen().catch(() => ({ data: { playlist: null } })),
+        api.playlists.getProvince().catch(() => ({ data: { playlists: [] } })),
+        api.playlists.getGenre().catch(() => ({ data: { playlists: [] } })),
       ]);
 
       setPlaylists({
-        topTen: topTenData.playlist,
-        provinces: provincesData.playlists || [],
-        genres: genresData.playlists || [],
+        topTen: topTenRes.data.playlist,
+        provinces: provincesRes.data.playlists || [],
+        genres: genresRes.data.playlists || [],
       });
     } catch (error) {
       console.error('Error fetching playlists:', error);
@@ -59,26 +55,28 @@ export default function PlaylistShowcase({
     }
   };
 
-  const getTypeIcon = (type: PlaylistType) => {
-    switch (type) {
-      case PlaylistType.TOP_TEN:
+  const getTypeIcon = (playlist: Playlist) => {
+    const typeSlug = playlist.playlistType?.slug;
+    switch (typeSlug) {
+      case 'top-ten':
         return '📊';
-      case PlaylistType.PROVINCE:
+      case 'province':
         return '🏙️';
-      case PlaylistType.GENRE:
+      case 'genre':
         return '🎵';
       default:
         return '🎵';
     }
   };
 
-  const getTypeGradient = (type: PlaylistType) => {
-    switch (type) {
-      case PlaylistType.TOP_TEN:
+  const getTypeGradient = (playlist: Playlist) => {
+    const typeSlug = playlist.playlistType?.slug;
+    switch (typeSlug) {
+      case 'top-ten':
         return 'from-orange-500 to-red-500';
-      case PlaylistType.PROVINCE:
+      case 'province':
         return 'from-green-500 to-teal-500';
-      case PlaylistType.GENRE:
+      case 'genre':
         return 'from-blue-500 to-indigo-500';
       default:
         return 'from-gray-500 to-gray-600';
@@ -189,15 +187,13 @@ export default function PlaylistShowcase({
               <div className='relative aspect-square bg-gradient-to-br from-slate-700 to-slate-800'>
                 {playlist.coverImage ? (
                   <img
-                    src={playlist.coverImage}
+                    src={constructFileUrl(playlist.coverImage)}
                     alt={playlist.name}
                     className='w-full h-full object-cover'
                   />
                 ) : (
                   <div className='w-full h-full flex items-center justify-center'>
-                    <span className='text-6xl'>
-                      {getTypeIcon(playlist.type)}
-                    </span>
+                    <span className='text-6xl'>{getTypeIcon(playlist)}</span>
                   </div>
                 )}
 
@@ -230,9 +226,9 @@ export default function PlaylistShowcase({
                 {/* Type Badge */}
                 <div className='absolute top-4 left-4'>
                   <span
-                    className={`px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r ${getTypeGradient(playlist.type)} text-white shadow-lg`}
+                    className={`px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r ${getTypeGradient(playlist)} text-white shadow-lg`}
                   >
-                    {playlist.type.replace('_', ' ')}
+                    {playlist.playlistType?.name || 'Unknown'}
                   </span>
                 </div>
 

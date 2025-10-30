@@ -19,111 +19,49 @@ import {
   MusicalNoteIcon as MusicalNoteSolidIcon,
   ChartBarIcon as ChartBarSolidIcon,
 } from '@heroicons/react/24/solid';
-import PlaylistManagement from './PlaylistManagement';
-import PlaylistForm from './PlaylistForm';
+import UnifiedPlaylistManagement from './UnifiedPlaylistManagement';
 import SubmissionReview from './SubmissionReview';
+import TrackManagement from './TrackManagement';
+import UserManagement from './UserManagement';
+import { useAdminDashboardStats } from '@/hooks/useAdminDashboardStats';
 import { Playlist } from '@/types/playlist';
+import { Track } from '@/types/track';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [isPlaylistFormOpen, setIsPlaylistFormOpen] = useState(false);
-  const [editingPlaylist, setEditingPlaylist] = useState<
-    Playlist | undefined
-  >();
+  const { stats, loading, error, refetch } = useAdminDashboardStats();
 
   const handleCreatePlaylist = () => {
-    setEditingPlaylist(undefined);
-    setIsPlaylistFormOpen(true);
+    // This will be handled by the UnifiedPlaylistManagement component
+    console.log('Create playlist requested');
   };
 
   const handleEditPlaylist = (playlist: Playlist) => {
-    setEditingPlaylist(playlist);
-    setIsPlaylistFormOpen(true);
+    // This will be handled by the UnifiedPlaylistManagement component
+    console.log('Edit playlist requested:', playlist.name);
   };
 
-  const handleSavePlaylist = async (_playlistData: Partial<Playlist>) => {
-    // Here you would typically save to your API
-    // console.log('Saving playlist:', playlistData);
-    // For now, just close the form
-    setIsPlaylistFormOpen(false);
+  const handleTrackPlay = (track: Track) => {
+    // This will be handled by the TrackManagement component
+    console.log('Track play requested:', track.title);
   };
 
-  const handleClosePlaylistForm = () => {
-    setIsPlaylistFormOpen(false);
-    setEditingPlaylist(undefined);
+  const handleUserAction = (action: string, user: any) => {
+    console.log('User action requested:', action, user.email);
   };
 
-  // Mock data - replace with real data from your API
-  const systemMetrics = {
-    totalUsers: 1247,
-    totalArtists: 89,
-    totalTracks: 3421,
-    totalPlays: 125430,
-    totalRevenue: 12475.5,
+  // Use real data from API or fallback to defaults
+  const systemMetrics = stats?.systemMetrics || {
+    totalUsers: 0,
+    totalArtists: 0,
+    totalTracks: 0,
+    totalPlays: 0,
+    totalRevenue: 0,
     platformHealth: 'healthy' as 'healthy' | 'warning' | 'critical',
   };
 
-  const recentActivity = [
-    {
-      id: '1',
-      type: 'user_registration',
-      message: 'New user registered: MusicLover123',
-      timestamp: '2 minutes ago',
-      icon: UserGroupIcon,
-      color: 'text-blue-600',
-    },
-    {
-      id: '2',
-      type: 'track_upload',
-      message: 'Artist "BeatMaker" uploaded new track',
-      timestamp: '15 minutes ago',
-      icon: MusicalNoteIcon,
-      color: 'text-green-600',
-    },
-    {
-      id: '3',
-      type: 'content_flag',
-      message: 'Content flagged for review: "Track Title"',
-      timestamp: '1 hour ago',
-      icon: ExclamationTriangleIcon,
-      color: 'text-red-600',
-    },
-    {
-      id: '4',
-      type: 'artist_approval',
-      message: 'Artist "NewArtist" approved for platform',
-      timestamp: '2 hours ago',
-      icon: CheckCircleIcon,
-      color: 'text-green-600',
-    },
-  ];
-
-  const pendingActions = [
-    {
-      id: '1',
-      type: 'artist_approval',
-      title: 'Artist Approval Required',
-      description: '5 artists waiting for approval',
-      priority: 'high',
-      count: 5,
-    },
-    {
-      id: '2',
-      type: 'content_review',
-      title: 'Content Review',
-      description: '12 tracks pending review',
-      priority: 'medium',
-      count: 12,
-    },
-    {
-      id: '3',
-      type: 'flagged_content',
-      title: 'Flagged Content',
-      description: '3 items reported by users',
-      priority: 'high',
-      count: 3,
-    },
-  ];
+  const recentActivity = stats?.recentActivity || [];
+  const pendingActions = stats?.pendingActions || [];
 
   const tabs = [
     { id: 'overview', name: 'Overview', icon: ChartBarIcon },
@@ -226,327 +164,343 @@ export default function AdminDashboard() {
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
         {activeTab === 'overview' && (
           <div className='space-y-8'>
-            {/* System Metrics */}
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6'>
-              <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='flex items-center'>
-                  <div className='flex-shrink-0'>
-                    <div className='w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center'>
-                      <UserGroupSolidIcon className='w-5 h-5 text-blue-600 dark:text-blue-400' />
-                    </div>
-                  </div>
-                  <div className='ml-4'>
-                    <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                      Total Users
-                    </p>
-                    <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                      {systemMetrics.totalUsers.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
+            {/* Loading State */}
+            {loading && (
+              <div className='flex justify-center items-center h-32'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
               </div>
+            )}
 
-              <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+            {/* Error State */}
+            {error && (
+              <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4'>
                 <div className='flex items-center'>
-                  <div className='flex-shrink-0'>
-                    <div className='w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center'>
-                      <MusicalNoteSolidIcon className='w-5 h-5 text-green-600 dark:text-green-400' />
-                    </div>
-                  </div>
-                  <div className='ml-4'>
-                    <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                      Total Artists
-                    </p>
-                    <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                      {systemMetrics.totalArtists.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='flex items-center'>
-                  <div className='flex-shrink-0'>
-                    <div className='w-8 h-8 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center'>
-                      <MusicalNoteIcon className='w-5 h-5 text-purple-600 dark:text-purple-400' />
-                    </div>
-                  </div>
-                  <div className='ml-4'>
-                    <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                      Total Tracks
-                    </p>
-                    <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                      {systemMetrics.totalTracks.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='flex items-center'>
-                  <div className='flex-shrink-0'>
-                    <div className='w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center'>
-                      <ChartBarSolidIcon className='w-5 h-5 text-orange-600 dark:text-orange-400' />
-                    </div>
-                  </div>
-                  <div className='ml-4'>
-                    <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                      Total Plays
-                    </p>
-                    <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                      {systemMetrics.totalPlays.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='flex items-center'>
-                  <div className='flex-shrink-0'>
-                    <div className='w-8 h-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center'>
-                      <span className='text-yellow-600 dark:text-yellow-400 font-bold'>
-                        $
-                      </span>
-                    </div>
-                  </div>
-                  <div className='ml-4'>
-                    <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                      Total Revenue
-                    </p>
-                    <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                      ${systemMetrics.totalRevenue.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='flex items-center'>
-                  <div className='flex-shrink-0'>
-                    <div className='w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center'>
-                      <ShieldCheckIcon className='w-5 h-5 text-green-600 dark:text-green-400' />
-                    </div>
-                  </div>
-                  <div className='ml-4'>
-                    <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                      System Health
-                    </p>
-                    <p className='text-lg font-bold text-gray-900 dark:text-white capitalize'>
-                      {systemMetrics.platformHealth}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-              {/* Pending Actions */}
-              <div className='bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='px-6 py-4 border-b border-gray-200 dark:border-slate-700'>
-                  <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                    Pending Actions
-                  </h3>
-                  <p className='text-sm text-gray-500 dark:text-gray-400'>
-                    Items requiring your attention
+                  <ExclamationTriangleIcon className='w-5 h-5 text-red-600 dark:text-red-400 mr-2' />
+                  <p className='text-red-600 dark:text-red-400'>
+                    Error loading dashboard data: {error}
                   </p>
                 </div>
-                <div className='p-6'>
-                  <div className='space-y-4'>
-                    {pendingActions.map(action => (
-                      <div
-                        key={action.id}
-                        className='flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg'
-                      >
-                        <div className='flex-1'>
-                          <h4 className='font-medium text-gray-900 dark:text-white'>
-                            {action.title}
-                          </h4>
-                          <p className='text-sm text-gray-500 dark:text-gray-400'>
-                            {action.description}
-                          </p>
-                        </div>
-                        <div className='flex items-center space-x-3'>
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(action.priority)}`}
-                          >
-                            {action.priority}
-                          </span>
-                          <span className='text-sm font-medium text-gray-900 dark:text-white'>
-                            {action.count}
-                          </span>
-                          <button className='text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'>
-                            <EyeIcon className='w-4 h-4' />
-                          </button>
+                <button
+                  onClick={refetch}
+                  className='mt-2 text-sm text-red-600 dark:text-red-400 hover:underline'
+                >
+                  Try again
+                </button>
+              </div>
+            )}
+
+            {/* System Metrics */}
+            {!loading && !error && (
+              <>
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6'>
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center'>
+                      <div className='flex-shrink-0'>
+                        <div className='w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center'>
+                          <UserGroupSolidIcon className='w-5 h-5 text-blue-600 dark:text-blue-400' />
                         </div>
                       </div>
-                    ))}
+                      <div className='ml-4'>
+                        <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                          Total Users
+                        </p>
+                        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                          {systemMetrics.totalUsers.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Recent Activity */}
-              <div className='bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='px-6 py-4 border-b border-gray-200 dark:border-slate-700'>
-                  <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                    Recent Activity
-                  </h3>
-                  <p className='text-sm text-gray-500 dark:text-gray-400'>
-                    Latest platform events
-                  </p>
-                </div>
-                <div className='p-6'>
-                  <div className='space-y-4'>
-                    {recentActivity.map(activity => {
-                      const Icon = activity.icon;
-                      return (
-                        <div
-                          key={activity.id}
-                          className='flex items-start space-x-3'
-                        >
-                          <div
-                            className={`w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center flex-shrink-0`}
-                          >
-                            <Icon className={`w-4 h-4 ${activity.color}`} />
-                          </div>
-                          <div className='flex-1 min-w-0'>
-                            <p className='text-sm text-gray-900 dark:text-white'>
-                              {activity.message}
-                            </p>
-                            <p className='text-xs text-gray-500 dark:text-gray-400'>
-                              {activity.timestamp}
-                            </p>
-                          </div>
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center'>
+                      <div className='flex-shrink-0'>
+                        <div className='w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center'>
+                          <MusicalNoteSolidIcon className='w-5 h-5 text-green-600 dark:text-green-400' />
                         </div>
-                      );
-                    })}
+                      </div>
+                      <div className='ml-4'>
+                        <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                          Total Artists
+                        </p>
+                        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                          {systemMetrics.totalArtists.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center'>
+                      <div className='flex-shrink-0'>
+                        <div className='w-8 h-8 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center'>
+                          <MusicalNoteIcon className='w-5 h-5 text-purple-600 dark:text-purple-400' />
+                        </div>
+                      </div>
+                      <div className='ml-4'>
+                        <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                          Total Tracks
+                        </p>
+                        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                          {systemMetrics.totalTracks.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center'>
+                      <div className='flex-shrink-0'>
+                        <div className='w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center'>
+                          <ChartBarSolidIcon className='w-5 h-5 text-orange-600 dark:text-orange-400' />
+                        </div>
+                      </div>
+                      <div className='ml-4'>
+                        <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                          Total Plays
+                        </p>
+                        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                          {systemMetrics.totalPlays.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center'>
+                      <div className='flex-shrink-0'>
+                        <div className='w-8 h-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center'>
+                          <span className='text-yellow-600 dark:text-yellow-400 font-bold'>
+                            $
+                          </span>
+                        </div>
+                      </div>
+                      <div className='ml-4'>
+                        <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                          Total Revenue
+                        </p>
+                        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                          ${systemMetrics.totalRevenue.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center'>
+                      <div className='flex-shrink-0'>
+                        <div className='w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center'>
+                          <ShieldCheckIcon className='w-5 h-5 text-green-600 dark:text-green-400' />
+                        </div>
+                      </div>
+                      <div className='ml-4'>
+                        <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                          System Health
+                        </p>
+                        <p className='text-lg font-bold text-gray-900 dark:text-white capitalize'>
+                          {systemMetrics.platformHealth}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Quick Actions */}
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-              <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='flex items-center space-x-4'>
-                  <div className='w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center'>
-                    <UserGroupIcon className='w-6 h-6 text-blue-600 dark:text-blue-400' />
+                <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
+                  {/* Pending Actions */}
+                  <div className='bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='px-6 py-4 border-b border-gray-200 dark:border-slate-700'>
+                      <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                        Pending Actions
+                      </h3>
+                      <p className='text-sm text-gray-500 dark:text-gray-400'>
+                        Items requiring your attention
+                      </p>
+                    </div>
+                    <div className='p-6'>
+                      <div className='space-y-4'>
+                        {pendingActions.map(action => (
+                          <div
+                            key={action.id}
+                            className='flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg'
+                          >
+                            <div className='flex-1'>
+                              <h4 className='font-medium text-gray-900 dark:text-white'>
+                                {action.title}
+                              </h4>
+                              <p className='text-sm text-gray-500 dark:text-gray-400'>
+                                {action.description}
+                              </p>
+                            </div>
+                            <div className='flex items-center space-x-3'>
+                              <span
+                                className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(action.priority)}`}
+                              >
+                                {action.priority}
+                              </span>
+                              <span className='text-sm font-medium text-gray-900 dark:text-white'>
+                                {action.count}
+                              </span>
+                              <button className='text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'>
+                                <EyeIcon className='w-4 h-4' />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+
+                  {/* Recent Activity */}
+                  <div className='bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='px-6 py-4 border-b border-gray-200 dark:border-slate-700'>
+                      <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                        Recent Activity
+                      </h3>
+                      <p className='text-sm text-gray-500 dark:text-gray-400'>
+                        Latest platform events
+                      </p>
+                    </div>
+                    <div className='p-6'>
+                      <div className='space-y-4'>
+                        {recentActivity.map(activity => {
+                          const getIcon = (iconName: string) => {
+                            switch (iconName) {
+                              case 'UserGroupIcon':
+                                return UserGroupIcon;
+                              case 'MusicalNoteIcon':
+                                return MusicalNoteIcon;
+                              case 'ClockIcon':
+                                return ClockIcon;
+                              case 'ExclamationTriangleIcon':
+                                return ExclamationTriangleIcon;
+                              case 'CheckCircleIcon':
+                                return CheckCircleIcon;
+                              default:
+                                return ClockIcon;
+                            }
+                          };
+                          const Icon = getIcon(activity.icon);
+                          return (
+                            <div
+                              key={activity.id}
+                              className='flex items-start space-x-3'
+                            >
+                              <div
+                                className={`w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center flex-shrink-0`}
+                              >
+                                <Icon className={`w-4 h-4 ${activity.color}`} />
+                              </div>
+                              <div className='flex-1 min-w-0'>
+                                <p className='text-sm text-gray-900 dark:text-white'>
+                                  {activity.message}
+                                </p>
+                                <p className='text-xs text-gray-500 dark:text-gray-400'>
+                                  {activity.timestamp}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center space-x-4'>
+                      <div className='w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center'>
+                        <UserGroupIcon className='w-6 h-6 text-blue-600 dark:text-blue-400' />
+                      </div>
+                      <div>
+                        <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                          Manage Users
+                        </h3>
+                        <p className='text-sm text-gray-500 dark:text-gray-400'>
+                          View and manage all users
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      className='mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'
+                      onClick={() => setActiveTab('users')}
+                    >
                       Manage Users
-                    </h3>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      View and manage all users
-                    </p>
+                    </button>
                   </div>
-                </div>
-                <button className='mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'>
-                  Manage Users
-                </button>
-              </div>
 
-              <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='flex items-center space-x-4'>
-                  <div className='w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center'>
-                    <MusicalNoteIcon className='w-6 h-6 text-green-600 dark:text-green-400' />
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center space-x-4'>
+                      <div className='w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center'>
+                        <MusicalNoteIcon className='w-6 h-6 text-green-600 dark:text-green-400' />
+                      </div>
+                      <div>
+                        <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                          Content Review
+                        </h3>
+                        <p className='text-sm text-gray-500 dark:text-gray-400'>
+                          Review and moderate content
+                        </p>
+                      </div>
+                    </div>
+                    <button className='mt-4 w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'>
+                      Review Content
+                    </button>
                   </div>
-                  <div>
-                    <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                      Content Review
-                    </h3>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      Review and moderate content
-                    </p>
-                  </div>
-                </div>
-                <button className='mt-4 w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'>
-                  Review Content
-                </button>
-              </div>
 
-              <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='flex items-center space-x-4'>
-                  <div className='w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center'>
-                    <ChartBarIcon className='w-6 h-6 text-purple-600 dark:text-purple-400' />
-                  </div>
-                  <div>
-                    <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center space-x-4'>
+                      <div className='w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center'>
+                        <ChartBarIcon className='w-6 h-6 text-purple-600 dark:text-purple-400' />
+                      </div>
+                      <div>
+                        <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                          View Analytics
+                        </h3>
+                        <p className='text-sm text-gray-500 dark:text-gray-400'>
+                          Platform performance metrics
+                        </p>
+                      </div>
+                    </div>
+                    <button className='mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'>
                       View Analytics
-                    </h3>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      Platform performance metrics
-                    </p>
+                    </button>
                   </div>
-                </div>
-                <button className='mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'>
-                  View Analytics
-                </button>
-              </div>
 
-              <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='flex items-center space-x-4'>
-                  <div className='w-12 h-12 bg-gray-100 dark:bg-gray-900/20 rounded-lg flex items-center justify-center'>
-                    <Cog6ToothIcon className='w-6 h-6 text-gray-600 dark:text-gray-400' />
-                  </div>
-                  <div>
-                    <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                      Platform Settings
-                    </h3>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      Configure platform settings
-                    </p>
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center space-x-4'>
+                      <div className='w-12 h-12 bg-gray-100 dark:bg-gray-900/20 rounded-lg flex items-center justify-center'>
+                        <Cog6ToothIcon className='w-6 h-6 text-gray-600 dark:text-gray-400' />
+                      </div>
+                      <div>
+                        <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                          Platform Settings
+                        </h3>
+                        <p className='text-sm text-gray-500 dark:text-gray-400'>
+                          Configure platform settings
+                        </p>
+                      </div>
+                    </div>
+                    <button className='mt-4 w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'>
+                      Settings
+                    </button>
                   </div>
                 </div>
-                <button className='mt-4 w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'>
-                  Settings
-                </button>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         )}
 
         {activeTab === 'users' && (
-          <div className='space-y-8'>
-            <div className='bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700'>
-              <div className='px-6 py-4 border-b border-gray-200 dark:border-slate-700'>
-                <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                  User Management
-                </h3>
-                <p className='text-sm text-gray-500 dark:text-gray-400'>
-                  Manage all platform users and artists
-                </p>
-              </div>
-              <div className='p-6'>
-                <p className='text-gray-500 dark:text-gray-400 text-center py-8'>
-                  User management interface will be displayed here
-                </p>
-              </div>
-            </div>
-          </div>
+          <UserManagement onUserAction={handleUserAction} />
         )}
 
         {activeTab === 'content' && (
-          <div className='space-y-8'>
-            <div className='bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700'>
-              <div className='px-6 py-4 border-b border-gray-200 dark:border-slate-700'>
-                <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                  Content Management
-                </h3>
-                <p className='text-sm text-gray-500 dark:text-gray-400'>
-                  Review and moderate platform content
-                </p>
-              </div>
-              <div className='p-6'>
-                <p className='text-gray-500 dark:text-gray-400 text-center py-8'>
-                  Content management interface will be displayed here
-                </p>
-              </div>
-            </div>
-          </div>
+          <TrackManagement onTrackPlay={handleTrackPlay} />
         )}
 
         {activeTab === 'playlists' && (
-          <PlaylistManagement
+          <UnifiedPlaylistManagement
             onEditPlaylist={handleEditPlaylist}
             onCreatePlaylist={handleCreatePlaylist}
           />
@@ -594,14 +548,6 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-
-      {/* Playlist Form Modal */}
-      <PlaylistForm
-        playlist={editingPlaylist}
-        isOpen={isPlaylistFormOpen}
-        onClose={handleClosePlaylistForm}
-        onSave={handleSavePlaylist}
-      />
     </div>
   );
 }

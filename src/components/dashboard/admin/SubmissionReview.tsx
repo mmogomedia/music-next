@@ -10,13 +10,20 @@ import {
   MusicalNoteIcon,
   UserIcon,
   CalendarIcon,
+  PlayIcon,
+  PauseIcon,
+  PencilIcon,
 } from '@heroicons/react/24/outline';
 import {
   PlaylistSubmission,
   TrackSubmissionStatus,
   Playlist,
-  Track,
 } from '@/types/playlist';
+import { api } from '@/lib/api-client';
+import { constructFileUrl } from '@/lib/url-utils';
+import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import { Track } from '@/types/track';
+import { SourceType } from '@/types/stats';
 
 interface SubmissionReviewProps {
   onClose?: () => void;
@@ -25,7 +32,6 @@ interface SubmissionReviewProps {
 export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
   const [submissions, setSubmissions] = useState<PlaylistSubmission[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSubmission, setSelectedSubmission] =
     useState<PlaylistSubmission | null>(null);
@@ -35,148 +41,34 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
     search: '',
   });
   const [reviewComment, setReviewComment] = useState('');
+  const [reviewing, setReviewing] = useState(false);
 
-  // Mock data - replace with API calls
+  // Use global music player
+  const { playTrack, currentTrack, isPlaying } = useMusicPlayer();
+
+  // Fetch submissions and playlists
   useEffect(() => {
-    const mockSubmissions: PlaylistSubmission[] = [
-      {
-        id: '1',
-        playlistId: '1',
-        trackId: 'track-1',
-        artistId: 'artist-1',
-        status: TrackSubmissionStatus.PENDING,
-        submittedAt: new Date('2024-01-20'),
-        reviewedAt: null,
-        reviewedBy: null,
-        adminComment: null,
-        artistComment:
-          'This track would be perfect for your featured playlist!',
-      },
-      {
-        id: '2',
-        playlistId: '2',
-        trackId: 'track-2',
-        artistId: 'artist-2',
-        status: TrackSubmissionStatus.APPROVED,
-        submittedAt: new Date('2024-01-19'),
-        reviewedAt: new Date('2024-01-20'),
-        reviewedBy: 'admin-1',
-        adminComment: 'Great track, fits perfectly with the theme.',
-        artistComment: 'Hope you like this one!',
-      },
-      {
-        id: '3',
-        playlistId: '3',
-        trackId: 'track-3',
-        artistId: 'artist-3',
-        status: TrackSubmissionStatus.REJECTED,
-        submittedAt: new Date('2024-01-18'),
-        reviewedAt: new Date('2024-01-19'),
-        reviewedBy: 'admin-1',
-        adminComment: 'Not quite the right genre for this playlist.',
-        artistComment: 'Please consider this track for your playlist.',
-      },
-      {
-        id: '4',
-        playlistId: '4',
-        trackId: 'track-4',
-        artistId: 'artist-4',
-        status: TrackSubmissionStatus.SHORTLISTED,
-        submittedAt: new Date('2024-01-17'),
-        reviewedAt: new Date('2024-01-18'),
-        reviewedBy: 'admin-1',
-        adminComment: 'Good track, considering for next update.',
-        artistComment: 'This is my latest release.',
-      },
-    ];
-
-    const mockPlaylists: Playlist[] = [
-      {
-        id: '1',
-        name: "Editor's Choice",
-        type: 'FEATURED' as any,
-        coverImage: '/api/placeholder/300/300',
-        maxTracks: 5,
-        currentTracks: 4,
-        status: 'ACTIVE' as any,
-        submissionStatus: 'CLOSED' as any,
-        maxSubmissionsPerArtist: 1,
-        createdBy: 'admin-1',
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-20'),
-        order: 1,
-      },
-      {
-        id: '2',
-        name: 'Top 10 This Week',
-        type: 'TOP_TEN' as any,
-        coverImage: '/api/placeholder/300/300',
-        maxTracks: 10,
-        currentTracks: 10,
-        status: 'ACTIVE' as any,
-        submissionStatus: 'OPEN' as any,
-        maxSubmissionsPerArtist: 2,
-        createdBy: 'admin-1',
-        createdAt: new Date('2024-01-10'),
-        updatedAt: new Date('2024-01-18'),
-        order: 2,
-      },
-    ];
-
-    const mockTracks: Track[] = [
-      {
-        id: 'track-1',
-        title: 'Amapiano Vibes',
-        coverImageUrl: '/api/placeholder/300/300',
-        genre: 'Amapiano',
-        album: 'Summer Collection',
-        description: 'A fresh take on Amapiano with modern elements',
-        duration: 240,
-        playCount: 1250,
-        createdAt: new Date('2024-01-15'),
-        updatedAt: new Date('2024-01-20'),
-        filePath: 'tracks/amapiano-vibes.mp3',
-        albumArtwork: null,
-        artist: 'DJ Fresh',
-        artistProfileId: 'profile-1',
-        bitrate: 320,
-        bpm: 120,
-        channels: 2,
-        composer: 'DJ Fresh',
-        copyrightInfo: 'All rights reserved',
-        distributionRights: 'Flemoji Records',
-        downloadCount: 45,
-        fileSize: 8.5 * 1024 * 1024,
-        isDownloadable: true,
-        isExplicit: false,
-        isPublic: true,
-        isrc: 'USRC17607839',
-        licenseType: 'All Rights Reserved',
-        likeCount: 89,
-        lyrics: null,
-        releaseDate: new Date('2024-01-15'),
-        sampleRate: 44100,
-        shareCount: 23,
-        uniqueUrl: 'amapiano-vibes-dj-fresh',
-        userId: 'user-1',
-        watermarkId: null,
-        year: 2024,
-        playEvents: [],
-        playlistSubmissions: [],
-        playlistTracks: [],
-        smartLinks: [],
-        artistProfile: {} as any,
-        user: {} as any,
-      },
-    ];
-
-    setTimeout(() => {
-      setSubmissions(mockSubmissions);
-      setPlaylists(mockPlaylists);
-      setTracks(mockTracks);
-      setLoading(false);
-    }, 1000);
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch submissions and playlists in parallel
+      const [submissionsResponse, playlistsResponse] = await Promise.all([
+        api.admin.getSubmissions(),
+        api.admin.getPlaylists(),
+      ]);
+
+      setSubmissions(submissionsResponse.data.submissions || []);
+      setPlaylists(playlistsResponse.data.playlists || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status: TrackSubmissionStatus) => {
     switch (status) {
@@ -198,26 +90,41 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
     status: TrackSubmissionStatus,
     comment?: string
   ) => {
-    // Here you would typically call the API to update the submission
-    console.log('Reviewing submission:', { submissionId, status, comment });
+    try {
+      setReviewing(true);
 
-    // Update local state
-    setSubmissions(prev =>
-      prev.map(sub =>
-        sub.id === submissionId
-          ? {
-              ...sub,
-              status,
-              reviewedAt: new Date(),
-              reviewedBy: 'admin-1',
-              adminComment: comment || null,
-            }
-          : sub
-      )
-    );
+      // Call the API to review the submission
+      const response = await api.admin.reviewSubmission(submissionId, {
+        status,
+        comment,
+      });
 
-    setSelectedSubmission(null);
-    setReviewComment('');
+      // Update local state with the response
+      setSubmissions(prev =>
+        prev.map(sub =>
+          sub.id === submissionId
+            ? {
+                ...sub,
+                status: response.data.submission.status,
+                reviewedAt: response.data.submission.reviewedAt,
+                reviewedBy: response.data.submission.reviewedBy,
+                adminComment: response.data.submission.adminComment,
+              }
+            : sub
+        )
+      );
+
+      setSelectedSubmission(null);
+      setReviewComment('');
+
+      // Refresh data to show updated submission
+      await fetchData();
+    } catch (error) {
+      console.error('Error reviewing submission:', error);
+      // You might want to show an error message to the user here
+    } finally {
+      setReviewing(false);
+    }
   };
 
   const filteredSubmissions = submissions.filter(submission => {
@@ -229,7 +136,7 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
     )
       return false;
     if (filters.search) {
-      const track = tracks.find(t => t.id === submission.trackId);
+      const track = submission.track;
       if (!track?.title.toLowerCase().includes(filters.search.toLowerCase()))
         return false;
     }
@@ -241,9 +148,45 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
     return playlist?.name || 'Unknown Playlist';
   };
 
-  const getTrack = (trackId: string) => {
-    return tracks.find(t => t.id === trackId);
+  const handlePlayTrack = (submissionTrack: any) => {
+    // Convert submission track to Track type for the global player
+    const track: Track = {
+      id: submissionTrack.id,
+      title: submissionTrack.title,
+      artist: submissionTrack.artist || 'Unknown Artist',
+      filePath: submissionTrack.filePath,
+      fileUrl: submissionTrack.fileUrl, // Constructed by API from filePath
+      coverImageUrl: submissionTrack.coverImageUrl,
+      albumArtwork: submissionTrack.albumArtwork,
+      genre: submissionTrack.genre,
+      duration: submissionTrack.duration,
+      playCount: submissionTrack.playCount || 0,
+      artistId: submissionTrack.artistProfileId || '', // Use artistProfileId from schema
+      userId: '', // Not available in submission track data
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    playTrack(track, 'admin' as SourceType);
   };
+
+  // Group submissions by date
+  const groupedSubmissions = filteredSubmissions.reduce(
+    (groups, submission) => {
+      const date = new Date(submission.submittedAt).toDateString();
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(submission);
+      return groups;
+    },
+    {} as Record<string, typeof filteredSubmissions>
+  );
+
+  // Sort dates (most recent first)
+  const sortedDates = Object.keys(groupedSubmissions).sort(
+    (a, b) => new Date(b).getTime() - new Date(a).getTime()
+  );
 
   if (loading) {
     return (
@@ -282,6 +225,14 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
               </p>
             </div>
             <div className='flex items-center gap-4'>
+              <button
+                onClick={fetchData}
+                disabled={loading}
+                className='px-3 py-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                title='Refresh submissions'
+              >
+                Refresh
+              </button>
               <div className='text-sm text-gray-500 dark:text-gray-400'>
                 {filteredSubmissions.length} submissions
               </div>
@@ -348,151 +299,215 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
 
         {/* Submissions List */}
         <div className='p-6'>
-          <div className='space-y-4'>
-            {filteredSubmissions.map(submission => {
-              const track = getTrack(submission.trackId);
-              const playlistName = getPlaylistName(submission.playlistId);
-
-              return (
-                <div
-                  key={submission.id}
-                  className='bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-200 dark:border-slate-600'
-                >
-                  <div className='flex items-start justify-between'>
-                    <div className='flex items-start space-x-4 flex-1'>
-                      {/* Track Image */}
-                      <div className='w-16 h-16 bg-gray-200 dark:bg-slate-600 rounded-lg flex items-center justify-center flex-shrink-0'>
-                        {track?.coverImageUrl ? (
-                          <img
-                            src={track.coverImageUrl}
-                            alt={track.title}
-                            className='w-full h-full object-cover rounded-lg'
-                          />
-                        ) : (
-                          <MusicalNoteIcon className='w-8 h-8 text-gray-400' />
-                        )}
-                      </div>
-
-                      {/* Track Info */}
-                      <div className='flex-1 min-w-0'>
-                        <div className='flex items-center gap-2 mb-1'>
-                          <h4 className='text-lg font-semibold text-gray-900 dark:text-white truncate'>
-                            {track?.title || 'Unknown Track'}
-                          </h4>
-                          <span
-                            className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(submission.status)}`}
-                          >
-                            {submission.status}
-                          </span>
-                        </div>
-
-                        <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-2'>
-                          <div className='flex items-center gap-1'>
-                            <UserIcon className='w-4 h-4' />
-                            {track?.artist || 'Unknown Artist'}
-                          </div>
-                          <div className='flex items-center gap-1'>
-                            <CalendarIcon className='w-4 h-4' />
-                            {submission.submittedAt.toLocaleDateString()}
-                          </div>
-                          <div className='flex items-center gap-1'>
-                            <span>Playlist:</span>
-                            <span className='font-medium'>{playlistName}</span>
-                          </div>
-                        </div>
-
-                        {submission.artistComment && (
-                          <div className='bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-2'>
-                            <div className='flex items-start gap-2'>
-                              <ChatBubbleLeftIcon className='w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0' />
-                              <div>
-                                <p className='text-sm font-medium text-blue-900 dark:text-blue-100 mb-1'>
-                                  Artist Comment:
-                                </p>
-                                <p className='text-sm text-blue-800 dark:text-blue-200'>
-                                  {submission.artistComment}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {submission.adminComment && (
-                          <div className='bg-gray-100 dark:bg-slate-600 rounded-lg p-3'>
-                            <div className='flex items-start gap-2'>
-                              <ChatBubbleLeftIcon className='w-4 h-4 text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0' />
-                              <div>
-                                <p className='text-sm font-medium text-gray-900 dark:text-white mb-1'>
-                                  Admin Comment:
-                                </p>
-                                <p className='text-sm text-gray-700 dark:text-gray-300'>
-                                  {submission.adminComment}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className='flex items-center gap-2 ml-4'>
-                      {submission.status === TrackSubmissionStatus.PENDING && (
-                        <>
-                          <button
-                            onClick={() =>
-                              handleReview(
-                                submission.id,
-                                TrackSubmissionStatus.APPROVED,
-                                reviewComment
-                              )
-                            }
-                            className='p-2 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors'
-                            title='Approve'
-                          >
-                            <CheckCircleIcon className='w-5 h-5' />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleReview(
-                                submission.id,
-                                TrackSubmissionStatus.SHORTLISTED,
-                                reviewComment
-                              )
-                            }
-                            className='p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors'
-                            title='Shortlist'
-                          >
-                            <EyeIcon className='w-5 h-5' />
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleReview(
-                                submission.id,
-                                TrackSubmissionStatus.REJECTED,
-                                reviewComment
-                              )
-                            }
-                            className='p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors'
-                            title='Reject'
-                          >
-                            <XCircleIcon className='w-5 h-5' />
-                          </button>
-                        </>
-                      )}
-
-                      <button
-                        onClick={() => setSelectedSubmission(submission)}
-                        className='p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
-                        title='View Details'
-                      >
-                        <EyeIcon className='w-5 h-5' />
-                      </button>
-                    </div>
-                  </div>
+          <div className='space-y-8'>
+            {sortedDates.map(date => (
+              <div key={date} className='space-y-4'>
+                {/* Date Header */}
+                <div className='flex items-center gap-3'>
+                  <div className='h-px bg-gray-200 dark:bg-slate-600 flex-1'></div>
+                  <h3 className='text-lg font-semibold text-gray-900 dark:text-white px-4'>
+                    {date}
+                  </h3>
+                  <div className='h-px bg-gray-200 dark:bg-slate-600 flex-1'></div>
                 </div>
-              );
-            })}
+
+                {/* Submissions for this date */}
+                <div className='space-y-4'>
+                  {groupedSubmissions[date].map(submission => {
+                    const track = submission.track;
+                    const playlistName = getPlaylistName(submission.playlistId);
+
+                    return (
+                      <div
+                        key={submission.id}
+                        className='bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 border border-gray-200 dark:border-slate-600'
+                      >
+                        <div className='flex items-start justify-between'>
+                          <div className='flex items-start space-x-4 flex-1'>
+                            {/* Track Image */}
+                            <div className='w-16 h-16 bg-gray-200 dark:bg-slate-600 rounded-lg flex items-center justify-center flex-shrink-0'>
+                              {track?.coverImageUrl || track?.albumArtwork ? (
+                                <img
+                                  src={constructFileUrl(
+                                    track.coverImageUrl ||
+                                      track.albumArtwork ||
+                                      ''
+                                  )}
+                                  alt={track.title}
+                                  className='w-full h-full object-cover rounded-lg'
+                                />
+                              ) : (
+                                <MusicalNoteIcon className='w-8 h-8 text-gray-400' />
+                              )}
+                            </div>
+
+                            {/* Track Info */}
+                            <div className='flex-1 min-w-0'>
+                              <div className='flex items-center gap-2 mb-1'>
+                                <h4 className='text-lg font-semibold text-gray-900 dark:text-white truncate'>
+                                  {track?.title || 'Unknown Track'}
+                                </h4>
+                                <span
+                                  className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(submission.status)}`}
+                                >
+                                  {submission.status}
+                                </span>
+                              </div>
+
+                              <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-2'>
+                                <div className='flex items-center gap-1'>
+                                  <UserIcon className='w-4 h-4' />
+                                  {track?.artist || 'Unknown Artist'}
+                                </div>
+                                <div className='flex items-center gap-1'>
+                                  <CalendarIcon className='w-4 h-4' />
+                                  {new Date(
+                                    submission.submittedAt
+                                  ).toLocaleDateString()}
+                                </div>
+                                <div className='flex items-center gap-1'>
+                                  <span>Playlist:</span>
+                                  <span className='font-medium'>
+                                    {playlistName}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {submission.artistComment && (
+                                <div className='bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-2'>
+                                  <div className='flex items-start gap-2'>
+                                    <ChatBubbleLeftIcon className='w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0' />
+                                    <div>
+                                      <p className='text-sm font-medium text-blue-900 dark:text-blue-100 mb-1'>
+                                        Artist Comment:
+                                      </p>
+                                      <p className='text-sm text-blue-800 dark:text-blue-200'>
+                                        {submission.artistComment}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {submission.adminComment && (
+                                <div className='bg-gray-100 dark:bg-slate-600 rounded-lg p-3'>
+                                  <div className='flex items-start gap-2'>
+                                    <ChatBubbleLeftIcon className='w-4 h-4 text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0' />
+                                    <div>
+                                      <p className='text-sm font-medium text-gray-900 dark:text-white mb-1'>
+                                        Admin Comment:
+                                      </p>
+                                      <p className='text-sm text-gray-700 dark:text-gray-300'>
+                                        {submission.adminComment}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className='flex items-center gap-2 ml-4'>
+                            {/* Play Button */}
+                            {track && (
+                              <button
+                                onClick={() => handlePlayTrack(track)}
+                                className='p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors'
+                                title={
+                                  currentTrack?.id === track.id && isPlaying
+                                    ? 'Pause preview'
+                                    : 'Preview track'
+                                }
+                              >
+                                {currentTrack?.id === track.id && isPlaying ? (
+                                  <PauseIcon className='w-5 h-5' />
+                                ) : (
+                                  <PlayIcon className='w-5 h-5' />
+                                )}
+                              </button>
+                            )}
+
+                            {/* Review Actions - Show for all submissions */}
+                            {submission.status !==
+                              TrackSubmissionStatus.PENDING && (
+                              <button
+                                onClick={() => {
+                                  setSelectedSubmission(submission);
+                                  setReviewComment(
+                                    submission.adminComment || ''
+                                  );
+                                }}
+                                className='p-2 text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 transition-colors'
+                                title='Update Review'
+                              >
+                                <PencilIcon className='w-5 h-5' />
+                              </button>
+                            )}
+
+                            {submission.status ===
+                              TrackSubmissionStatus.PENDING && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    handleReview(
+                                      submission.id,
+                                      TrackSubmissionStatus.APPROVED,
+                                      reviewComment
+                                    )
+                                  }
+                                  disabled={reviewing}
+                                  className='p-2 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                  title='Approve'
+                                >
+                                  <CheckCircleIcon className='w-5 h-5' />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleReview(
+                                      submission.id,
+                                      TrackSubmissionStatus.SHORTLISTED,
+                                      reviewComment
+                                    )
+                                  }
+                                  disabled={reviewing}
+                                  className='p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                  title='Shortlist'
+                                >
+                                  <EyeIcon className='w-5 h-5' />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleReview(
+                                      submission.id,
+                                      TrackSubmissionStatus.REJECTED,
+                                      reviewComment
+                                    )
+                                  }
+                                  disabled={reviewing}
+                                  className='p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                  title='Reject'
+                                >
+                                  <XCircleIcon className='w-5 h-5' />
+                                </button>
+                              </>
+                            )}
+
+                            <button
+                              onClick={() => setSelectedSubmission(submission)}
+                              className='p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors'
+                              title='View Details'
+                            >
+                              <EyeIcon className='w-5 h-5' />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
 
             {filteredSubmissions.length === 0 && (
               <div className='text-center py-12'>
@@ -521,43 +536,132 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
           <div className='flex min-h-screen items-center justify-center p-4'>
             <div
               className='fixed inset-0 bg-black bg-opacity-50'
-              onClick={() => setSelectedSubmission(null)}
+              onClick={() => {
+                setSelectedSubmission(null);
+                setReviewComment('');
+              }}
               role='button'
               tabIndex={0}
               onKeyDown={e => e.key === 'Enter' && setSelectedSubmission(null)}
               aria-label='Close modal'
             ></div>
 
-            <div className='relative bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md'>
+            <div className='relative bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-lg'>
               <div className='p-6'>
                 <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-4'>
-                  Add Review Comment
+                  {selectedSubmission.status === TrackSubmissionStatus.PENDING
+                    ? 'Add Review Comment'
+                    : 'Update Review'}
                 </h3>
+
+                {selectedSubmission.status !==
+                  TrackSubmissionStatus.PENDING && (
+                  <div className='mb-4'>
+                    <p className='text-sm text-gray-600 dark:text-gray-400 mb-2'>
+                      Current Status:{' '}
+                      <span className='font-medium'>
+                        {selectedSubmission.status}
+                      </span>
+                    </p>
+                    <div className='flex items-center gap-2'>
+                      <span className='text-sm text-gray-600 dark:text-gray-400'>
+                        Change to:
+                      </span>
+                      <button
+                        onClick={() =>
+                          setSelectedSubmission({
+                            ...selectedSubmission,
+                            status: TrackSubmissionStatus.APPROVED,
+                          })
+                        }
+                        className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                          selectedSubmission.status ===
+                          TrackSubmissionStatus.APPROVED
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20'
+                        }`}
+                      >
+                        Approved
+                      </button>
+                      <button
+                        onClick={() =>
+                          setSelectedSubmission({
+                            ...selectedSubmission,
+                            status: TrackSubmissionStatus.SHORTLISTED,
+                          })
+                        }
+                        className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                          selectedSubmission.status ===
+                          TrackSubmissionStatus.SHORTLISTED
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                        }`}
+                      >
+                        Shortlisted
+                      </button>
+                      <button
+                        onClick={() =>
+                          setSelectedSubmission({
+                            ...selectedSubmission,
+                            status: TrackSubmissionStatus.REJECTED,
+                          })
+                        }
+                        className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                          selectedSubmission.status ===
+                          TrackSubmissionStatus.REJECTED
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20'
+                        }`}
+                      >
+                        Rejected
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <textarea
                   value={reviewComment}
                   onChange={e => setReviewComment(e.target.value)}
                   rows={4}
                   className='w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4'
-                  placeholder='Add a comment for the artist...'
+                  placeholder={
+                    selectedSubmission.status === TrackSubmissionStatus.PENDING
+                      ? 'Add a comment for the artist...'
+                      : 'Update your comment...'
+                  }
                 />
 
                 <div className='flex items-center justify-end space-x-3'>
                   <button
-                    onClick={() => setSelectedSubmission(null)}
+                    onClick={() => {
+                      setSelectedSubmission(null);
+                      setReviewComment('');
+                    }}
                     className='px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-lg font-medium transition-colors duration-200'
                   >
                     Cancel
                   </button>
                   <button
                     onClick={() => {
-                      // Handle comment submission
-                      setSelectedSubmission(null);
-                      setReviewComment('');
+                      if (selectedSubmission) {
+                        handleReview(
+                          selectedSubmission.id,
+                          selectedSubmission.status,
+                          reviewComment
+                        );
+                        setSelectedSubmission(null);
+                        setReviewComment('');
+                      }
                     }}
-                    className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200'
+                    disabled={reviewing}
+                    className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
                   >
-                    Save Comment
+                    {reviewing
+                      ? 'Saving...'
+                      : selectedSubmission.status ===
+                          TrackSubmissionStatus.PENDING
+                        ? 'Save Comment'
+                        : 'Update Review'}
                   </button>
                 </div>
               </div>

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { TrackSubmissionStatus } from '@/types/playlist';
+import { constructFileUrl } from '@/lib/url-utils';
 
 // GET /api/admin/submissions - Get all submissions with filters
 export async function GET(request: NextRequest) {
@@ -36,7 +37,13 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              type: true,
+              playlistType: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
             },
           },
           track: {
@@ -50,6 +57,8 @@ export async function GET(request: NextRequest) {
               albumArtwork: true,
               playCount: true,
               likeCount: true,
+              filePath: true,
+              artistProfileId: true,
             },
           },
           artist: {
@@ -74,8 +83,17 @@ export async function GET(request: NextRequest) {
       prisma.playlistSubmission.count({ where }),
     ]);
 
+    // Construct full URLs from file paths
+    const submissionsWithUrls = submissions.map(submission => ({
+      ...submission,
+      track: {
+        ...submission.track,
+        fileUrl: constructFileUrl(submission.track.filePath),
+      },
+    }));
+
     return NextResponse.json({
-      submissions,
+      submissions: submissionsWithUrls,
       pagination: {
         page,
         limit,

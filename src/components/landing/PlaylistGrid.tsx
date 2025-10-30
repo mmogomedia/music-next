@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { MusicalNoteIcon } from '@heroicons/react/24/outline';
 import { PlayIcon as PlaySolidIcon } from '@heroicons/react/24/solid';
-import { Playlist, PlaylistType } from '@/types/playlist';
+import { Playlist } from '@/types/playlist';
+import { constructFileUrl } from '@/lib/url-utils';
 
 interface PlaylistGridProps {
   type: 'top-ten' | 'province' | 'genre';
@@ -52,30 +53,32 @@ export default function PlaylistGrid({
     }
   };
 
-  const getTypeIcon = (playlistType: PlaylistType) => {
-    switch (playlistType) {
-      case PlaylistType.FEATURED:
+  const getTypeIcon = (playlist: Playlist) => {
+    const typeSlug = playlist.playlistType?.slug;
+    switch (typeSlug) {
+      case 'featured':
         return '🏆';
-      case PlaylistType.TOP_TEN:
+      case 'top-ten':
         return '📊';
-      case PlaylistType.PROVINCE:
+      case 'province':
         return '🏙️';
-      case PlaylistType.GENRE:
+      case 'genre':
         return '🎵';
       default:
         return '🎵';
     }
   };
 
-  const getTypeColor = (playlistType: PlaylistType) => {
-    switch (playlistType) {
-      case PlaylistType.FEATURED:
+  const getTypeColor = (playlist: Playlist) => {
+    const typeSlug = playlist.playlistType?.slug;
+    switch (typeSlug) {
+      case 'featured':
         return 'from-purple-500 to-blue-500';
-      case PlaylistType.TOP_TEN:
+      case 'top-ten':
         return 'from-orange-500 to-red-500';
-      case PlaylistType.PROVINCE:
+      case 'province':
         return 'from-green-500 to-teal-500';
-      case PlaylistType.GENRE:
+      case 'genre':
         return 'from-blue-500 to-indigo-500';
       default:
         return 'from-gray-500 to-gray-600';
@@ -157,13 +160,13 @@ export default function PlaylistGrid({
             <div className='relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-700 dark:to-slate-600'>
               {playlist.coverImage ? (
                 <img
-                  src={playlist.coverImage}
+                  src={constructFileUrl(playlist.coverImage)}
                   alt={playlist.name}
                   className='w-full h-full object-cover'
                 />
               ) : (
                 <div className='w-full h-full flex items-center justify-center'>
-                  <span className='text-4xl'>{getTypeIcon(playlist.type)}</span>
+                  <span className='text-4xl'>{getTypeIcon(playlist)}</span>
                 </div>
               )}
 
@@ -183,9 +186,9 @@ export default function PlaylistGrid({
               {/* Type Badge */}
               <div className='absolute top-3 left-3'>
                 <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full bg-gradient-to-r ${getTypeColor(playlist.type)} text-white`}
+                  className={`px-2 py-1 text-xs font-medium rounded-full bg-gradient-to-r ${getTypeColor(playlist)} text-white`}
                 >
-                  {playlist.type.replace('_', ' ')}
+                  {playlist.playlistType?.name || 'Unknown'}
                 </span>
               </div>
             </div>

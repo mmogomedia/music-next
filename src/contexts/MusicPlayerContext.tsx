@@ -6,9 +6,12 @@ import React, {
   useState,
   useRef,
   useEffect,
+  useMemo,
   ReactNode,
 } from 'react';
 import { Track } from '@/types/track';
+import { useStats } from '@/hooks/useStats';
+import { SourceType } from '@/types/stats';
 
 interface MusicPlayerContextType {
   // State
@@ -19,7 +22,11 @@ interface MusicPlayerContextType {
   volume: number;
 
   // Actions
-  playTrack: (_track: Track) => void;
+  playTrack: (
+    _track: Track,
+    _source?: SourceType,
+    _playlistId?: string
+  ) => void;
   playPause: () => void;
   seekTo: (_time: number) => void;
   setVolume: (_newVolume: number) => void;
@@ -50,7 +57,26 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   const [volume, setVolume] = useState(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Stats tracking - will be updated dynamically based on source
+  const [currentSource, setCurrentSource] = useState<SourceType>('player');
+  const [currentPlaylistId, setCurrentPlaylistId] = useState<
+    string | undefined
+  >();
+  const playStartTimeRef = useRef<number | null>(null);
+
+  // Create stats hook with current source and playlistId
+  // This will be recreated when currentSource or currentPlaylistId changes
+  const statsOptions = useMemo(
+    () => ({
+      source: currentSource as any,
+      playlistId: currentPlaylistId,
+    }),
+    [currentSource, currentPlaylistId]
+  );
+  const { trackPlayStart, trackPlayEnd } = useStats(statsOptions);
+
   // Initialize audio element
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (typeof window !== 'undefined') {
       audioRef.current = new Audio();
@@ -70,14 +96,37 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       const handleEnded = () => {
         setIsPlaying(false);
         setCurrentTime(0);
+
+        // Track play completion
+        if (currentTrack && playStartTimeRef.current) {
+          trackPlayEnd(currentTrack.id, duration, false); // Not skipped, completed
+          playStartTimeRef.current = null;
+        }
       };
 
       const handlePlay = () => {
         setIsPlaying(true);
+
+        // Track play start
+        if (currentTrack) {
+          playStartTimeRef.current = Date.now();
+          trackPlayStart(currentTrack.id);
+        }
       };
 
       const handlePause = () => {
         setIsPlaying(false);
+
+        // Track play pause/end
+        if (currentTrack && playStartTimeRef.current) {
+          const playDuration = Math.floor(
+            (Date.now() - playStartTimeRef.current) / 1000
+          );
+          const skipped = playDuration < 20; // Less than 20 seconds = skipped
+
+          trackPlayEnd(currentTrack.id, duration, skipped);
+          playStartTimeRef.current = null;
+        }
       };
 
       audio.addEventListener('loadedmetadata', handleLoadedMetadata);
@@ -98,8 +147,16 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     }
   }, [volume]);
 
-  const playTrack = (track: Track) => {
+  const playTrack = (
+    track: Track,
+    source: SourceType = 'player',
+    playlistId?: string
+  ) => {
     if (!audioRef.current) return;
+
+    // Update source and playlistId for stats tracking
+    setCurrentSource(source);
+    setCurrentPlaylistId(playlistId);
 
     if (currentTrack?.id === track.id) {
       // Same track - toggle play/pause
@@ -117,6 +174,10 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       audioRef.current.src = track.fileUrl || '';
       audioRef.current.volume = volume;
       audioRef.current.play();
+
+      // Track new track play start
+      playStartTimeRef.current = Date.now();
+      trackPlayStart(track.id, source, playlistId);
     }
   };
 

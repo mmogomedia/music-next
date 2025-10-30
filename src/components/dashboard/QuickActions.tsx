@@ -5,18 +5,21 @@ import {
   PlusIcon,
   MusicalNoteIcon,
   ChartBarIcon,
+  QueueListIcon,
 } from '@heroicons/react/24/outline';
 
 interface QuickActionsProps {
   onUpload: () => void;
   onLibrary: () => void;
   onAnalytics: () => void;
+  onSubmissions: () => void;
 }
 
 export default function QuickActions({
   onUpload,
   onLibrary,
   onAnalytics,
+  onSubmissions,
 }: QuickActionsProps) {
   return (
     <div className='bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700'>
@@ -38,6 +41,16 @@ export default function QuickActions({
           onPress={onLibrary}
         >
           My Music
+        </Button>
+        <Button
+          size='md'
+          variant='flat'
+          color='primary'
+          fullWidth
+          startContent={<QueueListIcon className='w-4 h-4' />}
+          onPress={onSubmissions}
+        >
+          Submissions
         </Button>
         <Button
           size='md'

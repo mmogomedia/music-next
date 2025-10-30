@@ -7,6 +7,8 @@ import {
   TrophyIcon,
 } from '@heroicons/react/24/solid';
 import { Track } from '@/types/track';
+import { SourceType } from '@/types/stats';
+import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 
 interface TopTenTracksProps {
   onTrackPlay?: (_track: Track) => void;
@@ -14,8 +16,11 @@ interface TopTenTracksProps {
 
 export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
   const [topTracks, setTopTracks] = useState<Track[]>([]);
-  const [playingTrack, setPlayingTrack] = useState<string | null>(null);
+  const [topTenPlaylistId, setTopTenPlaylistId] = useState<
+    string | undefined
+  >();
   const [loading, setLoading] = useState(true);
+  const { currentTrack, isPlaying, playTrack } = useMusicPlayer();
 
   useEffect(() => {
     fetchTopTracks();
@@ -24,26 +29,37 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
   const fetchTopTracks = async () => {
     try {
       const response = await fetch('/api/playlists/top-ten');
+
+      if (response.status === 404) {
+        // No top ten playlist exists - this is not an error, just empty state
+        setTopTracks([]);
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
-        if (data.playlist?.tracks) {
-          setTopTracks(
-            data.playlist.tracks
-              .map((pt: any) => pt.track)
-              .filter(Boolean)
-              .slice(0, 9)
-          );
+        if (data.tracks) {
+          setTopTracks(data.tracks.slice(0, 9));
+          setTopTenPlaylistId(data.playlist?.id);
+        } else {
+          setTopTracks([]);
+          setTopTenPlaylistId(undefined);
         }
+      } else {
+        console.error('Error fetching top ten tracks:', response.status);
+        setTopTracks([]);
+        setTopTenPlaylistId(undefined);
       }
     } catch (error) {
       console.error('Error fetching top ten tracks:', error);
+      setTopTracks([]);
     } finally {
       setLoading(false);
     }
   };
 
   const handlePlay = (track: Track) => {
-    setPlayingTrack(playingTrack === track.id ? null : track.id);
+    playTrack(track, 'playlist' as SourceType, topTenPlaylistId);
     onTrackPlay?.(track);
   };
 
@@ -173,7 +189,7 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
                       onClick={() => handlePlay(track)}
                       className='w-6 h-6 bg-white/90 text-gray-900 rounded-full flex items-center justify-center hover:bg-white transition-all duration-200'
                     >
-                      {playingTrack === track.id ? (
+                      {currentTrack?.id === track.id && isPlaying ? (
                         <PauseIcon className='w-3 h-3' />
                       ) : (
                         <PlaySolidIcon className='w-3 h-3 ml-0.5' />
@@ -211,7 +227,7 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
                   onClick={() => handlePlay(track)}
                   className='flex-shrink-0 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100'
                 >
-                  {playingTrack === track.id ? (
+                  {currentTrack?.id === track.id && isPlaying ? (
                     <PauseIcon className='w-4 h-4' />
                   ) : (
                     <PlaySolidIcon className='w-4 h-4 ml-0.5' />

@@ -1,11 +1,7 @@
-// Playlist Types
-/* eslint-disable no-unused-vars */
-export enum PlaylistType {
-  GENRE = 'GENRE',
-  FEATURED = 'FEATURED',
-  TOP_TEN = 'TOP_TEN',
-  PROVINCE = 'PROVINCE',
-}
+// Import PlaylistTypeDefinition from dynamic types
+import type { PlaylistTypeDefinition } from './dynamic-playlist-types';
+
+// Note: PlaylistType enum removed - now using dynamic PlaylistTypeDefinition from database
 
 export enum PlaylistStatus {
   ACTIVE = 'ACTIVE',
@@ -30,7 +26,7 @@ export interface Playlist {
   id: string;
   name: string;
   description?: string;
-  type: PlaylistType;
+  playlistTypeId: string;
   coverImage: string;
   maxTracks: number;
   currentTracks: number;
@@ -44,6 +40,7 @@ export interface Playlist {
   order: number;
 
   // Relations (optional, populated when needed)
+  playlistType?: PlaylistTypeDefinition;
   createdByUser?: {
     id: string;
     name: string;
@@ -139,7 +136,7 @@ export interface PlaylistAnalytics {
 export interface CreatePlaylistData {
   name: string;
   description?: string;
-  type: PlaylistType;
+  playlistTypeId: string;
   coverImage: string;
   maxTracks: number;
   maxSubmissionsPerArtist: number;
@@ -180,7 +177,7 @@ export interface BulkReviewData {
 
 // Playlist Filters
 export interface PlaylistFilters {
-  type?: PlaylistType;
+  type?: string; // Now using playlistTypeId
   status?: PlaylistStatus;
   submissionStatus?: SubmissionStatus;
   province?: string;

@@ -23,6 +23,7 @@ import Link from 'next/link';
 import { useArtistProfile } from '@/hooks/useArtistProfile';
 import { CreateArtistProfileData } from '@/types/artist-profile';
 import ImageUpload from '@/components/ui/ImageUpload';
+import { uploadImageToR2 } from '@/lib/image-upload';
 import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 import { GENRES } from '@/lib/genres';
 
@@ -126,22 +127,8 @@ export default function CreateArtistProfilePage() {
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('image', file);
-    formData.append('type', 'profile');
-
-    const response = await fetch('/api/upload/image', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to upload image');
-    }
-
-    const data = await response.json();
-    // Store the full path (including user folder) for database storage
-    return data.key || data.url;
+    const key = await uploadImageToR2(file);
+    return key;
   };
 
   const handleImageChange = (file: File | null) => {

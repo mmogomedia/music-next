@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db';
 // POST /api/playlists/[id]/submit - Submit tracks to playlist
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -25,9 +25,12 @@ export async function POST(
       );
     }
 
+    // Await params to get the id
+    const { id } = await params;
+
     // Check if playlist exists and is open for submissions
     const playlist = await prisma.playlist.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: {
@@ -96,10 +99,33 @@ export async function POST(
       );
     }
 
-    // Check if any tracks are already in the playlist
+    // Check if any tracks have already been submitted to this playlist (check submissions first)
+    const existingSubmissions = await prisma.playlistSubmission.findMany({
+      where: {
+        playlistId: id,
+        trackId: { in: trackIds },
+      },
+      include: {
+        track: {
+          select: { title: true },
+        },
+      },
+    });
+
+    if (existingSubmissions.length > 0) {
+      const duplicateTracks = existingSubmissions.map(es => es.track.title);
+      return NextResponse.json(
+        {
+          error: `The following tracks have already been submitted to this playlist: ${duplicateTracks.join(', ')}. Each track can only be submitted once per playlist.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check if any tracks are already in the playlist (approved tracks)
     const existingTracks = await prisma.playlistTrack.findMany({
       where: {
-        playlistId: params.id,
+        playlistId: id,
         trackId: { in: trackIds },
       },
       select: { trackId: true },
@@ -121,7 +147,7 @@ export async function POST(
     // Create submissions
     const submissions = await prisma.playlistSubmission.createMany({
       data: trackIds.map(trackId => ({
-        playlistId: params.id,
+        playlistId: id,
         trackId,
         artistId: session.user.id,
         artistComment: message,

@@ -2,13 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import {
-  PlaylistType,
-  PlaylistStatus,
-  SubmissionStatus,
-} from '@/types/playlist';
 
-// GET /api/admin/playlists - List all playlists with filters
+// GET /api/admin/playlists-dynamic - List all playlists with dynamic types
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,11 +13,12 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type') as PlaylistType | null;
-    const status = searchParams.get('status') as PlaylistStatus | null;
-    const submissionStatus = searchParams.get(
-      'submissionStatus'
-    ) as SubmissionStatus | null;
+    const playlistTypeId = searchParams.get('playlistTypeId');
+    const status = searchParams.get('status') as 'ACTIVE' | 'INACTIVE' | null;
+    const submissionStatus = searchParams.get('submissionStatus') as
+      | 'OPEN'
+      | 'CLOSED'
+      | null;
     const province = searchParams.get('province');
     const search = searchParams.get('search');
     const page = parseInt(searchParams.get('page') || '1');
@@ -32,7 +28,7 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const where: any = {};
 
-    if (type) where.type = type;
+    if (playlistTypeId) where.playlistTypeId = playlistTypeId;
     if (status) where.status = status;
     if (submissionStatus) where.submissionStatus = submissionStatus;
     if (province) where.province = province;
@@ -47,6 +43,7 @@ export async function GET(request: NextRequest) {
       prisma.playlist.findMany({
         where,
         include: {
+          playlistType: true,
           createdByUser: {
             select: {
               id: true,
@@ -63,7 +60,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy: [{ status: 'desc' }, { order: 'asc' }, { createdAt: 'desc' }],
+        orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
@@ -82,13 +79,13 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching playlists:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch playlists' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-// POST /api/admin/playlists - Create new playlist
+// POST /api/admin/playlists-dynamic - Create new playlist with dynamic type
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -101,7 +98,7 @@ export async function POST(request: NextRequest) {
     const {
       name,
       description,
-      type,
+      playlistTypeId,
       coverImage,
       maxTracks,
       maxSubmissionsPerArtist,
@@ -111,7 +108,7 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (
       !name ||
-      !type ||
+      !playlistTypeId ||
       !coverImage ||
       !maxTracks ||
       !maxSubmissionsPerArtist
@@ -122,46 +119,75 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get playlist type to validate constraints
+    const playlistType = await prisma.playlistTypeDefinition.findUnique({
+      where: { id: playlistTypeId },
+    });
+
+    if (!playlistType) {
+      return NextResponse.json(
+        { error: 'Invalid playlist type' },
+        { status: 400 }
+      );
+    }
+
+    if (!playlistType.isActive) {
+      return NextResponse.json(
+        { error: 'Cannot create playlist with inactive type' },
+        { status: 400 }
+      );
+    }
+
     // Validate playlist type limits
-    if (type === 'FEATURED') {
-      const existingFeatured = await prisma.playlist.findFirst({
-        where: { type: 'FEATURED', status: 'ACTIVE' },
+    if (playlistType.maxInstances !== -1) {
+      const existingCount = await prisma.playlist.count({
+        where: {
+          playlistTypeId,
+          status: 'ACTIVE',
+        },
       });
-      if (existingFeatured) {
+
+      if (existingCount >= playlistType.maxInstances) {
         return NextResponse.json(
-          { error: 'Only one featured playlist can be active at a time' },
+          {
+            error: `Maximum ${playlistType.maxInstances} active ${playlistType.name} playlist(s) allowed`,
+          },
           { status: 400 }
         );
       }
     }
 
-    if (type === 'TOP_TEN') {
-      const existingTopTen = await prisma.playlist.findFirst({
-        where: { type: 'TOP_TEN', status: 'ACTIVE' },
-      });
-      if (existingTopTen) {
-        return NextResponse.json(
-          { error: 'Only one top ten playlist can be active at a time' },
-          { status: 400 }
-        );
-      }
+    // Validate province requirement
+    if (playlistType.requiresProvince && !province) {
+      return NextResponse.json(
+        { error: `Province is required for ${playlistType.name} playlists` },
+        { status: 400 }
+      );
     }
 
-    if (type === 'PROVINCE' && province) {
+    // Validate province uniqueness for province playlists
+    if (playlistType.requiresProvince && province) {
       const existingProvince = await prisma.playlist.findFirst({
-        where: { type: 'PROVINCE', province, status: 'ACTIVE' },
+        where: {
+          playlistTypeId,
+          province,
+          status: 'ACTIVE',
+        },
       });
+
       if (existingProvince) {
         return NextResponse.json(
-          { error: `Only one ${province} playlist can be active at a time` },
+          {
+            error: `Only one ${province} ${playlistType.name} playlist can be active at a time`,
+          },
           { status: 400 }
         );
       }
     }
 
-    // Get next order number
+    // Get next order number for this type
     const lastPlaylist = await prisma.playlist.findFirst({
-      where: { type },
+      where: { playlistTypeId },
       orderBy: { order: 'desc' },
     });
     const order = (lastPlaylist?.order || 0) + 1;
@@ -170,15 +196,16 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         description,
-        type,
+        playlistTypeId,
         coverImage,
         maxTracks,
         maxSubmissionsPerArtist,
-        province: type === 'PROVINCE' ? province : null,
+        province: playlistType.requiresProvince ? province : null,
         createdBy: session.user.id,
         order,
       },
       include: {
+        playlistType: true,
         createdByUser: {
           select: {
             id: true,

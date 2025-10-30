@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { PlaylistType } from '@/types/playlist';
 
 // GET /api/playlists/available - Get playlists available for submission
 export async function GET(request: NextRequest) {
@@ -14,7 +13,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get('type') as PlaylistType | null;
+    const type = searchParams.get('type'); // Now expecting a slug instead of enum
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
@@ -25,7 +24,27 @@ export async function GET(request: NextRequest) {
       submissionStatus: 'OPEN',
     };
 
-    if (type) where.type = type;
+    // If type is provided, find the playlist type by slug
+    if (type) {
+      const playlistType = await prisma.playlistTypeDefinition.findFirst({
+        where: { slug: type, isActive: true },
+      });
+
+      if (playlistType) {
+        where.playlistTypeId = playlistType.id;
+      } else {
+        // If type slug not found, return empty results
+        return NextResponse.json({
+          playlists: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            pages: 0,
+          },
+        });
+      }
+    }
 
     const [playlists, total] = await Promise.all([
       prisma.playlist.findMany({
@@ -42,7 +61,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy: [{ type: 'asc' }, { order: 'asc' }, { createdAt: 'desc' }],
+        orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
         skip,
         take: limit,
       }),

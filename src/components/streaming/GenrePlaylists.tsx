@@ -10,19 +10,24 @@ import {
   StarIcon,
 } from '@heroicons/react/24/solid';
 import { Track } from '@/types/track';
+import { SourceType } from '@/types/stats';
+import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 
 interface GenrePlaylistsProps {
-  onTrackPlay: (_track: Track) => void;
+  onTrackPlay?: (_track: Track) => void;
 }
 
 export default function GenrePlaylists({ onTrackPlay }: GenrePlaylistsProps) {
   const [selectedGenre, setSelectedGenre] = useState<string>('');
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<
+    string | undefined
+  >();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [playingTrack, setPlayingTrack] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [availableGenres, setAvailableGenres] = useState<string[]>([]);
+  const { currentTrack, isPlaying, playTrack } = useMusicPlayer();
 
   // Fetch available genres
   const fetchGenres = useCallback(async () => {
@@ -40,13 +45,12 @@ export default function GenrePlaylists({ onTrackPlay }: GenrePlaylistsProps) {
       // Set the first genre as selected if no genre is selected and genres exist
       if (!selectedGenre && genres.length > 0) {
         setSelectedGenre(genres[0]);
-      } else if (genres.length === 0) {
-        // No genres available - show empty state
-        setLoading(false);
       }
     } catch (err) {
       console.error('Error fetching genres:', err);
       setError('Failed to load genres');
+      setAvailableGenres([]);
+    } finally {
       setLoading(false);
     }
   }, [selectedGenre]);
@@ -77,9 +81,11 @@ export default function GenrePlaylists({ onTrackPlay }: GenrePlaylistsProps) {
 
       if (!playlist) {
         setTracks([]);
-        setLoading(false);
+        setSelectedPlaylistId(undefined);
         return;
       }
+
+      setSelectedPlaylistId(playlist.id);
 
       // Get tracks for this playlist
       const tracksResponse = await fetch(
@@ -94,6 +100,7 @@ export default function GenrePlaylists({ onTrackPlay }: GenrePlaylistsProps) {
     } catch (err) {
       console.error('Error fetching tracks:', err);
       setError('Failed to load tracks');
+      setTracks([]);
     } finally {
       setLoading(false);
     }
@@ -107,8 +114,8 @@ export default function GenrePlaylists({ onTrackPlay }: GenrePlaylistsProps) {
 
   // Handle track play
   const handlePlay = (track: Track) => {
-    setPlayingTrack(playingTrack === track.id ? null : track.id);
-    onTrackPlay(track);
+    playTrack(track, 'playlist' as SourceType, selectedPlaylistId);
+    onTrackPlay?.(track);
   };
 
   // Load genres when component mounts
@@ -142,23 +149,42 @@ export default function GenrePlaylists({ onTrackPlay }: GenrePlaylistsProps) {
     );
   }
 
-  if (error) {
+  if (error || availableGenres.length === 0) {
     return (
       <div className='bg-white dark:bg-slate-800 py-12'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='text-center'>
-            <div className='w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-xl flex items-center justify-center mx-auto mb-4'>
-              <MusicalNoteIcon className='w-8 h-8 text-red-600 dark:text-red-400' />
+          {/* Header */}
+          <div className='mb-8'>
+            <div className='flex items-center gap-3 mb-2'>
+              <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center'>
+                <MusicalNoteIcon className='w-5 h-5 text-white' />
+              </div>
+              <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+                Genre Playlists
+              </h2>
+            </div>
+            <p className='text-sm text-gray-500 dark:text-gray-400 ml-11'>
+              Explore music by genre and discover your next favorite track
+            </p>
+          </div>
+
+          {/* Placeholder */}
+          <div className='text-center py-12'>
+            <div className='w-16 h-16 bg-gray-200 dark:bg-slate-700 rounded-xl flex items-center justify-center mx-auto mb-4'>
+              <MusicalNoteIcon className='w-8 h-8 text-gray-400 dark:text-slate-400' />
             </div>
             <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
-              Error Loading Tracks
+              No Genre Playlists Available
             </h3>
-            <p className='text-gray-500 dark:text-gray-400 mb-4'>{error}</p>
+            <p className='text-gray-500 dark:text-gray-400 mb-4'>
+              Genre playlists will appear here once they are created. Check back
+              later!
+            </p>
             <button
-              onClick={fetchTracks}
+              onClick={fetchGenres}
               className='px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200'
             >
-              Try Again
+              Refresh
             </button>
           </div>
         </div>
@@ -279,7 +305,7 @@ export default function GenrePlaylists({ onTrackPlay }: GenrePlaylistsProps) {
                   onClick={() => handlePlay(tracks[0])}
                   className='w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 flex-shrink-0'
                 >
-                  {playingTrack === tracks[0].id ? (
+                  {currentTrack?.id === tracks[0].id && isPlaying ? (
                     <PauseIcon className='w-6 h-6' />
                   ) : (
                     <PlayIcon className='w-6 h-6 ml-0.5' />
@@ -291,19 +317,7 @@ export default function GenrePlaylists({ onTrackPlay }: GenrePlaylistsProps) {
         )}
 
         {/* Tracks Grid - 3 per row, compact */}
-        {availableGenres.length === 0 ? (
-          <div className='text-center py-12'>
-            <div className='w-16 h-16 bg-gray-200 dark:bg-slate-700 rounded-xl flex items-center justify-center mx-auto mb-4'>
-              <MusicalNoteIcon className='w-8 h-8 text-gray-400 dark:text-slate-400' />
-            </div>
-            <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
-              No Genre Playlists Available
-            </h3>
-            <p className='text-gray-500 dark:text-gray-400'>
-              No genre playlists have been created yet. Check back later!
-            </p>
-          </div>
-        ) : tracks.length === 0 ? (
+        {tracks.length === 0 ? (
           <div className='text-center py-12'>
             <div className='w-16 h-16 bg-gray-200 dark:bg-slate-700 rounded-xl flex items-center justify-center mx-auto mb-4'>
               <MusicalNoteIcon className='w-8 h-8 text-gray-400 dark:text-slate-400' />
@@ -367,7 +381,7 @@ export default function GenrePlaylists({ onTrackPlay }: GenrePlaylistsProps) {
                     onClick={() => handlePlay(track)}
                     className='w-6 h-6 bg-blue-600 hover:bg-blue-700 text-white rounded flex items-center justify-center transition-all duration-200 hover:scale-105'
                   >
-                    {playingTrack === track.id ? (
+                    {currentTrack?.id === track.id && isPlaying ? (
                       <PauseIcon className='w-3 h-3' />
                     ) : (
                       <PlayIcon className='w-3 h-3 ml-0.5' />

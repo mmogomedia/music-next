@@ -42,13 +42,18 @@ model User {
   password            String?
   role                UserRole             @default(USER)
   isPremium           Boolean              @default(false)
+  isActive            Boolean              @default(true)
   stripeCustomerId    String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   accounts            Account[]
   sessions            Session[]
   artistProfile       ArtistProfile?
-  playEvents          PlayEvent[]
+  playEvents          PlayEvent[]           @relation("UserPlays")
+  likeEvents          LikeEvent[]           @relation("UserLikes")
+  saveEvents          SaveEvent[]           @relation("UserSaves")
+  shareEvents         ShareEvent[]          @relation("UserShares")
+  downloadEvents      DownloadEvent[]       @relation("UserDownloads")
   playlistSubmissions PlaylistSubmission[] @relation("PlaylistSubmissions")
   reviewedSubmissions PlaylistSubmission[] @relation("PlaylistSubmissionReviewedBy")
   addedPlaylistTracks PlaylistTrack[]      @relation("PlaylistTrackAddedBy")
@@ -92,6 +97,9 @@ model ArtistProfile {
   updatedAt      DateTime @updatedAt
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tracks         Track[]
+  strengthScores ArtistStrengthScore[] @relation("ArtistStrengthScores")
+  metrics        ArtistMetrics[] @relation("ArtistMetrics")
+  trends         ArtistTrends[] @relation("ArtistTrends")
 
   @@map("artist_profiles")
 }
@@ -133,7 +141,15 @@ model Track {
   userId              String
   watermarkId         String?
   year                Int?
-  playEvents          PlayEvent[]
+  playEvents          PlayEvent[]           @relation("TrackPlays")
+  likeEvents          LikeEvent[]           @relation("TrackLikes")
+  saveEvents          SaveEvent[]           @relation("TrackSaves")
+  shareEvents         ShareEvent[]          @relation("TrackShares")
+  downloadEvents      DownloadEvent[]       @relation("TrackDownloads")
+  dailyStats          DailyStats[]          @relation("TrackDailyStats")
+  weeklyStats         WeeklyStats[]         @relation("TrackWeeklyStats")
+  monthlyStats        MonthlyStats[]        @relation("TrackMonthlyStats")
+  yearlyStats         YearlyStats[]         @relation("TrackYearlyStats")
   playlistSubmissions PlaylistSubmission[]
   playlistTracks      PlaylistTrack[]
   smartLinks          SmartLink[]
@@ -144,15 +160,29 @@ model Track {
 }
 
 model PlayEvent {
-  id        String   @id @default(cuid())
-  trackId   String
-  userId    String?
-  timestamp DateTime @default(now())
-  ipAddress String?
-  userAgent String?
-  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
-  user      User?    @relation(fields: [userId], references: [id])
+  id             String    @id @default(cuid())
+  trackId        String
+  userId         String?
+  sessionId      String
+  timestamp      DateTime
+  source         String    // 'landing' | 'playlist' | 'search' | 'direct' | 'share'
+  playlistId     String?
+  userAgent      String
+  ip             String?
+  duration       Int?      // How long they actually played (seconds)
+  completionRate Int?      // 0-100%
+  skipped        Boolean   @default(false)
+  replayed       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
 
+  // Relations
+  track          Track     @relation("TrackPlays", fields: [trackId], references: [id], onDelete: Cascade)
+  user           User?     @relation("UserPlays", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([trackId])
+  @@index([timestamp])
+  @@index([sessionId])
+  @@index([source])
   @@map("play_events")
 }
 
@@ -200,11 +230,32 @@ model UploadJob {
   @@map("upload_jobs")
 }
 
+model PlaylistTypeDefinition {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  description      String?
+  icon             String?
+  color            String?
+  maxInstances     Int      @default(-1)
+  requiresProvince Boolean  @default(false)
+  defaultMaxTracks Int      @default(20)
+  displayOrder     Int      @default(0)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  playlists        Playlist[]
+
+  @@map("playlist_types")
+}
+
 model Playlist {
   id                      String               @id @default(cuid())
   name                    String
   description             String?
-  type                    PlaylistType
+  playlistTypeId          String
   coverImage              String
   maxTracks               Int
   currentTracks           Int                  @default(0)
@@ -216,6 +267,9 @@ model Playlist {
   createdAt               DateTime             @default(now())
   updatedAt               DateTime             @updatedAt
   order                   Int                  @default(0)
+  
+  // Relations
+  playlistType            PlaylistTypeDefinition @relation(fields: [playlistTypeId], references: [id])
   analytics               PlaylistAnalytics[]
   submissions             PlaylistSubmission[]
   tracks                  PlaylistTrack[]
@@ -317,4 +371,264 @@ enum TrackSubmissionStatus {
   APPROVED
   REJECTED
   SHORTLISTED
+}
+
+// ===== STATS & ANALYTICS MODELS =====
+
+model LikeEvent {
+  id        String   @id @default(cuid())
+  trackId   String
+  userId    String?
+  sessionId String
+  timestamp DateTime
+  source    String
+  action    String   // 'like' | 'unlike'
+  createdAt DateTime @default(now())
+
+  // Relations
+  track     Track    @relation("TrackLikes", fields: [trackId], references: [id], onDelete: Cascade)
+  user      User?    @relation("UserLikes", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([trackId])
+  @@index([timestamp])
+  @@index([sessionId])
+  @@map("like_events")
+}
+
+model SaveEvent {
+  id         String   @id @default(cuid())
+  trackId    String
+  userId     String?
+  sessionId  String
+  timestamp  DateTime
+  playlistId String
+  action     String   // 'save' | 'unsave'
+  createdAt  DateTime @default(now())
+
+  // Relations
+  track      Track    @relation("TrackSaves", fields: [trackId], references: [id], onDelete: Cascade)
+  user       User?    @relation("UserSaves", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([trackId])
+  @@index([timestamp])
+  @@index([sessionId])
+  @@map("save_events")
+}
+
+model ShareEvent {
+  id        String   @id @default(cuid())
+  trackId   String
+  userId    String?
+  sessionId String
+  timestamp DateTime
+  platform  String   // 'twitter' | 'facebook' | 'instagram' | 'whatsapp' | 'copy_link' | 'embed'
+  source    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  track     Track    @relation("TrackShares", fields: [trackId], references: [id], onDelete: Cascade)
+  user      User?    @relation("UserShares", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([trackId])
+  @@index([timestamp])
+  @@index([sessionId])
+  @@map("share_events")
+}
+
+model DownloadEvent {
+  id        String   @id @default(cuid())
+  trackId   String
+  userId    String?
+  sessionId String
+  timestamp DateTime
+  source    String
+  userAgent String
+  ip        String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  track     Track    @relation("TrackDownloads", fields: [trackId], references: [id], onDelete: Cascade)
+  user      User?    @relation("UserDownloads", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([trackId])
+  @@index([timestamp])
+  @@index([sessionId])
+  @@map("download_events")
+}
+
+// ===== AGGREGATED STATS TABLES =====
+
+model DailyStats {
+  id                 String   @id @default(cuid())
+  trackId            String
+  date               DateTime @db.Date
+  totalPlays         Int      @default(0)
+  uniquePlays        Int      @default(0)
+  totalLikes         Int      @default(0)
+  totalShares        Int      @default(0)
+  totalDownloads     Int      @default(0)
+  totalSaves         Int      @default(0)
+  avgDuration        Float    @default(0)
+  avgCompletionRate  Float    @default(0)
+  skipRate           Float    @default(0)
+  replayRate         Float    @default(0)
+  createdAt          DateTime @default(now())
+
+  // Relations
+  track              Track    @relation("TrackDailyStats", fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, date], name: "trackId_date")
+  @@index([date])
+  @@index([trackId])
+  @@map("daily_stats")
+}
+
+model WeeklyStats {
+  id                 String   @id @default(cuid())
+  trackId            String
+  weekStart          DateTime @db.Date
+  totalPlays         Int      @default(0)
+  uniquePlays        Int      @default(0)
+  totalLikes         Int      @default(0)
+  totalShares        Int      @default(0)
+  totalDownloads     Int      @default(0)
+  totalSaves         Int      @default(0)
+  avgDuration        Float    @default(0)
+  avgCompletionRate  Float    @default(0)
+  skipRate           Float    @default(0)
+  replayRate         Float    @default(0)
+  createdAt          DateTime @default(now())
+
+  // Relations
+  track              Track    @relation("TrackWeeklyStats", fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, weekStart], name: "trackId_weekStart")
+  @@index([weekStart])
+  @@index([trackId])
+  @@map("weekly_stats")
+}
+
+model MonthlyStats {
+  id                 String   @id @default(cuid())
+  trackId            String
+  monthStart         DateTime @db.Date
+  totalPlays         Int      @default(0)
+  uniquePlays        Int      @default(0)
+  totalLikes         Int      @default(0)
+  totalShares        Int      @default(0)
+  totalDownloads     Int      @default(0)
+  totalSaves         Int      @default(0)
+  avgDuration        Float    @default(0)
+  avgCompletionRate  Float    @default(0)
+  skipRate           Float    @default(0)
+  replayRate         Float    @default(0)
+  createdAt          DateTime @default(now())
+
+  // Relations
+  track              Track    @relation("TrackMonthlyStats", fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, monthStart], name: "trackId_monthStart")
+  @@index([monthStart])
+  @@index([trackId])
+  @@map("monthly_stats")
+}
+
+model YearlyStats {
+  id                 String   @id @default(cuid())
+  trackId            String
+  year               Int
+  totalPlays         Int      @default(0)
+  uniquePlays        Int      @default(0)
+  totalLikes         Int      @default(0)
+  totalShares        Int      @default(0)
+  totalDownloads     Int      @default(0)
+  totalSaves         Int      @default(0)
+  avgDuration        Float    @default(0)
+  avgCompletionRate  Float    @default(0)
+  skipRate           Float    @default(0)
+  replayRate         Float    @default(0)
+  createdAt          DateTime @default(now())
+
+  // Relations
+  track              Track    @relation("TrackYearlyStats", fields: [trackId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, year], name: "trackId_year")
+  @@index([year])
+  @@index([trackId])
+  @@map("yearly_stats")
+}
+
+// ===== ARTIST STRENGTH SCORING TABLES =====
+
+model ArtistStrengthScore {
+  id                 String   @id @default(cuid())
+  artistId           String
+  timeRange          String   // '24h', '7d', '30d', '3m', '1y', 'all'
+  engagementScore    Float    @default(0)
+  growthScore        Float    @default(0)
+  qualityScore       Float    @default(0)
+  potentialScore     Float    @default(0)
+  overallScore       Float    @default(0)
+  calculatedAt       DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  artist             ArtistProfile @relation("ArtistStrengthScores", fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([artistId, timeRange])
+  @@index([timeRange])
+  @@index([artistId])
+  @@index([overallScore])
+  @@map("artist_strength_scores")
+}
+
+model ArtistMetrics {
+  id                    String   @id @default(cuid())
+  artistId              String
+  timeRange             String
+  totalPlays            Int      @default(0)
+  uniquePlays           Int      @default(0)
+  totalLikes            Int      @default(0)
+  totalShares           Int      @default(0)
+  totalDownloads        Int      @default(0)
+  totalSaves            Int      @default(0)
+  avgCompletionRate     Float    @default(0)
+  avgDuration           Float    @default(0)
+  skipRate              Float    @default(0)
+  replayRate            Float    @default(0)
+  growthVelocity        Float    @default(0)
+  viralCoefficient      Float    @default(0)
+  geographicReach       Int      @default(0)
+  crossPlatformScore    Float    @default(0)
+  retentionRate         Float    @default(0)
+  calculatedAt          DateTime @default(now())
+
+  // Relations
+  artist                ArtistProfile @relation("ArtistMetrics", fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([artistId, timeRange])
+  @@index([timeRange])
+  @@index([artistId])
+  @@map("artist_metrics")
+}
+
+model ArtistTrends {
+  id                    String   @id @default(cuid())
+  artistId              String
+  timeRange             String
+  playTrend             Float    @default(0) // % change from previous period
+  engagementTrend       Float    @default(0)
+  growthTrend           Float    @default(0)
+  qualityTrend          Float    @default(0)
+  viralTrend            Float    @default(0)
+  geographicTrend       Float    @default(0)
+  calculatedAt          DateTime @default(now())
+
+  // Relations
+  artist                ArtistProfile @relation("ArtistTrends", fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([artistId, timeRange])
+  @@index([timeRange])
+  @@index([artistId])
+  @@map("artist_trends")
 }

@@ -37,7 +37,11 @@ This folder contains the development rules and guidelines for building the Next.
 - [**12-admin-dashboard.md**](./12-admin-dashboard.md) - Admin interface and user management
 - [**13-content-moderation.md**](./13-content-moderation.md) - Content review and moderation tools
 
-### 🚀 Phase 6: Deployment & Optimization
+### 🛠️ Phase 6: Code Quality & Architecture
+
+- [**25-api-client-and-utilities.md**](./25-api-client-and-utilities.md) - Centralized API client and utility functions
+
+### 🚀 Phase 7: Deployment & Optimization
 
 - [**14-testing-qa.md**](./14-testing-qa.md) - Testing strategy and quality assurance
 - [**15-deployment.md**](./15-deployment.md) - Production deployment and monitoring

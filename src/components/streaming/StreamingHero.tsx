@@ -13,6 +13,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { PlayIcon as PlaySolidIcon } from '@heroicons/react/24/solid';
 import { Track } from '@/types/track';
+import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import { SourceType } from '@/types/stats';
 
 interface StreamingHeroProps {
   onTrackPlay?: (_track: Track) => void;
@@ -20,11 +22,26 @@ interface StreamingHeroProps {
 
 export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
   const [featuredTracks, setFeaturedTracks] = useState<Track[]>([]);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [featuredPlaylistId, setFeaturedPlaylistId] = useState<
+    string | undefined
+  >();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const {
+    currentTrack: globalCurrentTrack,
+    isPlaying: globalIsPlaying,
+    playTrack,
+  } = useMusicPlayer();
+
+  // Find the current track index based on the global player state
+  const currentTrackIndex = featuredTracks.findIndex(
+    track => track.id === globalCurrentTrack?.id
+  );
+  const currentTrack =
+    currentTrackIndex >= 0
+      ? featuredTracks[currentTrackIndex]
+      : featuredTracks[0];
 
   useEffect(() => {
     fetchFeaturedTracks();
@@ -59,13 +76,14 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
       }
 
       const data = await response.json();
-      if (data.playlist?.tracks) {
-        const tracks = data.playlist.tracks
-          .map((pt: any) => pt.track)
-          .filter(Boolean);
-        setFeaturedTracks(tracks);
+
+      if (data.tracks && data.tracks.length > 0) {
+        // API returns tracks directly with fileUrl constructed
+        setFeaturedTracks(data.tracks);
+        setFeaturedPlaylistId(data.playlist?.id);
       } else {
         setFeaturedTracks([]);
+        setFeaturedPlaylistId(undefined);
       }
     } catch (error: any) {
       console.error('Error fetching featured tracks:', error);
@@ -76,19 +94,28 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
   };
 
   const handlePlay = (track: Track) => {
-    setIsPlaying(!isPlaying);
+    playTrack(track, 'playlist' as SourceType, featuredPlaylistId);
     onTrackPlay?.(track);
   };
 
   const handlePrevious = () => {
-    if (currentTrackIndex > 0) {
-      setCurrentTrackIndex(currentTrackIndex - 1);
+    const prevIndex = currentTrackIndex > 0 ? currentTrackIndex - 1 : 0;
+    const prevTrack = featuredTracks[prevIndex];
+    if (prevTrack) {
+      playTrack(prevTrack, 'playlist' as SourceType, featuredPlaylistId);
+      onTrackPlay?.(prevTrack);
     }
   };
 
   const handleNext = () => {
-    if (currentTrackIndex < featuredTracks.length - 1) {
-      setCurrentTrackIndex(currentTrackIndex + 1);
+    const nextIndex =
+      currentTrackIndex < featuredTracks.length - 1
+        ? currentTrackIndex + 1
+        : featuredTracks.length - 1;
+    const nextTrack = featuredTracks[nextIndex];
+    if (nextTrack) {
+      playTrack(nextTrack, 'playlist' as SourceType, featuredPlaylistId);
+      onTrackPlay?.(nextTrack);
     }
   };
 
@@ -308,8 +335,6 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
     );
   }
 
-  const currentTrack = featuredTracks[currentTrackIndex];
-
   return (
     <div className='bg-gradient-to-r from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-900 py-16'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
@@ -406,26 +431,18 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
 
           <div className='relative flex h-80'>
             {/* Track Artwork - Quarter Width */}
-            <div className='w-1/4 relative group overflow-hidden'>
-              <div className='absolute inset-0 bg-gray-200 dark:bg-slate-700'>
-                {currentTrack.coverImageUrl ? (
-                  <img
-                    src={currentTrack.coverImageUrl}
-                    alt={currentTrack.title}
-                    className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-                  />
-                ) : (
-                  <div className='w-full h-full flex items-center justify-center'>
-                    <PlaySolidIcon className='w-24 h-24 text-gray-400 dark:text-slate-400' />
-                  </div>
-                )}
-              </div>
-              {/* Subtle Hover Overlay */}
-              <div className='absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
-                <div className='w-16 h-16 bg-white/90 text-gray-900 rounded-full flex items-center justify-center shadow-xl'>
-                  <PlaySolidIcon className='w-8 h-8 ml-0.5' />
+            <div className='w-1/4 relative group overflow-hidden rounded-2xl'>
+              {currentTrack?.coverImageUrl ? (
+                <img
+                  src={currentTrack.coverImageUrl}
+                  alt={currentTrack.title}
+                  className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+                />
+              ) : (
+                <div className='w-full h-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center'>
+                  <PlaySolidIcon className='w-24 h-24 text-gray-400 dark:text-slate-400' />
                 </div>
-              </div>
+              )}
               {/* Featured Badge */}
               <div className='absolute top-4 right-4 w-12 h-12 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg border-4 border-white dark:border-slate-800'>
                 <span className='text-white text-xl font-bold'>★</span>
@@ -446,10 +463,10 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
                   <div className='mb-6 flex items-start gap-6'>
                     <div className='flex-1 min-w-0 max-w-2xl'>
                       <h2 className='text-5xl font-black text-gray-900 dark:text-white mb-2 overflow-hidden text-ellipsis whitespace-nowrap bg-gradient-to-r from-gray-900 via-blue-600 to-purple-600 dark:from-white dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent leading-tight'>
-                        {currentTrack.title}
+                        {currentTrack?.title || 'No Track Selected'}
                       </h2>
                       <p className='text-2xl text-gray-600 dark:text-gray-300 overflow-hidden text-ellipsis whitespace-nowrap font-semibold'>
-                        {currentTrack.artist}
+                        {currentTrack?.artist || 'Unknown Artist'}
                       </p>
                     </div>
 
@@ -457,11 +474,17 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
                     <div className='flex items-center gap-3 mt-2 flex-shrink-0'>
                       {/* Main Play Button */}
                       <button
-                        onClick={() => handlePlay(currentTrack)}
-                        className='group relative w-14 h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 text-white rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105'
+                        onClick={() => {
+                          if (currentTrack) {
+                            handlePlay(currentTrack);
+                          }
+                        }}
+                        disabled={!currentTrack}
+                        className='group relative w-14 h-14 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 disabled:from-gray-400 disabled:via-gray-400 disabled:to-gray-400 text-white rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:cursor-not-allowed disabled:transform-none'
                       >
                         <div className='absolute inset-0 bg-white/20 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300'></div>
-                        {isPlaying ? (
+                        {globalCurrentTrack?.id === currentTrack?.id &&
+                        globalIsPlaying ? (
                           <PauseIcon className='w-7 h-7 relative z-10' />
                         ) : (
                           <PlaySolidIcon className='w-7 h-7 ml-0.5 relative z-10' />
@@ -530,7 +553,7 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
                     <div className='flex items-center gap-6'>
                       <div className='text-center'>
                         <div className='text-3xl font-black text-blue-600 dark:text-blue-400 mb-1'>
-                          {currentTrack.playCount.toLocaleString()}
+                          {currentTrack?.playCount?.toLocaleString() || '0'}
                         </div>
                         <div className='text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider'>
                           PLAYS
@@ -538,9 +561,9 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
                       </div>
                       <div className='text-center'>
                         <div className='text-3xl font-black text-gray-900 dark:text-white mb-1'>
-                          {Math.floor((currentTrack.duration || 0) / 60)}:
-                          {(currentTrack.duration || 0) % 60 < 10 ? '0' : ''}
-                          {(currentTrack.duration || 0) % 60}
+                          {currentTrack?.duration
+                            ? `${Math.floor(currentTrack.duration / 60)}:${currentTrack.duration % 60 < 10 ? '0' : ''}${currentTrack.duration % 60}`
+                            : '0:00'}
                         </div>
                         <div className='text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider'>
                           DURATION
@@ -548,7 +571,7 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
                       </div>
                       <div className='text-center'>
                         <div className='text-3xl font-black text-purple-600 dark:text-purple-400 mb-1'>
-                          {currentTrackIndex + 1}
+                          {currentTrackIndex >= 0 ? currentTrackIndex + 1 : 0}
                         </div>
                         <div className='text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider'>
                           TRACK
@@ -557,29 +580,13 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
                     </div>
 
                     {/* Genre Badge */}
-                    <div className='px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-xl'>
-                      <span className='text-sm font-black uppercase tracking-wider'>
-                        {currentTrack.genre}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Progress Section */}
-                  <div className='space-y-2 bg-white/50 dark:bg-slate-700/50 rounded-lg p-3 border border-gray-200/50 dark:border-slate-600/50'>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider'>
-                        Now Playing
-                      </span>
-                      <span className='text-sm font-bold text-gray-700 dark:text-gray-300'>
-                        1:23 / 4:05
-                      </span>
-                    </div>
-                    <div className='relative'>
-                      <div className='w-full bg-gray-200 dark:bg-slate-600 rounded-full h-4 overflow-hidden shadow-inner'>
-                        <div className='h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full w-1/3 transition-all duration-1000 shadow-lg'></div>
+                    {currentTrack?.genre && (
+                      <div className='px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-xl'>
+                        <span className='text-sm font-black uppercase tracking-wider'>
+                          {currentTrack.genre}
+                        </span>
                       </div>
-                      <div className='absolute top-0 left-1/3 w-1.5 h-4 bg-white dark:bg-gray-200 rounded-full shadow-lg transform -translate-x-1/2'></div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>

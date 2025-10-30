@@ -5,6 +5,7 @@ import { PauseIcon, HeartIcon, ShareIcon } from '@heroicons/react/24/outline';
 import { PlayIcon as PlaySolidIcon } from '@heroicons/react/24/solid';
 import { Playlist } from '@/types/playlist';
 import { Track } from '@/types/track';
+import { constructFileUrl } from '@/lib/url-utils';
 
 interface HeroSectionProps {
   onTrackPlay?: (_track: Track) => void;
@@ -199,7 +200,7 @@ export default function HeroSection({
               <div className='aspect-square bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-3xl backdrop-blur-sm border border-white/20 p-8 shadow-2xl'>
                 {playlist.coverImage ? (
                   <img
-                    src={playlist.coverImage}
+                    src={constructFileUrl(playlist.coverImage)}
                     alt={playlist.name}
                     className='w-full h-full object-cover rounded-2xl shadow-xl'
                   />

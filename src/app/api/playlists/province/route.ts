@@ -1,13 +1,25 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { PlaylistType, PlaylistStatus } from '@/types/playlist';
+import { PlaylistStatus } from '@/types/playlist';
 
 // GET /api/playlists/province - Get province playlists
 export async function GET() {
   try {
+    // First find the "province" playlist type
+    const provinceType = await prisma.playlistTypeDefinition.findFirst({
+      where: { slug: 'province', isActive: true },
+    });
+
+    if (!provinceType) {
+      return NextResponse.json(
+        { error: 'Province playlist type not found' },
+        { status: 404 }
+      );
+    }
+
     const provincePlaylists = await prisma.playlist.findMany({
       where: {
-        type: PlaylistType.PROVINCE,
+        playlistTypeId: provinceType.id,
         status: PlaylistStatus.ACTIVE,
       },
       include: {

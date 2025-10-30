@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   PauseIcon,
   HeartIcon,
@@ -10,22 +10,14 @@ import {
 import { PlayIcon as PlaySolidIcon } from '@heroicons/react/24/solid';
 import { Track } from '@/types/track';
 import { Playlist } from '@/types/playlist';
+import { SourceType } from '@/types/stats';
+import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 
 interface ProvincialPlaylistsProps {
   onTrackPlay?: (_track: Track) => void;
 }
 
-const SOUTH_AFRICAN_PROVINCES = [
-  'Western Cape',
-  'Eastern Cape',
-  'Northern Cape',
-  'Free State',
-  'KwaZulu-Natal',
-  'North West',
-  'Gauteng',
-  'Mpumalanga',
-  'Limpopo',
-];
+// Removed hardcoded provinces - will use actual playlists from database
 
 export default function ProvincialPlaylists({
   onTrackPlay,
@@ -33,25 +25,17 @@ export default function ProvincialPlaylists({
   const [provincialPlaylists, setProvincialPlaylists] = useState<Playlist[]>(
     []
   );
-  const [selectedProvince, setSelectedProvince] =
-    useState<string>('Western Cape');
+  const [selectedProvince, setSelectedProvince] = useState<string>('');
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<
+    string | undefined
+  >();
   const [provincialTracks, setProvincialTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [playingTrack, setPlayingTrack] = useState<string | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { currentTrack, isPlaying, playTrack } = useMusicPlayer();
 
-  useEffect(() => {
-    fetchProvincialPlaylists();
-  }, []);
-
-  useEffect(() => {
-    if (provincialPlaylists.length > 0) {
-      fetchProvincialTracks(selectedProvince);
-    }
-  }, [provincialPlaylists, selectedProvince]);
-
-  const fetchProvincialPlaylists = async () => {
+  const fetchProvincialPlaylists = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/playlists/province');
@@ -59,34 +43,54 @@ export default function ProvincialPlaylists({
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setProvincialPlaylists(data.playlists || []);
+      const playlists = data.playlists || [];
+      setProvincialPlaylists(playlists);
+
+      // Set the first playlist as default selected
+      if (playlists.length > 0 && !selectedProvince) {
+        setSelectedProvince(playlists[0].name);
+      }
     } catch (error: any) {
       console.error('Error fetching provincial playlists:', error);
       setError(error.message || 'Failed to fetch provincial playlists');
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedProvince]);
 
-  const fetchProvincialTracks = async (province: string) => {
-    try {
-      const playlist = provincialPlaylists.find(p => p.name === province);
-      if (playlist) {
-        const response = await fetch(`/api/playlists/${playlist.id}/tracks`);
-        if (response.ok) {
-          const data = await response.json();
-          // The API returns tracks directly in data.tracks, not nested in pt.track
-          const tracks = data.tracks || [];
-          setProvincialTracks(tracks.slice(0, 10)); // Limit to 10 tracks
+  const fetchProvincialTracks = useCallback(
+    async (province: string) => {
+      try {
+        const playlist = provincialPlaylists.find(p => p.name === province);
+        if (playlist) {
+          setSelectedPlaylistId(playlist.id);
+          const response = await fetch(`/api/playlists/${playlist.id}/tracks`);
+          if (response.ok) {
+            const data = await response.json();
+            // The API returns tracks directly in data.tracks, not nested in pt.track
+            const tracks = data.tracks || [];
+            setProvincialTracks(tracks.slice(0, 10)); // Limit to 10 tracks
+          }
         }
+      } catch (error) {
+        console.error('Error fetching provincial tracks:', error);
       }
-    } catch (error) {
-      console.error('Error fetching provincial tracks:', error);
+    },
+    [provincialPlaylists]
+  );
+
+  useEffect(() => {
+    fetchProvincialPlaylists();
+  }, [fetchProvincialPlaylists]);
+
+  useEffect(() => {
+    if (provincialPlaylists.length > 0 && selectedProvince) {
+      fetchProvincialTracks(selectedProvince);
     }
-  };
+  }, [provincialPlaylists, selectedProvince, fetchProvincialTracks]);
 
   const handlePlay = (track: Track) => {
-    setPlayingTrack(playingTrack === track.id ? null : track.id);
+    playTrack(track, 'playlist' as SourceType, selectedPlaylistId);
     onTrackPlay?.(track);
   };
 
@@ -132,17 +136,44 @@ export default function ProvincialPlaylists({
     );
   }
 
-  if (error) {
+  if (error || provincialPlaylists.length === 0) {
     return (
       <div className='bg-gray-50 dark:bg-slate-900 py-12'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-red-400'>
-          <p>Error: {error}</p>
-          <button
-            onClick={fetchProvincialPlaylists}
-            className='mt-4 px-4 py-2 bg-blue-600 rounded-md text-white'
-          >
-            Retry
-          </button>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+          {/* Header */}
+          <div className='mb-8'>
+            <div className='flex items-center gap-3 mb-2'>
+              <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center'>
+                <MapPinIcon className='w-5 h-5 text-white' />
+              </div>
+              <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+                Provincial Playlists
+              </h2>
+            </div>
+            <p className='text-sm text-gray-500 dark:text-gray-400 ml-11'>
+              Discover music from different provinces across South Africa
+            </p>
+          </div>
+
+          {/* Placeholder */}
+          <div className='text-center py-12'>
+            <div className='w-16 h-16 bg-gray-200 dark:bg-slate-800 rounded-xl flex items-center justify-center mx-auto mb-4'>
+              <MapPinIcon className='w-8 h-8 text-gray-400 dark:text-slate-500' />
+            </div>
+            <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
+              No Provincial Playlists Available
+            </h3>
+            <p className='text-gray-500 dark:text-gray-400 mb-4'>
+              Provincial playlists will appear here once they are created. Check
+              back later!
+            </p>
+            <button
+              onClick={fetchProvincialPlaylists}
+              className='px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200'
+            >
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -171,7 +202,7 @@ export default function ProvincialPlaylists({
               >
                 <MapPinIcon className='w-5 h-5 text-blue-600 dark:text-blue-400' />
                 <span className='text-lg font-semibold text-gray-900 dark:text-white'>
-                  {selectedProvince}
+                  {selectedProvince || 'Select Province'}
                 </span>
                 <ChevronDownIcon
                   className={`w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
@@ -180,22 +211,32 @@ export default function ProvincialPlaylists({
 
               {isDropdownOpen && (
                 <div className='absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden'>
-                  {SOUTH_AFRICAN_PROVINCES.map(province => (
+                  {provincialPlaylists.map(playlist => (
                     <button
-                      key={province}
-                      onClick={() => handleProvinceChange(province)}
+                      key={playlist.id}
+                      onClick={() => handleProvinceChange(playlist.name)}
                       className={`w-full px-6 py-4 text-left hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors duration-200 ${
-                        selectedProvince === province
+                        selectedProvince === playlist.name
                           ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                           : 'text-gray-900 dark:text-white'
                       }`}
                     >
                       <div className='flex items-center gap-3'>
                         <MapPinIcon className='w-4 h-4' />
-                        <span className='font-medium'>{province}</span>
+                        <div className='flex-1'>
+                          <span className='font-medium'>{playlist.name}</span>
+                          <div className='text-xs text-gray-500 dark:text-gray-400'>
+                            {playlist.currentTracks} tracks
+                          </div>
+                        </div>
                       </div>
                     </button>
                   ))}
+                  {provincialPlaylists.length === 0 && (
+                    <div className='px-6 py-4 text-center text-gray-500 dark:text-gray-400'>
+                      No provincial playlists available
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -212,10 +253,12 @@ export default function ProvincialPlaylists({
               <MapPinIcon className='w-8 h-8 text-gray-400 dark:text-slate-500' />
             </div>
             <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
-              No Tracks Available
+              {selectedProvince ? 'No Tracks Available' : 'Select a Province'}
             </h3>
             <p className='text-gray-500 dark:text-gray-400'>
-              No tracks found for {selectedProvince}
+              {selectedProvince
+                ? `No tracks found for ${selectedProvince}`
+                : 'Choose a province from the dropdown to view its playlist'}
             </p>
           </div>
         ) : (
@@ -301,7 +344,7 @@ export default function ProvincialPlaylists({
                       onClick={() => handlePlay(track)}
                       className='w-8 h-8 bg-gray-100 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-blue-900/20 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg flex items-center justify-center transition-all duration-200'
                     >
-                      {playingTrack === track.id ? (
+                      {currentTrack?.id === track.id && isPlaying ? (
                         <PauseIcon className='w-4 h-4' />
                       ) : (
                         <PlaySolidIcon className='w-4 h-4 ml-0.5' />

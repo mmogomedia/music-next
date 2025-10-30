@@ -122,23 +122,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const artistProfile = await prisma.artistProfile.create({
-      data: {
-        userId: session.user.id,
-        artistName,
-        bio,
-        profileImage,
-        coverImage,
-        location,
-        website,
-        genre,
-        slug,
-        socialLinks,
-        streamingLinks,
-      },
+    // Create artist profile and update user role in a transaction
+    const result = await prisma.$transaction(async tx => {
+      // Create the artist profile
+      const artistProfile = await tx.artistProfile.create({
+        data: {
+          userId: session.user.id,
+          artistName,
+          bio,
+          profileImage,
+          coverImage,
+          location,
+          website,
+          genre,
+          slug,
+          socialLinks,
+          streamingLinks,
+        },
+      });
+
+      // Update user role to ARTIST
+      await tx.user.update({
+        where: { id: session.user.id },
+        data: { role: 'ARTIST' },
+      });
+
+      return artistProfile;
     });
 
-    return NextResponse.json({ artistProfile }, { status: 201 });
+    return NextResponse.json({ artistProfile: result }, { status: 201 });
   } catch (error) {
     console.error('Error creating artist profile:', error);
     return NextResponse.json(

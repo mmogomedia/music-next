@@ -36,7 +36,13 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               name: true,
-              type: true,
+              playlistType: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
               coverImage: true,
             },
           },

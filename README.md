@@ -12,6 +12,7 @@ Quick links:
 - Auth Setup: `rules/02-authentication-setup.md`
 - Admin Dashboard: `rules/12-admin-dashboard.md`
 - Dashboard System: `rules/07-dashboard-system.md`
+- API Client & Utilities: `rules/25-api-client-and-utilities.md`
 
 ## 🔐 NextAuth Secret Key Setup
 
@@ -94,3 +95,35 @@ yarn db:seed
 ```
 
 For detailed information, see [Admin Dashboard Rules](./rules/12-admin-dashboard.md) and [Authentication Setup](./rules/02-authentication-setup.md).
+
+## 🚀 Centralized API Client
+
+The platform features a centralized API client system that eliminates code duplication and provides consistent API communication:
+
+### **Key Features**
+- **Single API Client**: Centralized HTTP methods with automatic authentication
+- **Error Handling**: Custom error types with consistent error responses
+- **Image Upload Utility**: Centralized image upload to Cloudflare R2
+- **TypeScript Support**: Fully typed API calls and responses
+- **Timeout & Retry**: Built-in request timeout and error handling
+
+### **Usage Examples**
+```typescript
+import { api } from '@/lib/api-client';
+
+// Simple API calls
+const playlists = await api.playlists.getTopTen();
+const newPlaylist = await api.admin.createPlaylist(data);
+
+// Image upload
+import { uploadImageToR2 } from '@/lib/image-upload';
+const imageKey = await uploadImageToR2(file);
+```
+
+### **Benefits**
+- ✅ **Eliminated 150+ lines** of duplicate code
+- ✅ **Consistent error handling** across all components
+- ✅ **Automatic authentication** using NextAuth.js
+- ✅ **Better maintainability** with single source of truth
+
+For detailed documentation, see [API Client & Utilities](./rules/25-api-client-and-utilities.md).

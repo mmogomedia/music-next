@@ -30,6 +30,7 @@ import {
 } from '@/lib/file-protection';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { constructFileUrl } from '@/lib/url-utils';
+import { uploadImageToR2 } from '@/lib/image-upload';
 import { GENRES } from '@/lib/genres';
 
 interface TrackData {
@@ -147,20 +148,7 @@ export default function TrackEditForm({
     setErrors(prev => ({ ...prev, artwork: '' }));
 
     try {
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const response = await fetch('/api/upload/image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to upload artwork');
-      }
-
-      const { key } = await response.json();
+      const key = await uploadImageToR2(file);
       setFormData(prev => ({ ...prev, albumArtwork: key }));
     } catch (error) {
       console.error('Artwork upload error:', error);

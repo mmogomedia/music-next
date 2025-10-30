@@ -3,8 +3,11 @@
 import { useState, useEffect } from 'react';
 import { HeartIcon, ShareIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { PlayIcon as PlaySolidIcon } from '@heroicons/react/24/solid';
-import { Playlist, PlaylistType } from '@/types/playlist';
+import { Playlist } from '@/types/playlist';
 import { Track } from '@/types/track';
+import { SourceType } from '@/types/stats';
+import { constructFileUrl } from '@/lib/url-utils';
+import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 
 interface MusicStreamingProps {
   onTrackPlay?: (_track: Track) => void;
@@ -28,7 +31,7 @@ export default function MusicStreaming({
   });
   const [loading, setLoading] = useState(true);
   const [activePlaylist, setActivePlaylist] = useState<Playlist | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const { playTrack } = useMusicPlayer();
 
   useEffect(() => {
     fetchAllPlaylists();
@@ -71,7 +74,7 @@ export default function MusicStreaming({
   };
 
   const handlePlay = (track: Track) => {
-    setIsPlaying(!isPlaying);
+    playTrack(track, 'playlist' as SourceType, activePlaylist?.id);
     onTrackPlay?.(track);
   };
 
@@ -79,30 +82,32 @@ export default function MusicStreaming({
     setActivePlaylist(playlist);
   };
 
-  const getTypeIcon = (type: PlaylistType) => {
-    switch (type) {
-      case PlaylistType.FEATURED:
+  const getTypeIcon = (playlist: Playlist) => {
+    const typeSlug = playlist.playlistType?.slug;
+    switch (typeSlug) {
+      case 'featured':
         return '🏆';
-      case PlaylistType.TOP_TEN:
+      case 'top-ten':
         return '📊';
-      case PlaylistType.PROVINCE:
+      case 'province':
         return '🏙️';
-      case PlaylistType.GENRE:
+      case 'genre':
         return '🎵';
       default:
         return '🎵';
     }
   };
 
-  const getTypeGradient = (type: PlaylistType) => {
-    switch (type) {
-      case PlaylistType.FEATURED:
+  const getTypeGradient = (playlist: Playlist) => {
+    const typeSlug = playlist.playlistType?.slug;
+    switch (typeSlug) {
+      case 'featured':
         return 'from-purple-500 to-pink-500';
-      case PlaylistType.TOP_TEN:
+      case 'top-ten':
         return 'from-orange-500 to-red-500';
-      case PlaylistType.PROVINCE:
+      case 'province':
         return 'from-green-500 to-teal-500';
-      case PlaylistType.GENRE:
+      case 'genre':
         return 'from-blue-500 to-indigo-500';
       default:
         return 'from-gray-500 to-gray-600';
@@ -176,7 +181,7 @@ export default function MusicStreaming({
                   >
                     <div className='flex items-center gap-3'>
                       <span className='text-lg'>
-                        {getTypeIcon(playlists.featured.type)}
+                        {getTypeIcon(playlists.featured)}
                       </span>
                       <div className='flex-1 min-w-0'>
                         <div className='font-medium truncate text-sm'>
@@ -202,7 +207,7 @@ export default function MusicStreaming({
                   >
                     <div className='flex items-center gap-3'>
                       <span className='text-lg'>
-                        {getTypeIcon(playlists.topTen.type)}
+                        {getTypeIcon(playlists.topTen)}
                       </span>
                       <div className='flex-1 min-w-0'>
                         <div className='font-medium truncate text-sm'>
@@ -235,7 +240,7 @@ export default function MusicStreaming({
                         >
                           <div className='flex items-center gap-2'>
                             <span className='text-sm'>
-                              {getTypeIcon(playlist.type)}
+                              {getTypeIcon(playlist)}
                             </span>
                             <div className='flex-1 min-w-0'>
                               <div className='font-medium truncate text-xs'>
@@ -271,7 +276,7 @@ export default function MusicStreaming({
                         >
                           <div className='flex items-center gap-2'>
                             <span className='text-sm'>
-                              {getTypeIcon(playlist.type)}
+                              {getTypeIcon(playlist)}
                             </span>
                             <div className='flex-1 min-w-0'>
                               <div className='font-medium truncate text-xs'>
@@ -297,26 +302,26 @@ export default function MusicStreaming({
               <div className='space-y-6'>
                 {/* Playlist Header */}
                 <div
-                  className={`bg-gradient-to-r ${getTypeGradient(activePlaylist.type)} rounded-2xl p-6`}
+                  className={`bg-gradient-to-r ${getTypeGradient(activePlaylist)} rounded-2xl p-6`}
                 >
                   <div className='flex items-center gap-4'>
                     <div className='w-20 h-20 bg-white/20 rounded-xl flex items-center justify-center shadow-lg'>
                       {activePlaylist.coverImage ? (
                         <img
-                          src={activePlaylist.coverImage}
+                          src={constructFileUrl(activePlaylist.coverImage)}
                           alt={activePlaylist.name}
                           className='w-full h-full object-cover rounded-xl'
                         />
                       ) : (
                         <span className='text-3xl'>
-                          {getTypeIcon(activePlaylist.type)}
+                          {getTypeIcon(activePlaylist)}
                         </span>
                       )}
                     </div>
                     <div className='flex-1 text-white'>
                       <div className='flex items-center gap-2 mb-1'>
                         <span className='px-2 py-1 bg-white/20 rounded-full text-xs font-medium'>
-                          {activePlaylist.type.replace('_', ' ')}
+                          {activePlaylist.playlistType?.name || 'Unknown'}
                         </span>
                         {activePlaylist.province && (
                           <span className='px-2 py-1 bg-white/20 rounded-full text-xs font-medium'>
@@ -369,11 +374,11 @@ export default function MusicStreaming({
                           <div
                             key={playlistTrack.id}
                             className='group px-6 py-3 hover:bg-slate-700/30 transition-colors duration-200 cursor-pointer'
-                            onClick={() => handlePlay(track)}
+                            onClick={() => handlePlay(track as Track)}
                             role='button'
                             tabIndex={0}
                             onKeyDown={e =>
-                              e.key === 'Enter' && handlePlay(track)
+                              e.key === 'Enter' && handlePlay(track as Track)
                             }
                             aria-label={`Play ${track.title} by ${track.artist}`}
                           >
@@ -418,7 +423,7 @@ export default function MusicStreaming({
 
                               {/* Album */}
                               <div className='col-span-2 text-slate-400 text-sm truncate'>
-                                {track.album || 'Single'}
+                                Single
                               </div>
 
                               {/* Duration */}

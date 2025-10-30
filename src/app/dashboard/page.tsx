@@ -2,7 +2,17 @@
 
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-import { Card, CardBody, Button, Chip, Avatar } from '@heroui/react';
+import {
+  Card,
+  CardBody,
+  Button,
+  Chip,
+  Avatar,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+} from '@heroui/react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import {
   PlayIcon,
@@ -16,6 +26,7 @@ import {
   PlusIcon,
   UserIcon,
   ChartBarIcon,
+  EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline';
 import TrackEditModal from '@/components/track/TrackEditModal';
 import FileUpload from '@/components/upload/FileUpload';
@@ -25,19 +36,30 @@ import QuickActions from '@/components/dashboard/QuickActions';
 import ProfileURL from '@/components/dashboard/ProfileURL';
 import StatsGrid from '@/components/dashboard/StatsGrid';
 import RecentTracks from '@/components/dashboard/RecentTracks';
+import RecentActivity from '@/components/dashboard/RecentActivity';
+import PlaylistSubmissionsTab from '@/components/dashboard/artist/PlaylistSubmissionsTab';
+import QuickSubmitModal from '@/components/dashboard/artist/QuickSubmitModal';
 import TrackArtwork from '@/components/music/TrackArtwork';
 import { useArtistProfile } from '@/hooks/useArtistProfile';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 import {
   CreateArtistProfileData,
   UpdateArtistProfileData,
 } from '@/types/artist-profile';
 import { Track } from '@/types/track';
+import { SourceType } from '@/types/stats';
 import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const { playTrack, currentTrack, isPlaying } = useMusicPlayer();
   const [activeTab, setActiveTab] = useState('overview');
+  const [timeRange, setTimeRange] = useState('7d');
+  const {
+    stats,
+    loading: statsLoading,
+    error: statsError,
+  } = useDashboardStats(timeRange);
   const {
     profile,
     loading: profileLoading,
@@ -55,6 +77,11 @@ export default function DashboardPage() {
   );
   const [editingTrack, setEditingTrack] = useState<Track | null>(null);
   const [showTrackEdit, setShowTrackEdit] = useState(false);
+  const [showQuickSubmit, setShowQuickSubmit] = useState(false);
+  const [selectedTrackForSubmit, setSelectedTrackForSubmit] =
+    useState<Track | null>(null);
+  const [selectedPlaylistForSubmit, setSelectedPlaylistForSubmit] =
+    useState<any>(null);
 
   // Fetch tracks from API
   useEffect(() => {
@@ -188,12 +215,17 @@ export default function DashboardPage() {
     return null;
   }
 
-  // Calculate stats from real data
-  const stats = {
+  // Use stats from API or fallback to basic stats
+  const displayStats = stats?.overview || {
     totalTracks: tracks.length,
     totalPlays: tracks.reduce((sum, track) => sum + (track.playCount || 0), 0),
     totalLikes: 0,
-    totalRevenue: 0,
+    totalShares: 0,
+    totalDownloads: 0,
+    totalSaves: 0,
+    uniqueListeners: 0,
+    avgDuration: 0,
+    avgCompletionRate: 0,
   };
 
   const recentTracks = tracks.slice(0, 5);
@@ -300,10 +332,10 @@ export default function DashboardPage() {
                 {/* Quick Stats Pills */}
                 <div className='hidden md:flex items-center gap-2'>
                   <Chip size='sm' color='primary' variant='flat'>
-                    {stats.totalTracks} tracks
+                    {stats?.totalTracks || 0} tracks
                   </Chip>
                   <Chip size='sm' color='success' variant='flat'>
-                    {stats.totalPlays.toLocaleString()} plays
+                    {(stats?.totalPlays || 0).toLocaleString()} plays
                   </Chip>
                   {profile && (
                     <Chip size='sm' color='secondary' variant='flat'>
@@ -353,6 +385,7 @@ export default function DashboardPage() {
                 onUpload={() => setActiveTab('upload')}
                 onLibrary={() => setActiveTab('library')}
                 onAnalytics={() => setActiveTab('analytics')}
+                onSubmissions={() => setActiveTab('submissions')}
               />
 
               {profile?.slug && (
@@ -364,17 +397,73 @@ export default function DashboardPage() {
             </div>
 
             {/* Main Content Area */}
-            <div className='lg:col-span-3'>
+            <div className='lg:col-span-3 overflow-visible'>
               {/* Overview Tab */}
               {activeTab === 'overview' && (
                 <div className='space-y-8'>
-                  <StatsGrid stats={stats} />
+                  {/* Time Range Selector */}
+                  <div className='flex justify-between items-center'>
+                    <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+                      Dashboard Overview
+                    </h2>
+                    <Dropdown>
+                      <DropdownTrigger>
+                        <Button variant='bordered' size='sm'>
+                          {timeRange === '24h'
+                            ? 'Last 24 Hours'
+                            : timeRange === '7d'
+                              ? 'Last 7 Days'
+                              : timeRange === '30d'
+                                ? 'Last 30 Days'
+                                : timeRange === '90d'
+                                  ? 'Last 90 Days'
+                                  : timeRange === '1y'
+                                    ? 'Last Year'
+                                    : 'All Time'}
+                        </Button>
+                      </DropdownTrigger>
+                      <DropdownMenu
+                        selectedKeys={[timeRange]}
+                        onSelectionChange={keys =>
+                          setTimeRange(Array.from(keys)[0] as string)
+                        }
+                      >
+                        <DropdownItem key='24h'>Last 24 Hours</DropdownItem>
+                        <DropdownItem key='7d'>Last 7 Days</DropdownItem>
+                        <DropdownItem key='30d'>Last 30 Days</DropdownItem>
+                        <DropdownItem key='90d'>Last 90 Days</DropdownItem>
+                        <DropdownItem key='1y'>Last Year</DropdownItem>
+                        <DropdownItem key='all'>All Time</DropdownItem>
+                      </DropdownMenu>
+                    </Dropdown>
+                  </div>
 
-                  <RecentTracks
-                    tracks={recentTracks}
-                    onViewAll={() => setActiveTab('library')}
-                    onPlay={playTrack}
-                  />
+                  {statsLoading ? (
+                    <div className='flex justify-center items-center h-32'>
+                      <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
+                    </div>
+                  ) : statsError ? (
+                    <div className='text-center text-red-600 dark:text-red-400'>
+                      Error loading stats: {statsError}
+                    </div>
+                  ) : (
+                    <StatsGrid
+                      stats={displayStats}
+                      growth={stats?.growthMetrics}
+                    />
+                  )}
+
+                  <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                    <RecentTracks
+                      tracks={recentTracks}
+                      onViewAll={() => setActiveTab('library')}
+                      onPlay={playTrack}
+                    />
+
+                    {stats?.recentActivity && (
+                      <RecentActivity activity={stats.recentActivity} />
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -625,7 +714,7 @@ export default function DashboardPage() {
               {/* Library Tab */}
               {activeTab === 'library' && (
                 <Card>
-                  <CardBody className='p-6'>
+                  <CardBody className='p-6 overflow-visible'>
                     <div className='flex items-center justify-between mb-6'>
                       <h3 className='text-xl font-bold text-gray-900 dark:text-white'>
                         My Music Library
@@ -663,11 +752,11 @@ export default function DashboardPage() {
                         </Button>
                       </div>
                     ) : (
-                      <div className='space-y-3'>
+                      <div className='space-y-3 overflow-visible'>
                         {tracks.map(track => (
                           <div
                             key={track.id}
-                            className='flex items-center gap-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors'
+                            className='flex items-center gap-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors relative'
                           >
                             <div className='flex-shrink-0'>
                               <TrackArtwork
@@ -702,7 +791,9 @@ export default function DashboardPage() {
                                 isIconOnly
                                 size='sm'
                                 color='primary'
-                                onPress={() => playTrack(track)}
+                                onPress={() =>
+                                  playTrack(track, 'dashboard' as SourceType)
+                                }
                               >
                                 {currentTrack?.id === track.id && isPlaying ? (
                                   <PauseIcon className='w-4 h-4' />
@@ -710,23 +801,55 @@ export default function DashboardPage() {
                                   <PlayIcon className='w-4 h-4' />
                                 )}
                               </Button>
-                              <Button
-                                isIconOnly
-                                size='sm'
-                                color='default'
-                                variant='flat'
-                                onPress={() => handleEditTrack(track)}
-                              >
-                                <PencilIcon className='w-4 h-4' />
-                              </Button>
-                              <Button
-                                isIconOnly
-                                size='sm'
-                                color='danger'
-                                onPress={() => confirmDelete(track.id)}
-                              >
-                                <TrashIcon className='w-4 h-4' />
-                              </Button>
+
+                              {/* 3-dot menu with HeroUI Dropdown */}
+                              <Dropdown placement='bottom-end'>
+                                <DropdownTrigger>
+                                  <Button
+                                    isIconOnly
+                                    size='sm'
+                                    variant='light'
+                                    className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                                  >
+                                    <EllipsisVerticalIcon className='w-4 h-4' />
+                                  </Button>
+                                </DropdownTrigger>
+                                <DropdownMenu aria-label='Track actions'>
+                                  <DropdownItem
+                                    key='submit'
+                                    startContent={
+                                      <MusicalNoteIcon className='w-4 h-4' />
+                                    }
+                                    onPress={() => {
+                                      setSelectedTrackForSubmit(track);
+                                      setSelectedPlaylistForSubmit(null);
+                                      setShowQuickSubmit(true);
+                                    }}
+                                  >
+                                    Submit to Playlists
+                                  </DropdownItem>
+                                  <DropdownItem
+                                    key='edit'
+                                    startContent={
+                                      <PencilIcon className='w-4 h-4' />
+                                    }
+                                    onPress={() => handleEditTrack(track)}
+                                  >
+                                    Edit Track
+                                  </DropdownItem>
+                                  <DropdownItem
+                                    key='delete'
+                                    className='text-danger'
+                                    color='danger'
+                                    startContent={
+                                      <TrashIcon className='w-4 h-4' />
+                                    }
+                                    onPress={() => confirmDelete(track.id)}
+                                  >
+                                    Delete Track
+                                  </DropdownItem>
+                                </DropdownMenu>
+                              </Dropdown>
                             </div>
                           </div>
                         ))}
@@ -734,6 +857,25 @@ export default function DashboardPage() {
                     )}
                   </CardBody>
                 </Card>
+              )}
+
+              {/* Submissions Tab */}
+              {activeTab === 'submissions' && (
+                <PlaylistSubmissionsTab
+                  onQuickSubmit={(track, playlist) => {
+                    if (track) {
+                      // Track-based submission
+                      setSelectedTrackForSubmit(track);
+                      setSelectedPlaylistForSubmit(null);
+                      setShowQuickSubmit(true);
+                    } else if (playlist) {
+                      // Playlist-based submission - pass available tracks
+                      setSelectedTrackForSubmit(null);
+                      setSelectedPlaylistForSubmit(playlist);
+                      setShowQuickSubmit(true);
+                    }
+                  }}
+                />
               )}
 
               {/* Analytics Tab */}
@@ -820,6 +962,23 @@ export default function DashboardPage() {
                 }
               : undefined
           }
+        />
+
+        {/* Quick Submit Modal */}
+        <QuickSubmitModal
+          isOpen={showQuickSubmit}
+          onClose={() => {
+            setShowQuickSubmit(false);
+            setSelectedTrackForSubmit(null);
+            setSelectedPlaylistForSubmit(null);
+          }}
+          track={selectedTrackForSubmit}
+          playlist={selectedPlaylistForSubmit}
+          availableTracks={!selectedTrackForSubmit ? tracks : undefined}
+          onSuccess={() => {
+            // Optionally refresh submissions data
+            // Track submitted successfully
+          }}
         />
       </div>
     </RoleBasedRedirect>

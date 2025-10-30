@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Card, CardBody, Button } from '@heroui/react';
 import { UserIcon } from '@heroicons/react/24/outline';
 import ImageUpload from '@/components/ui/ImageUpload';
+import { uploadImageToR2 } from '@/lib/image-upload';
 
 interface ProfileImageUpdateProps {
   currentImage?: string;
@@ -24,21 +25,8 @@ export default function ProfileImageUpdate({
   const [error, setError] = useState<string>('');
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('image', file);
-    formData.append('type', 'profile');
-
-    const response = await fetch('/api/upload/image', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to upload image');
-    }
-
-    const data = await response.json();
-    return data.url;
+    const key = await uploadImageToR2(file);
+    return key;
   };
 
   const handleImageChange = (file: File | null) => {
