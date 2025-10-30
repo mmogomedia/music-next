@@ -37,16 +37,8 @@ export async function GET(request: NextRequest) {
       weekStart = statsAggregator.getWeekStart(lastWeek);
     }
 
-    console.log(
-      `Starting weekly aggregation for week starting ${weekStart.toISOString()}`
-    );
-
     // Run weekly aggregation
     await statsAggregator.aggregateWeekly(weekStart);
-
-    console.log(
-      `Weekly aggregation completed for week starting ${weekStart.toISOString()}`
-    );
 
     return NextResponse.json({
       success: true,
@@ -90,10 +82,6 @@ export async function POST(request: NextRequest) {
       lastWeek.setDate(now.getDate() - 7);
       weekStart = statsAggregator.getWeekStart(lastWeek);
     }
-
-    console.log(
-      `Manual weekly aggregation triggered for week starting ${weekStart.toISOString()}`
-    );
 
     await statsAggregator.aggregateWeekly(weekStart);
 

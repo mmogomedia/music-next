@@ -52,10 +52,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(
-      `Getting top artists for ${timeRange} (limit: ${limit}, minScore: ${minScore})`
-    );
-
     // Get top artists
     const topArtists = await artistStrengthCalculator.getTopArtists(
       timeRange,

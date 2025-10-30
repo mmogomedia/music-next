@@ -105,7 +105,6 @@ export function TrackListRenderer({
               size='sm'
               variant='bordered'
               onClick={() => {
-                console.log('Action triggered:', action);
                 // TODO: Implement action handling
               }}
             >

@@ -48,8 +48,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    console.log(`Getting strength score for artist ${artistId} (${timeRange})`);
-
     // Calculate or get cached strength score
     const strengthScore =
       await artistStrengthCalculator.calculateArtistStrengthScore(
@@ -111,10 +109,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
-
-    console.log(
-      `Force recalculating strength score for artist ${artistId} (${timeRange})`
-    );
 
     // Force recalculation
     const strengthScore =

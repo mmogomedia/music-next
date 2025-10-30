@@ -35,12 +35,8 @@ export async function GET(request: NextRequest) {
       targetDate.setDate(targetDate.getDate() - 1);
     }
 
-    console.log(`Starting daily aggregation for ${targetDate.toISOString()}`);
-
     // Run daily aggregation
     await statsAggregator.aggregateDaily(targetDate);
-
-    console.log(`Daily aggregation completed for ${targetDate.toISOString()}`);
 
     return NextResponse.json({
       success: true,
@@ -82,10 +78,6 @@ export async function POST(request: NextRequest) {
       targetDate = new Date();
       targetDate.setDate(targetDate.getDate() - 1);
     }
-
-    console.log(
-      `Manual daily aggregation triggered for ${targetDate.toISOString()}`
-    );
 
     await statsAggregator.aggregateDaily(targetDate);
 

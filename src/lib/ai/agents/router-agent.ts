@@ -42,9 +42,6 @@ export class RouterAgent {
   async route(message: string, context?: AgentContext): Promise<AgentResponse> {
     try {
       const decision = this.analyzeIntent(message);
-      console.log(
-        `Routing to ${decision.agent} with intent: ${decision.intent} (confidence: ${decision.confidence})`
-      );
 
       let response: AgentResponse;
       switch (decision.intent) {
@@ -61,11 +58,6 @@ export class RouterAgent {
           // Default to discovery for unknown intents
           response = await this.discoveryAgent.process(message, context);
       }
-
-      console.log('Router Agent Response:', {
-        hasMessage: !!response.message,
-        messageLength: response.message?.length || 0,
-      });
 
       return response;
     } catch (error) {

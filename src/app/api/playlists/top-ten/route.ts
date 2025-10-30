@@ -33,7 +33,6 @@ export async function GET() {
         id: playlistWithTracks.id,
         name: playlistWithTracks.name,
         description: playlistWithTracks.description,
-        playlistType: playlistWithTracks.playlistType,
         status: playlistWithTracks.status,
       },
       tracks,

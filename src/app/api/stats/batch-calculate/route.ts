@@ -43,8 +43,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`Starting batch calculation for ${timeRange}`);
-
     // Start batch calculation (this will run in background)
     const calculationPromise =
       artistStrengthCalculator.batchCalculateScores(timeRange);

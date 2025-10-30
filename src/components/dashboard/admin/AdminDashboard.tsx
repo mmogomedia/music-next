@@ -33,21 +33,18 @@ export default function AdminDashboard() {
 
   const handleCreatePlaylist = () => {
     // This will be handled by the UnifiedPlaylistManagement component
-    console.log('Create playlist requested');
   };
 
-  const handleEditPlaylist = (playlist: Playlist) => {
+  const handleEditPlaylist = (_playlist: Playlist) => {
     // This will be handled by the UnifiedPlaylistManagement component
-    console.log('Edit playlist requested:', playlist.name);
   };
 
-  const handleTrackPlay = (track: Track) => {
+  const handleTrackPlay = (_track: Track) => {
     // This will be handled by the TrackManagement component
-    console.log('Track play requested:', track.title);
   };
 
-  const handleUserAction = (action: string, user: any) => {
-    console.log('User action requested:', action, user.email);
+  const handleUserAction = (_action: string, _user: any) => {
+    // Placeholder for future implementation
   };
 
   // Use real data from API or fallback to defaults

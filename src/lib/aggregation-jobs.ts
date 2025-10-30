@@ -76,8 +76,6 @@ export class StatsAggregator {
     const endOfDay = new Date(date);
     endOfDay.setHours(23, 59, 59, 999);
 
-    console.log(`Aggregating daily stats for ${startOfDay.toISOString()}`);
-
     try {
       // Get all tracks that had activity on this date
       const tracksWithActivity = await prisma.track.findMany({
@@ -131,10 +129,6 @@ export class StatsAggregator {
       for (const track of tracksWithActivity) {
         await this.aggregateTrackDaily(track.id, startOfDay, endOfDay);
       }
-
-      console.log(
-        `Daily aggregation completed for ${tracksWithActivity.length} tracks`
-      );
     } catch (error) {
       console.error('Error in daily aggregation:', error);
       throw error;
@@ -285,10 +279,6 @@ export class StatsAggregator {
     weekEnd.setDate(weekEnd.getDate() + 6);
     weekEnd.setHours(23, 59, 59, 999);
 
-    console.log(
-      `Aggregating weekly stats for week starting ${weekStart.toISOString()}`
-    );
-
     try {
       // Get all tracks that have daily stats in this week
       const tracksWithStats = await prisma.dailyStats.findMany({
@@ -305,10 +295,6 @@ export class StatsAggregator {
       for (const track of tracksWithStats) {
         await this.aggregateTrackWeekly(track.trackId, weekStart, weekEnd);
       }
-
-      console.log(
-        `Weekly aggregation completed for ${tracksWithStats.length} tracks`
-      );
     } catch (error) {
       console.error('Error in weekly aggregation:', error);
       throw error;
@@ -433,10 +419,6 @@ export class StatsAggregator {
     monthEnd.setDate(0); // Last day of the month
     monthEnd.setHours(23, 59, 59, 999);
 
-    console.log(
-      `Aggregating monthly stats for month starting ${monthStart.toISOString()}`
-    );
-
     try {
       // Get all tracks that have weekly stats in this month
       const tracksWithStats = await prisma.weeklyStats.findMany({
@@ -453,10 +435,6 @@ export class StatsAggregator {
       for (const track of tracksWithStats) {
         await this.aggregateTrackMonthly(track.trackId, monthStart, monthEnd);
       }
-
-      console.log(
-        `Monthly aggregation completed for ${tracksWithStats.length} tracks`
-      );
     } catch (error) {
       console.error('Error in monthly aggregation:', error);
       throw error;
@@ -579,8 +557,6 @@ export class StatsAggregator {
     const yearStart = new Date(year, 0, 1);
     const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999);
 
-    console.log(`Aggregating yearly stats for year ${year}`);
-
     try {
       // Get all tracks that have monthly stats in this year
       const tracksWithStats = await prisma.monthlyStats.findMany({
@@ -597,10 +573,6 @@ export class StatsAggregator {
       for (const track of tracksWithStats) {
         await this.aggregateTrackYearly(track.trackId, yearStart, yearEnd);
       }
-
-      console.log(
-        `Yearly aggregation completed for ${tracksWithStats.length} tracks`
-      );
     } catch (error) {
       console.error('Error in yearly aggregation:', error);
       throw error;
@@ -742,8 +714,6 @@ export class StatsAggregator {
       if (yearStart.getTime() === date.getTime()) {
         await this.aggregateYearly(date.getFullYear());
       }
-
-      console.log(`All aggregations completed for ${date.toISOString()}`);
     } catch (error) {
       console.error('Error in runAllAggregations:', error);
       throw error;

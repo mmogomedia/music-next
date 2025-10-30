@@ -74,9 +74,6 @@ export async function POST(request: NextRequest) {
     // Create track record - store only the file path, not full URL
     const filePath = key; // The key already contains the full path
 
-    console.log('Upload complete - key:', key);
-    console.log('Upload complete - filePath:', filePath);
-
     if (!filePath) {
       return NextResponse.json(
         { error: 'File path is missing' },

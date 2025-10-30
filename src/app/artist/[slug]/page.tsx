@@ -59,12 +59,10 @@ export default function PublicArtistProfilePage() {
 
   const handlePlayAll = () => {
     // TODO: Implement play all functionality
-    console.log('Play all tracks');
   };
 
   const handleFollow = () => {
     // TODO: Implement follow functionality
-    console.log('Follow artist');
   };
 
   const handleShare = () => {
