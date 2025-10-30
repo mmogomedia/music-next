@@ -113,6 +113,7 @@ export interface PlaylistTypeValidation {
 }
 
 // Backward compatibility - keep old enums for migration
+/* eslint-disable no-unused-vars */
 export enum LegacyPlaylistType {
   GENRE = 'GENRE',
   FEATURED = 'FEATURED',
@@ -136,6 +137,7 @@ export enum TrackSubmissionStatus {
   REJECTED = 'REJECTED',
   SHORTLISTED = 'SHORTLISTED',
 }
+/* eslint-enable no-unused-vars */
 
 // Import existing types
 import type {
