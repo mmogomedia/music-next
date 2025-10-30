@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PlaylistService } from '@/lib/services';
 import { prisma } from '@/lib/db';
-import { constructFileUrl } from '@/lib/url-utils';
 
 // GET /api/playlists/[id]/tracks - Get tracks for a specific playlist
 export async function GET(
@@ -18,51 +18,34 @@ export async function GET(
       );
     }
 
-    const playlist = await prisma.playlist.findUnique({
-      where: { id: playlistId },
-      include: {
-        playlistType: true,
-        tracks: {
-          include: {
-            track: {
-              include: {
-                artistProfile: {
-                  select: {
-                    artistName: true,
-                  },
-                },
-              },
-            },
-          },
-          orderBy: { order: 'asc' },
-        },
-      },
-    });
+    const playlistWithTracks =
+      await PlaylistService.getPlaylistById(playlistId);
 
-    if (!playlist) {
+    if (!playlistWithTracks) {
       return NextResponse.json(
         { error: 'Playlist not found' },
         { status: 404 }
       );
     }
 
-    const tracks = playlist.tracks.map(pt => {
-      const imagePath = pt.track.coverImageUrl || pt.track.albumArtwork;
-      return {
-        ...pt.track,
-        artist: pt.track.artistProfile?.artistName || 'Unknown Artist',
-        fileUrl: pt.track.filePath ? constructFileUrl(pt.track.filePath) : null,
-        coverImageUrl: imagePath ? constructFileUrl(imagePath) : null,
-      };
+    // Get playlist type for response
+    const playlist = await prisma.playlist.findUnique({
+      where: { id: playlistId },
+      include: {
+        playlistType: true,
+      },
     });
+
+    // Transform tracks to API response format
+    const tracks = playlistWithTracks.tracks.map(pt => pt.track);
 
     return NextResponse.json({
       playlist: {
-        id: playlist.id,
-        name: playlist.name,
-        description: playlist.description,
-        playlistType: playlist.playlistType,
-        status: playlist.status,
+        id: playlistWithTracks.id,
+        name: playlistWithTracks.name,
+        description: playlistWithTracks.description,
+        playlistType: playlist?.playlistType,
+        status: playlistWithTracks.status,
       },
       tracks,
     });

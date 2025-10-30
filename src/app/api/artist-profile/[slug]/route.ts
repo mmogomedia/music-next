@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { constructFileUrl } from '@/lib/url-utils';
+import { ArtistService } from '@/lib/services';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,34 +12,7 @@ export async function GET(
   try {
     const { slug } = await params;
 
-    const artistProfile = await prisma.artistProfile.findFirst({
-      where: {
-        OR: [
-          { slug: slug },
-          { artistName: slug }, // Fallback to artist name if slug not found
-        ],
-        isPublic: true,
-        isActive: true,
-      },
-      include: {
-        tracks: {
-          where: {
-            // Only include tracks that are public (if we add that field later)
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-    });
+    const artistProfile = await ArtistService.getArtistBySlug(slug);
 
     if (!artistProfile) {
       return NextResponse.json(
@@ -49,30 +21,8 @@ export async function GET(
       );
     }
 
-    // Increment profile view count
-    await prisma.artistProfile.update({
-      where: {
-        id: artistProfile.id,
-      },
-      data: {
-        profileViews: {
-          increment: 1,
-        },
-      },
-    });
-
-    // Construct full URLs from file paths for images
-    const artistProfileWithUrls = {
-      ...artistProfile,
-      profileImage: artistProfile.profileImage
-        ? constructFileUrl(artistProfile.profileImage)
-        : null,
-      coverImage: artistProfile.coverImage
-        ? constructFileUrl(artistProfile.coverImage)
-        : null,
-    };
-
-    return NextResponse.json({ artistProfile: artistProfileWithUrls });
+    // Transform to API response format (already includes URLs from service)
+    return NextResponse.json({ artistProfile });
   } catch (error) {
     console.error('Error fetching public artist profile:', error);
     return NextResponse.json(

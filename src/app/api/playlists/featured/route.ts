@@ -1,81 +1,33 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { PlaylistStatus } from '@/types/playlist';
-import { constructFileUrl } from '@/lib/url-utils';
+import { PlaylistService } from '@/lib/services';
 
-// GET /api/playlists/featured - Get featured playlist
+// GET /api/playlists/featured - Get featured playlists
 export async function GET() {
   try {
-    // First find the "featured" playlist type
-    const featuredType = await prisma.playlistTypeDefinition.findFirst({
-      where: { slug: 'featured', isActive: true },
-    });
+    const playlists = await PlaylistService.getFeaturedPlaylists(10);
 
-    if (!featuredType) {
-      return NextResponse.json(
-        { error: 'Featured playlist type not found' },
-        { status: 404 }
-      );
-    }
-
-    const featuredPlaylist = await prisma.playlist.findFirst({
-      where: {
-        playlistTypeId: featuredType.id,
-        status: PlaylistStatus.ACTIVE,
-      },
-      include: {
-        tracks: {
-          include: {
-            track: {
-              select: {
-                id: true,
-                title: true,
-                artist: true,
-                duration: true,
-                genre: true,
-                coverImageUrl: true,
-                albumArtwork: true,
-                playCount: true,
-                likeCount: true,
-                filePath: true,
-                artistProfileId: true,
-                userId: true,
-                createdAt: true,
-                updatedAt: true,
-              },
-            },
-          },
-          orderBy: { order: 'asc' },
-        },
-      },
-    });
-
-    if (!featuredPlaylist) {
-      return NextResponse.json(
-        { error: 'No featured playlist found' },
-        { status: 404 }
-      );
-    }
-
-    // Construct full URLs from file paths
-    const tracksWithUrls = featuredPlaylist.tracks.map(pt => ({
-      ...pt.track,
-      fileUrl: constructFileUrl(pt.track.filePath),
-      coverImageUrl: pt.track.coverImageUrl
-        ? constructFileUrl(pt.track.coverImageUrl)
-        : pt.track.albumArtwork
-          ? constructFileUrl(pt.track.albumArtwork)
-          : null,
-    }));
+    // Transform to API response format
+    const playlistsWithDetails = await Promise.all(
+      playlists.map(async playlist => {
+        const withTracks = await PlaylistService.getPlaylistById(playlist.id);
+        return {
+          id: playlist.id,
+          name: playlist.name,
+          description: playlist.description,
+          playlistType: playlist.playlistType,
+          status: playlist.status,
+          tracks: withTracks ? withTracks.tracks.map(pt => pt.track) : [],
+        };
+      })
+    );
 
     return NextResponse.json({
-      playlist: featuredPlaylist,
-      tracks: tracksWithUrls,
+      playlists: playlistsWithDetails,
     });
   } catch (error) {
-    console.error('Error fetching featured playlist:', error);
+    console.error('Error fetching featured playlists:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch featured playlist' },
+      { error: 'Failed to fetch featured playlists' },
       { status: 500 }
     );
   }

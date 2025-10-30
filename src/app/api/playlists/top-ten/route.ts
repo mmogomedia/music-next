@@ -1,73 +1,42 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
-import { PlaylistStatus } from '@/types/playlist';
-import { constructFileUrl } from '@/lib/url-utils';
+import { PlaylistService } from '@/lib/services';
 
 // GET /api/playlists/top-ten - Get top ten playlist
 export async function GET() {
   try {
-    // First find the "top-ten" playlist type
-    const topTenType = await prisma.playlistTypeDefinition.findFirst({
-      where: { slug: 'top-ten', isActive: true },
-    });
+    const playlists = await PlaylistService.getTopCharts(1);
 
-    if (!topTenType) {
-      return NextResponse.json(
-        { error: 'Top ten playlist type not found' },
-        { status: 404 }
-      );
-    }
-
-    const topTenPlaylist = await prisma.playlist.findFirst({
-      where: {
-        playlistTypeId: topTenType.id,
-        status: PlaylistStatus.ACTIVE,
-      },
-      include: {
-        tracks: {
-          include: {
-            track: {
-              select: {
-                id: true,
-                title: true,
-                artist: true,
-                duration: true,
-                genre: true,
-                coverImageUrl: true,
-                albumArtwork: true,
-                playCount: true,
-                likeCount: true,
-                filePath: true,
-                artistProfileId: true,
-              },
-            },
-          },
-          orderBy: { order: 'asc' },
-        },
-      },
-    });
-
-    if (!topTenPlaylist) {
+    if (!playlists || playlists.length === 0) {
       return NextResponse.json(
         { error: 'No top ten playlist found' },
         { status: 404 }
       );
     }
 
-    // Construct full URLs from file paths
-    const tracksWithUrls = topTenPlaylist.tracks.map(pt => ({
-      ...pt.track,
-      fileUrl: constructFileUrl(pt.track.filePath),
-      coverImageUrl: pt.track.coverImageUrl
-        ? constructFileUrl(pt.track.coverImageUrl)
-        : pt.track.albumArtwork
-          ? constructFileUrl(pt.track.albumArtwork)
-          : null,
-    }));
+    const topTenPlaylist = playlists[0];
+    const playlistWithTracks = await PlaylistService.getPlaylistById(
+      topTenPlaylist.id
+    );
+
+    if (!playlistWithTracks) {
+      return NextResponse.json(
+        { error: 'No top ten playlist found' },
+        { status: 404 }
+      );
+    }
+
+    // Transform to API response format
+    const tracks = playlistWithTracks.tracks.map(pt => pt.track);
 
     return NextResponse.json({
-      playlist: topTenPlaylist,
-      tracks: tracksWithUrls,
+      playlist: {
+        id: playlistWithTracks.id,
+        name: playlistWithTracks.name,
+        description: playlistWithTracks.description,
+        playlistType: playlistWithTracks.playlistType,
+        status: playlistWithTracks.status,
+      },
+      tracks,
     });
   } catch (error) {
     console.error('Error fetching top ten playlist:', error);
