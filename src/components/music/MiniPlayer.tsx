@@ -1,18 +1,19 @@
 'use client';
 
 import React from 'react';
-import { Button, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from '@heroui/react';
+import {
+  Button,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+} from '@heroui/react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import TrackArtwork from './TrackArtwork';
 
 export default function MiniPlayer() {
-  const {
-    currentTrack,
-    isPlaying,
-    currentTime,
-    duration,
-    playPause,
-  } = useMusicPlayer();
+  const { currentTrack, isPlaying, currentTime, duration, playPause } =
+    useMusicPlayer();
 
   const formatTime = (seconds: number) => {
     if (!isFinite(seconds) || isNaN(seconds)) return '0:00';
@@ -83,8 +84,18 @@ export default function MiniPlayer() {
           aria-label='Previous'
           isDisabled
         >
-          <svg className='w-3.5 h-3.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 19l-7-7 7-7' />
+          <svg
+            className='w-3.5 h-3.5'
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
+          >
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth={2}
+              d='M15 19l-7-7 7-7'
+            />
           </svg>
         </Button>
         <Button
@@ -98,11 +109,19 @@ export default function MiniPlayer() {
           isDisabled={!currentTrack}
         >
           {isPlaying ? (
-            <svg className='w-3.5 h-3.5' fill='currentColor' viewBox='0 0 24 24'>
+            <svg
+              className='w-3.5 h-3.5'
+              fill='currentColor'
+              viewBox='0 0 24 24'
+            >
               <path d='M6 4h4v16H6V4zm8 0h4v16h-4V4z' />
             </svg>
           ) : (
-            <svg className='w-3.5 h-3.5' fill='currentColor' viewBox='0 0 24 24'>
+            <svg
+              className='w-3.5 h-3.5'
+              fill='currentColor'
+              viewBox='0 0 24 24'
+            >
               <path d='M8 5v14l11-7z' />
             </svg>
           )}
@@ -116,8 +135,18 @@ export default function MiniPlayer() {
           aria-label='Next'
           isDisabled
         >
-          <svg className='w-3.5 h-3.5' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 5l7 7-7 7' />
+          <svg
+            className='w-3.5 h-3.5'
+            fill='none'
+            stroke='currentColor'
+            viewBox='0 0 24 24'
+          >
+            <path
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              strokeWidth={2}
+              d='M9 5l7 7-7 7'
+            />
           </svg>
         </Button>
         <div className='w-px h-4 bg-gray-300 dark:bg-slate-600 mx-1' />
@@ -131,7 +160,11 @@ export default function MiniPlayer() {
               className='bg-transparent hover:bg-gray-300 dark:hover:bg-slate-600 h-7 w-7 min-w-7'
               aria-label='More options'
             >
-              <svg className='w-3.5 h-3.5' fill='currentColor' viewBox='0 0 24 24'>
+              <svg
+                className='w-3.5 h-3.5'
+                fill='currentColor'
+                viewBox='0 0 24 24'
+              >
                 <path d='M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z' />
               </svg>
             </Button>
@@ -147,4 +180,3 @@ export default function MiniPlayer() {
     </div>
   );
 }
-

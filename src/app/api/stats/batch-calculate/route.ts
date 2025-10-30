@@ -37,8 +37,7 @@ export async function POST(request: NextRequest) {
     if (!validTimeRanges.includes(timeRange)) {
       return NextResponse.json(
         {
-          error:
-            'Invalid time range. Must be one of: ' + validTimeRanges.join(', '),
+          error: `Invalid time range. Must be one of: ${validTimeRanges.join(', ')}`,
         },
         { status: 400 }
       );

@@ -8,5 +8,3 @@ export default function ChatGroupLayout({
 }) {
   return <ChatLayout>{children}</ChatLayout>;
 }
-
-

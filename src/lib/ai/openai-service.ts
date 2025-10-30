@@ -1,5 +1,9 @@
 import { ChatOpenAI } from '@langchain/openai';
-import { HumanMessage, SystemMessage, AIMessage as LangChainMessage } from '@langchain/core/messages';
+import {
+  HumanMessage,
+  SystemMessage,
+  AIMessage as LangChainMessage,
+} from '@langchain/core/messages';
 import { BaseAIService } from './base-service';
 import { AIConfig, AIMessage, AIResponse } from '@/types/ai-service';
 
@@ -9,7 +13,7 @@ export class OpenAIService extends BaseAIService {
   constructor(config: AIConfig) {
     super(config);
     this.validateConfig(config);
-    
+
     this.client = new ChatOpenAI({
       modelName: config.model,
       temperature: config.temperature || 0.7,
@@ -21,28 +25,35 @@ export class OpenAIService extends BaseAIService {
     });
   }
 
-  async chat(messages: AIMessage[], config?: Partial<AIConfig>): Promise<AIResponse> {
+  async chat(
+    messages: AIMessage[],
+    config?: Partial<AIConfig>
+  ): Promise<AIResponse> {
     try {
       const mergedConfig = { ...this.config, ...config };
       const formattedMessages = this.formatMessages(messages);
-      
-      const langchainMessages: LangChainMessage[] = formattedMessages.map(msg => {
-        if (msg.role === 'system') {
-          return new SystemMessage(msg.content);
+
+      const langchainMessages: LangChainMessage[] = formattedMessages.map(
+        msg => {
+          if (msg.role === 'system') {
+            return new SystemMessage(msg.content);
+          }
+          return new HumanMessage(msg.content);
         }
-        return new HumanMessage(msg.content);
-      });
+      );
 
       const response = await this.client.invoke(langchainMessages);
       const usage = response.response_metadata?.tokenUsage;
 
       return {
         content: response.content as string,
-        usage: usage ? {
-          promptTokens: usage.promptTokens || 0,
-          completionTokens: usage.completionTokens || 0,
-          totalTokens: usage.totalTokens || 0,
-        } : undefined,
+        usage: usage
+          ? {
+              promptTokens: usage.promptTokens || 0,
+              completionTokens: usage.completionTokens || 0,
+              totalTokens: usage.totalTokens || 0,
+            }
+          : undefined,
         model: mergedConfig.model,
         provider: 'openai',
       };
@@ -59,4 +70,3 @@ export class OpenAIService extends BaseAIService {
     return !!this.config.apiKey && !!this.config.model;
   }
 }
-

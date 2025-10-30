@@ -46,17 +46,28 @@ export class RouterAgent {
         `Routing to ${decision.agent} with intent: ${decision.intent} (confidence: ${decision.confidence})`
       );
 
+      let response: AgentResponse;
       switch (decision.intent) {
         case 'discovery':
-          return await this.discoveryAgent.process(message, context);
+          response = await this.discoveryAgent.process(message, context);
+          break;
         case 'playback':
-          return await this.playbackAgent.process(message, context);
+          response = await this.playbackAgent.process(message, context);
+          break;
         case 'recommendation':
-          return await this.recommendationAgent.process(message, context);
+          response = await this.recommendationAgent.process(message, context);
+          break;
         default:
           // Default to discovery for unknown intents
-          return await this.discoveryAgent.process(message, context);
+          response = await this.discoveryAgent.process(message, context);
       }
+
+      console.log('Router Agent Response:', {
+        hasMessage: !!response.message,
+        messageLength: response.message?.length || 0,
+      });
+
+      return response;
     } catch (error) {
       console.error('RouterAgent error:', error);
       throw error;

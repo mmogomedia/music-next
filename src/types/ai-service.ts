@@ -43,4 +43,3 @@ export interface AIServiceFactory {
   getAvailableProviders(): AIProvider[];
   isProviderAvailable(provider: AIProvider): boolean;
 }
-

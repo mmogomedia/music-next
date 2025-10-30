@@ -87,14 +87,22 @@ export class DiscoveryAgent extends BaseAgent {
         { role: 'user', content: fullMessage },
       ]);
 
+      console.log('Discovery Agent Response:', {
+        content: response.content,
+        toolCalls: response.tool_calls?.length || 0,
+      });
+
       // Parse tool calls if any
       if (response.tool_calls && response.tool_calls.length > 0) {
         return this.handleToolCalls(response);
       }
 
       // Return text response
+      const content = response.content as string;
       return {
-        message: response.content as string,
+        message:
+          content ||
+          'I found some information for you. Let me help you explore that!',
         metadata: {
           agent: this.name,
         },

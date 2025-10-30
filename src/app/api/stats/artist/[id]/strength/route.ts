@@ -43,8 +43,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (!validTimeRanges.includes(timeRange)) {
       return NextResponse.json(
         {
-          error:
-            'Invalid time range. Must be one of: ' + validTimeRanges.join(', '),
+          error: `Invalid time range. Must be one of: ${validTimeRanges.join(', ')}`,
         },
         { status: 400 }
       );
@@ -108,8 +107,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (!validTimeRanges.includes(timeRange)) {
       return NextResponse.json(
         {
-          error:
-            'Invalid time range. Must be one of: ' + validTimeRanges.join(', '),
+          error: `Invalid time range. Must be one of: ${validTimeRanges.join(', ')}`,
         },
         { status: 400 }
       );

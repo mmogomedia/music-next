@@ -1,5 +1,11 @@
 import { aiServiceFactory } from './ai-service-factory';
-import { AIService, AIConfig, AIMessage, AIResponse, AIProvider } from '@/types/ai-service';
+import {
+  AIService,
+  AIConfig,
+  AIMessage,
+  AIResponse,
+  AIProvider,
+} from '@/types/ai-service';
 
 export class AIServiceManager {
   private static instance: AIServiceManager;
@@ -33,7 +39,7 @@ export class AIServiceManager {
   }
 
   async chat(
-    messages: AIMessage[], 
+    messages: AIMessage[],
     options?: {
       provider?: AIProvider;
       config?: Partial<AIConfig>;
@@ -41,12 +47,14 @@ export class AIServiceManager {
     }
   ): Promise<AIResponse> {
     const { provider, config, fallback = true } = options || {};
-    
+
     // Determine which provider to use
     const targetProvider = provider || this.preferredProvider;
-    
+
     if (!targetProvider) {
-      throw new Error('No AI provider available. Please configure at least one provider.');
+      throw new Error(
+        'No AI provider available. Please configure at least one provider.'
+      );
     }
 
     if (!aiServiceFactory.isProviderAvailable(targetProvider)) {
@@ -54,12 +62,14 @@ export class AIServiceManager {
         // Try to fallback to any available provider
         const availableProviders = aiServiceFactory.getAvailableProviders();
         if (availableProviders.length === 0) {
-          throw new Error('No AI providers are available. Please configure API keys.');
+          throw new Error(
+            'No AI providers are available. Please configure API keys.'
+          );
         }
-        return this.chat(messages, { 
-          provider: availableProviders[0], 
-          config, 
-          fallback: false 
+        return this.chat(messages, {
+          provider: availableProviders[0],
+          config,
+          fallback: false,
         });
       } else {
         throw new Error(`Provider ${targetProvider} is not available`);
@@ -74,13 +84,15 @@ export class AIServiceManager {
         // If we were using a specific provider and it failed, try fallback
         const availableProviders = aiServiceFactory.getAvailableProviders();
         const fallbackProvider = availableProviders.find(p => p !== provider);
-        
+
         if (fallbackProvider) {
-          console.warn(`Provider ${provider} failed, falling back to ${fallbackProvider}`);
-          return this.chat(messages, { 
-            provider: fallbackProvider, 
-            config, 
-            fallback: false 
+          console.warn(
+            `Provider ${provider} failed, falling back to ${fallbackProvider}`
+          );
+          return this.chat(messages, {
+            provider: fallbackProvider,
+            config,
+            fallback: false,
           });
         }
       }
@@ -103,4 +115,3 @@ export class AIServiceManager {
 
 // Export singleton instance
 export const aiService = AIServiceManager.getInstance();
-

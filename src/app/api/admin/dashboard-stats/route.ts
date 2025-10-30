@@ -126,7 +126,12 @@ export async function GET(request: NextRequest) {
         type: 'submission_review',
         title: 'Submission Review',
         description: `${pendingSubmissions} tracks pending review`,
-        priority: pendingSubmissions > 10 ? 'high' : pendingSubmissions > 5 ? 'medium' : 'low',
+        priority:
+          pendingSubmissions > 10
+            ? 'high'
+            : pendingSubmissions > 5
+              ? 'medium'
+              : 'low',
         count: pendingSubmissions,
       },
       {

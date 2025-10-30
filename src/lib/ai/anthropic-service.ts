@@ -1,5 +1,9 @@
 import { ChatAnthropic } from '@langchain/anthropic';
-import { HumanMessage, SystemMessage, AIMessage as LangChainMessage } from '@langchain/core/messages';
+import {
+  HumanMessage,
+  SystemMessage,
+  AIMessage as LangChainMessage,
+} from '@langchain/core/messages';
 import { BaseAIService } from './base-service';
 import { AIConfig, AIMessage, AIResponse } from '@/types/ai-service';
 
@@ -9,7 +13,7 @@ export class AnthropicService extends BaseAIService {
   constructor(config: AIConfig) {
     super(config);
     this.validateConfig(config);
-    
+
     this.client = new ChatAnthropic({
       model: config.model,
       temperature: config.temperature || 0.7,
@@ -18,21 +22,28 @@ export class AnthropicService extends BaseAIService {
     });
   }
 
-  async chat(messages: AIMessage[], config?: Partial<AIConfig>): Promise<AIResponse> {
+  async chat(
+    messages: AIMessage[],
+    config?: Partial<AIConfig>
+  ): Promise<AIResponse> {
     try {
       const mergedConfig = { ...this.config, ...config };
       const formattedMessages = this.formatMessages(messages);
-      
+
       // Anthropic requires system message to be separate
-      const systemMessage = formattedMessages.find(msg => msg.role === 'system');
-      const conversationMessages = formattedMessages.filter(msg => msg.role !== 'system');
-      
-      const langchainMessages: LangChainMessage[] = conversationMessages.map(msg => 
-        new HumanMessage(msg.content)
+      const systemMessage = formattedMessages.find(
+        msg => msg.role === 'system'
+      );
+      const conversationMessages = formattedMessages.filter(
+        msg => msg.role !== 'system'
+      );
+
+      const langchainMessages: LangChainMessage[] = conversationMessages.map(
+        msg => new HumanMessage(msg.content)
       );
 
       // Create a new client instance with system message if provided
-      const clientWithSystem = systemMessage?.content 
+      const clientWithSystem = systemMessage?.content
         ? new ChatAnthropic({
             model: mergedConfig.model,
             temperature: mergedConfig.temperature || 0.7,
@@ -48,11 +59,13 @@ export class AnthropicService extends BaseAIService {
 
       return {
         content: response.content as string,
-        usage: usage ? {
-          promptTokens: usage.promptTokens || 0,
-          completionTokens: usage.completionTokens || 0,
-          totalTokens: usage.totalTokens || 0,
-        } : undefined,
+        usage: usage
+          ? {
+              promptTokens: usage.promptTokens || 0,
+              completionTokens: usage.completionTokens || 0,
+              totalTokens: usage.totalTokens || 0,
+            }
+          : undefined,
         model: mergedConfig.model,
         provider: 'anthropic',
       };

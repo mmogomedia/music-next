@@ -6,7 +6,13 @@ export interface AIMessage {
 }
 
 // Re-export service types for convenience
-export type { AIProvider, AIConfig, AIResponse, AIService, AIServiceFactory } from './ai-service';
+export type {
+  AIProvider,
+  AIConfig,
+  AIResponse,
+  AIService,
+  AIServiceFactory,
+} from './ai-service';
 import type { AIProvider } from './ai-service';
 
 export interface ChatRequest {

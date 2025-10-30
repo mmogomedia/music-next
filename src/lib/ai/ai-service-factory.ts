@@ -115,4 +115,3 @@ export class AIServiceFactoryImpl implements AIServiceFactory {
 
 // Export singleton instance
 export const aiServiceFactory = AIServiceFactoryImpl.getInstance();
-

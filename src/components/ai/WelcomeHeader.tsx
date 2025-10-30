@@ -19,7 +19,9 @@ export default function WelcomeHeader({ onGetStarted }: WelcomeHeaderProps) {
                 <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-60'></span>
                 <span className='relative inline-flex rounded-full h-2 w-2 bg-blue-600 dark:bg-blue-400'></span>
               </span>
-              <span className='text-[10px] font-bold tracking-wider text-blue-700 dark:text-blue-300 uppercase'>AI Streaming</span>
+              <span className='text-[10px] font-bold tracking-wider text-blue-700 dark:text-blue-300 uppercase'>
+                AI Streaming
+              </span>
             </div>
             <h1 className='text-2xl md:text-3xl font-black mb-1.5 leading-tight'>
               <span className='bg-gradient-to-r from-blue-600 via-purple-500 to-green-600 dark:from-blue-400 dark:via-purple-400 dark:to-green-400 bg-clip-text text-transparent'>
@@ -28,7 +30,9 @@ export default function WelcomeHeader({ onGetStarted }: WelcomeHeaderProps) {
             </h1>
             <p className='text-xs md:text-sm text-gray-600 dark:text-gray-400 max-w-2xl'>
               Discover South African music through{' '}
-              <span className='font-semibold text-gray-900 dark:text-white'>AI-powered conversation</span>
+              <span className='font-semibold text-gray-900 dark:text-white'>
+                AI-powered conversation
+              </span>
               . Ask for any song, artist, mood or playlist.
             </p>
           </div>
@@ -36,36 +40,44 @@ export default function WelcomeHeader({ onGetStarted }: WelcomeHeaderProps) {
           {/* Right side - Actions and Features */}
           <div className='flex flex-col items-start md:items-end gap-3'>
             <div className='flex items-center gap-2'>
-              <Button 
-                color='primary' 
-                radius='sm' 
+              <Button
+                color='primary'
+                radius='sm'
                 size='sm'
                 onPress={onGetStarted}
                 className='px-5 py-2 text-xs font-semibold bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400'
               >
                 Start Exploring
               </Button>
-              <Button 
-                variant='bordered' 
-                radius='sm' 
+              <Button
+                variant='bordered'
+                radius='sm'
                 size='sm'
                 className='px-4 py-2 text-xs font-medium border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
               >
                 Learn More
               </Button>
             </div>
-            
+
             {/* Flat feature badges */}
             <div className='flex items-center gap-3 text-[10px] text-gray-500 dark:text-gray-400'>
               <div className='flex items-center gap-1.5'>
-                <svg className='w-3.5 h-3.5 text-blue-500' fill='currentColor' viewBox='0 0 24 24'>
+                <svg
+                  className='w-3.5 h-3.5 text-blue-500'
+                  fill='currentColor'
+                  viewBox='0 0 24 24'
+                >
                   <path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z' />
                 </svg>
                 <span>Powered by AI</span>
               </div>
               <div className='w-1 h-1 rounded-full bg-gray-400'></div>
               <div className='flex items-center gap-1.5'>
-                <svg className='w-3.5 h-3.5 text-green-500' fill='currentColor' viewBox='0 0 24 24'>
+                <svg
+                  className='w-3.5 h-3.5 text-green-500'
+                  fill='currentColor'
+                  viewBox='0 0 24 24'
+                >
                   <path d='M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z' />
                 </svg>
                 <span>Live Streaming</span>
@@ -79,5 +91,3 @@ export default function WelcomeHeader({ onGetStarted }: WelcomeHeaderProps) {
     </div>
   );
 }
-
-

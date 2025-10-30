@@ -46,19 +46,38 @@ export async function POST(request: NextRequest) {
       // Context information can be parsed here if needed
     }
 
-    // Use Router Agent to get the appropriate response
-    const agentResponse = await routerAgent.route(message, agentContext);
+    try {
+      // Use Router Agent to get the appropriate response
+      const agentResponse = await routerAgent.route(message, agentContext);
 
-    // Create response
-    const chatResponse: ChatResponse = {
-      message: agentResponse.message,
-      conversationId,
-      timestamp: new Date(),
-      // Note: Agent responses may include data and actions
-      // These can be extended in the future for structured responses
-    };
+      // Ensure we have a message (fallback if empty)
+      const responseMessage =
+        agentResponse.message ||
+        'I understand you want to explore music. Let me help you with that!';
 
-    return NextResponse.json(chatResponse);
+      // Create response
+      const chatResponse: ChatResponse = {
+        message: responseMessage,
+        conversationId,
+        timestamp: new Date(),
+        // Note: Agent responses may include data and actions
+        // These can be extended in the future for structured responses
+      };
+
+      return NextResponse.json(chatResponse);
+    } catch (agentError) {
+      console.error('Agent execution error:', agentError);
+      
+      // Fallback response
+      const chatResponse: ChatResponse = {
+        message:
+          "I'm here to help you discover great South African music! Try asking me to find tracks, artists, or playlists.",
+        conversationId,
+        timestamp: new Date(),
+      };
+
+      return NextResponse.json(chatResponse);
+    }
   } catch (error) {
     console.error('AI Chat API Error:', error);
 
