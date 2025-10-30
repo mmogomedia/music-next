@@ -1,33 +1,47 @@
 import { NextResponse } from 'next/server';
 import { PlaylistService } from '@/lib/services';
 
-// GET /api/playlists/featured - Get featured playlists
+// GET /api/playlists/featured - Get featured playlist (first one)
 export async function GET() {
   try {
-    const playlists = await PlaylistService.getFeaturedPlaylists(10);
+    const playlists = await PlaylistService.getFeaturedPlaylists(1);
 
-    // Transform to API response format
-    const playlistsWithDetails = await Promise.all(
-      playlists.map(async playlist => {
-        const withTracks = await PlaylistService.getPlaylistById(playlist.id);
-        return {
-          id: playlist.id,
-          name: playlist.name,
-          description: playlist.description,
-          playlistType: playlist.playlistType,
-          status: playlist.status,
-          tracks: withTracks ? withTracks.tracks.map(pt => pt.track) : [],
-        };
-      })
+    if (!playlists || playlists.length === 0) {
+      return NextResponse.json(
+        { error: 'No featured playlist found' },
+        { status: 404 }
+      );
+    }
+
+    const featuredPlaylist = playlists[0];
+    const playlistWithTracks = await PlaylistService.getPlaylistById(
+      featuredPlaylist.id
     );
 
+    if (!playlistWithTracks) {
+      return NextResponse.json(
+        { error: 'No featured playlist found' },
+        { status: 404 }
+      );
+    }
+
+    // Get playlist type for response
+    const tracks = playlistWithTracks.tracks.map(pt => pt.track);
+
     return NextResponse.json({
-      playlists: playlistsWithDetails,
+      playlist: {
+        id: playlistWithTracks.id,
+        name: playlistWithTracks.name,
+        description: playlistWithTracks.description,
+        playlistType: playlistWithTracks.playlistType,
+        status: playlistWithTracks.status,
+      },
+      tracks,
     });
   } catch (error) {
-    console.error('Error fetching featured playlists:', error);
+    console.error('Error fetching featured playlist:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch featured playlists' },
+      { error: 'Failed to fetch featured playlist' },
       { status: 500 }
     );
   }
