@@ -1,6 +1,6 @@
 # AI Agent System - Test Results
 
-## Test Date: 2025-01-09
+## Test Date: 2025-01-09 (Last Updated: 2025-01-09)
 
 ## Test Execution
 
@@ -25,12 +25,12 @@ npx tsx scripts/test-intent-recognition.ts
 
 **Test Queries:**
 
-1. "Find me Amapiano tracks" → DiscoveryAgent (0.08 confidence)
-2. "Play the top playlist" → DiscoveryAgent (0.17 confidence) - Multiple keywords
-3. "Recommend me music" → RecommendationAgent (0.08 confidence)
-4. "Show me trending tracks" → DiscoveryAgent (0.08 confidence)
-5. "What should I listen to?" → RecommendationAgent (0.08 confidence)
-6. "Search for artists from Johannesburg" → DiscoveryAgent (0.17 confidence)
+1. "Find me Amapiano tracks" → DiscoveryAgent (0.95 confidence) - Two keywords
+2. "Play the top playlist" → DiscoveryAgent (1.00 confidence) - Multiple keywords
+3. "Recommend me music" → RecommendationAgent (0.80 confidence)
+4. "Show me trending tracks" → DiscoveryAgent (0.95 confidence) - Two keywords
+5. "What should I listen to?" → RecommendationAgent (0.80 confidence)
+6. "Search for artists from Johannesburg" → DiscoveryAgent (0.95 confidence) - Two keywords
 
 **Intent Recognition Test Suite (23 test cases):**
 
@@ -42,11 +42,20 @@ npx tsx scripts/test-intent-recognition.ts
 
 **Note:** "Play the top playlist" routes to Discovery due to multiple keywords ("top", "show") overriding "play". This is expected behavior as it contains more discovery-oriented keywords.
 
-**Keyword Improvements:**
+**Improvements Made:**
+
+**Keywords Added:**
 
 - Added "trending", "track", "song" to discovery keywords
 - Added "what else", "else is good" to recommendation keywords
 - Changed default fallback from "unknown" to "discovery" intent
+
+**Confidence Scoring:**
+
+- ✅ **Fixed confidence calculation** - Normalized scale instead of percentage
+- Old: Single keyword match = 0.08 (8% - confusing)
+- New: Single keyword match = 0.80 (80% - clear and intuitive)
+- 1 keyword = 0.80, 2 keywords = 0.95, 3+ keywords = 1.00
 
 ### ✅ Service Layer - PASSING
 
@@ -149,6 +158,13 @@ Navigate to the chat interface and test with real user queries:
 3. **Response Parsing**: Agent responses need to be parsed into structured format
 4. **R2 URL Configuration**: Missing R2_PUBLIC_URL environment variable (expected in local dev)
 
+## Recent Improvements
+
+- ✅ Fixed confidence scoring to use normalized scale (0.80-1.00 instead of 0.08-0.17)
+- ✅ Created comprehensive intent recognition test suite (23 test cases)
+- ✅ 100% test success rate for all intent recognition tests
+- ✅ Improved keyword detection for better routing accuracy
+
 ## Conclusion
 
 ✅ **System Status: OPERATIONAL**
@@ -173,8 +189,11 @@ The AI agent infrastructure is working correctly. All core components are in pla
 ## How to Run Tests
 
 ```bash
-# Run automated tests
+# Run comprehensive test suite
 npx tsx scripts/test-ai-agents.ts
+
+# Run intent recognition tests only (23 test cases)
+npx tsx scripts/test-intent-recognition.ts
 
 # Test specific router intent
 npx tsx -e "import { RouterAgent } from './src/lib/ai/agents'; const router = new RouterAgent(); console.log(router.getRoutingDecision('your query here'));"
