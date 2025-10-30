@@ -80,7 +80,12 @@ class ApiClient {
       const authHeaders = requireAuth ? await this.getAuthHeaders() : {};
 
       // Prepare request configuration
-      const requestConfig: RequestInit = {
+      const requestConfig: {
+        method: string;
+        headers: Record<string, string>;
+        signal?: AbortSignal;
+        body?: string | FormData;
+      } = {
         method,
         headers: {
           ...authHeaders,
