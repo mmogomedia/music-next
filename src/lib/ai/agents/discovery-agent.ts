@@ -134,8 +134,17 @@ export class DiscoveryAgent extends BaseAgent {
           }
 
           try {
-            // Parse the tool arguments
-            const args = JSON.parse(toolCall.args);
+            // Parse the tool arguments (may already be an object or a string)
+            let args = toolCall.args;
+            if (typeof args === 'string') {
+              try {
+                args = JSON.parse(args);
+              } catch {
+                args = {};
+              }
+            }
+
+            console.log(`Executing tool ${toolCall.name} with args:`, args);
 
             // Execute the tool
             const result = await tool.invoke(args);
@@ -192,7 +201,7 @@ export class DiscoveryAgent extends BaseAgent {
       console.error('Error handling tool calls:', error);
       return {
         message:
-          "I encountered an issue while searching. Let me try a different approach.",
+          'I encountered an issue while searching. Let me try a different approach.',
         metadata: {
           agent: this.name,
           error: error instanceof Error ? error.message : 'Unknown error',
