@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import {
-  Card,
-  CardBody,
   Button,
   Chip,
   Avatar,
@@ -31,16 +29,12 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   EllipsisVerticalIcon,
-  UserIcon,
-  ShieldCheckIcon,
   UserGroupIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
   CheckCircleIcon,
   XCircleIcon,
-  CalendarIcon,
-  EnvelopeIcon,
 } from '@heroicons/react/24/outline';
 import { UserRole } from '@prisma/client';
 
@@ -66,7 +60,7 @@ interface User {
 }
 
 interface UserManagementProps {
-  onUserAction?: (action: string, user: User) => void;
+  onUserAction?: (_action: string, _user: User) => void;
 }
 
 export default function UserManagement({ onUserAction }: UserManagementProps) {

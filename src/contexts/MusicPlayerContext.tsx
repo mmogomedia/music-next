@@ -76,7 +76,6 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   const { trackPlayStart, trackPlayEnd } = useStats(statsOptions);
 
   // Initialize audio element
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (typeof window !== 'undefined') {
       audioRef.current = new Audio();

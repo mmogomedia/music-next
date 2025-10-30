@@ -132,7 +132,6 @@ export function useStats(options: UseStatsOptions = {}) {
   };
 
   // Cleanup on unmount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     return () => {
       if (currentTrackRef.current && playStartTime.current) {

@@ -81,7 +81,6 @@ export default function StrengthScoringDashboard() {
 
   useEffect(() => {
     fetchTopArtists();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange, minScore]);
 
   const fetchArtistBreakdown = async (artistId: string) => {
