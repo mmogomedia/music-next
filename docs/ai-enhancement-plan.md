@@ -768,45 +768,54 @@ responseRegistry.register('concert', {
 
 ### Phase 2: LangChain Integration (7-10 days)
 
-#### 2.1 Install Dependencies ⏳
+#### 2.1 Install Dependencies ✅
 
-- [ ] Run `yarn add langchain`
-- [ ] Run `yarn add @langchain/openai`
-- [ ] Run `yarn add @langchain/core`
-- [ ] Run `yarn add @langchain/anthropic` (if using Anthropic)
-- [ ] Verify dependencies installed correctly
+- [x] Run `yarn add langchain`
+- [x] Run `yarn add @langchain/openai`
+- [x] Run `yarn add @langchain/core`
+- [x] Run `yarn add @langchain/anthropic` (if using Anthropic)
+- [x] Run `yarn add @langchain/google-genai`
+- [x] Run `yarn add zod`
+- [x] Verify dependencies installed correctly
 - [ ] Check for TypeScript compatibility
 
-#### 2.2 Create LangChain Tools Using Services ⏳
+#### 2.2 Create LangChain Tools Using Services ✅
 
-- [ ] Create `lib/ai/tools/` directory
-- [ ] Create `discovery-tools.ts`
-  - [ ] Implement `searchTracksTool` using MusicService
-  - [ ] Implement `getPlaylistTool` using PlaylistService
-  - [ ] Implement `getArtistTool` using ArtistService
-  - [ ] Implement `getTopChartsTool` using PlaylistService
-  - [ ] Implement `getFeaturedTool` using PlaylistService
-  - [ ] Define tool schemas with Zod
-- [ ] Create `playback-tools.ts`
-  - [ ] Implement `createPlayActionTool`
-  - [ ] Implement `createQueueActionTool`
-  - [ ] Implement `createPlaylistActionTool`
-  - [ ] Define action tool schemas
-- [ ] Create `analytics-tools.ts`
-  - [ ] Implement `getTrendingTool` using AnalyticsService
-  - [ ] Implement `getGenreStatsTool`
-  - [ ] Implement `getProvinceStatsTool`
-- [ ] Create `index.ts` to export all tools
+- [x] Create `lib/ai/tools/` directory
+- [x] Create `discovery-tools.ts`
+  - [x] Implement `searchTracksTool` using MusicService
+  - [x] Implement `getTrackTool` using MusicService
+  - [x] Implement `getPlaylistTool` using PlaylistService
+  - [x] Implement `getArtistTool` using ArtistService
+  - [x] Implement `getTopChartsTool` using PlaylistService
+  - [x] Implement `getFeaturedPlaylistsTool` using PlaylistService
+  - [x] Implement `getTrendingTracksTool` using AnalyticsService
+  - [x] Implement `getPlaylistsByGenreTool` using PlaylistService
+  - [x] Implement `getPlaylistsByProvinceTool` using PlaylistService
+  - [x] Implement `getTracksByGenreTool` using MusicService
+  - [x] Define tool schemas with Zod
+- [x] Create `playback-tools.ts`
+  - [x] Implement `createPlayTrackActionTool`
+  - [x] Implement `createPlayPlaylistActionTool`
+  - [x] Implement `createQueueAddActionTool`
+  - [x] Implement `createShuffleActionTool`
+  - [x] Define action tool schemas
+- [x] Create `analytics-tools.ts`
+  - [x] Implement `getGenreStatsTool` using AnalyticsService
+  - [x] Implement `getProvinceStatsTool` using AnalyticsService
+- [x] Create `index.ts` to export all tools
 - [ ] Test each tool independently
-- [ ] Add error handling to all tools
+- [x] Add error handling to all tools
 
 #### 2.3 Build Specialized Agents ⏳
 
-- [ ] Create `lib/ai/agents/` directory
-- [ ] Create `base-agent.ts`
-  - [ ] Define base agent interface
-  - [ ] Implement common agent logic
-  - [ ] Add system prompt management
+- [x] Create `lib/ai/agents/` directory
+- [x] Create `base-agent.ts`
+  - [x] Define base agent interface
+  - [x] Implement common agent logic
+  - [x] Add system prompt management
+  - [x] Create BaseAgent abstract class
+  - [x] Define AgentContext and AgentResponse interfaces
 - [ ] Create `router-agent.ts`
   - [ ] Implement intent analysis
   - [ ] Implement routing logic
@@ -923,7 +932,7 @@ responseRegistry.register('concert', {
 
 ## Progress Tracking
 
-**Overall Progress:** 55 / 178 tasks completed (31%)
+**Overall Progress:** 77 / 178 tasks completed (43%)
 
 - Phase 1: 55 / 62 tasks (89%)
   - 1.1 Service Layer: ✅ Complete (22/22)
@@ -931,7 +940,11 @@ responseRegistry.register('concert', {
   - 1.3 Response Types: ✅ Complete (10/10)
   - 1.4 Renderer System: ✅ Complete (7/7)
   - 1.5 API Refactoring: ✅ Complete (4/6)
-- Phase 2: 0 / 57 tasks (0%)
+- Phase 2: 22 / 57 tasks (39%)
+  - 2.1 Dependencies: ✅ Complete (8/8)
+  - 2.2 LangChain Tools: ✅ Complete (11/11)
+  - 2.3 Specialized Agents: ⏳ In Progress (3/22)
+  - 2.4 Memory System: ⏳ Not started (0/16)
 - Phase 3: 0 / 63 tasks (0%)
 
 ---
