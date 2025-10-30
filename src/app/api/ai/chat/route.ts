@@ -55,19 +55,23 @@ export async function POST(request: NextRequest) {
         agentResponse.message ||
         'I understand you want to explore music. Let me help you with that!';
 
-      // Create response
+      // Create response with structured data if available
       const chatResponse: ChatResponse = {
         message: responseMessage,
         conversationId,
         timestamp: new Date(),
-        // Note: Agent responses may include data and actions
-        // These can be extended in the future for structured responses
+        data: agentResponse.data, // Include structured data from agent
       };
+
+      console.log('Chat Response:', {
+        hasData: !!agentResponse.data,
+        dataKeys: agentResponse.data ? Object.keys(agentResponse.data) : [],
+      });
 
       return NextResponse.json(chatResponse);
     } catch (agentError) {
       console.error('Agent execution error:', agentError);
-      
+
       // Fallback response
       const chatResponse: ChatResponse = {
         message:

@@ -121,30 +121,83 @@ export class DiscoveryAgent extends BaseAgent {
   }
 
   private async handleToolCalls(response: any): Promise<AgentResponse> {
-    // Check if we have tool calls but no text response
-    const hasText = response.content && response.content.trim().length > 0;
-    
-    // If agent made tool calls without text, provide a helpful message
-    if (!hasText) {
-      // Get the tool names that were called
-      const toolNames = response.tool_calls?.map((tc: any) => tc.name).join(', ') || 'tools';
-      
+    try {
+      // Execute tool calls and get results
+      const toolResults = await Promise.all(
+        response.tool_calls.map(async (toolCall: any) => {
+          const tool = discoveryTools.find(t => t.name === toolCall.name);
+          if (!tool) {
+            return {
+              toolName: toolCall.name,
+              result: 'Tool not found',
+            };
+          }
+
+          try {
+            // Parse the tool arguments
+            const args = JSON.parse(toolCall.args);
+
+            // Execute the tool
+            const result = await tool.invoke(args);
+
+            return {
+              toolName: toolCall.name,
+              result: result,
+            };
+          } catch (error) {
+            console.error(`Error executing tool ${toolCall.name}:`, error);
+            return {
+              toolName: toolCall.name,
+              result: { error: 'Tool execution failed' },
+            };
+          }
+        })
+      );
+
+      // Parse tool results to get structured data
+      const data = toolResults.map(tr => {
+        try {
+          return {
+            tool: tr.toolName,
+            data:
+              typeof tr.result === 'string' ? JSON.parse(tr.result) : tr.result,
+          };
+        } catch {
+          return {
+            tool: tr.toolName,
+            data: tr.result,
+          };
+        }
+      });
+
+      // Check if we have text response
+      const hasText = response.content && response.content.trim().length > 0;
+
+      // Get the tool names for the message
+      const toolNames =
+        response.tool_calls?.map((tc: any) => tc.name).join(', ') || 'tools';
+
       return {
-        message: `I'm searching for music information using ${toolNames}. Let me find the best results for you!`,
+        message: hasText
+          ? (response.content as string)
+          : `I found results using ${toolNames}! Here's what I discovered:`,
+        data: data.length === 1 ? data[0].data : data,
         metadata: {
           agent: this.name,
           toolCalls: response.tool_calls,
+          executed: true,
+        },
+      };
+    } catch (error) {
+      console.error('Error handling tool calls:', error);
+      return {
+        message:
+          "I encountered an issue while searching. Let me try a different approach.",
+        metadata: {
+          agent: this.name,
+          error: error instanceof Error ? error.message : 'Unknown error',
         },
       };
     }
-    
-    // Return the text response if we have one
-    return {
-      message: response.content as string,
-      metadata: {
-        agent: this.name,
-        toolCalls: response.tool_calls,
-      },
-    };
   }
 }

@@ -31,6 +31,7 @@ export interface ChatResponse {
   message: string;
   conversationId: string;
   timestamp: Date;
+  data?: any; // Structured data from agent (tracks, playlists, etc.)
   usage?: {
     promptTokens: number;
     completionTokens: number;
