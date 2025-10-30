@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
 
     // Format recent activity
     const formattedRecentActivity = [
-      ...recentUsers.map((user, index) => ({
+      ...recentUsers.map(user => ({
         id: `user-${user.id}`,
         type: 'user_registration',
         message: `New user registered: ${user.name || user.email}`,
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         icon: 'UserGroupIcon',
         color: 'text-blue-600',
       })),
-      ...recentTracks.map((track, index) => ({
+      ...recentTracks.map(track => ({
         id: `track-${track.id}`,
         type: 'track_upload',
         message: `New track uploaded: "${track.title}" by ${track.artist}`,
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
         icon: 'MusicalNoteIcon',
         color: 'text-green-600',
       })),
-      ...recentSubmissions.map((submission, index) => ({
+      ...recentSubmissions.map(submission => ({
         id: `submission-${submission.id}`,
         type: 'playlist_submission',
         message: `Track "${submission.track.title}" submitted to ${submission.playlist.name}`,

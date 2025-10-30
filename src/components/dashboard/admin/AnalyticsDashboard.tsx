@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardBody, Button, Chip } from '@heroui/react';
+import { Card, CardBody, Chip } from '@heroui/react';
 import {
   ChartBarIcon,
   PlayIcon,
@@ -47,6 +47,7 @@ export default function AnalyticsDashboard() {
 
   useEffect(() => {
     fetchAnalytics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeRange, metric]);
 
   const fetchAnalytics = async () => {
@@ -305,29 +306,32 @@ export default function AnalyticsDashboard() {
               Top Tracks
             </h3>
             <div className='space-y-3'>
-              {analytics.topTracks.map((track, index) => (
-                <div
-                  key={track.trackId}
-                  className='flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg'
-                >
-                  <div className='flex items-center gap-3'>
-                    <div className='w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>
-                      {index + 1}
+              {analytics.topTracks.map((track, index) => {
+                const rank = index + 1;
+                return (
+                  <div
+                    key={track.trackId}
+                    className='flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg'
+                  >
+                    <div className='flex items-center gap-3'>
+                      <div className='w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>
+                        {rank}
+                      </div>
+                      <div>
+                        <p className='font-medium text-gray-900 dark:text-white'>
+                          {track.track?.title || 'Unknown Track'}
+                        </p>
+                        <p className='text-sm text-gray-500 dark:text-gray-400'>
+                          {track.track?.artist || 'Unknown Artist'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className='font-medium text-gray-900 dark:text-white'>
-                        {track.track?.title || 'Unknown Track'}
-                      </p>
-                      <p className='text-sm text-gray-500 dark:text-gray-400'>
-                        {track.track?.artist || 'Unknown Artist'}
-                      </p>
-                    </div>
+                    <Chip size='sm' color='primary' variant='flat'>
+                      {formatNumber(track._count.id)} plays
+                    </Chip>
                   </div>
-                  <Chip size='sm' color='primary' variant='flat'>
-                    {formatNumber(track._count.id)} plays
-                  </Chip>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardBody>
         </Card>
@@ -341,7 +345,7 @@ export default function AnalyticsDashboard() {
               Traffic Sources
             </h3>
             <div className='space-y-2'>
-              {analytics.sourceBreakdown.map((source, index) => (
+              {analytics.sourceBreakdown.map((source, _index) => (
                 <div
                   key={source.source}
                   className='flex items-center justify-between'

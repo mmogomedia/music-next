@@ -615,6 +615,7 @@ export class StatsAggregator {
     yearStart: Date,
     yearEnd: Date
   ): Promise<void> {
+    const year = yearStart.getFullYear();
     const monthlyStats = await prisma.monthlyStats.findMany({
       where: {
         trackId,

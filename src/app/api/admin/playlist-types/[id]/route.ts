@@ -5,8 +5,8 @@ import { prisma } from '@/lib/db';
 
 // GET /api/admin/playlist-types/[id] - Get specific playlist type
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,8 +15,9 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const playlistType = await prisma.playlistTypeDefinition.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: { playlists: true },
@@ -44,7 +45,7 @@ export async function GET(
 // PUT /api/admin/playlist-types/[id] - Update playlist type
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -53,6 +54,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
     const {
       name,
@@ -69,7 +71,7 @@ export async function PUT(
 
     // Check if playlist type exists
     const existingType = await prisma.playlistTypeDefinition.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!existingType) {
@@ -130,7 +132,7 @@ export async function PUT(
 
     // Update playlist type
     const playlistType = await prisma.playlistTypeDefinition.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(name && { name }),
         ...(slug && { slug }),
@@ -157,8 +159,8 @@ export async function PUT(
 
 // DELETE /api/admin/playlist-types/[id] - Delete playlist type
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -167,9 +169,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     // Check if playlist type exists
     const existingType = await prisma.playlistTypeDefinition.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: { playlists: true },
@@ -196,7 +199,7 @@ export async function DELETE(
 
     // Delete playlist type
     await prisma.playlistTypeDefinition.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ message: 'Playlist type deleted successfully' });

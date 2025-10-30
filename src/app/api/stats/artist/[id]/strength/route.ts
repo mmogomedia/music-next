@@ -36,7 +36,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id: artistId } = await params;
     const { searchParams } = new URL(request.url);
     const timeRange = searchParams.get('timeRange') || '7d';
-    const forceRecalculate = searchParams.get('forceRecalculate') === 'true';
 
     // Validate timeRange
     const validTimeRanges = ['24h', '7d', '30d', '3m', '1y', 'all'];

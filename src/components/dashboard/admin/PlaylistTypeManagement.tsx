@@ -183,10 +183,14 @@ export default function PlaylistTypeManagement({
       {/* Filters */}
       <div className='flex items-center gap-4'>
         <div className='flex items-center gap-2'>
-          <label className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+          <label
+            htmlFor='filter-select'
+            className='text-sm font-medium text-gray-700 dark:text-gray-300'
+          >
             Filter:
           </label>
           <select
+            id='filter-select'
             value={filter}
             onChange={e => setFilter(e.target.value as any)}
             className='px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent'

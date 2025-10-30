@@ -5,8 +5,8 @@ import { prisma } from '@/lib/db';
 
 // GET /api/admin/playlists-dynamic/[id] - Get single playlist
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -15,8 +15,9 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const playlist = await prisma.playlist.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         playlistType: true,
         createdByUser: {
@@ -57,7 +58,7 @@ export async function GET(
 // PUT /api/admin/playlists-dynamic/[id] - Update playlist
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -66,6 +67,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     const body = await request.json();
     const {
       name,
@@ -95,7 +97,7 @@ export async function PUT(
 
     // Check if playlist exists
     const existingPlaylist = await prisma.playlist.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { playlistType: true },
     });
 
@@ -124,7 +126,7 @@ export async function PUT(
         where: {
           playlistTypeId,
           status: 'ACTIVE',
-          id: { not: params.id }, // Exclude current playlist
+          id: { not: id }, // Exclude current playlist
         },
       });
 
@@ -144,7 +146,7 @@ export async function PUT(
           playlistTypeId,
           province,
           status: 'ACTIVE',
-          id: { not: params.id }, // Exclude current playlist
+          id: { not: id }, // Exclude current playlist
         },
       });
 
@@ -159,7 +161,7 @@ export async function PUT(
     }
 
     const playlist = await prisma.playlist.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         description,
@@ -203,8 +205,8 @@ export async function PUT(
 
 // DELETE /api/admin/playlists-dynamic/[id] - Delete playlist
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -213,9 +215,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await params;
     // Check if playlist exists and has submissions/tracks
     const playlist = await prisma.playlist.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: {
@@ -244,7 +247,7 @@ export async function DELETE(
     }
 
     await prisma.playlist.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ success: true });

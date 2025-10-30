@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { timeRange = '7d', artistIds } = body;
+    const { timeRange = '7d' } = body;
 
     // Validate timeRange
     const validTimeRanges = ['24h', '7d', '30d', '3m', '1y', 'all'];

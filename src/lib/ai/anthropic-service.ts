@@ -1,7 +1,6 @@
 import { ChatAnthropic } from '@langchain/anthropic';
 import {
   HumanMessage,
-  SystemMessage,
   AIMessage as LangChainMessage,
 } from '@langchain/core/messages';
 import { BaseAIService } from './base-service';

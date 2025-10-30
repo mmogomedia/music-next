@@ -4,12 +4,11 @@ import { prisma } from '@/lib/db';
 
 // GET /api/playlists/[id]/tracks - Get tracks for a specific playlist
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await params;
-    const playlistId = resolvedParams?.id;
+    const { id: playlistId } = await params;
 
     if (!playlistId) {
       return NextResponse.json(
