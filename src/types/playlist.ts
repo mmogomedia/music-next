@@ -2,6 +2,7 @@
 import type { PlaylistTypeDefinition } from './dynamic-playlist-types';
 
 // Note: PlaylistType enum removed - now using dynamic PlaylistTypeDefinition from database
+/* eslint-disable no-unused-vars */
 
 export enum PlaylistStatus {
   ACTIVE = 'ACTIVE',

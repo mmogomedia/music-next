@@ -1,7 +1,7 @@
 'use client';
 
 import type { ArtistResponse } from '@/types/ai-responses';
-import { Button } from '@nextui-org/react';
+import { Button } from '@heroui/react';
 import Image from 'next/image';
 
 interface ArtistRendererProps {
@@ -16,7 +16,16 @@ export function ArtistRenderer({
   response,
   onViewArtist,
 }: ArtistRendererProps) {
-  const { data: artist } = response;
+  // Support both shapes: { data: Artist } and { data: { artist: Artist } }
+  const payload = response.data as unknown as { artist?: any } & Record<
+    string,
+    any
+  >;
+  const artist = payload && payload.artist ? payload.artist : (payload as any);
+  const displayName: string =
+    typeof artist?.artistName === 'string' && artist.artistName.length > 0
+      ? artist.artistName
+      : 'Artist';
 
   const handleViewArtist = () => {
     if (onViewArtist) {
@@ -30,10 +39,10 @@ export function ArtistRenderer({
       <div className='flex items-start gap-4'>
         {/* Profile Image */}
         <div className='w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-slate-700 flex-shrink-0'>
-          {artist.profileImageUrl ? (
+          {artist?.profileImageUrl ? (
             <Image
               src={artist.profileImageUrl}
-              alt={artist.artistName}
+              alt={displayName}
               width={96}
               height={96}
               className='w-full h-full object-cover'
@@ -41,7 +50,7 @@ export function ArtistRenderer({
           ) : (
             <div className='w-full h-full flex items-center justify-center'>
               <span className='text-2xl font-bold text-gray-400'>
-                {artist.artistName.charAt(0).toUpperCase()}
+                {displayName.charAt(0).toUpperCase()}
               </span>
             </div>
           )}
@@ -50,14 +59,14 @@ export function ArtistRenderer({
         {/* Artist Info */}
         <div className='flex-1'>
           <h3 className='text-xl font-bold text-gray-900 dark:text-white'>
-            {artist.artistName}
+            {displayName}
           </h3>
-          {artist.genre && (
+          {artist?.genre && (
             <span className='inline-block mt-1 text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full'>
               {artist.genre}
             </span>
           )}
-          {artist.location && (
+          {artist?.location && (
             <p className='text-sm text-gray-600 dark:text-gray-400 mt-1'>
               📍 {artist.location}
             </p>
@@ -66,7 +75,7 @@ export function ArtistRenderer({
       </div>
 
       {/* Bio */}
-      {artist.bio && (
+      {artist?.bio && (
         <div className='rounded-lg bg-gray-50 dark:bg-slate-800 p-4'>
           <p className='text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap'>
             {artist.bio}
@@ -76,7 +85,7 @@ export function ArtistRenderer({
 
       {/* Stats */}
       <div className='flex gap-4'>
-        {artist.totalPlays > 0 && (
+        {artist?.totalPlays > 0 && (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-900 dark:text-white'>
               {artist.totalPlays.toLocaleString()}
@@ -84,7 +93,7 @@ export function ArtistRenderer({
             <p className='text-xs text-gray-600 dark:text-gray-400'>Plays</p>
           </div>
         )}
-        {artist.totalLikes > 0 && (
+        {artist?.totalLikes > 0 && (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-900 dark:text-white'>
               {artist.totalLikes.toLocaleString()}
@@ -92,7 +101,7 @@ export function ArtistRenderer({
             <p className='text-xs text-gray-600 dark:text-gray-400'>Likes</p>
           </div>
         )}
-        {artist.profileViews > 0 && (
+        {artist?.profileViews > 0 && (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-900 dark:text-white'>
               {artist.profileViews.toLocaleString()}

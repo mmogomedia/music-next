@@ -1,7 +1,7 @@
 'use client';
 
 import type { PlaylistResponse } from '@/types/ai-responses';
-import { Button } from '@nextui-org/react';
+import { Button } from '@heroui/react';
 import Image from 'next/image';
 
 interface PlaylistRendererProps {

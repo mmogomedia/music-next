@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { aiService } from '@/lib/ai/ai-service';
 import { routerAgent } from '@/lib/ai/agents';
 import { ChatRequest, ChatResponse, AIError } from '@/types/ai';
+import { conversationStore } from '@/lib/ai/memory/conversation-store';
+import { preferenceTracker } from '@/lib/ai/memory/preference-tracker';
+import { contextBuilder } from '@/lib/ai/memory/context-builder';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,10 +38,11 @@ export async function POST(request: NextRequest) {
       body.conversationId ||
       `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Build agent context from request context
+    // Build agent context from request context + memory
+    const built = contextBuilder.buildContext(context?.userId);
     const agentContext = {
       userId: context?.userId,
-      filters: {} as any,
+      filters: built.filters ?? ({} as any),
     };
 
     // Map context to filters if needed
@@ -47,6 +51,16 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      // Store user message
+      if (context?.userId) {
+        conversationStore.storeMessage(context.userId, {
+          role: 'user',
+          content: message,
+          timestamp: new Date(),
+        });
+        preferenceTracker.updateFromMessage(context.userId, message);
+      }
+
       // Use Router Agent to get the appropriate response
       const agentResponse = await routerAgent.route(message, agentContext);
 
@@ -63,10 +77,22 @@ export async function POST(request: NextRequest) {
         data: agentResponse.data, // Include structured data from agent
       };
 
-      console.log('Chat Response:', {
-        hasData: !!agentResponse.data,
-        dataKeys: agentResponse.data ? Object.keys(agentResponse.data) : [],
-      });
+      // Store assistant response and update preferences
+      if (context?.userId) {
+        conversationStore.storeMessage(context.userId, {
+          role: 'assistant',
+          content: responseMessage,
+          timestamp: new Date(),
+        });
+        if (agentResponse?.data) {
+          preferenceTracker.updateFromResults(
+            context.userId,
+            agentResponse.data
+          );
+        }
+      }
+
+      // Debug: chat response built
 
       return NextResponse.json(chatResponse);
     } catch (agentError) {

@@ -7,6 +7,8 @@ import ChatQuickActions from './ChatQuickActions';
 import ChatTopBar from './ChatTopBar';
 import WelcomeHeader from './WelcomeHeader';
 import ChatWelcomePlaceholder from './ChatWelcomePlaceholder';
+import { ResponseRenderer } from './response-renderers';
+import type { AIResponse as StructuredAIResponse } from '@/types/ai-responses';
 
 interface AIChatProps {
   context?: {
@@ -139,6 +141,22 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                   <p className='text-sm whitespace-pre-wrap'>
                     {response.message}
                   </p>
+                  {/* Render structured content, if provided */}
+                  {response.data && (response as any).data?.type && (
+                    <div className='mt-3'>
+                      <ResponseRenderer
+                        response={
+                          {
+                            // Compose a proper AIResponse object for renderer
+                            type: (response as any).data.type,
+                            message: response.message,
+                            timestamp: new Date(response.timestamp),
+                            data: (response as any).data.data,
+                          } as StructuredAIResponse
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

@@ -13,7 +13,13 @@ import { ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import type { AIProvider } from '@/types/ai-service';
-import type { TrackListResponse, PlaylistResponse, PlaylistGridResponse, ArtistResponse, SearchResultsResponse } from '@/types/ai-responses';
+import type {
+  AIResponse,
+  TrackListResponse,
+  PlaylistGridResponse,
+  ArtistResponse,
+  SearchResultsResponse,
+} from '@/types/ai-responses';
 
 const DISCOVERY_SYSTEM_PROMPT = `You are a music discovery assistant for Flemoji, a South African music streaming platform.
 
@@ -88,10 +94,7 @@ export class DiscoveryAgent extends BaseAgent {
         { role: 'user', content: fullMessage },
       ]);
 
-      console.log('Discovery Agent Response:', {
-        content: response.content,
-        toolCalls: response.tool_calls?.length || 0,
-      });
+      // Debug: Agent responded; tool calls will be handled below
 
       // Parse tool calls if any
       if (response.tool_calls && response.tool_calls.length > 0) {
@@ -145,10 +148,10 @@ export class DiscoveryAgent extends BaseAgent {
               }
             }
 
-            console.log(`Executing tool ${toolCall.name} with args:`, args);
+            // Debug: Executing tool with parsed args
 
             // Execute the tool
-            const result = await tool.invoke(args);
+            const result = await (tool as unknown as any).invoke(args);
 
             return {
               toolName: toolCall.name,
@@ -217,61 +220,161 @@ export class DiscoveryAgent extends BaseAgent {
   /**
    * Convert raw tool data to structured AI response format
    */
-  private convertToolDataToResponse(toolData: any[]): any {
+  private convertToolDataToResponse(toolData: any[]): AIResponse | null {
     if (toolData.length === 0) return null;
-    
-    const firstResult = toolData[0];
-    const resultData = firstResult.data;
-    const toolName = firstResult.tool;
 
-    // Convert based on tool type
-    switch (toolName) {
-      case 'search_tracks':
-      case 'get_tracks_by_genre':
-      case 'get_trending_tracks':
-        return {
-          type: 'track_list',
-          data: {
-            tracks: resultData.tracks || [],
-            metadata: {
-              genre: resultData.genre,
-              total: resultData.count || resultData.tracks?.length || 0,
-            },
+    // Aggregate across tool outputs
+    const aggregated: {
+      tracks: any[];
+      artists: any[];
+      playlists: any[];
+      meta: Record<string, any>;
+    } = { tracks: [], artists: [], playlists: [], meta: {} };
+
+    for (const item of toolData) {
+      const toolName = item.tool;
+      const data = item.data || {};
+
+      switch (toolName) {
+        case 'search_tracks':
+        case 'get_tracks_by_genre':
+        case 'get_trending_tracks': {
+          if (Array.isArray(data.tracks))
+            aggregated.tracks.push(...data.tracks);
+          if (data.genre) aggregated.meta.genre = data.genre;
+          if (typeof data.count === 'number')
+            aggregated.meta.totalTracks = data.count;
+          break;
+        }
+        case 'get_top_charts':
+        case 'get_featured_playlists':
+        case 'get_playlists_by_genre':
+        case 'get_playlists_by_province': {
+          if (Array.isArray(data.playlists))
+            aggregated.playlists.push(...data.playlists);
+          if (data.genre) aggregated.meta.genre = data.genre;
+          if (data.province) aggregated.meta.province = data.province;
+          if (typeof data.count === 'number')
+            aggregated.meta.totalPlaylists = data.count;
+          break;
+        }
+        case 'get_playlist': {
+          if (data) aggregated.playlists.push(data);
+          break;
+        }
+        case 'get_artist': {
+          // Tools may return { artist: {...} }
+          const artistObj = data.artist ? data.artist : data;
+          if (artistObj) aggregated.artists.push(artistObj);
+          break;
+        }
+        case 'search_artists': {
+          if (Array.isArray(data.artists))
+            aggregated.artists.push(...data.artists);
+          break;
+        }
+        default: {
+          // ignore
+          break;
+        }
+      }
+    }
+
+    // De-duplicate aggregated items by id where available
+    const dedupeById = (arr: any[]) => {
+      const seen = new Set<string>();
+      const out: any[] = [];
+      for (const item of arr) {
+        const id = (item && item.id) as string | undefined;
+        const key = id || JSON.stringify(item);
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push(item);
+        }
+      }
+      return out;
+    };
+
+    aggregated.tracks = dedupeById(aggregated.tracks);
+    aggregated.artists = dedupeById(aggregated.artists);
+    aggregated.playlists = dedupeById(aggregated.playlists);
+
+    // If we have both tracks and artists, return mixed search results
+    if (aggregated.tracks.length > 0 && aggregated.artists.length > 0) {
+      return {
+        type: 'search_results',
+        message: '',
+        timestamp: new Date(),
+        data: {
+          tracks: aggregated.tracks,
+          artists: aggregated.artists,
+          metadata: {
+            ...aggregated.meta,
+            total:
+              (aggregated.tracks?.length || 0) +
+              (aggregated.artists?.length || 0),
           },
-        };
+        },
+      } as SearchResultsResponse;
+    }
 
-      case 'get_playlist':
-        return {
-          type: 'playlist',
-          data: resultData,
-        };
-
-      case 'get_top_charts':
-      case 'get_featured_playlists':
-      case 'get_playlists_by_genre':
-      case 'get_playlists_by_province':
-        return {
-          type: 'playlist_grid',
-          data: {
-            playlists: resultData.playlists || [],
-            metadata: {
-              genre: resultData.genre,
-              province: resultData.province,
-              total: resultData.count || resultData.playlists?.length || 0,
-            },
+    // If only tracks
+    if (aggregated.tracks.length > 0) {
+      return {
+        type: 'track_list',
+        message: '',
+        timestamp: new Date(),
+        data: {
+          tracks: aggregated.tracks,
+          metadata: {
+            genre: aggregated.meta.genre,
+            total: aggregated.tracks.length,
           },
-        };
+        },
+      } as TrackListResponse;
+    }
 
-      case 'get_artist':
-      case 'search_artists':
+    // If only artists
+    if (aggregated.artists.length > 0) {
+      // If single artist, return artist; otherwise mixed search with artists only
+      if (aggregated.artists.length === 1) {
         return {
           type: 'artist',
-          data: resultData,
-        };
-
-      default:
-        // Return raw data if we don't recognize the tool
-        return resultData;
+          message: '',
+          timestamp: new Date(),
+          data: aggregated.artists[0],
+        } as ArtistResponse;
+      }
+      return {
+        type: 'search_results',
+        message: '',
+        timestamp: new Date(),
+        data: {
+          artists: aggregated.artists,
+          metadata: { total: aggregated.artists.length },
+        },
+      } as SearchResultsResponse;
     }
+
+    // If only playlists/grid
+    if (aggregated.playlists.length > 0) {
+      return {
+        type: 'playlist_grid',
+        message: '',
+        timestamp: new Date(),
+        data: {
+          playlists: aggregated.playlists,
+          metadata: {
+            genre: aggregated.meta.genre,
+            province: aggregated.meta.province,
+            total: aggregated.playlists.length,
+          },
+        },
+      } as PlaylistGridResponse;
+    }
+
+    // Fallback to first tool's raw data
+    const first = toolData[0];
+    return (first?.data as AIResponse) ?? null;
   }
 }

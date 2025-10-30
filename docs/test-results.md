@@ -39,6 +39,7 @@ npx tsx scripts/test-intent-recognition.ts
 - ✅ All playback intent queries correctly identified
 - ✅ All recommendation intent queries correctly identified
 - ✅ Edge cases and fallbacks handled correctly
+- ✅ Mixed query verified (artist + track → search_results)
 
 **Note:** "Play the top playlist" routes to Discovery due to multiple keywords ("top", "show") overriding "play". This is expected behavior as it contains more discovery-oriented keywords.
 

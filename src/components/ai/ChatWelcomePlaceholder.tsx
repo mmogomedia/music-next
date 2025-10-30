@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Button, Chip } from '@heroui/react';
+import { Chip } from '@heroui/react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { Track } from '@/types/track';
 import TrackArtwork from '@/components/music/TrackArtwork';
@@ -118,7 +118,8 @@ export default function ChatWelcomePlaceholder({
     };
 
     return (
-      <div
+      <button
+        type='button'
         className={`group relative bg-white dark:bg-slate-800 border-2 rounded-xl overflow-hidden transition-all duration-300 ease-out cursor-pointer ${
           isCurrentTrack
             ? 'border-blue-500 dark:border-blue-400 shadow-xl shadow-blue-500/20 ring-2 ring-blue-500/30 dark:ring-blue-400/30'
@@ -127,6 +128,7 @@ export default function ChatWelcomePlaceholder({
         onClick={handleClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        aria-label={`Play ${track.title} by ${track.artist || 'artist'}`}
       >
         {/* Playing indicator bar */}
         {isCurrentlyPlaying && (
@@ -300,21 +302,23 @@ export default function ChatWelcomePlaceholder({
             )}
           </div>
         </div>
-      </div>
+      </button>
     );
   };
 
   // Top ten track card - compact list style
   const TopTenTrackCard = ({
     track,
-    index,
+    index: _index,
   }: {
     track: Track;
     index: number;
   }) => (
-    <div
-      className='flex items-center gap-3 rounded-xl bg-white/60 dark:bg-slate-900/40 p-3 border border-gray-100/60 dark:border-slate-800/60 hover:bg-white/80 dark:hover:bg-slate-800/60 transition-colors cursor-pointer group'
+    <button
+      type='button'
+      className='flex items-center gap-3 rounded-xl bg-white/60 dark:bg-slate-900/40 p-3 border border-gray-100/60 dark:border-slate-800/60 hover:bg-white/80 dark:hover:bg-slate-800/60 transition-colors cursor-pointer group text-left w-full'
       onClick={() => handlePlay(track)}
+      aria-label={`Play ${track.title}`}
     >
       <div className='flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-gray-200 dark:bg-slate-700'>
         {track.coverImageUrl || track.albumArtwork ? (
@@ -364,7 +368,7 @@ export default function ChatWelcomePlaceholder({
           </svg>
         </button>
       </div>
-    </div>
+    </button>
   );
 
   const PlaceholderCard = ({

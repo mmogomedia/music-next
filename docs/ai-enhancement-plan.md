@@ -820,13 +820,13 @@ responseRegistry.register('concert', {
   - [x] Implement intent analysis
   - [x] Implement routing logic
   - [x] Add fallback handling
-  - [ ] Test routing accuracy
+  - [x] Test routing accuracy
 - [x] Create `discovery-agent.ts`
   - [x] Set up agent with discovery tools
   - [x] Create discovery-specific system prompt
   - [x] Implement search/browse/discover logic
-  - [ ] Integrate with response registry
-  - [ ] Test agent with sample queries
+  - [x] Integrate with response registry
+  - [x] Test agent with sample queries
 - [x] Create `playback-agent.ts`
   - [x] Set up agent with playback tools
   - [x] Create playback-specific system prompt
