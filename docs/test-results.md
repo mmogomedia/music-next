@@ -5,7 +5,11 @@
 ## Test Execution
 
 ```bash
+# Comprehensive test suite
 npx tsx scripts/test-ai-agents.ts
+
+# Intent recognition only
+npx tsx scripts/test-intent-recognition.ts
 ```
 
 ## Results Summary
@@ -28,7 +32,21 @@ npx tsx scripts/test-ai-agents.ts
 5. "What should I listen to?" → RecommendationAgent (0.08 confidence)
 6. "Search for artists from Johannesburg" → DiscoveryAgent (0.17 confidence)
 
+**Intent Recognition Test Suite (23 test cases):**
+
+- ✅ **100% Success Rate** (23/23 tests passing)
+- ✅ All discovery intent queries correctly identified
+- ✅ All playback intent queries correctly identified
+- ✅ All recommendation intent queries correctly identified
+- ✅ Edge cases and fallbacks handled correctly
+
 **Note:** "Play the top playlist" routes to Discovery due to multiple keywords ("top", "show") overriding "play". This is expected behavior as it contains more discovery-oriented keywords.
+
+**Keyword Improvements:**
+
+- Added "trending", "track", "song" to discovery keywords
+- Added "what else", "else is good" to recommendation keywords
+- Changed default fallback from "unknown" to "discovery" intent
 
 ### ✅ Service Layer - PASSING
 
