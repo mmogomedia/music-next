@@ -1,3 +1,6 @@
+import { prisma } from '@/lib/db';
+import { logger } from '@/lib/utils/logger';
+
 type Counter = Record<string, number>;
 
 export interface UserPreferences {
@@ -7,7 +10,6 @@ export interface UserPreferences {
 
 export class PreferenceTracker {
   private static instance: PreferenceTracker;
-  private userIdToPrefs = new Map<string, UserPreferences>();
 
   static getInstance(): PreferenceTracker {
     if (!PreferenceTracker.instance) {
@@ -16,49 +18,114 @@ export class PreferenceTracker {
     return PreferenceTracker.instance;
   }
 
-  get(userId: string): UserPreferences {
+  async get(userId: string): Promise<UserPreferences> {
     if (!userId) return { genres: {}, artists: {} };
-    const prefs = this.userIdToPrefs.get(userId);
-    if (prefs) return prefs;
-    const init = { genres: {}, artists: {} };
-    this.userIdToPrefs.set(userId, init);
-    return init;
-  }
 
-  updateFromMessage(userId: string, text: string): void {
-    if (!userId || !text) return;
-    const prefs = this.get(userId);
-    const lower = text.toLowerCase();
-    // naive extraction
-    const knownGenres = [
-      'amapiano',
-      'afro house',
-      'afrobeat',
-      'house',
-      'hip hop',
-    ];
-    for (const g of knownGenres) {
-      if (lower.includes(g)) {
-        prefs.genres[g] = (prefs.genres[g] ?? 0) + 1;
+    try {
+      const prefs = await prisma.aIPreferences.findUnique({
+        where: { userId },
+      });
+
+      if (!prefs) {
+        return { genres: {}, artists: {} };
       }
+
+      return {
+        genres: (prefs.genres as Counter) || {},
+        artists: (prefs.artists as Counter) || {},
+      };
+    } catch (error) {
+      logger.error('Failed to get preferences:', error);
+      return { genres: {}, artists: {} };
     }
   }
 
-  updateFromResults(userId: string, result: any): void {
+  async updateFromMessage(userId: string, text: string): Promise<void> {
+    if (!userId || !text) return;
+
+    try {
+      const currentPrefs = await this.get(userId);
+      const lower = text.toLowerCase();
+
+      // Simple genre extraction
+      const knownGenres = [
+        'amapiano',
+        'afro house',
+        'afrobeat',
+        'house',
+        'hip hop',
+        'gospel',
+        'jazz',
+        'r&b',
+        'pop',
+      ];
+
+      let updated = false;
+      for (const genre of knownGenres) {
+        if (lower.includes(genre)) {
+          currentPrefs.genres[genre] = (currentPrefs.genres[genre] || 0) + 1;
+          updated = true;
+        }
+      }
+
+      if (updated) {
+        await prisma.aIPreferences.upsert({
+          where: { userId },
+          update: {
+            genres: currentPrefs.genres,
+          },
+          create: {
+            userId,
+            genres: currentPrefs.genres,
+            artists: {},
+          },
+        });
+      }
+    } catch (error) {
+      logger.error('Failed to update preferences from message:', error);
+    }
+  }
+
+  async updateFromResults(userId: string, result: any): Promise<void> {
     if (!userId || !result) return;
-    const prefs = this.get(userId);
-    // tracks
-    const tracks = result?.data?.tracks ?? result?.tracks ?? [];
-    for (const t of tracks) {
-      if (t?.genre) {
-        const key = String(t.genre);
-        prefs.genres[key] = (prefs.genres[key] ?? 0) + 1;
+
+    try {
+      const currentPrefs = await this.get(userId);
+      const tracks = result?.data?.tracks ?? result?.tracks ?? [];
+
+      let updated = false;
+
+      for (const track of tracks) {
+        if (track?.genre) {
+          const key = String(track.genre);
+          currentPrefs.genres[key] = (currentPrefs.genres[key] || 0) + 1;
+          updated = true;
+        }
+
+        const artistName = track?.artist || track?.artistProfile?.artistName;
+        if (artistName) {
+          const key = String(artistName);
+          currentPrefs.artists[key] = (currentPrefs.artists[key] || 0) + 1;
+          updated = true;
+        }
       }
-      const artistName = t?.artist || t?.artistProfile?.artistName;
-      if (artistName) {
-        const key = String(artistName);
-        prefs.artists[key] = (prefs.artists[key] ?? 0) + 1;
+
+      if (updated) {
+        await prisma.aIPreferences.upsert({
+          where: { userId },
+          update: {
+            genres: currentPrefs.genres,
+            artists: currentPrefs.artists,
+          },
+          create: {
+            userId,
+            genres: currentPrefs.genres,
+            artists: currentPrefs.artists,
+          },
+        });
       }
+    } catch (error) {
+      logger.error('Failed to update preferences from results:', error);
     }
   }
 }

@@ -5,6 +5,7 @@ import { ChatRequest, ChatResponse, AIError } from '@/types/ai';
 import { conversationStore } from '@/lib/ai/memory/conversation-store';
 import { preferenceTracker } from '@/lib/ai/memory/preference-tracker';
 import { contextBuilder } from '@/lib/ai/memory/context-builder';
+import { logger } from '@/lib/utils/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -39,7 +40,10 @@ export async function POST(request: NextRequest) {
       `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Build agent context from request context + memory
-    const built = contextBuilder.buildContext(context?.userId);
+    const built = await contextBuilder.buildContext(
+      context?.userId,
+      conversationId
+    );
     const agentContext = {
       userId: context?.userId,
       filters: built.filters ?? ({} as any),
@@ -53,12 +57,12 @@ export async function POST(request: NextRequest) {
     try {
       // Store user message
       if (context?.userId) {
-        conversationStore.storeMessage(context.userId, {
+        await conversationStore.storeMessage(context.userId, conversationId, {
           role: 'user',
           content: message,
           timestamp: new Date(),
         });
-        preferenceTracker.updateFromMessage(context.userId, message);
+        await preferenceTracker.updateFromMessage(context.userId, message);
       }
 
       // Use Router Agent to get the appropriate response
@@ -79,13 +83,14 @@ export async function POST(request: NextRequest) {
 
       // Store assistant response and update preferences
       if (context?.userId) {
-        conversationStore.storeMessage(context.userId, {
+        await conversationStore.storeMessage(context.userId, conversationId, {
           role: 'assistant',
           content: responseMessage,
           timestamp: new Date(),
+          data: agentResponse.data,
         });
         if (agentResponse?.data) {
-          preferenceTracker.updateFromResults(
+          await preferenceTracker.updateFromResults(
             context.userId,
             agentResponse.data
           );
@@ -96,7 +101,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(chatResponse);
     } catch (agentError) {
-      console.error('Agent execution error:', agentError);
+      logger.error('Agent execution error:', agentError);
 
       // Fallback response
       const chatResponse: ChatResponse = {
@@ -109,7 +114,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(chatResponse);
     }
   } catch (error) {
-    console.error('AI Chat API Error:', error);
+    logger.error('AI Chat API Error:', error);
 
     const aiError: AIError = {
       error: 'Internal server error',

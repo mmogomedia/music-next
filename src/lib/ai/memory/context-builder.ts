@@ -10,10 +10,16 @@ export interface BuiltContext {
 }
 
 export class ContextBuilder {
-  buildContext(userId?: string): BuiltContext {
+  async buildContext(
+    userId?: string,
+    conversationId?: string
+  ): Promise<BuiltContext> {
     if (!userId) return {};
-    const recent = conversationStore.getConversation(userId, 6);
-    const prefs = preferenceTracker.get(userId);
+
+    const [recent, prefs] = await Promise.all([
+      conversationStore.getConversation(userId, conversationId || '', 6),
+      preferenceTracker.get(userId),
+    ]);
 
     // choose top genre preference if any
     const topGenre = Object.entries(prefs.genres).sort(
