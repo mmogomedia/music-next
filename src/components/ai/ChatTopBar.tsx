@@ -64,7 +64,7 @@ export default function ChatTopBar({
   };
 
   return (
-    <div className='fixed top-0 right-0 left-0 lg:left-64 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
+    <div className='fixed top-0 right-0 left-0 lg:left-32 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
       <div className='px-4 py-3 flex items-center gap-4'>
         {/* Filters section */}
         <div className='flex items-center gap-2.5 flex-shrink-0'>
