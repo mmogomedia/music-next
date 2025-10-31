@@ -18,6 +18,7 @@ import {
   SparklesIcon as SparklesSolidIcon,
 } from '@heroicons/react/24/solid';
 import Link from 'next/link';
+import ConversationList from '@/components/ai/ConversationList';
 
 interface QuickLink {
   id: string;
@@ -142,8 +143,20 @@ export default function ChatNavigation({
             </nav>
           </div>
 
-          {/* Classic View Link */}
+          {/* Conversations Section */}
           <div className='mt-8 pt-6 border-t border-gray-200 dark:border-slate-700'>
+            <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 px-3'>
+              Recent Conversations
+            </h3>
+            <ConversationList
+              onConversationSelect={() => {
+                // TODO: Load conversation
+              }}
+            />
+          </div>
+
+          {/* Classic View Link */}
+          <div className='pt-6 border-t border-gray-200 dark:border-slate-700'>
             <Link
               href='/classic'
               className='flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 hover:bg-gray-50 dark:hover:bg-slate-800 text-gray-700 dark:text-gray-300'
@@ -250,8 +263,21 @@ export default function ChatNavigation({
                 </nav>
               </div>
 
-              {/* Classic View Link */}
+              {/* Conversations Section */}
               <div className='mt-8 pt-6 border-t border-gray-200 dark:border-slate-700'>
+                <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 px-3'>
+                  Recent Conversations
+                </h3>
+                <ConversationList
+                  onConversationSelect={() => {
+                    setIsOpen(false);
+                    // TODO: Load conversation
+                  }}
+                />
+              </div>
+
+              {/* Classic View Link */}
+              <div className='pt-6 border-t border-gray-200 dark:border-slate-700'>
                 <Link
                   href='/classic'
                   onClick={() => setIsOpen(false)}

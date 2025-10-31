@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import ChatNavigation from './ChatNavigation';
 import AIChat, { AIChatHandle } from '@/components/ai/AIChat';
 
@@ -9,6 +10,7 @@ interface ChatLayoutProps {
 }
 
 export default function ChatLayout({ children }: ChatLayoutProps) {
+  const { data: session } = useSession();
   const chatRef = useRef<AIChatHandle>(null);
 
   const handleQuickLinkClick = (message: string) => {
@@ -30,7 +32,9 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
         {/* Content - ChatTopBar will render inside AIChat component */}
         <main className='w-full min-h-screen pb-24 pt-0'>
           <div className='w-full pt-6'>
-            {children || <AIChat ref={chatRef} />}
+            {children || (
+              <AIChat ref={chatRef} context={{ userId: session?.user?.id }} />
+            )}
           </div>
         </main>
       </div>
