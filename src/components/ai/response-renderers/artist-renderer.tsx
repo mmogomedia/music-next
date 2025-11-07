@@ -7,6 +7,7 @@ import Image from 'next/image';
 interface ArtistRendererProps {
   response: ArtistResponse;
   onViewArtist?: (_artistId: string) => void;
+  onAction?: (_action: any) => void;
 }
 
 /**
@@ -15,6 +16,7 @@ interface ArtistRendererProps {
 export function ArtistRenderer({
   response,
   onViewArtist,
+  onAction,
 }: ArtistRendererProps) {
   // Support both shapes: { data: Artist } and { data: { artist: Artist } }
   const payload = response.data as unknown as { artist?: any } & Record<
@@ -30,6 +32,29 @@ export function ArtistRenderer({
   const handleViewArtist = () => {
     if (onViewArtist) {
       onViewArtist(artist.id);
+    }
+  };
+
+  const handleAction = (action: any) => {
+    switch (action.type) {
+      case 'view_artist':
+        if (onViewArtist) {
+          onViewArtist(artist.id);
+        }
+        break;
+      case 'share_track':
+        if (navigator.share) {
+          navigator.share({
+            title: displayName,
+            text: `Check out ${displayName} on Flemoji`,
+            url: window.location.href,
+          }).catch(() => {
+            // Share failed or cancelled
+          });
+        }
+        break;
+      default:
+        console.log('Unhandled action type:', action.type);
     }
   };
 
@@ -164,7 +189,11 @@ export function ArtistRenderer({
               size='sm'
               variant='bordered'
               onClick={() => {
-                // TODO: Implement action handling
+                if (onAction) {
+                  onAction(action);
+                } else {
+                  handleAction(action);
+                }
               }}
             >
               {action.icon && <span className='mr-1'>{action.icon}</span>}

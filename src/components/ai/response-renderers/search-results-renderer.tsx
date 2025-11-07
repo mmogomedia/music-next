@@ -8,6 +8,7 @@ interface SearchResultsRendererProps {
   response: SearchResultsResponse;
   onPlayTrack?: (_trackId: string, _track: any) => void;
   onViewArtist?: (_artistId: string) => void;
+  onAction?: (_action: any) => void;
 }
 
 /**
@@ -17,6 +18,7 @@ export function SearchResultsRenderer({
   response,
   onPlayTrack,
   onViewArtist,
+  onAction,
 }: SearchResultsRendererProps) {
   const { tracks, artists, metadata } = response.data;
 
@@ -48,6 +50,7 @@ export function SearchResultsRenderer({
                   data: artist,
                 }}
                 onViewArtist={onViewArtist}
+                onAction={onAction}
               />
             ))}
           </div>
@@ -67,6 +70,7 @@ export function SearchResultsRenderer({
               data: { tracks, metadata },
             }}
             onPlayTrack={onPlayTrack}
+            onAction={onAction}
           />
         </div>
       )}

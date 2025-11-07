@@ -7,6 +7,7 @@ import { PlaylistGridRenderer } from './playlist-grid-renderer';
 import { ArtistRenderer } from './artist-renderer';
 import { SearchResultsRenderer } from './search-results-renderer';
 import { ActionExecutor } from './action-executor';
+import { GenreListRenderer } from './genre-list-renderer';
 import type { AIResponse } from '@/types/ai-responses';
 import { responseRegistry } from '@/lib/ai/response-registry';
 import { useEffect } from 'react';
@@ -16,6 +17,7 @@ interface ResponseRendererProps {
   onPlayTrack?: (_trackId: string, _track: any) => void;
   onPlayPlaylist?: (_playlistId: string) => void;
   onViewArtist?: (_artistId: string) => void;
+  onAction?: (_action: any) => void;
 }
 
 /**
@@ -173,6 +175,32 @@ function registerDefaultHandlers() {
       },
     });
   }
+
+  if (!responseRegistry.isRegistered('genre_list')) {
+    responseRegistry.register('genre_list', {
+      component: GenreListRenderer,
+      promptTemplate: 'Use for displaying available genres',
+      schema: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'genre_list' },
+          message: { type: 'string' },
+          data: {
+            type: 'object',
+            properties: {
+              genres: { type: 'array' },
+            },
+          },
+        },
+        required: ['type', 'message', 'data'],
+      },
+      metadata: {
+        description: 'List of available genres',
+        category: 'discovery',
+        priority: 8,
+      },
+    });
+  }
 }
 
 // Register defaults immediately when module is loaded
@@ -183,6 +211,7 @@ export function ResponseRenderer({
   onPlayTrack,
   onPlayPlaylist,
   onViewArtist,
+  onAction,
 }: ResponseRendererProps) {
   // Register components on mount if not already registered
   useEffect(() => {
@@ -336,6 +365,32 @@ export function ResponseRenderer({
         },
       });
     }
+
+    if (!responseRegistry.isRegistered('genre_list')) {
+      responseRegistry.register('genre_list', {
+        component: GenreListRenderer,
+        promptTemplate: 'Use for displaying available genres',
+        schema: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'genre_list' },
+            message: { type: 'string' },
+            data: {
+              type: 'object',
+              properties: {
+                genres: { type: 'array' },
+              },
+            },
+          },
+          required: ['type', 'message', 'data'],
+        },
+        metadata: {
+          description: 'List of available genres',
+          category: 'discovery',
+          priority: 8,
+        },
+      });
+    }
   }, []);
 
   // Get the registered handler for this response type
@@ -361,6 +416,7 @@ export function ResponseRenderer({
       onPlayTrack={onPlayTrack}
       onPlayPlaylist={onPlayPlaylist}
       onViewArtist={onViewArtist}
+      onAction={onAction}
     />
   );
 }

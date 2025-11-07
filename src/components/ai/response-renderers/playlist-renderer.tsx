@@ -3,10 +3,13 @@
 import type { PlaylistResponse } from '@/types/ai-responses';
 import { Button } from '@heroui/react';
 import Image from 'next/image';
+import TrackCard from '@/components/ai/TrackCard';
+import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 
 interface PlaylistRendererProps {
   response: PlaylistResponse;
   onPlayPlaylist?: (_playlistId: string) => void;
+  onAction?: (_action: any) => void;
 }
 
 /**
@@ -15,12 +18,53 @@ interface PlaylistRendererProps {
 export function PlaylistRenderer({
   response,
   onPlayPlaylist,
+  onAction,
 }: PlaylistRendererProps) {
   const { data: playlist } = response;
+  const { playTrack } = useMusicPlayer();
 
   const handlePlay = () => {
     if (onPlayPlaylist) {
       onPlayPlaylist(playlist.id);
+    }
+  };
+
+  const handlePlayTrack = (track: any) => {
+    if (!track) return;
+    playTrack(track);
+  };
+
+  const handleAction = (action: any) => {
+    switch (action.type) {
+      case 'play_playlist':
+        if (onPlayPlaylist) {
+          onPlayPlaylist(playlist.id);
+        }
+        break;
+      case 'open_playlist':
+        // Navigate to playlist page (if exists)
+        if (playlist.id) {
+          // TODO: Navigate to playlist detail page
+          console.log('Open playlist:', playlist.id);
+        }
+        break;
+      case 'save_playlist':
+        // TODO: Implement save playlist functionality
+        console.log('Save playlist action:', action);
+        break;
+      case 'share_track':
+        if (navigator.share) {
+          navigator.share({
+            title: playlist.name,
+            text: `Check out "${playlist.name}" playlist`,
+            url: window.location.href,
+          }).catch(() => {
+            // Share failed or cancelled
+          });
+        }
+        break;
+      default:
+        console.log('Unhandled action type:', action.type);
     }
   };
 
@@ -88,28 +132,16 @@ export function PlaylistRenderer({
             Tracks
           </h4>
           <div className='space-y-2'>
-            {playlist.tracks.slice(0, 5).map((item, index) => (
-              <div
+            {playlist.tracks.slice(0, 6).map(item => (
+              <TrackCard
                 key={item.track.id}
-                className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300'
-              >
-                <span className='text-gray-400 dark:text-gray-600'>
-                  {index + 1}.
-                </span>
-                <span className='truncate'>{item.track.title}</span>
-                <span className='text-gray-400 dark:text-gray-600'>—</span>
-                <span className='truncate text-gray-600 dark:text-gray-400'>
-                  {item.track.artist ||
-                    item.track.artistProfile?.artistName ||
-                    'Unknown Artist'}
-                </span>
-              </div>
+                track={item.track}
+                variant='compact'
+                size='md'
+                showDuration
+                onPlay={handlePlayTrack}
+              />
             ))}
-            {playlist.tracks.length > 5 && (
-              <p className='text-xs text-gray-500 dark:text-gray-500 italic'>
-                ...and {playlist.tracks.length - 5} more
-              </p>
-            )}
           </div>
         </div>
       )}
@@ -123,7 +155,11 @@ export function PlaylistRenderer({
               size='sm'
               variant='bordered'
               onClick={() => {
-                // TODO: Implement action handling
+                if (onAction) {
+                  onAction(action);
+                } else {
+                  handleAction(action);
+                }
               }}
             >
               {action.icon && <span className='mr-1'>{action.icon}</span>}

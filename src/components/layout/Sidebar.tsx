@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import {
   MusicalNoteIcon,
@@ -23,8 +23,30 @@ import {
   ChartBarIcon as ChartBarSolidIcon,
   UserGroupIcon as UserGroupSolidIcon,
 } from '@heroicons/react/24/solid';
+import MobileHeader from './MobileHeader';
 
 export default function Sidebar() {
+  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Don't render until we know if it's mobile or not
+  if (isMobile === null) {
+    return null;
+  }
+
+  // On mobile, render MobileHeader instead
+  if (isMobile) {
+    return <MobileHeader />;
+  }
   const { data: session } = useSession();
   const pathname = usePathname();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);

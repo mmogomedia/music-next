@@ -7,12 +7,13 @@ import { constructFileUrl } from '@/lib/url-utils';
 interface TrackArtworkProps {
   artworkUrl?: string;
   title?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   showFallback?: boolean;
 }
 
 const sizeClasses = {
+  xs: 'w-6 h-6',
   sm: 'w-8 h-8',
   md: 'w-12 h-12',
   lg: 'w-16 h-16',
@@ -28,13 +29,15 @@ export default function TrackArtwork({
 }: TrackArtworkProps) {
   const sizeClass = sizeClasses[size];
   const fallbackIconSize =
-    size === 'sm'
-      ? 'w-4 h-4'
-      : size === 'md'
-        ? 'w-6 h-6'
-        : size === 'lg'
-          ? 'w-8 h-8'
-          : 'w-12 h-12';
+    size === 'xs'
+      ? 'w-3 h-3'
+      : size === 'sm'
+        ? 'w-4 h-4'
+        : size === 'md'
+          ? 'w-6 h-6'
+          : size === 'lg'
+            ? 'w-8 h-8'
+            : 'w-12 h-12';
 
   if (artworkUrl) {
     // Handle both file paths and full URLs

@@ -74,9 +74,26 @@ export class MusicService {
       ],
     };
 
-    // Add genre filter if provided
+    // Add genre filter if provided (prefer Genre relation, fallback to legacy string)
     if (genre) {
-      where.genre = { contains: genre, mode: 'insensitive' };
+      // Try resolve genre by slug/name/alias
+      const resolved = await prisma.genre.findFirst({
+        where: {
+          OR: [
+            { slug: genre.toLowerCase() },
+            { name: { equals: genre, mode: 'insensitive' } },
+            { aliases: { has: genre } },
+          ],
+        },
+        select: { id: true },
+      });
+
+      if (resolved) {
+        where.genreId = resolved.id;
+      } else {
+        // Legacy fallback on free-text genre
+        where.genre = { contains: genre, mode: 'insensitive' };
+      }
     }
 
     // Add artist profile filters for province
@@ -104,6 +121,7 @@ export class MusicService {
       where,
       include: {
         artistProfile: true,
+        genreRef: true,
       },
       orderBy: orderByClause,
       take: limit,
@@ -198,7 +216,7 @@ export class MusicService {
   /**
    * Get tracks by genre
    *
-   * @param genre - Genre name
+   * @param genre - Genre name, slug, or alias (e.g., "3 Step", "Afro Pop", "amapiano")
    * @param limit - Number of tracks to return
    * @returns Array of tracks in the genre
    */
@@ -206,13 +224,36 @@ export class MusicService {
     genre: string,
     limit: number = 20
   ): Promise<TrackWithArtist[]> {
-    const tracks = await prisma.track.findMany({
+    // Try to resolve genre by slug/name/alias to get genreId
+    const resolved = await prisma.genre.findFirst({
       where: {
-        genre: { contains: genre, mode: 'insensitive' },
-        isPublic: true,
+        isActive: true,
+        OR: [
+          { slug: genre.toLowerCase().replace(/\s+/g, '-') },
+          { name: { equals: genre, mode: 'insensitive' } },
+          { aliases: { has: genre } },
+        ],
       },
+      select: { id: true },
+    });
+
+    const where: any = {
+      isPublic: true,
+    };
+
+    if (resolved) {
+      // Use genreId if genre was found in Genre model
+      where.genreId = resolved.id;
+    } else {
+      // Fallback to legacy genre string field
+      where.genre = { contains: genre, mode: 'insensitive' };
+    }
+
+    const tracks = await prisma.track.findMany({
+      where,
       include: {
         artistProfile: true,
+        genreRef: true,
       },
       orderBy: { playCount: 'desc' },
       take: limit,

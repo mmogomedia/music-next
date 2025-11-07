@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
-import { PlayIcon, PauseIcon } from '@heroicons/react/24/outline';
+import { PlayIcon, PauseIcon, ChevronLeftIcon, ChevronRightIcon, ArrowsRightLeftIcon, QueueListIcon } from '@heroicons/react/24/outline';
 import TrackArtwork from './TrackArtwork';
+import QueueView from './QueueView';
 
 export default function GlobalMusicPlayer() {
   const {
@@ -15,7 +16,16 @@ export default function GlobalMusicPlayer() {
     playPause,
     seekTo,
     setVolume,
+    next,
+    previous,
+    shuffle,
+    toggleShuffle,
+    repeatMode,
+    setRepeatMode,
+    queue,
   } = useMusicPlayer();
+
+  const [isQueueOpen, setIsQueueOpen] = React.useState(false);
 
   if (!currentTrack) return null;
 
@@ -53,6 +63,14 @@ export default function GlobalMusicPlayer() {
 
           {/* Controls */}
           <div className='flex items-center gap-4 flex-1 max-w-md'>
+            {/* Previous */}
+            <button
+              onClick={previous}
+              className='w-10 h-10 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-100 transition-colors'
+              aria-label='Previous track'
+            >
+              <ChevronLeftIcon className='w-5 h-5' />
+            </button>
             <button
               onClick={playPause}
               className='w-10 h-10 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center text-white transition-colors'
@@ -62,6 +80,14 @@ export default function GlobalMusicPlayer() {
               ) : (
                 <PlayIcon className='w-5 h-5 ml-0.5' />
               )}
+            </button>
+            {/* Next */}
+            <button
+              onClick={next}
+              className='w-10 h-10 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-full flex items-center justify-center text-gray-700 dark:text-gray-100 transition-colors'
+              aria-label='Next track'
+            >
+              <ChevronRightIcon className='w-5 h-5' />
             </button>
 
             {/* Progress Bar */}
@@ -115,8 +141,44 @@ export default function GlobalMusicPlayer() {
             </div>
           </div>
 
+          {/* Volume + Shuffle/Repeat */}
+          <div className='flex items-center gap-3 min-w-0'>
+            {/* Queue Button */}
+            <button
+              onClick={() => setIsQueueOpen(true)}
+              className='relative w-8 h-8 rounded-full flex items-center justify-center transition-colors bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600'
+              aria-label='View queue'
+              title={`Queue (${queue.length})`}
+            >
+              <QueueListIcon className='w-4 h-4' />
+              {queue.length > 0 && (
+                <span className='absolute -top-1 -right-1 w-4 h-4 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center'>
+                  {queue.length > 9 ? '9+' : queue.length}
+                </span>
+              )}
+            </button>
+            {/* Shuffle */}
+            <button
+              onClick={toggleShuffle}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${shuffle ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100'}`}
+              aria-pressed={shuffle}
+              aria-label='Toggle shuffle'
+              title='Shuffle'
+            >
+              <ArrowsRightLeftIcon className='w-4 h-4' />
+            </button>
+            {/* Repeat */}
+            <select
+              aria-label='Repeat mode'
+              className='text-xs bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded px-2 py-1'
+              value={repeatMode}
+              onChange={e => setRepeatMode(e.target.value as any)}
+            >
+              <option value='off'>Repeat: Off</option>
+              <option value='one'>Repeat: One</option>
+              <option value='all'>Repeat: All</option>
+            </select>
           {/* Volume */}
-          <div className='flex items-center gap-2 min-w-0'>
             <span className='text-xs text-gray-500 dark:text-gray-400'>
               Vol
             </span>
@@ -132,6 +194,9 @@ export default function GlobalMusicPlayer() {
           </div>
         </div>
       </div>
+
+      {/* Queue View */}
+      <QueueView isOpen={isQueueOpen} onClose={() => setIsQueueOpen(false)} />
     </div>
   );
 }

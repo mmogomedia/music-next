@@ -12,6 +12,7 @@ import { discoveryTools } from '@/lib/ai/tools';
 import { ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { logger } from '@/lib/utils/logger';
 import type { AIProvider } from '@/types/ai-service';
 import type {
   AIResponse,
@@ -98,7 +99,7 @@ export class DiscoveryAgent extends BaseAgent {
 
       // Parse tool calls if any
       if (response.tool_calls && response.tool_calls.length > 0) {
-        return this.handleToolCalls(response);
+        return this.handleToolCalls(response, context);
       }
 
       // Return text response
@@ -124,7 +125,10 @@ export class DiscoveryAgent extends BaseAgent {
     }
   }
 
-  private async handleToolCalls(response: any): Promise<AgentResponse> {
+  private async handleToolCalls(
+    response: any,
+    context?: AgentContext
+  ): Promise<AgentResponse> {
     try {
       // Execute tool calls and get results
       const toolResults = await Promise.all(
@@ -184,7 +188,10 @@ export class DiscoveryAgent extends BaseAgent {
       });
 
       // Convert tool results to structured response format
-      const structuredData = this.convertToolDataToResponse(data);
+      const structuredData = await this.convertToolDataToResponse(
+        data,
+        context
+      );
 
       // Check if we have text response
       const hasText = response.content && response.content.trim().length > 0;
@@ -220,7 +227,10 @@ export class DiscoveryAgent extends BaseAgent {
   /**
    * Convert raw tool data to structured AI response format
    */
-  private convertToolDataToResponse(toolData: any[]): AIResponse | null {
+  private async convertToolDataToResponse(
+    toolData: any[],
+    context?: AgentContext
+  ): Promise<AIResponse | null> {
     if (toolData.length === 0) return null;
 
     // Aggregate across tool outputs
@@ -273,6 +283,23 @@ export class DiscoveryAgent extends BaseAgent {
             aggregated.artists.push(...data.artists);
           break;
         }
+        case 'get_genres': {
+          // Handle genre list separately - return immediately
+          if (Array.isArray(data.genres)) {
+            return {
+              type: 'genre_list',
+              message: '',
+              timestamp: new Date(),
+              data: {
+                genres: data.genres,
+                metadata: {
+                  total: data.count || data.genres.length,
+                },
+              },
+            } as any;
+          }
+          break;
+        }
         default: {
           // ignore
           break;
@@ -320,12 +347,198 @@ export class DiscoveryAgent extends BaseAgent {
 
     // If only tracks
     if (aggregated.tracks.length > 0) {
+      let otherTracks: any[] | undefined;
+
+      // Generate summaries for all tracks and ensure fileUrl is present
+      const { constructFileUrl } = await import('@/lib/url-utils');
+      const tracksWithSummaries = await Promise.all(
+        aggregated.tracks.map(async track => {
+          let summary: string | undefined;
+
+          // Ensure fileUrl is constructed from filePath if missing
+          const fileUrl =
+            track.fileUrl ||
+            (track.filePath ? constructFileUrl(track.filePath) : '');
+
+          try {
+            const { aiService } = await import('@/lib/ai/ai-service');
+            const trackData = {
+              title: track.title,
+              artist: track.artist || 'Unknown Artist',
+              genre: track.genre || 'Unknown Genre',
+              playCount: track.playCount || 0,
+              likeCount: track.likeCount || 0,
+              duration: track.duration,
+              album: track.album,
+            };
+
+            const summaryPrompt = `Create a brief, engaging summary (2-3 sentences) for this South African track on Flemoji:
+
+Title: ${trackData.title}
+Artist: ${trackData.artist}
+Genre: ${trackData.genre}
+Plays: ${trackData.playCount}
+Likes: ${trackData.likeCount}
+${trackData.album ? `Album: ${trackData.album}` : ''}
+
+Write a concise summary that:
+- Highlights the track's genre and style
+- Mentions the artist
+- Notes its popularity if significant (high play/like counts)
+- Uses an enthusiastic, music-discovery tone
+- Keeps it under 150 words
+
+Summary:`;
+
+            const summaryResponse = await aiService.chat(
+              [{ role: 'user', content: summaryPrompt }],
+              {
+                provider: 'openai',
+                config: {
+                  temperature: 0.7,
+                  maxTokens: 200,
+                },
+                fallback: true,
+              }
+            );
+
+            if (summaryResponse?.content) {
+              summary = summaryResponse.content.trim();
+            }
+          } catch (error) {
+            // If summary generation fails, just continue without it
+            logger.error('Error generating track summary:', error);
+          }
+
+          return {
+            ...track,
+            fileUrl,
+            summary,
+          };
+        })
+      );
+
+      // Add featured tracks in "other" field for all track results
+      // Fetch featured tracks - try multiple playlists if needed to get enough tracks
+      try {
+        const { PlaylistService } = await import('@/lib/services');
+        const mainTrackIds = new Set(aggregated.tracks.map(t => t.id));
+        const featuredPlaylists = await PlaylistService.getFeaturedPlaylists(3);
+
+        if (featuredPlaylists && featuredPlaylists.length > 0) {
+          // Try to get tracks from multiple featured playlists if needed
+          const allFeaturedTracks: any[] = [];
+
+          for (const featuredPlaylist of featuredPlaylists) {
+            if (allFeaturedTracks.length >= 5) break;
+
+            try {
+              const playlist = await PlaylistService.getPlaylistById(
+                featuredPlaylist.id
+              );
+
+              if (playlist && playlist.tracks.length > 0) {
+                const uniqueTracks = playlist.tracks
+                  .map(pt => pt.track)
+                  .filter(t => t && !mainTrackIds.has(t.id))
+                  .filter(t => !allFeaturedTracks.some(ft => ft.id === t.id));
+
+                allFeaturedTracks.push(...uniqueTracks);
+              }
+            } catch (playlistError) {
+              // Continue to next playlist if this one fails
+              logger.error(
+                `Error fetching featured playlist ${featuredPlaylist.id}:`,
+                playlistError
+              );
+            }
+          }
+
+          if (allFeaturedTracks.length > 0) {
+            // Get first 5 tracks, ensuring fileUrl is constructed
+            const { constructFileUrl } = await import('@/lib/url-utils');
+            otherTracks = allFeaturedTracks.slice(0, 5).map(track => ({
+              id: track.id,
+              title: track.title,
+              artist:
+                track.artist ||
+                track.artistProfile?.artistName ||
+                'Unknown Artist',
+              genre: track.genre,
+              duration: track.duration,
+              playCount: track.playCount,
+              likeCount: track.likeCount,
+              coverImageUrl: track.coverImageUrl,
+              uniqueUrl: track.uniqueUrl,
+              filePath: track.filePath,
+              fileUrl:
+                track.fileUrl ||
+                (track.filePath ? constructFileUrl(track.filePath) : ''),
+              artistId: track.artistProfileId,
+              userId: track.userId,
+              createdAt: track.createdAt,
+              updatedAt: track.updatedAt,
+              albumArtwork: track.albumArtwork,
+            }));
+          }
+        }
+      } catch (error) {
+        // If featured tracks fetch fails, just continue without them
+        logger.error('Error fetching featured tracks:', error);
+      }
+
+      // Track AI search events for tracks in "other" field
+      if (otherTracks && otherTracks.length > 0) {
+        try {
+          const { processAISearchEvents } = await import('@/lib/stats-server');
+
+          // Deduplicate tracks within the same response (count once per track)
+          const uniqueTrackIds = new Set<string>();
+          const events: Array<{
+            eventType: 'ai_search';
+            trackId: string;
+            userId?: string;
+            sessionId: string;
+            conversationId?: string;
+            resultType: string;
+          }> = [];
+
+          const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+          for (const track of otherTracks) {
+            if (track.id && !uniqueTrackIds.has(track.id)) {
+              uniqueTrackIds.add(track.id);
+              events.push({
+                eventType: 'ai_search',
+                trackId: track.id,
+                userId: context?.userId,
+                sessionId: sessionId,
+                conversationId: context?.conversationId,
+                resultType: 'track_list',
+              });
+            }
+          }
+
+          // Process events directly on server (non-blocking)
+          if (events.length > 0) {
+            processAISearchEvents(events).catch(error => {
+              // Non-blocking: log error but continue
+              logger.error('Failed to track AI search events:', error);
+            });
+          }
+        } catch (error) {
+          // Non-blocking: log error but continue
+          logger.error('Failed to track AI search events:', error);
+        }
+      }
+
       return {
         type: 'track_list',
         message: '',
         timestamp: new Date(),
         data: {
-          tracks: aggregated.tracks,
+          tracks: tracksWithSummaries,
+          ...(otherTracks && otherTracks.length > 0 && { other: otherTracks }),
           metadata: {
             genre: aggregated.meta.genre,
             total: aggregated.tracks.length,

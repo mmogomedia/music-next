@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
     );
     const agentContext = {
       userId: context?.userId,
+      conversationId: conversationId,
       filters: built.filters ?? ({} as any),
     };
 

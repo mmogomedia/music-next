@@ -6,6 +6,7 @@ import SessionProvider from '@/components/providers/SessionProvider';
 import { MusicPlayerProvider } from '@/contexts/MusicPlayerContext';
 import ConditionalGlobalMusicPlayer from '@/components/music/ConditionalGlobalMusicPlayer';
 import BProgressProvider from '@/components/ui/BProgressProvider';
+import { ToastProvider } from '@/components/ui/Toast';
 
 export const metadata: Metadata = {
   title: 'Flemoji Music Streaming Platform',
@@ -26,10 +27,12 @@ export default function RootLayout({
         <BProgressProvider />
         <SessionProvider>
           <MusicPlayerProvider>
+            <ToastProvider>
             <HeroUIProviderWrapper>
               <main id='content'>{children}</main>
               <ConditionalGlobalMusicPlayer />
             </HeroUIProviderWrapper>
+            </ToastProvider>
           </MusicPlayerProvider>
         </SessionProvider>
       </body>

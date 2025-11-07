@@ -16,10 +16,12 @@ interface TopTenTracksProps {
 
 export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
   const [topTracks, setTopTracks] = useState<Track[]>([]);
+  const [allTopTracks, setAllTopTracks] = useState<Track[]>([]);
   const [topTenPlaylistId, setTopTenPlaylistId] = useState<
     string | undefined
   >();
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
   const { currentTrack, isPlaying, playTrack } = useMusicPlayer();
 
   useEffect(() => {
@@ -39,15 +41,18 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
       if (response.ok) {
         const data = await response.json();
         if (data.tracks) {
+          setAllTopTracks(data.tracks);
           setTopTracks(data.tracks.slice(0, 9));
           setTopTenPlaylistId(data.playlist?.id);
         } else {
           setTopTracks([]);
+          setAllTopTracks([]);
           setTopTenPlaylistId(undefined);
         }
       } else {
         console.error('Error fetching top ten tracks:', response.status);
         setTopTracks([]);
+        setAllTopTracks([]);
         setTopTenPlaylistId(undefined);
       }
     } catch (error) {
@@ -157,7 +162,7 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
 
         {/* Tracks Grid - 2 per row */}
         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-          {topTracks.map((track, index) => (
+          {(showAll ? allTopTracks : topTracks).map((track, index) => (
             <div
               key={track.id}
               className='group bg-white dark:bg-slate-800 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all duration-200 border border-gray-100 dark:border-slate-700'
@@ -238,12 +243,17 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
           ))}
         </div>
 
-        {/* View All Button */}
-        <div className='text-center mt-6'>
-          <button className='px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200'>
-            View All Top Tracks
-          </button>
-        </div>
+        {/* View All / Show Less Button */}
+        {allTopTracks.length > 9 && (
+          <div className='text-center mt-6'>
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className='px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200'
+            >
+              {showAll ? 'Show Less' : `View All Top Tracks (${allTopTracks.length})`}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

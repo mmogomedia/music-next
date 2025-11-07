@@ -10,7 +10,8 @@ import {
   Select,
   SelectItem,
   Switch,
-  Divider,
+  Tabs,
+  Tab,
 } from '@heroui/react';
 import {
   MusicalNoteIcon,
@@ -31,14 +32,21 @@ import {
 import ImageUpload from '@/components/ui/ImageUpload';
 import { constructFileUrl } from '@/lib/url-utils';
 import { uploadImageToR2 } from '@/lib/image-upload';
-import { GENRES } from '@/lib/genres';
+interface Genre {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  colorHex?: string;
+}
 
 interface TrackData {
   id?: string;
   title: string;
   artist?: string;
   album?: string;
-  genre?: string;
+  genre?: string; // Legacy field, kept for backward compatibility
+  genreId?: string; // New field linking to Genre model
   composer?: string;
   year?: number;
   releaseDate?: string;
@@ -89,6 +97,7 @@ export default function TrackEditForm({
     artist: '',
     album: '',
     genre: '',
+    genreId: undefined,
     composer: '',
     year: new Date().getFullYear(),
     releaseDate: '',
@@ -110,6 +119,30 @@ export default function TrackEditForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingArtwork, setIsUploadingArtwork] = useState(false);
+  const [genres, setGenres] = useState<Genre[]>([]);
+  const [loadingGenres, setLoadingGenres] = useState(true);
+
+  // Fetch genres from API
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        setLoadingGenres(true);
+        const response = await fetch('/api/genres');
+        if (response.ok) {
+          const data = await response.json();
+          setGenres(data.genres || []);
+        } else {
+          console.error('Failed to fetch genres');
+        }
+      } catch (error) {
+        console.error('Error fetching genres:', error);
+      } finally {
+        setLoadingGenres(false);
+      }
+    };
+
+    fetchGenres();
+  }, []);
 
   // Auto-generate unique URL when title changes
   useEffect(() => {
@@ -223,321 +256,349 @@ export default function TrackEditForm({
             </h3>
           </div>
 
-          {/* Basic Information */}
-          <div className='space-y-4'>
-            <h4 className='text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2'>
-              <DocumentTextIcon className='w-5 h-5' />
-              Basic Information
-            </h4>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <Input
-                label='Title *'
-                placeholder='Enter track title'
-                value={formData.title}
-                onValueChange={value => handleInputChange('title', value)}
-                isInvalid={!!errors.title}
-                errorMessage={errors.title}
-                isRequired
-              />
-
-              <Input
-                label='Artist'
-                placeholder='Artist name'
-                value={formData.artist || ''}
-                onValueChange={value => handleInputChange('artist', value)}
-              />
-
-              <Input
-                label='Album'
-                placeholder='Album name'
-                value={formData.album || ''}
-                onValueChange={value => handleInputChange('album', value)}
-              />
-
-              <Select
-                label='Genre'
-                placeholder='Select genre'
-                selectedKeys={formData.genre ? [formData.genre] : []}
-                onSelectionChange={keys => {
-                  const selected = Array.from(keys)[0] as string;
-                  handleInputChange('genre', selected || '');
-                }}
-              >
-                {GENRES.map(genre => (
-                  <SelectItem key={genre}>{genre}</SelectItem>
-                ))}
-              </Select>
-            </div>
-
-            <Textarea
-              label='Description'
-              placeholder='Describe your track...'
-              value={formData.description || ''}
-              onValueChange={value => handleInputChange('description', value)}
-              rows={3}
-            />
-          </div>
-
-          <Divider />
-
-          {/* Track Artwork */}
-          <div className='space-y-4'>
-            <h4 className='text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2'>
-              <PhotoIcon className='w-5 h-5' />
-              Track Artwork
-            </h4>
-            <p className='text-sm text-gray-500 dark:text-gray-400'>
-              Upload artwork for your track. Recommended size: 1000x1000px or
-              larger.
-            </p>
-
-            <ImageUpload
-              label='Album Artwork'
-              preview={
-                formData.albumArtwork
-                  ? constructFileUrl(formData.albumArtwork)
-                  : undefined
-              }
-              onImageChange={handleArtworkUpload}
-              onError={error =>
-                setErrors(prev => ({ ...prev, artwork: error }))
-              }
-              disabled={isUploadingArtwork || isSubmitting}
-              aspectRatio={1}
-              minWidth={500}
-              minHeight={500}
-              maxWidth={2000}
-              maxHeight={2000}
-              maxFileSize={5}
-              previewSize='lg'
-              showCropButton={true}
-              showRemoveButton={true}
-            />
-
-            {errors.artwork && (
-              <p className='text-sm text-red-600 dark:text-red-400'>
-                {errors.artwork}
-              </p>
-            )}
-          </div>
-
-          <Divider />
-
-          {/* Advanced Metadata */}
-          <div className='space-y-4'>
-            <h4 className='text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2'>
-              <CalendarIcon className='w-5 h-5' />
-              Advanced Metadata
-            </h4>
-
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-              <Input
-                label='Composer'
-                placeholder='Composer name'
-                value={formData.composer || ''}
-                onValueChange={value => handleInputChange('composer', value)}
-              />
-
-              <Input
-                type='number'
-                label='Year'
-                placeholder='2024'
-                value={formData.year?.toString() || ''}
-                onValueChange={value =>
-                  handleInputChange('year', value ? parseInt(value) : undefined)
-                }
-                isInvalid={!!errors.year}
-                errorMessage={errors.year}
-              />
-
-              <Input
-                type='date'
-                label='Release Date'
-                value={formData.releaseDate || ''}
-                onValueChange={value => handleInputChange('releaseDate', value)}
-              />
-
-              <Input
-                type='number'
-                label='BPM'
-                placeholder='120'
-                value={formData.bpm?.toString() || ''}
-                onValueChange={value =>
-                  handleInputChange('bpm', value ? parseInt(value) : undefined)
-                }
-                isInvalid={!!errors.bpm}
-                errorMessage={errors.bpm}
-              />
-
-              <Input
-                label='ISRC'
-                placeholder='USRC17607839'
-                value={formData.isrc || ''}
-                onValueChange={value => handleInputChange('isrc', value)}
-                isInvalid={!!errors.isrc}
-                errorMessage={errors.isrc}
-                description='International Standard Recording Code'
-              />
-            </div>
-
-            <Textarea
-              label='Lyrics'
-              placeholder='Enter song lyrics...'
-              value={formData.lyrics || ''}
-              onValueChange={value => handleInputChange('lyrics', value)}
-              rows={6}
-            />
-          </div>
-
-          <Divider />
-
-          {/* Privacy & Access Control */}
-          <div className='space-y-4'>
-            <h4 className='text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2'>
-              <ShieldCheckIcon className='w-5 h-5' />
-              Privacy & Access Control
-            </h4>
-
-            <div className='space-y-4'>
-              <div className='flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg'>
-                <div className='flex items-center gap-3'>
-                  {formData.isPublic ? (
-                    <EyeIcon className='w-5 h-5 text-green-600' />
-                  ) : (
-                    <EyeSlashIcon className='w-5 h-5 text-gray-400' />
-                  )}
-                  <div>
-                    <p className='font-medium text-gray-900 dark:text-white'>
-                      Public Track
-                    </p>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      {formData.isPublic
-                        ? 'Visible to everyone'
-                        : 'Only visible to you'}
-                    </p>
-                  </div>
+          {/* Tabs */}
+          <Tabs aria-label='Track edit tabs' className='w-full'>
+            {/* Basic Information Tab */}
+            <Tab
+              key='basic'
+              title={
+                <div className='flex items-center gap-2'>
+                  <DocumentTextIcon className='w-4 h-4' />
+                  <span>Basic Info</span>
                 </div>
-                <Switch
-                  isSelected={formData.isPublic}
-                  onValueChange={value => handleInputChange('isPublic', value)}
+              }
+            >
+              <div className='space-y-4 pt-4'>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <Input
+                    label='Title *'
+                    placeholder='Enter track title'
+                    value={formData.title}
+                    onValueChange={value => handleInputChange('title', value)}
+                    isInvalid={!!errors.title}
+                    errorMessage={errors.title}
+                    isRequired
+                  />
+
+                  <Input
+                    label='Artist'
+                    placeholder='Artist name'
+                    value={formData.artist || ''}
+                    onValueChange={value => handleInputChange('artist', value)}
+                  />
+
+                  <Input
+                    label='Album'
+                    placeholder='Album name'
+                    value={formData.album || ''}
+                    onValueChange={value => handleInputChange('album', value)}
+                  />
+
+                  <Select
+                    label='Genre'
+                    placeholder={loadingGenres ? 'Loading genres...' : 'Select genre'}
+                    selectedKeys={formData.genreId ? [formData.genreId] : []}
+                    onSelectionChange={keys => {
+                      const selectedId = Array.from(keys)[0] as string;
+                      const selectedGenre = genres.find(g => g.id === selectedId);
+                      handleInputChange('genreId', selectedId || undefined);
+                      // Also update genre string for backward compatibility
+                      handleInputChange('genre', selectedGenre?.name || '');
+                    }}
+                    isLoading={loadingGenres}
+                    disabled={loadingGenres}
+                  >
+                    {genres.map(genre => (
+                      <SelectItem key={genre.id}>
+                        {genre.name}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                </div>
+
+                <Textarea
+                  label='Description'
+                  placeholder='Describe your track...'
+                  value={formData.description || ''}
+                  onValueChange={value => handleInputChange('description', value)}
+                  rows={3}
                 />
               </div>
+            </Tab>
 
-              <div className='flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg'>
-                <div className='flex items-center gap-3'>
-                  <ArrowDownTrayIcon className='w-5 h-5 text-blue-600' />
-                  <div>
-                    <p className='font-medium text-gray-900 dark:text-white'>
-                      Allow Downloads
-                    </p>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      {formData.isDownloadable
-                        ? 'Users can download this track'
-                        : 'Download disabled'}
-                    </p>
-                  </div>
+            {/* Artwork Tab */}
+            <Tab
+              key='artwork'
+              title={
+                <div className='flex items-center gap-2'>
+                  <PhotoIcon className='w-4 h-4' />
+                  <span>Artwork</span>
                 </div>
-                <Switch
-                  isSelected={formData.isDownloadable}
-                  onValueChange={value =>
-                    handleInputChange('isDownloadable', value)
+              }
+            >
+              <div className='space-y-4 pt-4'>
+                <p className='text-sm text-gray-500 dark:text-gray-400'>
+                  Upload artwork for your track. Recommended size: 1000x1000px or
+                  larger.
+                </p>
+
+                <ImageUpload
+                  label='Album Artwork'
+                  preview={
+                    formData.albumArtwork
+                      ? constructFileUrl(formData.albumArtwork)
+                      : undefined
                   }
-                  isDisabled={!formData.isPublic}
+                  onImageChange={handleArtworkUpload}
+                  onError={error =>
+                    setErrors(prev => ({ ...prev, artwork: error }))
+                  }
+                  disabled={isUploadingArtwork || isSubmitting}
+                  aspectRatio={1}
+                  minWidth={500}
+                  minHeight={500}
+                  maxWidth={2000}
+                  maxHeight={2000}
+                  maxFileSize={5}
+                  previewSize='lg'
+                  showCropButton={true}
+                  showRemoveButton={true}
+                />
+
+                {errors.artwork && (
+                  <p className='text-sm text-red-600 dark:text-red-400'>
+                    {errors.artwork}
+                  </p>
+                )}
+              </div>
+            </Tab>
+
+            {/* Metadata Tab */}
+            <Tab
+              key='metadata'
+              title={
+                <div className='flex items-center gap-2'>
+                  <CalendarIcon className='w-4 h-4' />
+                  <span>Metadata</span>
+                </div>
+              }
+            >
+              <div className='space-y-4 pt-4'>
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+                  <Input
+                    label='Composer'
+                    placeholder='Composer name'
+                    value={formData.composer || ''}
+                    onValueChange={value => handleInputChange('composer', value)}
+                  />
+
+                  <Input
+                    type='number'
+                    label='Year'
+                    placeholder='2024'
+                    value={formData.year?.toString() || ''}
+                    onValueChange={value =>
+                      handleInputChange('year', value ? parseInt(value) : undefined)
+                    }
+                    isInvalid={!!errors.year}
+                    errorMessage={errors.year}
+                  />
+
+                  <Input
+                    type='date'
+                    label='Release Date'
+                    value={formData.releaseDate || ''}
+                    onValueChange={value => handleInputChange('releaseDate', value)}
+                  />
+
+                  <Input
+                    type='number'
+                    label='BPM'
+                    placeholder='120'
+                    value={formData.bpm?.toString() || ''}
+                    onValueChange={value =>
+                      handleInputChange('bpm', value ? parseInt(value) : undefined)
+                    }
+                    isInvalid={!!errors.bpm}
+                    errorMessage={errors.bpm}
+                  />
+
+                  <Input
+                    label='ISRC'
+                    placeholder='USRC17607839'
+                    value={formData.isrc || ''}
+                    onValueChange={value => handleInputChange('isrc', value)}
+                    isInvalid={!!errors.isrc}
+                    errorMessage={errors.isrc}
+                    description='International Standard Recording Code'
+                  />
+                </div>
+
+                <Textarea
+                  label='Lyrics'
+                  placeholder='Enter song lyrics...'
+                  value={formData.lyrics || ''}
+                  onValueChange={value => handleInputChange('lyrics', value)}
+                  rows={6}
                 />
               </div>
+            </Tab>
 
-              <div className='flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg'>
-                <div className='flex items-center gap-3'>
-                  <ExclamationTriangleIcon className='w-5 h-5 text-orange-600' />
-                  <div>
-                    <p className='font-medium text-gray-900 dark:text-white'>
-                      Explicit Content
-                    </p>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      Mark if this track contains explicit content
-                    </p>
-                  </div>
+            {/* Privacy Tab */}
+            <Tab
+              key='privacy'
+              title={
+                <div className='flex items-center gap-2'>
+                  <ShieldCheckIcon className='w-4 h-4' />
+                  <span>Privacy</span>
                 </div>
-                <Switch
-                  isSelected={formData.isExplicit}
+              }
+            >
+              <div className='space-y-4 pt-4'>
+                <div className='flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg'>
+                  <div className='flex items-center gap-3'>
+                    {formData.isPublic ? (
+                      <EyeIcon className='w-5 h-5 text-green-600' />
+                    ) : (
+                      <EyeSlashIcon className='w-5 h-5 text-gray-400' />
+                    )}
+                    <div>
+                      <p className='font-medium text-gray-900 dark:text-white'>
+                        Public Track
+                      </p>
+                      <p className='text-sm text-gray-500 dark:text-gray-400'>
+                        {formData.isPublic
+                          ? 'Visible to everyone'
+                          : 'Only visible to you'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    isSelected={formData.isPublic}
+                    onValueChange={value => handleInputChange('isPublic', value)}
+                  />
+                </div>
+
+                <div className='flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg'>
+                  <div className='flex items-center gap-3'>
+                    <ArrowDownTrayIcon className='w-5 h-5 text-blue-600' />
+                    <div>
+                      <p className='font-medium text-gray-900 dark:text-white'>
+                        Allow Downloads
+                      </p>
+                      <p className='text-sm text-gray-500 dark:text-gray-400'>
+                        {formData.isDownloadable
+                          ? 'Users can download this track'
+                          : 'Download disabled'}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    isSelected={formData.isDownloadable}
+                    onValueChange={value =>
+                      handleInputChange('isDownloadable', value)
+                    }
+                    isDisabled={!formData.isPublic}
+                  />
+                </div>
+
+                <div className='flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg'>
+                  <div className='flex items-center gap-3'>
+                    <ExclamationTriangleIcon className='w-5 h-5 text-orange-600' />
+                    <div>
+                      <p className='font-medium text-gray-900 dark:text-white'>
+                        Explicit Content
+                      </p>
+                      <p className='text-sm text-gray-500 dark:text-gray-400'>
+                        Mark if this track contains explicit content
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    isSelected={formData.isExplicit}
+                    onValueChange={value =>
+                      handleInputChange('isExplicit', value)
+                    }
+                  />
+                </div>
+              </div>
+            </Tab>
+
+            {/* Copyright Tab */}
+            <Tab
+              key='copyright'
+              title={
+                <div className='flex items-center gap-2'>
+                  <DocumentTextIcon className='w-4 h-4' />
+                  <span>Copyright</span>
+                </div>
+              }
+            >
+              <div className='space-y-4 pt-4'>
+                <Select
+                  label='License Type'
+                  placeholder='Select license type'
+                  selectedKeys={
+                    formData.licenseType ? [formData.licenseType] : []
+                  }
+                  onSelectionChange={keys => {
+                    const selected = Array.from(keys)[0] as string;
+                    handleInputChange('licenseType', selected || '');
+                  }}
+                >
+                  {LICENSE_TYPES.map(license => (
+                    <SelectItem key={license}>{license}</SelectItem>
+                  ))}
+                </Select>
+
+                <Textarea
+                  label='Copyright Information'
+                  placeholder='© 2024 Artist Name. All rights reserved.'
+                  value={formData.copyrightInfo || ''}
                   onValueChange={value =>
-                    handleInputChange('isExplicit', value)
+                    handleInputChange('copyrightInfo', value)
+                  }
+                  rows={2}
+                />
+
+                <Textarea
+                  label='Distribution Rights'
+                  placeholder='Describe distribution rights and restrictions...'
+                  value={formData.distributionRights || ''}
+                  onValueChange={value =>
+                    handleInputChange('distributionRights', value)
+                  }
+                  rows={3}
+                />
+              </div>
+            </Tab>
+
+            {/* Protection Tab */}
+            <Tab
+              key='protection'
+              title={
+                <div className='flex items-center gap-2'>
+                  <ShieldCheckIcon className='w-4 h-4' />
+                  <span>Protection</span>
+                </div>
+              }
+            >
+              <div className='space-y-4 pt-4'>
+                <p className='text-sm text-gray-500 dark:text-gray-400'>
+                  Configure advanced file protection and access controls
+                </p>
+
+                <TrackProtectionSettings
+                  settings={
+                    formData.protectionSettings || DEFAULT_PROTECTION_SETTINGS
+                  }
+                  onSettingsChange={settings =>
+                    handleInputChange('protectionSettings', settings)
                   }
                 />
               </div>
-            </div>
-          </div>
-
-          <Divider />
-
-          {/* Copyright & Protection */}
-          <div className='space-y-4'>
-            <h4 className='text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2'>
-              <DocumentTextIcon className='w-5 h-5' />
-              Copyright & Protection
-            </h4>
-
-            <div className='space-y-4'>
-              <Select
-                label='License Type'
-                placeholder='Select license type'
-                selectedKeys={
-                  formData.licenseType ? [formData.licenseType] : []
-                }
-                onSelectionChange={keys => {
-                  const selected = Array.from(keys)[0] as string;
-                  handleInputChange('licenseType', selected || '');
-                }}
-              >
-                {LICENSE_TYPES.map(license => (
-                  <SelectItem key={license}>{license}</SelectItem>
-                ))}
-              </Select>
-
-              <Textarea
-                label='Copyright Information'
-                placeholder='© 2024 Artist Name. All rights reserved.'
-                value={formData.copyrightInfo || ''}
-                onValueChange={value =>
-                  handleInputChange('copyrightInfo', value)
-                }
-                rows={2}
-              />
-
-              <Textarea
-                label='Distribution Rights'
-                placeholder='Describe distribution rights and restrictions...'
-                value={formData.distributionRights || ''}
-                onValueChange={value =>
-                  handleInputChange('distributionRights', value)
-                }
-                rows={3}
-              />
-            </div>
-          </div>
-
-          <Divider />
-
-          {/* Advanced Protection Settings */}
-          <div className='space-y-4'>
-            <h4 className='text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2'>
-              <ShieldCheckIcon className='w-5 h-5' />
-              Advanced Protection Settings
-            </h4>
-            <p className='text-sm text-gray-500 dark:text-gray-400'>
-              Configure advanced file protection and access controls
-            </p>
-
-            <TrackProtectionSettings
-              settings={
-                formData.protectionSettings || DEFAULT_PROTECTION_SETTINGS
-              }
-              onSettingsChange={settings =>
-                handleInputChange('protectionSettings', settings)
-              }
-            />
-          </div>
+            </Tab>
+          </Tabs>
 
           {/* Error Message */}
           {errors.submit && (

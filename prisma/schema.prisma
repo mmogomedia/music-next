@@ -49,11 +49,11 @@ model User {
   accounts            Account[]
   sessions            Session[]
   artistProfile       ArtistProfile?
-  playEvents          PlayEvent[]           @relation("UserPlays")
-  likeEvents          LikeEvent[]           @relation("UserLikes")
-  saveEvents          SaveEvent[]           @relation("UserSaves")
-  shareEvents         ShareEvent[]          @relation("UserShares")
-  downloadEvents      DownloadEvent[]       @relation("UserDownloads")
+  playEvents          PlayEvent[]          @relation("UserPlays")
+  likeEvents          LikeEvent[]          @relation("UserLikes")
+  saveEvents          SaveEvent[]          @relation("UserSaves")
+  shareEvents         ShareEvent[]         @relation("UserShares")
+  downloadEvents      DownloadEvent[]      @relation("UserDownloads")
   playlistSubmissions PlaylistSubmission[] @relation("PlaylistSubmissions")
   reviewedSubmissions PlaylistSubmission[] @relation("PlaylistSubmissionReviewedBy")
   addedPlaylistTracks PlaylistTrack[]      @relation("PlaylistTrackAddedBy")
@@ -63,6 +63,7 @@ model User {
   uploadJobs          UploadJob[]
   aiConversations     AIConversation[]
   aiPreferences       AIPreferences?
+  aiSearchEvents      AISearchEvent[]      @relation("AISearchEvents")
 
   @@map("users")
 }
@@ -76,32 +77,32 @@ model VerificationToken {
 }
 
 model ArtistProfile {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  artistName     String   @unique
+  id             String                @id @default(cuid())
+  userId         String                @unique
+  artistName     String                @unique
   bio            String?
   profileImage   String?
   coverImage     String?
   location       String?
   website        String?
   genre          String?
-  slug           String?  @unique
+  slug           String?               @unique
   socialLinks    Json?
   streamingLinks Json?
-  isPublic       Boolean  @default(true)
-  isVerified     Boolean  @default(false)
-  isActive       Boolean  @default(true)
-  totalPlays     Int      @default(0)
-  totalLikes     Int      @default(0)
-  totalFollowers Int      @default(0)
-  profileViews   Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isPublic       Boolean               @default(true)
+  isVerified     Boolean               @default(false)
+  isActive       Boolean               @default(true)
+  totalPlays     Int                   @default(0)
+  totalLikes     Int                   @default(0)
+  totalFollowers Int                   @default(0)
+  profileViews   Int                   @default(0)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   tracks         Track[]
   strengthScores ArtistStrengthScore[] @relation("ArtistStrengthScores")
-  metrics        ArtistMetrics[] @relation("ArtistMetrics")
-  trends         ArtistTrends[] @relation("ArtistTrends")
+  metrics        ArtistMetrics[]       @relation("ArtistMetrics")
+  trends         ArtistTrends[]        @relation("ArtistTrends")
 
   @@map("artist_profiles")
 }
@@ -111,10 +112,12 @@ model Track {
   title               String
   coverImageUrl       String?
   genre               String?
+  genreId             String?
   album               String?
   description         String?
   duration            Int?
   playCount           Int                  @default(0)
+  aiSearchCount       Int                  @default(0)
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   filePath            String
@@ -143,43 +146,45 @@ model Track {
   userId              String
   watermarkId         String?
   year                Int?
-  playEvents          PlayEvent[]           @relation("TrackPlays")
-  likeEvents          LikeEvent[]           @relation("TrackLikes")
-  saveEvents          SaveEvent[]           @relation("TrackSaves")
-  shareEvents         ShareEvent[]          @relation("TrackShares")
-  downloadEvents      DownloadEvent[]       @relation("TrackDownloads")
-  dailyStats          DailyStats[]          @relation("TrackDailyStats")
-  weeklyStats         WeeklyStats[]         @relation("TrackWeeklyStats")
-  monthlyStats        MonthlyStats[]        @relation("TrackMonthlyStats")
-  yearlyStats         YearlyStats[]         @relation("TrackYearlyStats")
+  playEvents          PlayEvent[]          @relation("TrackPlays")
+  likeEvents          LikeEvent[]          @relation("TrackLikes")
+  saveEvents          SaveEvent[]          @relation("TrackSaves")
+  shareEvents         ShareEvent[]         @relation("TrackShares")
+  downloadEvents      DownloadEvent[]      @relation("TrackDownloads")
+  aiSearchEvents      AISearchEvent[]      @relation("TrackAISearches")
+  dailyStats          DailyStats[]         @relation("TrackDailyStats")
+  weeklyStats         WeeklyStats[]        @relation("TrackWeeklyStats")
+  monthlyStats        MonthlyStats[]       @relation("TrackMonthlyStats")
+  yearlyStats         YearlyStats[]        @relation("TrackYearlyStats")
   playlistSubmissions PlaylistSubmission[]
   playlistTracks      PlaylistTrack[]
   smartLinks          SmartLink[]
   artistProfile       ArtistProfile        @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
   user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  genreRef            Genre?               @relation(fields: [genreId], references: [id], onDelete: SetNull)
 
   @@map("tracks")
 }
 
 model PlayEvent {
-  id             String    @id @default(cuid())
+  id             String   @id @default(cuid())
   trackId        String
   userId         String?
   sessionId      String
   timestamp      DateTime
-  source         String    // 'landing' | 'playlist' | 'search' | 'direct' | 'share'
+  source         String // 'landing' | 'playlist' | 'search' | 'direct' | 'share'
   playlistId     String?
   userAgent      String
   ip             String?
-  duration       Int?      // How long they actually played (seconds)
-  completionRate Int?      // 0-100%
-  skipped        Boolean   @default(false)
-  replayed       Boolean   @default(false)
-  createdAt      DateTime  @default(now())
+  duration       Int? // How long they actually played (seconds)
+  completionRate Int? // 0-100%
+  skipped        Boolean  @default(false)
+  replayed       Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
   // Relations
-  track          Track     @relation("TrackPlays", fields: [trackId], references: [id], onDelete: Cascade)
-  user           User?     @relation("UserPlays", fields: [userId], references: [id], onDelete: SetNull)
+  track Track @relation("TrackPlays", fields: [trackId], references: [id], onDelete: Cascade)
+  user  User? @relation("UserPlays", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([trackId])
   @@index([timestamp])
@@ -248,34 +253,34 @@ model PlaylistTypeDefinition {
   updatedAt        DateTime @updatedAt
 
   // Relations
-  playlists        Playlist[]
+  playlists Playlist[]
 
   @@map("playlist_types")
 }
 
 model Playlist {
-  id                      String               @id @default(cuid())
+  id                      String           @id @default(cuid())
   name                    String
   description             String?
   playlistTypeId          String
   coverImage              String
   maxTracks               Int
-  currentTracks           Int                  @default(0)
-  status                  PlaylistStatus       @default(INACTIVE)
-  submissionStatus        SubmissionStatus     @default(CLOSED)
-  maxSubmissionsPerArtist Int                  @default(1)
+  currentTracks           Int              @default(0)
+  status                  PlaylistStatus   @default(INACTIVE)
+  submissionStatus        SubmissionStatus @default(CLOSED)
+  maxSubmissionsPerArtist Int              @default(1)
   province                String?
   createdBy               String
-  createdAt               DateTime             @default(now())
-  updatedAt               DateTime             @updatedAt
-  order                   Int                  @default(0)
-  
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
+  order                   Int              @default(0)
+
   // Relations
-  playlistType            PlaylistTypeDefinition @relation(fields: [playlistTypeId], references: [id])
-  analytics               PlaylistAnalytics[]
-  submissions             PlaylistSubmission[]
-  tracks                  PlaylistTrack[]
-  createdByUser           User                 @relation("PlaylistCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
+  playlistType  PlaylistTypeDefinition @relation(fields: [playlistTypeId], references: [id])
+  analytics     PlaylistAnalytics[]
+  submissions   PlaylistSubmission[]
+  tracks        PlaylistTrack[]
+  createdByUser User                   @relation("PlaylistCreatedBy", fields: [createdBy], references: [id], onDelete: Cascade)
 
   @@map("playlists")
 }
@@ -375,6 +380,30 @@ enum TrackSubmissionStatus {
   SHORTLISTED
 }
 
+/// Genre taxonomy for tracks
+model Genre {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  colorHex    String?
+  icon        String?
+  aliases     String[]
+  parentId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  parent     Genre?   @relation("SubGenres", fields: [parentId], references: [id], onDelete: SetNull)
+  subGenres  Genre[]  @relation("SubGenres")
+  tracks     Track[]
+
+  @@index([isActive, order])
+  @@map("genres")
+}
+
 // ===== STATS & ANALYTICS MODELS =====
 
 model LikeEvent {
@@ -384,12 +413,12 @@ model LikeEvent {
   sessionId String
   timestamp DateTime
   source    String
-  action    String   // 'like' | 'unlike'
+  action    String // 'like' | 'unlike'
   createdAt DateTime @default(now())
 
   // Relations
-  track     Track    @relation("TrackLikes", fields: [trackId], references: [id], onDelete: Cascade)
-  user      User?    @relation("UserLikes", fields: [userId], references: [id], onDelete: SetNull)
+  track Track @relation("TrackLikes", fields: [trackId], references: [id], onDelete: Cascade)
+  user  User? @relation("UserLikes", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([trackId])
   @@index([timestamp])
@@ -404,12 +433,12 @@ model SaveEvent {
   sessionId  String
   timestamp  DateTime
   playlistId String
-  action     String   // 'save' | 'unsave'
+  action     String // 'save' | 'unsave'
   createdAt  DateTime @default(now())
 
   // Relations
-  track      Track    @relation("TrackSaves", fields: [trackId], references: [id], onDelete: Cascade)
-  user       User?    @relation("UserSaves", fields: [userId], references: [id], onDelete: SetNull)
+  track Track @relation("TrackSaves", fields: [trackId], references: [id], onDelete: Cascade)
+  user  User? @relation("UserSaves", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([trackId])
   @@index([timestamp])
@@ -423,13 +452,13 @@ model ShareEvent {
   userId    String?
   sessionId String
   timestamp DateTime
-  platform  String   // 'twitter' | 'facebook' | 'instagram' | 'whatsapp' | 'copy_link' | 'embed'
+  platform  String // 'twitter' | 'facebook' | 'instagram' | 'whatsapp' | 'copy_link' | 'embed'
   source    String
   createdAt DateTime @default(now())
 
   // Relations
-  track     Track    @relation("TrackShares", fields: [trackId], references: [id], onDelete: Cascade)
-  user      User?    @relation("UserShares", fields: [userId], references: [id], onDelete: SetNull)
+  track Track @relation("TrackShares", fields: [trackId], references: [id], onDelete: Cascade)
+  user  User? @relation("UserShares", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([trackId])
   @@index([timestamp])
@@ -449,8 +478,8 @@ model DownloadEvent {
   createdAt DateTime @default(now())
 
   // Relations
-  track     Track    @relation("TrackDownloads", fields: [trackId], references: [id], onDelete: Cascade)
-  user      User?    @relation("UserDownloads", fields: [userId], references: [id], onDelete: SetNull)
+  track Track @relation("TrackDownloads", fields: [trackId], references: [id], onDelete: Cascade)
+  user  User? @relation("UserDownloads", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([trackId])
   @@index([timestamp])
@@ -461,23 +490,24 @@ model DownloadEvent {
 // ===== AGGREGATED STATS TABLES =====
 
 model DailyStats {
-  id                 String   @id @default(cuid())
-  trackId            String
-  date               DateTime @db.Date
-  totalPlays         Int      @default(0)
-  uniquePlays        Int      @default(0)
-  totalLikes         Int      @default(0)
-  totalShares        Int      @default(0)
-  totalDownloads     Int      @default(0)
-  totalSaves         Int      @default(0)
-  avgDuration        Float    @default(0)
-  avgCompletionRate  Float    @default(0)
-  skipRate           Float    @default(0)
-  replayRate         Float    @default(0)
-  createdAt          DateTime @default(now())
+  id                String   @id @default(cuid())
+  trackId           String
+  date              DateTime @db.Date
+  totalPlays        Int      @default(0)
+  uniquePlays       Int      @default(0)
+  totalLikes        Int      @default(0)
+  totalShares       Int      @default(0)
+  totalDownloads    Int      @default(0)
+  totalSaves        Int      @default(0)
+  totalAISearches   Int      @default(0)
+  avgDuration       Float    @default(0)
+  avgCompletionRate Float    @default(0)
+  skipRate          Float    @default(0)
+  replayRate        Float    @default(0)
+  createdAt         DateTime @default(now())
 
   // Relations
-  track              Track    @relation("TrackDailyStats", fields: [trackId], references: [id], onDelete: Cascade)
+  track Track @relation("TrackDailyStats", fields: [trackId], references: [id], onDelete: Cascade)
 
   @@unique([trackId, date], name: "trackId_date")
   @@index([date])
@@ -486,23 +516,24 @@ model DailyStats {
 }
 
 model WeeklyStats {
-  id                 String   @id @default(cuid())
-  trackId            String
-  weekStart          DateTime @db.Date
-  totalPlays         Int      @default(0)
-  uniquePlays        Int      @default(0)
-  totalLikes         Int      @default(0)
-  totalShares        Int      @default(0)
-  totalDownloads     Int      @default(0)
-  totalSaves         Int      @default(0)
-  avgDuration        Float    @default(0)
-  avgCompletionRate  Float    @default(0)
-  skipRate           Float    @default(0)
-  replayRate         Float    @default(0)
-  createdAt          DateTime @default(now())
+  id                String   @id @default(cuid())
+  trackId           String
+  weekStart         DateTime @db.Date
+  totalPlays        Int      @default(0)
+  uniquePlays       Int      @default(0)
+  totalLikes        Int      @default(0)
+  totalShares       Int      @default(0)
+  totalDownloads    Int      @default(0)
+  totalSaves        Int      @default(0)
+  totalAISearches   Int      @default(0)
+  avgDuration       Float    @default(0)
+  avgCompletionRate Float    @default(0)
+  skipRate          Float    @default(0)
+  replayRate        Float    @default(0)
+  createdAt         DateTime @default(now())
 
   // Relations
-  track              Track    @relation("TrackWeeklyStats", fields: [trackId], references: [id], onDelete: Cascade)
+  track Track @relation("TrackWeeklyStats", fields: [trackId], references: [id], onDelete: Cascade)
 
   @@unique([trackId, weekStart], name: "trackId_weekStart")
   @@index([weekStart])
@@ -511,23 +542,24 @@ model WeeklyStats {
 }
 
 model MonthlyStats {
-  id                 String   @id @default(cuid())
-  trackId            String
-  monthStart         DateTime @db.Date
-  totalPlays         Int      @default(0)
-  uniquePlays        Int      @default(0)
-  totalLikes         Int      @default(0)
-  totalShares        Int      @default(0)
-  totalDownloads     Int      @default(0)
-  totalSaves         Int      @default(0)
-  avgDuration        Float    @default(0)
-  avgCompletionRate  Float    @default(0)
-  skipRate           Float    @default(0)
-  replayRate         Float    @default(0)
-  createdAt          DateTime @default(now())
+  id                String   @id @default(cuid())
+  trackId           String
+  monthStart        DateTime @db.Date
+  totalPlays        Int      @default(0)
+  uniquePlays       Int      @default(0)
+  totalLikes        Int      @default(0)
+  totalShares       Int      @default(0)
+  totalDownloads    Int      @default(0)
+  totalSaves        Int      @default(0)
+  totalAISearches   Int      @default(0)
+  avgDuration       Float    @default(0)
+  avgCompletionRate Float    @default(0)
+  skipRate          Float    @default(0)
+  replayRate        Float    @default(0)
+  createdAt         DateTime @default(now())
 
   // Relations
-  track              Track    @relation("TrackMonthlyStats", fields: [trackId], references: [id], onDelete: Cascade)
+  track Track @relation("TrackMonthlyStats", fields: [trackId], references: [id], onDelete: Cascade)
 
   @@unique([trackId, monthStart], name: "trackId_monthStart")
   @@index([monthStart])
@@ -536,23 +568,24 @@ model MonthlyStats {
 }
 
 model YearlyStats {
-  id                 String   @id @default(cuid())
-  trackId            String
-  year               Int
-  totalPlays         Int      @default(0)
-  uniquePlays        Int      @default(0)
-  totalLikes         Int      @default(0)
-  totalShares        Int      @default(0)
-  totalDownloads     Int      @default(0)
-  totalSaves         Int      @default(0)
-  avgDuration        Float    @default(0)
-  avgCompletionRate  Float    @default(0)
-  skipRate           Float    @default(0)
-  replayRate         Float    @default(0)
-  createdAt          DateTime @default(now())
+  id                String   @id @default(cuid())
+  trackId           String
+  year              Int
+  totalPlays        Int      @default(0)
+  uniquePlays       Int      @default(0)
+  totalLikes        Int      @default(0)
+  totalShares       Int      @default(0)
+  totalDownloads    Int      @default(0)
+  totalSaves        Int      @default(0)
+  totalAISearches   Int      @default(0)
+  avgDuration       Float    @default(0)
+  avgCompletionRate Float    @default(0)
+  skipRate          Float    @default(0)
+  replayRate        Float    @default(0)
+  createdAt         DateTime @default(now())
 
   // Relations
-  track              Track    @relation("TrackYearlyStats", fields: [trackId], references: [id], onDelete: Cascade)
+  track Track @relation("TrackYearlyStats", fields: [trackId], references: [id], onDelete: Cascade)
 
   @@unique([trackId, year], name: "trackId_year")
   @@index([year])
@@ -563,19 +596,19 @@ model YearlyStats {
 // ===== ARTIST STRENGTH SCORING TABLES =====
 
 model ArtistStrengthScore {
-  id                 String   @id @default(cuid())
-  artistId           String
-  timeRange          String   // '24h', '7d', '30d', '3m', '1y', 'all'
-  engagementScore    Float    @default(0)
-  growthScore        Float    @default(0)
-  qualityScore       Float    @default(0)
-  potentialScore     Float    @default(0)
-  overallScore       Float    @default(0)
-  calculatedAt       DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id              String   @id @default(cuid())
+  artistId        String
+  timeRange       String // '24h', '7d', '30d', '3m', '1y', 'all'
+  engagementScore Float    @default(0)
+  growthScore     Float    @default(0)
+  qualityScore    Float    @default(0)
+  potentialScore  Float    @default(0)
+  overallScore    Float    @default(0)
+  calculatedAt    DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
-  artist             ArtistProfile @relation("ArtistStrengthScores", fields: [artistId], references: [id], onDelete: Cascade)
+  artist ArtistProfile @relation("ArtistStrengthScores", fields: [artistId], references: [id], onDelete: Cascade)
 
   @@unique([artistId, timeRange])
   @@index([timeRange])
@@ -585,28 +618,28 @@ model ArtistStrengthScore {
 }
 
 model ArtistMetrics {
-  id                    String   @id @default(cuid())
-  artistId              String
-  timeRange             String
-  totalPlays            Int      @default(0)
-  uniquePlays           Int      @default(0)
-  totalLikes            Int      @default(0)
-  totalShares           Int      @default(0)
-  totalDownloads        Int      @default(0)
-  totalSaves            Int      @default(0)
-  avgCompletionRate     Float    @default(0)
-  avgDuration           Float    @default(0)
-  skipRate              Float    @default(0)
-  replayRate            Float    @default(0)
-  growthVelocity        Float    @default(0)
-  viralCoefficient      Float    @default(0)
-  geographicReach       Int      @default(0)
-  crossPlatformScore    Float    @default(0)
-  retentionRate         Float    @default(0)
-  calculatedAt          DateTime @default(now())
+  id                 String   @id @default(cuid())
+  artistId           String
+  timeRange          String
+  totalPlays         Int      @default(0)
+  uniquePlays        Int      @default(0)
+  totalLikes         Int      @default(0)
+  totalShares        Int      @default(0)
+  totalDownloads     Int      @default(0)
+  totalSaves         Int      @default(0)
+  avgCompletionRate  Float    @default(0)
+  avgDuration        Float    @default(0)
+  skipRate           Float    @default(0)
+  replayRate         Float    @default(0)
+  growthVelocity     Float    @default(0)
+  viralCoefficient   Float    @default(0)
+  geographicReach    Int      @default(0)
+  crossPlatformScore Float    @default(0)
+  retentionRate      Float    @default(0)
+  calculatedAt       DateTime @default(now())
 
   // Relations
-  artist                ArtistProfile @relation("ArtistMetrics", fields: [artistId], references: [id], onDelete: Cascade)
+  artist ArtistProfile @relation("ArtistMetrics", fields: [artistId], references: [id], onDelete: Cascade)
 
   @@unique([artistId, timeRange])
   @@index([timeRange])
@@ -615,19 +648,19 @@ model ArtistMetrics {
 }
 
 model ArtistTrends {
-  id                    String   @id @default(cuid())
-  artistId              String
-  timeRange             String
-  playTrend             Float    @default(0) // % change from previous period
-  engagementTrend       Float    @default(0)
-  growthTrend           Float    @default(0)
-  qualityTrend          Float    @default(0)
-  viralTrend            Float    @default(0)
-  geographicTrend       Float    @default(0)
-  calculatedAt          DateTime @default(now())
+  id              String   @id @default(cuid())
+  artistId        String
+  timeRange       String
+  playTrend       Float    @default(0) // % change from previous period
+  engagementTrend Float    @default(0)
+  growthTrend     Float    @default(0)
+  qualityTrend    Float    @default(0)
+  viralTrend      Float    @default(0)
+  geographicTrend Float    @default(0)
+  calculatedAt    DateTime @default(now())
 
   // Relations
-  artist                ArtistProfile @relation("ArtistTrends", fields: [artistId], references: [id], onDelete: Cascade)
+  artist ArtistProfile @relation("ArtistTrends", fields: [artistId], references: [id], onDelete: Cascade)
 
   @@unique([artistId, timeRange])
   @@index([timeRange])
@@ -639,13 +672,14 @@ model ArtistTrends {
 model AIConversation {
   id        String   @id @default(cuid())
   userId    String
-  title     String?  // User-friendly conversation title
+  title     String? // User-friendly conversation title
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  user   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages AIConversationMessage[]
+  user           User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages       AIConversationMessage[]
+  aiSearchEvents AISearchEvent[]         @relation("AISearchEvents")
 
   @@index([userId])
   @@index([updatedAt])
@@ -653,12 +687,12 @@ model AIConversation {
 }
 
 model AIConversationMessage {
-  id             String          @id @default(cuid())
+  id             String   @id @default(cuid())
   conversationId String
   role           String // 'user' | 'assistant'
   content        String
   data           Json? // Structured data from assistant
-  createdAt      DateTime        @default(now())
+  createdAt      DateTime @default(now())
 
   // Relations
   conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -678,4 +712,27 @@ model AIPreferences {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("ai_preferences")
+}
+
+// AI Search Event Tracking
+model AISearchEvent {
+  id             String   @id @default(cuid())
+  trackId        String
+  conversationId String?
+  userId         String?
+  resultType     String // 'track_list' (only type that has "other" field)
+  timestamp      DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  // Relations
+  track        Track           @relation("TrackAISearches", fields: [trackId], references: [id], onDelete: Cascade)
+  conversation AIConversation? @relation("AISearchEvents", fields: [conversationId], references: [id], onDelete: SetNull)
+  user         User?           @relation("AISearchEvents", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([trackId])
+  @@index([timestamp])
+  @@index([conversationId])
+  @@index([userId])
+  @@index([resultType])
+  @@map("ai_search_events")
 }

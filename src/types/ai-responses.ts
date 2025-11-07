@@ -63,6 +63,8 @@ export interface TrackListResponse extends BaseAIResponse {
   type: 'track_list';
   data: {
     tracks: TrackWithArtist[];
+    other?: TrackWithArtist[]; // Additional/featured tracks (e.g., for single track results)
+    summary?: string; // AI-generated summary for single track results
     metadata?: {
       genre?: string;
       province?: string;
@@ -124,6 +126,33 @@ export interface SearchResultsResponse extends BaseAIResponse {
 }
 
 /**
+ * Genre information
+ */
+export interface GenreInfo {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  colorHex?: string;
+  icon?: string;
+  trackCount?: number;
+}
+
+/**
+ * Response containing a list of available genres
+ */
+export interface GenreListResponse extends BaseAIResponse {
+  type: 'genre_list';
+  data: {
+    genres: GenreInfo[];
+    metadata?: {
+      total?: number;
+    };
+  };
+  actions?: Action[];
+}
+
+/**
  * Response for playback actions
  */
 export interface ActionResponse extends BaseAIResponse {
@@ -142,7 +171,8 @@ export type AIResponse =
   | PlaylistGridResponse
   | ArtistResponse
   | SearchResultsResponse
-  | ActionResponse;
+  | ActionResponse
+  | GenreListResponse;
 
 /**
  * Registry of available response types
@@ -155,6 +185,7 @@ export const RESPONSE_TYPES = {
   artist: 'artist',
   search_results: 'search_results',
   action: 'action',
+  genre_list: 'genre_list',
 } as const;
 
 /**
@@ -216,4 +247,10 @@ export function isActionResponse(
 
 export function isTextResponse(response: AIResponse): response is TextResponse {
   return response.type === 'text';
+}
+
+export function isGenreListResponse(
+  response: AIResponse
+): response is GenreListResponse {
+  return response.type === 'genre_list';
 }

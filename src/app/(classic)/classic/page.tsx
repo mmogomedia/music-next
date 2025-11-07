@@ -7,7 +7,7 @@ import GenrePlaylists from '@/components/streaming/GenrePlaylists';
 
 export default function ClassicLandingPage() {
   return (
-    <main className='w-full min-h-screen bg-gray-50 dark:bg-slate-900 pb-24'>
+    <div className='w-full min-h-screen bg-gray-50 dark:bg-slate-900'>
       {/* Streaming Hero */}
       <StreamingHero />
 
@@ -19,6 +19,6 @@ export default function ClassicLandingPage() {
 
       {/* Genre Playlists */}
       <GenrePlaylists />
-    </main>
+    </div>
   );
 }

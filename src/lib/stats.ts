@@ -62,12 +62,23 @@ export interface DownloadEvent {
   ip?: string;
 }
 
+export interface AISearchEvent {
+  eventType: 'ai_search';
+  trackId: string;
+  userId?: string;
+  sessionId: string;
+  timestamp: Date;
+  conversationId?: string; // Optional: which conversation this was in
+  resultType: string; // 'track_list' (only type that has "other" field)
+}
+
 export type StatEvent =
   | PlayEvent
   | LikeEvent
   | SaveEvent
   | ShareEvent
-  | DownloadEvent;
+  | DownloadEvent
+  | AISearchEvent;
 
 class StatsCollector {
   private eventQueue: StatEvent[] = [];
@@ -153,6 +164,20 @@ class StatsCollector {
     };
 
     this.enqueue(downloadEvent);
+  }
+
+  /**
+   * Record an AI search appearance event (non-blocking)
+   * Tracks when a track appears in AI search results (specifically in the "other" field)
+   */
+  recordAISearch(event: Omit<AISearchEvent, 'timestamp' | 'eventType'>): void {
+    const aiSearchEvent: AISearchEvent = {
+      ...event,
+      eventType: 'ai_search',
+      timestamp: new Date(),
+    };
+
+    this.enqueue(aiSearchEvent);
   }
 
   private enqueue(event: StatEvent): void {
@@ -244,6 +269,8 @@ export const stats = {
     statsCollector.recordShare(event),
   download: (event: Omit<DownloadEvent, 'timestamp'>) =>
     statsCollector.recordDownload(event),
+  aiSearch: (event: Omit<AISearchEvent, 'timestamp'>) =>
+    statsCollector.recordAISearch(event),
 };
 
 // Session ID generator

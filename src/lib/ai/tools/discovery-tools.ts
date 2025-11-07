@@ -72,6 +72,12 @@ export const searchTracksTool = new DynamicStructuredTool({
           likeCount: track.likeCount,
           coverImageUrl: track.coverImageUrl,
           uniqueUrl: track.uniqueUrl,
+          filePath: track.filePath,
+          artistId: track.artistProfileId,
+          userId: track.userId,
+          createdAt: track.createdAt,
+          updatedAt: track.updatedAt,
+          albumArtwork: track.albumArtwork,
         })),
         count: tracks.length,
       });
@@ -322,6 +328,13 @@ export const getTrendingTracksTool = new DynamicStructuredTool({
           likeCount: track.likeCount,
           trendingScore: track.stats.trendingScore,
           coverImageUrl: track.coverImageUrl,
+          duration: track.duration,
+          filePath: track.filePath,
+          artistId: track.artistProfileId,
+          userId: track.userId,
+          createdAt: track.createdAt,
+          updatedAt: track.updatedAt,
+          albumArtwork: track.albumArtwork,
         })),
         count: tracks.length,
       });
@@ -427,9 +440,14 @@ export const getPlaylistsByProvinceTool = new DynamicStructuredTool({
  */
 export const getTracksByGenreTool = new DynamicStructuredTool({
   name: 'get_tracks_by_genre',
-  description: 'Get popular tracks in a specific genre.',
+  description:
+    'Get popular tracks in a specific genre. Can search by genre name (e.g., "3 Step", "Afro Pop", "Amapiano"), slug, or alias. The system will automatically match the genre name to the correct genre in the database.',
   schema: z.object({
-    genre: z.string().describe('Genre name to filter by'),
+    genre: z
+      .string()
+      .describe(
+        'Genre name, slug, or alias to filter by (e.g., "3 Step", "Afro Pop", "Amapiano", "amapiano")'
+      ),
     limit: z
       .number()
       .optional()
@@ -453,6 +471,13 @@ export const getTracksByGenreTool = new DynamicStructuredTool({
           playCount: track.playCount,
           likeCount: track.likeCount,
           coverImageUrl: track.coverImageUrl,
+          duration: track.duration,
+          filePath: track.filePath,
+          artistId: track.artistProfileId,
+          userId: track.userId,
+          createdAt: track.createdAt,
+          updatedAt: track.updatedAt,
+          albumArtwork: track.albumArtwork,
         })),
         count: tracks.length,
       });
@@ -461,6 +486,72 @@ export const getTracksByGenreTool = new DynamicStructuredTool({
       return JSON.stringify({
         error: 'Failed to get tracks by genre',
         tracks: [],
+        count: 0,
+      });
+    }
+  },
+});
+
+/**
+ * Get available genres
+ */
+export const getGenresTool = new DynamicStructuredTool({
+  name: 'get_genres',
+  description:
+    'Get a list of all available music genres on the platform. Use this when users ask about available genres, what genres exist, or want to browse genres.',
+  schema: z.object({
+    limit: z
+      .number()
+      .optional()
+      .default(50)
+      .describe('Maximum number of genres to return (1-100)'),
+    includeInactive: z
+      .boolean()
+      .optional()
+      .default(false)
+      .describe('Include inactive genres in results'),
+  }),
+  func: async ({ limit = 50, includeInactive = false }) => {
+    try {
+      const { prisma } = await import('@/lib/db');
+      const genres = await prisma.genre.findMany({
+        where: {
+          isActive: includeInactive ? undefined : true,
+        },
+        orderBy: [{ order: 'asc' }, { name: 'asc' }],
+        take: Math.min(limit, 100),
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          colorHex: true,
+          icon: true,
+          _count: {
+            select: {
+              tracks: true,
+            },
+          },
+        },
+      });
+
+      return JSON.stringify({
+        genres: genres.map(genre => ({
+          id: genre.id,
+          name: genre.name,
+          slug: genre.slug,
+          description: genre.description,
+          colorHex: genre.colorHex,
+          icon: genre.icon,
+          trackCount: genre._count.tracks,
+        })),
+        count: genres.length,
+      });
+    } catch (error) {
+      console.error('Error in getGenresTool:', error);
+      return JSON.stringify({
+        error: 'Failed to get genres',
+        genres: [],
         count: 0,
       });
     }
@@ -481,4 +572,5 @@ export const discoveryTools = [
   getPlaylistsByGenreTool,
   getPlaylistsByProvinceTool,
   getTracksByGenreTool,
+  getGenresTool,
 ];

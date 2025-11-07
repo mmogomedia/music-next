@@ -27,9 +27,11 @@ import {
   SunIcon,
   MoonIcon,
 } from '@heroicons/react/24/outline';
+import SignInModal from '@/components/auth/SignInModal';
 
 export default function Header() {
   const { data: session } = useSession();
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { resolvedTheme, setTheme } = useNextTheme();
   const isDark = resolvedTheme === 'dark';
@@ -184,16 +186,15 @@ export default function Header() {
         ) : (
           <>
             <NavbarItem>
-              <Link href='/login'>
-                <Button
-                  variant='light'
-                  color='default'
-                  size='sm'
-                  className='font-medium hover:bg-primary/5 transition-all duration-200 text-sm'
-                >
-                  Login
-                </Button>
-              </Link>
+              <Button
+                variant='light'
+                color='default'
+                size='sm'
+                className='font-medium hover:bg-primary/5 transition-all duration-200 text-sm'
+                onPress={() => setIsSignInModalOpen(true)}
+              >
+                Login
+              </Button>
             </NavbarItem>
             <NavbarItem>
               <Link href='/register'>
@@ -255,6 +256,11 @@ export default function Header() {
           </>
         )}
       </NavbarMenu>
+
+      <SignInModal
+        isOpen={isSignInModalOpen}
+        onClose={() => setIsSignInModalOpen(false)}
+      />
     </Navbar>
   );
 }

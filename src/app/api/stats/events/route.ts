@@ -49,6 +49,7 @@ async function processEventBatch(events: StatEvent[]): Promise<void> {
   const saveEvents: any[] = [];
   const shareEvents: any[] = [];
   const downloadEvents: any[] = [];
+  const aiSearchEvents: any[] = [];
 
   // Categorize events by explicit eventType
   for (const event of events) {
@@ -112,6 +113,17 @@ async function processEventBatch(events: StatEvent[]): Promise<void> {
           source: event.source,
           userAgent: event.userAgent,
           ip: event.ip,
+        });
+        break;
+
+      case 'ai_search':
+        aiSearchEvents.push({
+          trackId: event.trackId,
+          userId: event.userId,
+          sessionId: event.sessionId,
+          timestamp: event.timestamp,
+          conversationId: event.conversationId,
+          resultType: event.resultType,
         });
         break;
 
@@ -208,6 +220,34 @@ async function processEventBatch(events: StatEvent[]): Promise<void> {
             downloadCount: { increment: 1 },
           },
         });
+      }
+    }
+
+    // Insert AI search events
+    // Note: This requires the AISearchEvent table to exist in the database
+    // If the table doesn't exist yet, this will fail silently or need to be handled
+    if (aiSearchEvents.length > 0) {
+      try {
+        await tx.aiSearchEvent.createMany({
+          data: aiSearchEvents,
+          skipDuplicates: true,
+        });
+
+        // Update track AI search counts (if aiSearchCount field exists)
+        for (const aiSearchEvent of aiSearchEvents) {
+          await tx.track.update({
+            where: { id: aiSearchEvent.trackId },
+            data: {
+              aiSearchCount: { increment: 1 },
+            },
+          });
+        }
+      } catch (error) {
+        // If table doesn't exist yet, log error but don't fail the entire batch
+        console.warn(
+          'Failed to process AI search events (table may not exist yet):',
+          error
+        );
       }
     }
   });

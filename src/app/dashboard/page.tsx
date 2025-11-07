@@ -31,9 +31,6 @@ import {
 import TrackEditModal from '@/components/track/TrackEditModal';
 import FileUpload from '@/components/upload/FileUpload';
 import ArtistProfileForm from '@/components/artist/ArtistProfileForm';
-import ProfileSection from '@/components/dashboard/ProfileSection';
-import QuickActions from '@/components/dashboard/QuickActions';
-import ProfileURL from '@/components/dashboard/ProfileURL';
 import StatsGrid from '@/components/dashboard/StatsGrid';
 import RecentTracks from '@/components/dashboard/RecentTracks';
 import RecentActivity from '@/components/dashboard/RecentActivity';
@@ -49,6 +46,8 @@ import {
 import { Track } from '@/types/track';
 import { SourceType } from '@/types/stats';
 import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
+import ArtistNavigation from '@/components/dashboard/artist/ArtistNavigation';
+import UnifiedLayout from '@/components/layout/UnifiedLayout';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -230,54 +229,73 @@ export default function DashboardPage() {
 
   const recentTracks = tracks.slice(0, 5);
 
+  const tabNames: Record<string, string> = {
+    overview: 'Overview',
+    library: 'Library',
+    upload: 'Upload',
+    submissions: 'Submissions',
+    analytics: 'Analytics',
+    profile: 'Profile',
+  };
+
+  const header = (
+    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
+      <div className='py-4 px-4 sm:px-6 lg:px-8'>
+        <div className='flex items-center justify-between'>
+          <div>
+            <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+              {tabNames[activeTab] || 'Artist Dashboard'}
+            </h1>
+            <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
+              {activeTab === 'overview'
+                ? 'Manage your music and track your performance'
+                : `Manage ${tabNames[activeTab]?.toLowerCase()}`}
+            </p>
+          </div>
+          <div className='flex items-center gap-3'>
+            {/* Quick Stats Pills */}
+            <div className='hidden md:flex items-center gap-2'>
+              <Chip size='sm' color='primary' variant='flat'>
+                {stats?.overview?.totalTracks || 0} tracks
+              </Chip>
+              <Chip size='sm' color='success' variant='flat'>
+                {(stats?.overview?.totalPlays || 0).toLocaleString()} plays
+              </Chip>
+              {profile && (
+                <Chip size='sm' color='secondary' variant='flat'>
+                  {profile.artistName}
+                </Chip>
+              )}
+            </div>
+            {activeTab !== 'upload' && (
+              <Button
+                size='sm'
+                color='primary'
+                className='hidden sm:flex'
+                startContent={<PlusIcon className='w-4 h-4' />}
+                onPress={() => setActiveTab('upload')}
+              >
+                Upload
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+
   // Show profile creation option if no profile exists
   if (!profileLoading && !profile) {
     return (
       <RoleBasedRedirect>
-        <div className='min-h-screen bg-gray-50 dark:bg-slate-900'>
-          {/* Header */}
-          <div className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-40 shadow-sm'>
-            <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-              <div className='flex items-center justify-between h-16'>
-                {/* Left: Logo + Quick Stats */}
-                <div className='flex items-center gap-6'>
-                  <div className='flex items-center gap-3'>
-                    <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center'>
-                      <MusicalNoteIcon className='w-5 h-5 text-white' />
-                    </div>
-                    <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
-                      Dashboard
-                    </h1>
-                  </div>
-                </div>
-
-                {/* Right: Actions */}
-                <div className='flex items-center gap-3'>
-                  <Button
-                    size='sm'
-                    color='primary'
-                    className='hidden sm:flex'
-                    startContent={<PlusIcon className='w-4 h-4' />}
-                    onPress={() => (window.location.href = '/profile/select')}
-                  >
-                    Create Profile
-                  </Button>
-                  <Button
-                    isIconOnly
-                    size='sm'
-                    color='primary'
-                    className='sm:hidden'
-                    onPress={() => (window.location.href = '/profile/select')}
-                  >
-                    <PlusIcon className='w-4 h-4' />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24'>
+        <UnifiedLayout
+          sidebar={
+            <ArtistNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+          }
+          contentClassName='w-full'
+          header={header}
+        >
+          <div className='w-full py-8 px-4 sm:px-6 lg:px-8'>
             <div className='min-h-[60vh] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-16 text-center bg-gray-50/50 dark:bg-slate-800/50 flex flex-col justify-center'>
               <div className='w-32 h-32 bg-blue-100 dark:bg-blue-900/20 rounded-3xl flex items-center justify-center mx-auto mb-8'>
                 <MusicalNoteIcon className='w-16 h-16 text-blue-600' />
@@ -306,170 +324,93 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        </div>
+        </UnifiedLayout>
       </RoleBasedRedirect>
     );
   }
 
   return (
     <RoleBasedRedirect>
-      <div className='min-h-screen bg-gray-50 dark:bg-slate-900'>
-        {/* Compact Header */}
-        <div className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-40 shadow-sm'>
-          <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-            <div className='flex items-center justify-between h-16'>
-              {/* Left: Logo + Quick Stats */}
-              <div className='flex items-center gap-6'>
-                <div className='flex items-center gap-3'>
-                  <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center'>
-                    <MusicalNoteIcon className='w-5 h-5 text-white' />
-                  </div>
-                  <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
-                    Dashboard
-                  </h1>
-                </div>
-
-                {/* Quick Stats Pills */}
-                <div className='hidden md:flex items-center gap-2'>
-                  <Chip size='sm' color='primary' variant='flat'>
-                    {stats?.overview?.totalTracks || 0} tracks
-                  </Chip>
-                  <Chip size='sm' color='success' variant='flat'>
-                    {(stats?.overview?.totalPlays || 0).toLocaleString()} plays
-                  </Chip>
-                  {profile && (
-                    <Chip size='sm' color='secondary' variant='flat'>
-                      {profile.artistName}
-                    </Chip>
-                  )}
-                </div>
+      <UnifiedLayout
+        sidebar={
+          <ArtistNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        }
+        contentClassName='w-full'
+        header={header}
+      >
+        <div className='w-full py-8 px-4 sm:px-6 lg:px-8'>
+          {/* Overview Tab */}
+          {activeTab === 'overview' && (
+            <div className='space-y-8'>
+              {/* Time Range Selector */}
+              <div className='flex justify-between items-center'>
+                <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+                  Dashboard Overview
+                </h2>
+                <Dropdown>
+                  <DropdownTrigger>
+                    <Button variant='bordered' size='sm'>
+                      {timeRange === '24h'
+                        ? 'Last 24 Hours'
+                        : timeRange === '7d'
+                          ? 'Last 7 Days'
+                          : timeRange === '30d'
+                            ? 'Last 30 Days'
+                            : timeRange === '90d'
+                              ? 'Last 90 Days'
+                              : timeRange === '1y'
+                                ? 'Last Year'
+                                : 'All Time'}
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu
+                    selectedKeys={[timeRange]}
+                    onSelectionChange={keys =>
+                      setTimeRange(Array.from(keys)[0] as string)
+                    }
+                  >
+                    <DropdownItem key='24h'>Last 24 Hours</DropdownItem>
+                    <DropdownItem key='7d'>Last 7 Days</DropdownItem>
+                    <DropdownItem key='30d'>Last 30 Days</DropdownItem>
+                    <DropdownItem key='90d'>Last 90 Days</DropdownItem>
+                    <DropdownItem key='1y'>Last Year</DropdownItem>
+                    <DropdownItem key='all'>All Time</DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
               </div>
 
-              {/* Right: Actions */}
-              <div className='flex items-center gap-3'>
-                <Button
-                  size='sm'
-                  color='primary'
-                  className='hidden sm:flex'
-                  startContent={<PlusIcon className='w-4 h-4' />}
-                  onPress={() => setActiveTab('upload')}
-                >
-                  Upload
-                </Button>
-                <Button
-                  isIconOnly
-                  size='sm'
-                  color='primary'
-                  className='sm:hidden'
-                  onPress={() => setActiveTab('upload')}
-                >
-                  <PlusIcon className='w-4 h-4' />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Layout */}
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24'>
-          <div className='grid grid-cols-1 lg:grid-cols-4 gap-8'>
-            {/* Left Sidebar - Profile & Quick Actions */}
-            <div className='lg:col-span-1 space-y-4'>
-              <ProfileSection
-                profile={profile}
-                onCreateProfile={() => setActiveTab('profile')}
-                onEditProfile={() => setActiveTab('profile')}
-              />
-
-              <QuickActions
-                onUpload={() => setActiveTab('upload')}
-                onLibrary={() => setActiveTab('library')}
-                onAnalytics={() => setActiveTab('analytics')}
-                onSubmissions={() => setActiveTab('submissions')}
-              />
-
-              {profile?.slug && (
-                <ProfileURL
-                  slug={profile.slug}
-                  artistName={profile.artistName}
+              {statsLoading ? (
+                <div className='flex justify-center items-center h-32'>
+                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
+                </div>
+              ) : statsError ? (
+                <div className='text-center text-red-600 dark:text-red-400'>
+                  Error loading stats: {statsError}
+                </div>
+              ) : (
+                <StatsGrid
+                  stats={displayStats}
+                  growth={stats?.growthMetrics}
                 />
               )}
+
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                <RecentTracks
+                  tracks={recentTracks}
+                  onViewAll={() => setActiveTab('library')}
+                  onPlay={playTrack}
+                />
+
+                {stats?.recentActivity && (
+                  <RecentActivity activity={stats.recentActivity} />
+                )}
+              </div>
             </div>
+          )}
 
-            {/* Main Content Area */}
-            <div className='lg:col-span-3 overflow-visible'>
-              {/* Overview Tab */}
-              {activeTab === 'overview' && (
-                <div className='space-y-8'>
-                  {/* Time Range Selector */}
-                  <div className='flex justify-between items-center'>
-                    <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
-                      Dashboard Overview
-                    </h2>
-                    <Dropdown>
-                      <DropdownTrigger>
-                        <Button variant='bordered' size='sm'>
-                          {timeRange === '24h'
-                            ? 'Last 24 Hours'
-                            : timeRange === '7d'
-                              ? 'Last 7 Days'
-                              : timeRange === '30d'
-                                ? 'Last 30 Days'
-                                : timeRange === '90d'
-                                  ? 'Last 90 Days'
-                                  : timeRange === '1y'
-                                    ? 'Last Year'
-                                    : 'All Time'}
-                        </Button>
-                      </DropdownTrigger>
-                      <DropdownMenu
-                        selectedKeys={[timeRange]}
-                        onSelectionChange={keys =>
-                          setTimeRange(Array.from(keys)[0] as string)
-                        }
-                      >
-                        <DropdownItem key='24h'>Last 24 Hours</DropdownItem>
-                        <DropdownItem key='7d'>Last 7 Days</DropdownItem>
-                        <DropdownItem key='30d'>Last 30 Days</DropdownItem>
-                        <DropdownItem key='90d'>Last 90 Days</DropdownItem>
-                        <DropdownItem key='1y'>Last Year</DropdownItem>
-                        <DropdownItem key='all'>All Time</DropdownItem>
-                      </DropdownMenu>
-                    </Dropdown>
-                  </div>
-
-                  {statsLoading ? (
-                    <div className='flex justify-center items-center h-32'>
-                      <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-                    </div>
-                  ) : statsError ? (
-                    <div className='text-center text-red-600 dark:text-red-400'>
-                      Error loading stats: {statsError}
-                    </div>
-                  ) : (
-                    <StatsGrid
-                      stats={displayStats}
-                      growth={stats?.growthMetrics}
-                    />
-                  )}
-
-                  <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                    <RecentTracks
-                      tracks={recentTracks}
-                      onViewAll={() => setActiveTab('library')}
-                      onPlay={playTrack}
-                    />
-
-                    {stats?.recentActivity && (
-                      <RecentActivity activity={stats.recentActivity} />
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Profile Tab */}
-              {activeTab === 'profile' && (
-                <div className='space-y-6'>
+          {/* Profile Tab */}
+          {activeTab === 'profile' && (
+            <div className='space-y-6'>
                   {!profile && !isEditingProfile ? (
                     <Card>
                       <CardBody className='p-8 text-center'>
@@ -664,14 +605,14 @@ export default function DashboardPage() {
                       </Card>
                     </div>
                   )}
-                </div>
-              )}
+            </div>
+          )}
 
-              {/* Upload Tab */}
-              {activeTab === 'upload' && (
-                <Card>
-                  <CardBody className='p-6'>
-                    <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-6'>
+          {/* Upload Tab */}
+          {activeTab === 'upload' && (
+            <Card>
+              <CardBody className='p-6'>
+                <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-6'>
                       Upload Music
                     </h3>
                     <FileUpload
@@ -707,14 +648,14 @@ export default function DashboardPage() {
                         );
                       }}
                     />
-                  </CardBody>
-                </Card>
-              )}
+              </CardBody>
+            </Card>
+          )}
 
-              {/* Library Tab */}
-              {activeTab === 'library' && (
-                <Card>
-                  <CardBody className='p-6 overflow-visible'>
+          {/* Library Tab */}
+          {activeTab === 'library' && (
+            <Card>
+              <CardBody className='p-6 overflow-visible'>
                     <div className='flex items-center justify-between mb-6'>
                       <h3 className='text-xl font-bold text-gray-900 dark:text-white'>
                         My Music Library
@@ -855,13 +796,13 @@ export default function DashboardPage() {
                         ))}
                       </div>
                     )}
-                  </CardBody>
-                </Card>
-              )}
+              </CardBody>
+            </Card>
+          )}
 
-              {/* Submissions Tab */}
-              {activeTab === 'submissions' && (
-                <PlaylistSubmissionsTab
+          {/* Submissions Tab */}
+          {activeTab === 'submissions' && (
+            <PlaylistSubmissionsTab
                   onQuickSubmit={(track, playlist) => {
                     if (track) {
                       // Track-based submission
@@ -875,13 +816,13 @@ export default function DashboardPage() {
                       setShowQuickSubmit(true);
                     }
                   }}
-                />
-              )}
+            />
+          )}
 
-              {/* Analytics Tab */}
-              {activeTab === 'analytics' && (
-                <Card>
-                  <CardBody className='p-8 text-center'>
+          {/* Analytics Tab */}
+          {activeTab === 'analytics' && (
+            <Card>
+              <CardBody className='p-8 text-center'>
                     <div className='w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6'>
                       <ChartBarIcon className='w-10 h-10 text-white' />
                     </div>
@@ -892,11 +833,9 @@ export default function DashboardPage() {
                       Detailed charts and metrics will be displayed here to help
                       you track your music performance
                     </p>
-                  </CardBody>
-                </Card>
-              )}
-            </div>
-          </div>
+              </CardBody>
+            </Card>
+          )}
         </div>
 
         {/* Delete Confirmation Modal */}
@@ -945,6 +884,7 @@ export default function DashboardPage() {
                   artist: editingTrack.artist,
                   album: editingTrack.album,
                   genre: editingTrack.genre,
+                  genreId: (editingTrack as any).genreId || undefined,
                   composer: editingTrack.composer,
                   year: editingTrack.year,
                   releaseDate: editingTrack.releaseDate,
@@ -980,7 +920,7 @@ export default function DashboardPage() {
             // Track submitted successfully
           }}
         />
-      </div>
+      </UnifiedLayout>
     </RoleBasedRedirect>
   );
 }

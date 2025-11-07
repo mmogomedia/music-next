@@ -19,6 +19,7 @@ export async function PUT(request: NextRequest) {
       artist,
       album,
       genre,
+      genreId,
       composer,
       year,
       releaseDate,
@@ -83,6 +84,21 @@ export async function PUT(request: NextRequest) {
       uniqueUrl = slug;
     }
 
+    // If genreId is provided, fetch the genre name for backward compatibility
+    let genreName = genre?.trim() || null;
+    if (genreId) {
+      const genreRecord = await prisma.genre.findUnique({
+        where: { id: genreId },
+        select: { name: true },
+      });
+      if (genreRecord) {
+        genreName = genreRecord.name;
+      }
+    } else if (genreId === null || genreId === '') {
+      // Explicitly clear genreId if empty string or null
+      genreName = null;
+    }
+
     // Update track
     const updatedTrack = await prisma.track.update({
       where: { id: trackId },
@@ -91,7 +107,8 @@ export async function PUT(request: NextRequest) {
         uniqueUrl,
         artist: artist?.trim() || null,
         album: album?.trim() || null,
-        genre: genre?.trim() || null,
+        genre: genreName,
+        genreId: genreId || null,
         composer: composer?.trim() || null,
         year: year || null,
         releaseDate: releaseDate ? new Date(releaseDate) : null,
