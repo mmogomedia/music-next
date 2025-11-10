@@ -59,8 +59,14 @@ export default function RecentActivity({ activity }: RecentActivityProps) {
 
   // Combine and sort all activities
   const allActivities = [
-    ...activity.plays.map(play => ({ ...play, activityType: 'play' as const })),
-    ...activity.likes.map(like => ({ ...like, activityType: 'like' as const })),
+    ...(activity.plays || []).map(play => ({
+      ...play,
+      activityType: 'play' as const,
+    })),
+    ...(activity.likes || []).map(like => ({
+      ...like,
+      activityType: 'like' as const,
+    })),
   ].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );

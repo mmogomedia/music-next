@@ -254,7 +254,12 @@ async function getAggregatedStats(
 }
 
 async function getRecentActivity(trackIds: string[], startDate: Date) {
-  if (trackIds.length === 0) return [];
+  if (trackIds.length === 0) {
+    return {
+      plays: [],
+      likes: [],
+    };
+  }
 
   const recentPlays = await prisma.playEvent.findMany({
     where: {

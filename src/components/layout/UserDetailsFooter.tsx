@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
+import { UserRole } from '@prisma/client';
 import {
   Dropdown,
   DropdownTrigger,
@@ -111,9 +112,9 @@ export default function UserDetailsFooter({
                   startContent={<HomeIcon className='w-4 h-4' />}
                   as={Link}
                   href={
-                    session?.user?.role === 'ARTIST'
-                      ? '/dashboard'
-                      : '/admin/dashboard'
+                    session?.user?.role === UserRole.ADMIN
+                      ? '/admin/dashboard'
+                      : '/dashboard'
                   }
                   onPress={onMobileMenuClose}
                 >
