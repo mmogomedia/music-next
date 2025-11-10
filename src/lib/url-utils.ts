@@ -47,9 +47,8 @@ export function getPublicUrlBase(): string {
  * @param filePath - The file path stored in the database (e.g., "audio/userId/fileId.mp3" or "image/userId/fileId.jpg")
  * @returns The complete URL for accessing the file
  */
-export function constructFileUrl(filePath: string): string {
+export function constructFileUrl(filePath?: string | null): string {
   if (!filePath) {
-    console.error('constructFileUrl: filePath is undefined or null');
     return '';
   }
 
