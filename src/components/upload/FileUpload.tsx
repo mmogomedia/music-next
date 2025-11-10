@@ -113,8 +113,21 @@ export default function FileUpload({
       });
 
       if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        throw new Error(errorData.error || 'Upload failed');
+        let errorMessage = 'Upload failed';
+        try {
+          const errorData = await uploadResponse.json();
+          errorMessage = errorData?.error || errorMessage;
+        } catch (_jsonError) {
+          try {
+            const errorText = await uploadResponse.text();
+            if (errorText) {
+              errorMessage = errorText;
+            }
+          } catch (_textError) {
+            // Ignore secondary errors; fall back to default message
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       setUploadStatus('Upload complete, processing...');
