@@ -412,8 +412,11 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
         {/* Mobile: top-14 (nav header ~56px) + filter bar button row (~48px) = ~104px total */}
         {/* Desktop: pt-24 for ChatTopBar */}
         <div
-          className='flex-1 overflow-y-auto pb-6 space-y-4 px-4 lg:px-6'
-          style={{ paddingTop: isMobile ? '72px' : '0px' }}
+          className='flex-1 overflow-y-auto space-y-4 px-4 lg:px-6'
+          style={{
+            paddingTop: isMobile ? '72px' : '0px',
+            paddingBottom: isMobile ? '120px' : '24px', // Extra padding on mobile for fixed input
+          }}
         >
           {/* Landing view - always visible as intro */}
           {demoArea}
@@ -566,7 +569,19 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
         </div>
 
         {/* Composer anchored fixed at bottom of container */}
-        <div className='sticky bottom-0 inset-x-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-t border-gray-200 dark:border-slate-700'>
+        {/* Mobile: fixed to viewport bottom, Desktop: sticky within container */}
+        <div
+          className={`${
+            isMobile ? 'fixed' : 'sticky'
+          } bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-t border-gray-200 dark:border-slate-700`}
+          style={
+            isMobile
+              ? {
+                  paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                }
+              : undefined
+          }
+        >
           {/* Information Banner */}
           {isInfoBannerVisible && (
             <ChatInfoBanner
