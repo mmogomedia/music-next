@@ -118,23 +118,22 @@ export class ConversationStore {
   async getUserConversations(
     userId: string
   ): Promise<Array<{ id: string; title: string | null; updatedAt: Date }>> {
-    // eslint-disable-next-line no-console
-    console.log(
+    logger.debug(
       '[ConversationStore] getUserConversations called with userId:',
       userId
     );
 
     if (!userId) {
-      // eslint-disable-next-line no-console
-      console.log(
+      logger.warn(
         '[ConversationStore] ❌ No userId provided, returning empty array'
       );
       return [];
     }
 
     try {
-      // eslint-disable-next-line no-console
-      console.log('[ConversationStore] Querying database for conversations...');
+      logger.debug(
+        '[ConversationStore] Querying database for conversations...'
+      );
       const conversations = await prisma.aIConversation.findMany({
         where: { userId },
         orderBy: { updatedAt: 'desc' },
@@ -146,8 +145,7 @@ export class ConversationStore {
         },
       });
 
-      // eslint-disable-next-line no-console
-      console.log('[ConversationStore] ✅ Database query successful:', {
+      logger.info('[ConversationStore] ✅ Database query successful:', {
         count: conversations.length,
         conversations: conversations.map(c => ({
           id: c.id,
@@ -158,8 +156,6 @@ export class ConversationStore {
 
       return conversations;
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('[ConversationStore] ❌ Database query failed:', error);
       logger.error('Failed to get user conversations:', error);
       return [];
     }
