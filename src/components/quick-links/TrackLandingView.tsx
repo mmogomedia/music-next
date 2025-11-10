@@ -99,12 +99,34 @@ export default function TrackLandingView({
     setIsDownloading(true);
     try {
       recordEvent('download');
+
+      // Fetch the file as a blob to trigger download
+      const response = await fetch(track.fileUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch file');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      // Format filename: "Track name - Artist [flemoji.com].mp3"
+      const artistName = track.artist || 'Artist';
+      const trackName = track.title || 'track';
+      const filename = `${trackName} - ${artistName} [flemoji.com].mp3`;
+
       const link = document.createElement('a');
-      link.href = track.fileUrl;
-      link.download = `${track.title || 'track'}.mp3`;
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+
       showToast('Download started');
     } catch (error) {
       console.error(error);
@@ -159,10 +181,10 @@ export default function TrackLandingView({
         </div>
         <div className='flex-1 p-6 sm:p-8 space-y-6 bg-white'>
           <div className='space-y-2'>
-            <p className='text-sm uppercase tracking-widest text-blue-500 font-semibold'>
+            <p className='text-sm uppercase tracking-widest text-blue-500 font-semibold truncate'>
               {track.artist || 'Artist'}
             </p>
-            <h2 className='text-3xl sm:text-4xl font-bold text-slate-900 leading-tight'>
+            <h2 className='text-3xl sm:text-4xl font-bold text-slate-900 leading-tight break-words line-clamp-2'>
               {track.title}
             </h2>
             {track.album && (

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { extractAudioMetadata } from '@/lib/services/audio-metadata-service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,17 +82,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Extract metadata from the audio file
+    let extractedMetadata = null;
+    try {
+      extractedMetadata = await extractAudioMetadata(filePath);
+    } catch (metadataError) {
+      console.error(
+        'Failed to extract metadata, continuing with defaults:',
+        metadataError
+      );
+      // Continue with default values if metadata extraction fails
+    }
+
+    // Create track record with extracted metadata or defaults
     const track = await prisma.track.create({
       data: {
-        title: uploadJob.fileName.replace(/\.[^/.]+$/, ''), // Remove file extension
+        title:
+          extractedMetadata?.title ||
+          uploadJob.fileName.replace(/\.[^/.]+$/, ''), // Use metadata title or filename
         userId: session.user.id,
         artistProfileId: artistProfile.id,
         filePath: filePath, // Store only the file path
         uniqueUrl: `track-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`, // Generate unique URL
-        genre: 'Unknown', // Default genre, can be updated later
-        album: 'Single', // Default album
+        genre: extractedMetadata?.genre || 'Unknown', // Use metadata genre or default
+        album: extractedMetadata?.album || 'Single', // Use metadata album or default
+        artist: extractedMetadata?.artist || artistProfile.artistName, // Use metadata artist or profile name
         description: `Uploaded on ${new Date().toLocaleDateString()}`,
-        duration: 0, // Will be updated when we process the audio
+        duration: extractedMetadata?.duration || 0, // Use extracted duration or 0
+        bpm: extractedMetadata?.bpm || null,
+        bitrate: extractedMetadata?.bitrate || null,
+        sampleRate: extractedMetadata?.sampleRate || null,
+        channels: extractedMetadata?.channels || null,
+        year: extractedMetadata?.year || null,
+        releaseDate: extractedMetadata?.releaseDate || null,
+        fileSize: size,
         playCount: 0,
         likeCount: 0,
       },
@@ -110,6 +134,7 @@ export async function POST(request: NextRequest) {
       jobId,
       trackId: track.id,
       status: 'COMPLETED',
+      metadataExtracted: extractedMetadata !== null,
     });
   } catch (error) {
     console.error('Upload complete error:', error);

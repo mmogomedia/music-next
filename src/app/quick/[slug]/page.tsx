@@ -179,7 +179,7 @@ export default async function QuickLinkPage({
             </div>
 
             <div className='space-y-4 max-w-3xl'>
-              <h1 className='text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight font-["Poppins"] text-slate-900'>
+              <h1 className='text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight font-["Poppins"] text-slate-900 break-words line-clamp-3'>
                 {quickLink.title}
               </h1>
               {quickLink.description && (
