@@ -47,7 +47,11 @@ export async function POST(request: NextRequest) {
     const agentContext = {
       userId: context?.userId,
       conversationId: conversationId,
-      filters: built.filters ?? ({} as any),
+      filters: {
+        ...built.filters,
+        // Add province from request context if provided
+        ...(context?.province && { province: context.province }),
+      },
     };
 
     // Map context to filters if needed

@@ -12,7 +12,8 @@ interface QueueViewProps {
 }
 
 export default function QueueView({ isOpen, onClose }: QueueViewProps) {
-  const { queue, queueIndex, currentTrack, playTrack, removeFromQueue } = useMusicPlayer();
+  const { queue, queueIndex, currentTrack, playTrack, removeFromQueue } =
+    useMusicPlayer();
 
   if (!isOpen) return null;
 
@@ -23,7 +24,7 @@ export default function QueueView({ isOpen, onClose }: QueueViewProps) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleTrackClick = (track: Track, index: number) => {
+  const handleTrackClick = (track: Track) => {
     // If clicking the current track, do nothing
     if (currentTrack?.id === track.id) return;
     // Otherwise, play the track (this will update queueIndex)
@@ -37,12 +38,24 @@ export default function QueueView({ isOpen, onClose }: QueueViewProps) {
     }
   };
 
+  const handleBackdropKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>
+  ) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onClose();
+    }
+  };
+
   return (
     <div className='fixed inset-0 z-50 flex items-end justify-center pointer-events-none'>
       {/* Backdrop */}
       <div
         className='absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity pointer-events-auto'
         onClick={onClose}
+        role='button'
+        tabIndex={0}
+        onKeyDown={handleBackdropKeyDown}
       />
 
       {/* Queue Panel */}
@@ -85,15 +98,16 @@ export default function QueueView({ isOpen, onClose }: QueueViewProps) {
               {queue.map((track, index) => {
                 const isCurrent = currentTrack?.id === track.id;
                 const isPlaying = isCurrent && index === queueIndex;
-                const durationSeconds = typeof track.duration === 'number' && track.duration > 0
-                  ? track.duration
-                  : undefined;
+                const durationSeconds =
+                  typeof track.duration === 'number' && track.duration > 0
+                    ? track.duration
+                    : undefined;
 
                 return (
                   <button
                     key={`${track.id}-${index}`}
                     type='button'
-                    onClick={() => handleTrackClick(track, index)}
+                    onClick={() => handleTrackClick(track)}
                     className={`w-full flex items-center gap-4 px-6 py-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors text-left ${
                       isCurrent
                         ? 'bg-blue-50 dark:bg-blue-950/20 border-l-4 border-blue-500 dark:border-blue-400'
@@ -105,8 +119,14 @@ export default function QueueView({ isOpen, onClose }: QueueViewProps) {
                       {isPlaying ? (
                         <div className='flex gap-1'>
                           <span className='w-1 h-4 bg-blue-500 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]' />
-                          <span className='w-1 h-4 bg-blue-500 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]' style={{ animationDelay: '0.15s' }} />
-                          <span className='w-1 h-4 bg-blue-500 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]' style={{ animationDelay: '0.3s' }} />
+                          <span
+                            className='w-1 h-4 bg-blue-500 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
+                            style={{ animationDelay: '0.15s' }}
+                          />
+                          <span
+                            className='w-1 h-4 bg-blue-500 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
+                            style={{ animationDelay: '0.3s' }}
+                          />
                         </div>
                       ) : (
                         <span className='text-sm text-gray-400 dark:text-gray-500 font-medium'>
@@ -157,7 +177,7 @@ export default function QueueView({ isOpen, onClose }: QueueViewProps) {
                     {/* Remove Button */}
                     <button
                       type='button'
-                      onClick={(e) => handleRemove(track.id, e)}
+                      onClick={e => handleRemove(track.id, e)}
                       className='flex-shrink-0 p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors'
                       aria-label={`Remove ${track.title} from queue`}
                     >
@@ -173,4 +193,3 @@ export default function QueueView({ isOpen, onClose }: QueueViewProps) {
     </div>
   );
 }
-

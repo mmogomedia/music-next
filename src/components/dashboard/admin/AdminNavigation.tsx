@@ -62,16 +62,50 @@ export default function AdminNavigation({
   }
 
   const navItems: NavItem[] = [
-    { id: 'overview', name: 'Overview', icon: ChartBarIcon, activeIcon: ChartBarSolidIcon },
-    { id: 'users', name: 'Users', icon: UserGroupIcon, activeIcon: UserGroupSolidIcon },
-    { id: 'content', name: 'Content', icon: MusicalNoteIcon, activeIcon: MusicalNoteSolidIcon2 },
+    {
+      id: 'overview',
+      name: 'Overview',
+      icon: ChartBarIcon,
+      activeIcon: ChartBarSolidIcon,
+    },
+    {
+      id: 'users',
+      name: 'Users',
+      icon: UserGroupIcon,
+      activeIcon: UserGroupSolidIcon,
+    },
+    {
+      id: 'content',
+      name: 'Content',
+      icon: MusicalNoteIcon,
+      activeIcon: MusicalNoteSolidIcon2,
+    },
     { id: 'genres', name: 'Genres', icon: TagIcon, activeIcon: TagSolidIcon },
-    { id: 'playlists', name: 'Playlists', icon: QueueListIcon, activeIcon: QueueListSolidIcon },
-    { id: 'submissions', name: 'Submissions', icon: ClockIcon, activeIcon: ClockSolidIcon },
-    { id: 'analytics', name: 'Analytics', icon: ChartBarIcon, activeIcon: ChartBarSolidIcon },
-    { id: 'settings', name: 'Settings', icon: Cog6ToothIcon, activeIcon: Cog6ToothSolidIcon },
+    {
+      id: 'playlists',
+      name: 'Playlists',
+      icon: QueueListIcon,
+      activeIcon: QueueListSolidIcon,
+    },
+    {
+      id: 'submissions',
+      name: 'Submissions',
+      icon: ClockIcon,
+      activeIcon: ClockSolidIcon,
+    },
+    {
+      id: 'analytics',
+      name: 'Analytics',
+      icon: ChartBarIcon,
+      activeIcon: ChartBarSolidIcon,
+    },
+    {
+      id: 'settings',
+      name: 'Settings',
+      icon: Cog6ToothIcon,
+      activeIcon: Cog6ToothSolidIcon,
+    },
   ];
-
 
   const handleTabClick = (tabId: string) => {
     onTabChange(tabId);
@@ -109,7 +143,8 @@ export default function AdminNavigation({
             </h3>
             <nav className='space-y-2'>
               {navItems.map(item => {
-                const IconComponent = activeTab === item.id ? item.activeIcon : item.icon;
+                const IconComponent =
+                  activeTab === item.id ? item.activeIcon : item.icon;
                 const isActive = activeTab === item.id;
 
                 return (
@@ -223,7 +258,8 @@ export default function AdminNavigation({
                 </h3>
                 <nav className='space-y-2'>
                   {navItems.map(item => {
-                    const IconComponent = activeTab === item.id ? item.activeIcon : item.icon;
+                    const IconComponent =
+                      activeTab === item.id ? item.activeIcon : item.icon;
                     const isActive = activeTab === item.id;
 
                     return (
@@ -266,4 +302,3 @@ export default function AdminNavigation({
     </>
   );
 }
-

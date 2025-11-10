@@ -1,19 +1,16 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Chip } from '@heroui/react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { Track } from '@/types/track';
 import TrackCard from '@/components/ai/TrackCard';
 
 interface ChatWelcomePlaceholderProps {
   province?: string;
-  genre?: string;
 }
 
 export default function ChatWelcomePlaceholder({
   province,
-  genre,
 }: ChatWelcomePlaceholderProps) {
   const [featured, setFeatured] = useState<Track[]>([]);
   const [topTen, setTopTen] = useState<Track[]>([]);
@@ -47,6 +44,7 @@ export default function ChatWelcomePlaceholder({
             updatedAt: t.updatedAt || new Date(),
             duration: t.duration,
             genre: t.genre,
+            isDownloadable: t.isDownloadable ?? false,
           }));
           setFeatured(tracks);
         }
@@ -69,6 +67,7 @@ export default function ChatWelcomePlaceholder({
             updatedAt: t.updatedAt || new Date(),
             duration: t.duration,
             genre: t.genre,
+            isDownloadable: t.isDownloadable ?? false,
           }));
           setTopTen(tracks);
         }
@@ -107,22 +106,6 @@ export default function ChatWelcomePlaceholder({
 
   return (
     <div className='space-y-8'>
-      {/* Context badges */}
-      {(province || genre) && (
-        <div className='flex items-center gap-2 flex-wrap justify-center'>
-          {province && (
-            <Chip size='sm' variant='flat' color='primary'>
-              {province}
-            </Chip>
-          )}
-          {genre && (
-            <Chip size='sm' variant='flat' color='success'>
-              {genre}
-            </Chip>
-          )}
-        </div>
-      )}
-
       {/* Featured - horizontal grid layout */}
       <section className='mb-6'>
         <div className='bg-gradient-to-br from-blue-50/50 via-purple-50/30 to-green-50/50 dark:from-blue-950/40 dark:via-purple-950/30 dark:to-green-950/40 border border-gray-200/80 dark:border-slate-700/80 rounded-2xl p-5 md:p-6 shadow-sm'>
@@ -199,9 +182,9 @@ export default function ChatWelcomePlaceholder({
           <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-1'>
             Top 10 Tracks
           </h3>
-          {(province || genre) && (
+          {province && (
             <p className='text-sm text-gray-600 dark:text-gray-400'>
-              {province && `in ${province}`} {genre && `• ${genre}`}
+              in {province}
             </p>
           )}
         </div>

@@ -2,7 +2,14 @@
 
 import React from 'react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
-import { PlayIcon, PauseIcon, ChevronLeftIcon, ChevronRightIcon, ArrowsRightLeftIcon, QueueListIcon } from '@heroicons/react/24/outline';
+import {
+  PlayIcon,
+  PauseIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ArrowsRightLeftIcon,
+  QueueListIcon,
+} from '@heroicons/react/24/outline';
 import TrackArtwork from './TrackArtwork';
 import QueueView from './QueueView';
 
@@ -178,7 +185,7 @@ export default function GlobalMusicPlayer() {
               <option value='one'>Repeat: One</option>
               <option value='all'>Repeat: All</option>
             </select>
-          {/* Volume */}
+            {/* Volume */}
             <span className='text-xs text-gray-500 dark:text-gray-400'>
               Vol
             </span>

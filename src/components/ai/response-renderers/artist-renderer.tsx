@@ -44,17 +44,19 @@ export function ArtistRenderer({
         break;
       case 'share_track':
         if (navigator.share) {
-          navigator.share({
-            title: displayName,
-            text: `Check out ${displayName} on Flemoji`,
-            url: window.location.href,
-          }).catch(() => {
-            // Share failed or cancelled
-          });
+          navigator
+            .share({
+              title: displayName,
+              text: `Check out ${displayName} on Flemoji`,
+              url: window.location.href,
+            })
+            .catch(() => {
+              // Share failed or cancelled
+            });
         }
         break;
       default:
-        console.log('Unhandled action type:', action.type);
+        break;
     }
   };
 

@@ -5,7 +5,6 @@ import React, { useState, useEffect, ReactNode } from 'react';
 interface UnifiedLayoutProps {
   children: ReactNode;
   sidebar: ReactNode;
-  sidebarWidth?: string; // Default: 'w-64' (256px)
   contentClassName?: string;
   header?: ReactNode; // Optional header component
   disableBottomPadding?: boolean;
@@ -24,7 +23,6 @@ interface UnifiedLayoutProps {
 export default function UnifiedLayout({
   children,
   sidebar,
-  sidebarWidth = 'w-64',
   contentClassName = '',
   header,
   disableBottomPadding = false,
@@ -57,9 +55,7 @@ export default function UnifiedLayout({
         {isMobile && <div className='h-14 flex-shrink-0' />}
 
         {/* Optional Header */}
-        {header && (
-          <div className='flex-shrink-0 z-20'>{header}</div>
-        )}
+        {header && <div className='flex-shrink-0 z-20'>{header}</div>}
 
         {/* Main Content */}
         <main
@@ -72,7 +68,8 @@ export default function UnifiedLayout({
               : isMobile
                 ? '0px'
                 : '80px',
-            ...(contentClassName.includes('fixed') || contentClassName.includes('h-full')
+            ...(contentClassName.includes('fixed') ||
+            contentClassName.includes('h-full')
               ? { paddingBottom: 0 }
               : {}),
           }}

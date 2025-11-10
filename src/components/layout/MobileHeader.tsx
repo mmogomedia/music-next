@@ -41,10 +41,30 @@ export default function MobileHeader() {
 
   const menuItems = [
     { name: 'Explore', href: '/', icon: HomeIcon, activeIcon: HomeSolidIcon },
-    { name: 'Albums', href: '/albums', icon: ChartBarIcon, activeIcon: ChartBarSolidIcon },
-    { name: 'Genres', href: '/genres', icon: UserGroupIcon, activeIcon: UserGroupSolidIcon },
-    { name: 'Artists', href: '/artists', icon: UserGroupIcon, activeIcon: UserGroupSolidIcon },
-    { name: 'Dashboard', href: '/dashboard', icon: ChartBarIcon, activeIcon: ChartBarSolidIcon },
+    {
+      name: 'Albums',
+      href: '/albums',
+      icon: ChartBarIcon,
+      activeIcon: ChartBarSolidIcon,
+    },
+    {
+      name: 'Genres',
+      href: '/genres',
+      icon: UserGroupIcon,
+      activeIcon: UserGroupSolidIcon,
+    },
+    {
+      name: 'Artists',
+      href: '/artists',
+      icon: UserGroupIcon,
+      activeIcon: UserGroupSolidIcon,
+    },
+    {
+      name: 'Dashboard',
+      href: '/dashboard',
+      icon: ChartBarIcon,
+      activeIcon: ChartBarSolidIcon,
+    },
   ];
 
   const isActive = (href: string) => {
@@ -171,6 +191,14 @@ export default function MobileHeader() {
           <div
             className='fixed inset-0 bg-black/50 z-[60] lg:hidden'
             onClick={() => setIsMenuOpen(false)}
+            role='button'
+            tabIndex={0}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setIsMenuOpen(false);
+              }
+            }}
           />
 
           {/* Drawer Panel - slides in from left, starts below header */}
@@ -183,20 +211,20 @@ export default function MobileHeader() {
             <div className='flex-1 overflow-y-auto pt-4'>
               {/* Search Section */}
               <div className='px-4 pb-4'>
-          <Input
-            size='sm'
-            placeholder='Search...'
-            variant='bordered'
-            classNames={{
-              inputWrapper:
-                'bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-600',
-              input: 'text-gray-900 dark:text-gray-100',
-            }}
-            startContent={
-              <MagnifyingGlassIcon className='w-4 h-4 text-gray-400' />
-            }
-          />
-        </div>
+                <Input
+                  size='sm'
+                  placeholder='Search...'
+                  variant='bordered'
+                  classNames={{
+                    inputWrapper:
+                      'bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-600',
+                    input: 'text-gray-900 dark:text-gray-100',
+                  }}
+                  startContent={
+                    <MagnifyingGlassIcon className='w-4 h-4 text-gray-400' />
+                  }
+                />
+              </div>
 
               {/* MENU Section */}
               <div className='px-4 pb-6'>
@@ -209,7 +237,7 @@ export default function MobileHeader() {
                     const IconComponent = active ? item.activeIcon : item.icon;
 
                     return (
-            <Link
+                      <Link
                         key={item.name}
                         href={item.href}
                         onClick={() => setIsMenuOpen(false)}
@@ -221,7 +249,9 @@ export default function MobileHeader() {
                       >
                         <div
                           className={`w-2 h-2 rounded-full ${
-                            active ? 'bg-blue-600 dark:bg-blue-400' : 'bg-transparent'
+                            active
+                              ? 'bg-blue-600 dark:bg-blue-400'
+                              : 'bg-transparent'
                           }`}
                         />
                         <IconComponent className='w-5 h-5' />
@@ -254,7 +284,7 @@ export default function MobileHeader() {
                     >
                       <UserIcon className='w-5 h-5' />
                       <span className='text-sm'>Sign Up</span>
-            </Link>
+                    </Link>
                   </nav>
                 </div>
               )}
@@ -284,15 +314,15 @@ export default function MobileHeader() {
                     </div>
                   </div>
                   <div className='mt-2 space-y-1'>
-              <Link
-                href='/dashboard'
+                    <Link
+                      href='/dashboard'
                       onClick={() => setIsMenuOpen(false)}
                       className='flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors'
-              >
+                    >
                       <Cog6ToothIcon className='w-4 h-4' />
-                Dashboard
-              </Link>
-              <button
+                      Dashboard
+                    </Link>
+                    <button
                       onClick={() => {
                         setIsMenuOpen(false);
                         signOut();
@@ -300,15 +330,15 @@ export default function MobileHeader() {
                       className='flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full text-left'
                     >
                       <ArrowRightOnRectangleIcon className='w-4 h-4' />
-                Sign out
-              </button>
+                      Sign out
+                    </button>
                   </div>
                 </div>
               )}
             </div>
           </div>
-          </>
-        )}
+        </>
+      )}
     </Navbar>
   );
 }

@@ -18,6 +18,7 @@ import {
   TableColumn,
   TableHeader,
   TableRow,
+  Textarea,
 } from '@heroui/react';
 import {
   PlusIcon,
@@ -90,11 +91,10 @@ export default function GenreManagement() {
 
   const openCreate = async () => {
     setEditing(null);
-    
+
     // Get the max order from existing genres
-    const maxOrder = genres.length > 0 
-      ? Math.max(...genres.map(g => g.order), 0)
-      : -1;
+    const maxOrder =
+      genres.length > 0 ? Math.max(...genres.map(g => g.order), 0) : -1;
     const nextOrder = maxOrder + 10;
 
     setForm({
@@ -365,10 +365,10 @@ export default function GenreManagement() {
                   value={form.name || ''}
                   onValueChange={value => {
                     const slug = generateSlug(value);
-                    setForm(prev => ({ 
-                      ...prev, 
+                    setForm(prev => ({
+                      ...prev,
                       name: value,
-                      slug: slug
+                      slug: slug,
                     }));
                   }}
                   isRequired
@@ -383,14 +383,13 @@ export default function GenreManagement() {
                 />
               </div>
 
-              <Input
+              <Textarea
                 label='Description'
                 placeholder='Genre description...'
                 value={form.description || ''}
                 onValueChange={value =>
                   setForm(prev => ({ ...prev, description: value }))
                 }
-                multiline
                 minRows={2}
               />
 
@@ -443,7 +442,7 @@ export default function GenreManagement() {
                   Active
                 </Switch>
                 <span className='text-sm text-gray-500 dark:text-gray-400'>
-                  Inactive genres won't appear in public listings
+                  Inactive genres won&apos;t appear in public listings
                 </span>
               </div>
             </div>
@@ -470,4 +469,3 @@ export default function GenreManagement() {
     </div>
   );
 }
-

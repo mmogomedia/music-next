@@ -2,12 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-} from '@heroui/react';
+import { Modal, ModalContent, ModalHeader, ModalBody } from '@heroui/react';
 import SignInForm from './SignInForm';
 
 interface SignInModalProps {
@@ -57,4 +52,3 @@ export default function SignInModal({
     </Modal>
   );
 }
-

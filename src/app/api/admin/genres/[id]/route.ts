@@ -3,7 +3,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -11,7 +14,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, slug, description, isActive, order, colorHex, icon, aliases, parentId } = body || {};
+    const {
+      name,
+      slug,
+      description,
+      isActive,
+      order,
+      colorHex,
+      icon,
+      aliases,
+      parentId,
+    } = body || {};
 
     const updated = await prisma.genre.update({
       where: { id },
@@ -29,11 +42,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     });
     return NextResponse.json({ genre: updated });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to update genre' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update genre' },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -44,8 +63,9 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     await prisma.genre.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to delete genre' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to delete genre' },
+      { status: 500 }
+    );
   }
 }
-
-

@@ -78,6 +78,7 @@ export const searchTracksTool = new DynamicStructuredTool({
           createdAt: track.createdAt,
           updatedAt: track.updatedAt,
           albumArtwork: track.albumArtwork,
+          isDownloadable: track.isDownloadable,
         })),
         count: tracks.length,
       });
@@ -124,6 +125,7 @@ export const getTrackTool = new DynamicStructuredTool({
           shareCount: track.shareCount,
           coverImageUrl: track.coverImageUrl,
           uniqueUrl: track.uniqueUrl,
+          isDownloadable: track.isDownloadable,
         },
       });
     } catch (error) {
@@ -335,6 +337,7 @@ export const getTrendingTracksTool = new DynamicStructuredTool({
           createdAt: track.createdAt,
           updatedAt: track.updatedAt,
           albumArtwork: track.albumArtwork,
+          isDownloadable: track.isDownloadable,
         })),
         count: tracks.length,
       });
@@ -478,6 +481,7 @@ export const getTracksByGenreTool = new DynamicStructuredTool({
           createdAt: track.createdAt,
           updatedAt: track.updatedAt,
           albumArtwork: track.albumArtwork,
+          isDownloadable: track.isDownloadable,
         })),
         count: tracks.length,
       });

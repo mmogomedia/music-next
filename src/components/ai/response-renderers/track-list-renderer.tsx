@@ -9,7 +9,7 @@ import {
   ChevronUpIcon,
 } from '@heroicons/react/24/outline';
 import TrackCard from '@/components/ai/TrackCard';
-import { Track } from '@/types/track';
+import type { Track } from '@/types/track';
 
 interface TrackListRendererProps {
   response: TrackListResponse;
@@ -28,11 +28,49 @@ export function TrackListRenderer({
   const { tracks } = response.data;
   const [openSummaries, setOpenSummaries] = useState<Set<string>>(new Set());
 
+  const normalizeTrack = (track: any): Track & { summary?: string } => ({
+    id: track.id,
+    title: track.title ?? 'Untitled',
+    filePath: track.filePath ?? '',
+    fileUrl: track.fileUrl ?? '',
+    coverImageUrl: track.coverImageUrl ?? track.albumArtwork ?? undefined,
+    albumArtwork: track.albumArtwork ?? undefined,
+    genre: track.genre ?? undefined,
+    album: track.album ?? undefined,
+    description: track.description ?? undefined,
+    duration:
+      typeof track.duration === 'number' && Number.isFinite(track.duration)
+        ? track.duration
+        : undefined,
+    playCount: track.playCount ?? 0,
+    likeCount: track.likeCount ?? 0,
+    artistId: track.artistId ?? track.artistProfileId ?? '',
+    artistProfileId: track.artistProfileId ?? undefined,
+    userId: track.userId ?? '',
+    createdAt: track.createdAt ?? new Date().toISOString(),
+    updatedAt: track.updatedAt ?? new Date().toISOString(),
+    artist: track.artist ?? track.artistProfile?.artistName ?? 'Unknown Artist',
+    composer: track.composer ?? undefined,
+    year: track.year ?? undefined,
+    releaseDate: track.releaseDate ?? undefined,
+    bpm: track.bpm ?? undefined,
+    isrc: track.isrc ?? undefined,
+    lyrics: track.lyrics ?? undefined,
+    isPublic: track.isPublic ?? true,
+    isDownloadable: track.isDownloadable ?? false,
+    isExplicit: track.isExplicit ?? false,
+    watermarkId: track.watermarkId ?? undefined,
+    copyrightInfo: track.copyrightInfo ?? undefined,
+    licenseType: track.licenseType ?? undefined,
+    distributionRights: track.distributionRights ?? undefined,
+    downloadCount: track.downloadCount ?? undefined,
+    shareCount: track.shareCount ?? undefined,
+    summary: track.summary ?? undefined,
+  });
+
   const handlePlayTrack = (track: Track) => {
     if (onPlayTrack) {
       onPlayTrack(track.id, track);
-    } else {
-      console.warn('onPlayTrack handler not provided');
     }
   };
 
@@ -95,10 +133,9 @@ export function TrackListRenderer({
         break;
       case 'save_playlist':
         // TODO: Implement save playlist functionality
-        console.log('Save playlist action:', action);
         break;
       default:
-        console.log('Unhandled action type:', action.type);
+        break;
     }
   };
 
@@ -115,14 +152,14 @@ export function TrackListRenderer({
       {/* Tracks with individual summaries */}
       <div className='space-y-3'>
         {tracks.map(track => {
-          const trackWithSummary = track as Track & { summary?: string };
+          const trackWithSummary = normalizeTrack(track);
           const hasSummary = !!trackWithSummary.summary;
           const isOpen = openSummaries.has(track.id);
 
           return (
             <div key={track.id} className='space-y-2'>
               <TrackCard
-                track={track as unknown as Track}
+                track={trackWithSummary}
                 onPlay={handlePlayTrack}
                 size='md'
                 showDuration

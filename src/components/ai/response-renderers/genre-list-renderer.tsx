@@ -20,7 +20,7 @@ export function GenreListRenderer({
   const { genres } = response.data;
   const [clickedGenres, setClickedGenres] = useState<Set<string>>(new Set());
 
-  const handleGenreClick = (genre: typeof genres[0]) => {
+  const handleGenreClick = (genre: (typeof genres)[0]) => {
     // Mark as clicked for visual feedback
     setClickedGenres(prev => new Set(prev).add(genre.id));
 
@@ -106,9 +106,7 @@ export function GenreListRenderer({
                 ) : (
                   <MusicalNoteIcon
                     className={`w-4 h-4 ${
-                      isClicked
-                        ? 'text-gray-500 dark:text-gray-400'
-                        : ''
+                      isClicked ? 'text-gray-500 dark:text-gray-400' : ''
                     }`}
                     style={
                       !isClicked && genre.colorHex
@@ -182,4 +180,3 @@ export function GenreListRenderer({
     </div>
   );
 }
-

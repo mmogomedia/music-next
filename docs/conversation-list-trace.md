@@ -45,17 +45,20 @@ This document traces the entire flow from when the page loads to when conversati
 ### Step 1-3: Component Mounting
 
 **Files:**
+
 - `src/app/(chat)/page.tsx` - Landing page
 - `src/components/layout/ChatLayout.tsx` - Main layout wrapper
 - `src/components/layout/ChatNavigation.tsx` - Left sidebar
 - `src/components/ai/ConversationList.tsx` - Conversation list component
 
 **What happens:**
+
 1. Next.js renders the page
 2. `ChatLayout` mounts and renders `ChatNavigation`
 3. `ChatNavigation` renders `ConversationList`
 
 **Checkpoints:**
+
 - Console: `[ConversationList] useEffect triggered` should appear
 
 ### Step 4-6: Session Loading
@@ -63,17 +66,20 @@ This document traces the entire flow from when the page loads to when conversati
 **File:** `src/components/ai/ConversationList.tsx`
 
 **Code:**
+
 ```typescript
 const { data: session, status } = useSession();
 ```
 
 **What happens:**
+
 1. `useSession()` hook from `next-auth/react` starts
 2. Initially `status === 'loading'` and `session === undefined`
 3. NextAuth fetches session from server
 4. Status changes to `'authenticated'` or `'unauthenticated'`
 
 **Checkpoints:**
+
 - Console: `[ConversationList] useEffect triggered` should log:
   - First with `status: 'loading'`
   - Then with `status: 'authenticated'` (if logged in)
@@ -83,6 +89,7 @@ const { data: session, status } = useSession();
 **File:** `src/components/ai/ConversationList.tsx`
 
 **Code:**
+
 ```typescript
 useEffect(() => {
   if (status === 'authenticated' && session?.user?.id) {
@@ -92,10 +99,12 @@ useEffect(() => {
 ```
 
 **What happens:**
+
 1. Effect runs when `status` or `session?.user?.id` changes
 2. If authenticated AND userId exists, calls `fetchConversations()`
 
 **Checkpoints:**
+
 - Console: `[ConversationList] Calling fetchConversations`
 - Console: `[ConversationList] fetchConversations: Making API call`
 
@@ -104,15 +113,18 @@ useEffect(() => {
 **File:** `src/components/ai/ConversationList.tsx`
 
 **Code:**
+
 ```typescript
 const response = await fetch('/api/ai/conversations');
 ```
 
 **What happens:**
+
 1. Browser sends GET request to `/api/ai/conversations`
 2. Request includes cookies (for session authentication)
 
 **Checkpoints:**
+
 - **Network Tab:** Should see `GET /api/ai/conversations` request
 - Console: `[API] GET /api/ai/conversations - Request received`
 
@@ -121,6 +133,7 @@ const response = await fetch('/api/ai/conversations');
 **File:** `src/app/api/ai/conversations/route.ts`
 
 **Code:**
+
 ```typescript
 export async function GET(_request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -129,11 +142,13 @@ export async function GET(_request: NextRequest) {
 ```
 
 **What happens:**
+
 1. Next.js API route handler receives request
 2. Calls `getServerSession(authOptions)` to get server-side session
 3. Verifies session exists and has `userId`
 
 **Checkpoints:**
+
 - Console: `[API] Getting server session...`
 - Console: `[API] Session check:` with session details
 - If unauthorized: `[API] ❌ Unauthorized - No session or userId`
@@ -141,15 +156,20 @@ export async function GET(_request: NextRequest) {
 ### Step 12-13: Database Query
 
 **Files:**
+
 - `src/app/api/ai/conversations/route.ts`
 - `src/lib/ai/memory/conversation-store.ts`
 
 **Code:**
+
 ```typescript
-const conversations = await conversationStore.getUserConversations(session.user.id);
+const conversations = await conversationStore.getUserConversations(
+  session.user.id
+);
 ```
 
 **What happens:**
+
 1. Calls `conversationStore.getUserConversations(userId)`
 2. Executes Prisma query:
    ```typescript
@@ -158,10 +178,11 @@ const conversations = await conversationStore.getUserConversations(session.user.
      orderBy: { updatedAt: 'desc' },
      take: 20,
      select: { id: true, title: true, updatedAt: true },
-   })
+   });
    ```
 
 **Checkpoints:**
+
 - Console: `[ConversationStore] getUserConversations called with userId:`
 - Console: `[ConversationStore] Querying database for conversations...`
 - Console: `[ConversationStore] ✅ Database query successful:` with results
@@ -171,15 +192,18 @@ const conversations = await conversationStore.getUserConversations(session.user.
 **File:** `src/app/api/ai/conversations/route.ts`
 
 **Code:**
+
 ```typescript
 return NextResponse.json({ conversations });
 ```
 
 **What happens:**
+
 1. API returns JSON response with conversations array
 2. Response format: `{ conversations: [{ id, title, updatedAt }, ...] }`
 
 **Checkpoints:**
+
 - Console: `[API] ✅ Conversations fetched:` with count and data
 - **Network Tab:** Response should show 200 status and JSON data
 
@@ -188,18 +212,21 @@ return NextResponse.json({ conversations });
 **File:** `src/components/ai/ConversationList.tsx`
 
 **Code:**
+
 ```typescript
 const data = await response.json();
 setConversations(data.conversations || []);
 ```
 
 **What happens:**
+
 1. Frontend receives response
 2. Parses JSON and updates state with `setConversations()`
 3. Component re-renders with new conversations
 4. UI displays conversation list or "No conversations yet" placeholder
 
 **Checkpoints:**
+
 - Console: `[ConversationList] fetchConversations: Response status 200`
 - Console: `[ConversationList] fetchConversations: Received data`
 - UI should update to show conversations
@@ -209,16 +236,19 @@ setConversations(data.conversations || []);
 ### Issue 1: API Call Never Happens
 
 **Symptoms:**
+
 - No network request in Network tab
 - No `[API]` logs in console
 
 **Possible Causes:**
+
 1. Session never becomes `'authenticated'`
 2. `session?.user?.id` is undefined
 3. Component not mounting
 4. useEffect not triggering
 
 **Debug:**
+
 - Check console for `[ConversationList] useEffect triggered` logs
 - Verify session status and userId in logs
 - Check if user is actually logged in
@@ -226,15 +256,18 @@ setConversations(data.conversations || []);
 ### Issue 2: 401 Unauthorized
 
 **Symptoms:**
+
 - Network request shows 401 status
 - `[API] ❌ Unauthorized` in console
 
 **Possible Causes:**
+
 1. Session expired
 2. Cookies not being sent
 3. Server-side session not matching client-side session
 
 **Debug:**
+
 - Check cookies in Application tab
 - Verify session in browser
 - Check server logs for session details
@@ -242,15 +275,18 @@ setConversations(data.conversations || []);
 ### Issue 3: Empty Array Returned
 
 **Symptoms:**
+
 - API returns 200 with `{ conversations: [] }`
 - UI shows "No conversations yet"
 
 **Possible Causes:**
+
 1. User has no conversations in database
 2. Wrong userId being queried
 3. Database query returning empty results
 
 **Debug:**
+
 - Run diagnostic script: `yarn tsx scripts/check-conversations.ts [userId]`
 - Check `[ConversationStore]` logs for query results
 - Verify userId matches in database
@@ -258,15 +294,18 @@ setConversations(data.conversations || []);
 ### Issue 4: Database Query Fails
 
 **Symptoms:**
+
 - `[ConversationStore] ❌ Database query failed` in console
 - API returns 500 error
 
 **Possible Causes:**
+
 1. Database connection issue
 2. Prisma schema mismatch
 3. Table doesn't exist
 
 **Debug:**
+
 - Check database connection
 - Run Prisma migrations: `npx prisma migrate deploy`
 - Check Prisma schema matches database
@@ -298,6 +337,7 @@ yarn tsx scripts/check-conversations.ts <userId>
 ```
 
 This will:
+
 1. Test database connection
 2. List all users
 3. Count conversations per user

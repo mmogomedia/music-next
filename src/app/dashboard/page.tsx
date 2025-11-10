@@ -48,6 +48,7 @@ import { SourceType } from '@/types/stats';
 import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 import ArtistNavigation from '@/components/dashboard/artist/ArtistNavigation';
 import UnifiedLayout from '@/components/layout/UnifiedLayout';
+import QuickLinksManager from '@/components/dashboard/quick-links/QuickLinksManager';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -234,6 +235,7 @@ export default function DashboardPage() {
     library: 'Library',
     upload: 'Upload',
     submissions: 'Submissions',
+    'quick-links': 'Quick Links',
     analytics: 'Analytics',
     profile: 'Profile',
   };
@@ -290,7 +292,10 @@ export default function DashboardPage() {
       <RoleBasedRedirect>
         <UnifiedLayout
           sidebar={
-            <ArtistNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+            <ArtistNavigation
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
           }
           contentClassName='w-full'
           header={header}
@@ -388,10 +393,7 @@ export default function DashboardPage() {
                   Error loading stats: {statsError}
                 </div>
               ) : (
-                <StatsGrid
-                  stats={displayStats}
-                  growth={stats?.growthMetrics}
-                />
+                <StatsGrid stats={displayStats} growth={stats?.growthMetrics} />
               )}
 
               <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
@@ -411,200 +413,200 @@ export default function DashboardPage() {
           {/* Profile Tab */}
           {activeTab === 'profile' && (
             <div className='space-y-6'>
-                  {!profile && !isEditingProfile ? (
-                    <Card>
-                      <CardBody className='p-8 text-center'>
-                        <div className='w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4'>
-                          <UserIcon className='w-8 h-8 text-white' />
-                        </div>
-                        <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
-                          Create Your Artist Profile
-                        </h3>
-                        <p className='text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6'>
-                          Set up your artist identity to start sharing your
-                          music with the world
+              {!profile && !isEditingProfile ? (
+                <Card>
+                  <CardBody className='p-8 text-center'>
+                    <div className='w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4'>
+                      <UserIcon className='w-8 h-8 text-white' />
+                    </div>
+                    <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
+                      Create Your Artist Profile
+                    </h3>
+                    <p className='text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6'>
+                      Set up your artist identity to start sharing your music
+                      with the world
+                    </p>
+                    <Button
+                      color='primary'
+                      size='lg'
+                      className='flex justify-start'
+                      startContent={<UserIcon className='w-5 h-5' />}
+                      onPress={() => {
+                        setProfileError(null);
+                        setIsEditingProfile(true);
+                      }}
+                    >
+                      Create Artist Profile
+                    </Button>
+                  </CardBody>
+                </Card>
+              ) : isEditingProfile ? (
+                <Card>
+                  <CardBody className='p-6'>
+                    <div className='flex items-center justify-between mb-6'>
+                      <h3 className='text-xl font-bold text-gray-900 dark:text-white'>
+                        {profile
+                          ? 'Edit Artist Profile'
+                          : 'Create Artist Profile'}
+                      </h3>
+                      <Button
+                        variant='light'
+                        onPress={() => setIsEditingProfile(false)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                    <ArtistProfileForm
+                      profile={profile || undefined}
+                      onSave={async formData => {
+                        try {
+                          setProfileError(null);
+
+                          if (profile) {
+                            const updateData: UpdateArtistProfileData = {
+                              artistName: formData.artistName
+                                ? formData.artistName
+                                : profile.artistName,
+                              bio: formData.bio,
+                              profileImage: formData.profileImage,
+                              coverImage: formData.coverImage,
+                              location: formData.location,
+                              website: formData.website
+                                ? formData.website.startsWith('http://') ||
+                                  formData.website.startsWith('https://')
+                                  ? formData.website
+                                  : `https://${formData.website}`
+                                : formData.website,
+                              genre: formData.genre,
+                              slug: formData.slug,
+                            };
+                            const success = await updateProfile(updateData);
+                            if (success) {
+                              setIsEditingProfile(false);
+                            } else {
+                              setProfileError(
+                                'Failed to update profile. Please try again.'
+                              );
+                            }
+                          } else {
+                            if (!formData.artistName?.trim()) {
+                              setProfileError('Artist name is required.');
+                              return;
+                            }
+
+                            const createData: CreateArtistProfileData = {
+                              artistName: formData.artistName,
+                              bio: formData.bio,
+                              profileImage: formData.profileImage,
+                              coverImage: formData.coverImage,
+                              location: formData.location,
+                              website: formData.website
+                                ? formData.website.startsWith('http://') ||
+                                  formData.website.startsWith('https://')
+                                  ? formData.website
+                                  : `https://${formData.website}`
+                                : formData.website,
+                              genre: formData.genre,
+                              slug: formData.slug,
+                            };
+                            const success = await createProfile(createData);
+                            if (success) {
+                              setIsEditingProfile(false);
+                            } else {
+                              setProfileError(
+                                'Failed to create profile. Please try again.'
+                              );
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Error saving profile:', error);
+                          setProfileError(
+                            'An unexpected error occurred. Please try again.'
+                          );
+                        }
+                      }}
+                      onCancel={() => setIsEditingProfile(false)}
+                      isLoading={profileLoading}
+                    />
+
+                    {profileError && (
+                      <div className='mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg'>
+                        <p className='text-red-600 dark:text-red-400 text-sm'>
+                          {profileError}
                         </p>
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+              ) : (
+                <div className='space-y-6'>
+                  <Card>
+                    <CardBody className='p-6'>
+                      <div className='flex items-center justify-between mb-6'>
+                        <div className='flex items-center gap-4'>
+                          <Avatar
+                            src={profile?.profileImage}
+                            name={profile?.artistName}
+                            className='w-16 h-16'
+                          />
+                          <div>
+                            <h3 className='text-2xl font-bold text-gray-900 dark:text-white'>
+                              {profile?.artistName}
+                            </h3>
+                            <p className='text-gray-500 dark:text-gray-400'>
+                              {profile?.genre || 'Artist'}
+                            </p>
+                          </div>
+                        </div>
                         <Button
                           color='primary'
-                          size='lg'
                           className='flex justify-start'
-                          startContent={<UserIcon className='w-5 h-5' />}
+                          startContent={<PencilIcon className='w-4 h-4' />}
                           onPress={() => {
                             setProfileError(null);
                             setIsEditingProfile(true);
                           }}
                         >
-                          Create Artist Profile
+                          Edit Profile
                         </Button>
-                      </CardBody>
-                    </Card>
-                  ) : isEditingProfile ? (
-                    <Card>
-                      <CardBody className='p-6'>
-                        <div className='flex items-center justify-between mb-6'>
-                          <h3 className='text-xl font-bold text-gray-900 dark:text-white'>
-                            {profile
-                              ? 'Edit Artist Profile'
-                              : 'Create Artist Profile'}
-                          </h3>
-                          <Button
-                            variant='light'
-                            onPress={() => setIsEditingProfile(false)}
-                          >
-                            Cancel
-                          </Button>
+                      </div>
+
+                      {profile?.bio && (
+                        <div className='mb-6'>
+                          <h4 className='text-lg font-medium text-gray-900 dark:text-white mb-2'>
+                            About
+                          </h4>
+                          <p className='text-gray-600 dark:text-gray-300'>
+                            {profile.bio}
+                          </p>
                         </div>
-                        <ArtistProfileForm
-                          profile={profile || undefined}
-                          onSave={async formData => {
-                            try {
-                              setProfileError(null);
+                      )}
 
-                              if (profile) {
-                                const updateData: UpdateArtistProfileData = {
-                                  artistName: formData.artistName
-                                    ? formData.artistName
-                                    : profile.artistName,
-                                  bio: formData.bio,
-                                  profileImage: formData.profileImage,
-                                  coverImage: formData.coverImage,
-                                  location: formData.location,
-                                  website: formData.website
-                                    ? formData.website.startsWith('http://') ||
-                                      formData.website.startsWith('https://')
-                                      ? formData.website
-                                      : `https://${formData.website}`
-                                    : formData.website,
-                                  genre: formData.genre,
-                                  slug: formData.slug,
-                                };
-                                const success = await updateProfile(updateData);
-                                if (success) {
-                                  setIsEditingProfile(false);
-                                } else {
-                                  setProfileError(
-                                    'Failed to update profile. Please try again.'
-                                  );
-                                }
-                              } else {
-                                if (!formData.artistName?.trim()) {
-                                  setProfileError('Artist name is required.');
-                                  return;
-                                }
-
-                                const createData: CreateArtistProfileData = {
-                                  artistName: formData.artistName,
-                                  bio: formData.bio,
-                                  profileImage: formData.profileImage,
-                                  coverImage: formData.coverImage,
-                                  location: formData.location,
-                                  website: formData.website
-                                    ? formData.website.startsWith('http://') ||
-                                      formData.website.startsWith('https://')
-                                      ? formData.website
-                                      : `https://${formData.website}`
-                                    : formData.website,
-                                  genre: formData.genre,
-                                  slug: formData.slug,
-                                };
-                                const success = await createProfile(createData);
-                                if (success) {
-                                  setIsEditingProfile(false);
-                                } else {
-                                  setProfileError(
-                                    'Failed to create profile. Please try again.'
-                                  );
-                                }
-                              }
-                            } catch (error) {
-                              console.error('Error saving profile:', error);
-                              setProfileError(
-                                'An unexpected error occurred. Please try again.'
-                              );
-                            }
-                          }}
-                          onCancel={() => setIsEditingProfile(false)}
-                          isLoading={profileLoading}
-                        />
-
-                        {profileError && (
-                          <div className='mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg'>
-                            <p className='text-red-600 dark:text-red-400 text-sm'>
-                              {profileError}
-                            </p>
+                      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        {profile?.location && (
+                          <div className='flex items-center gap-2 text-gray-600 dark:text-gray-300'>
+                            <MapPinIcon className='w-5 h-5' />
+                            <span>{profile.location}</span>
                           </div>
                         )}
-                      </CardBody>
-                    </Card>
-                  ) : (
-                    <div className='space-y-6'>
-                      <Card>
-                        <CardBody className='p-6'>
-                          <div className='flex items-center justify-between mb-6'>
-                            <div className='flex items-center gap-4'>
-                              <Avatar
-                                src={profile?.profileImage}
-                                name={profile?.artistName}
-                                className='w-16 h-16'
-                              />
-                              <div>
-                                <h3 className='text-2xl font-bold text-gray-900 dark:text-white'>
-                                  {profile?.artistName}
-                                </h3>
-                                <p className='text-gray-500 dark:text-gray-400'>
-                                  {profile?.genre || 'Artist'}
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              color='primary'
-                              className='flex justify-start'
-                              startContent={<PencilIcon className='w-4 h-4' />}
-                              onPress={() => {
-                                setProfileError(null);
-                                setIsEditingProfile(true);
-                              }}
+                        {profile?.website && (
+                          <div className='flex items-center gap-2 text-gray-600 dark:text-gray-300'>
+                            <GlobeAltIcon className='w-5 h-5' />
+                            <a
+                              href={profile.website}
+                              target='_blank'
+                              rel='noopener noreferrer'
+                              className='text-blue-600 dark:text-blue-400 hover:underline'
                             >
-                              Edit Profile
-                            </Button>
+                              Website
+                            </a>
                           </div>
-
-                          {profile?.bio && (
-                            <div className='mb-6'>
-                              <h4 className='text-lg font-medium text-gray-900 dark:text-white mb-2'>
-                                About
-                              </h4>
-                              <p className='text-gray-600 dark:text-gray-300'>
-                                {profile.bio}
-                              </p>
-                            </div>
-                          )}
-
-                          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                            {profile?.location && (
-                              <div className='flex items-center gap-2 text-gray-600 dark:text-gray-300'>
-                                <MapPinIcon className='w-5 h-5' />
-                                <span>{profile.location}</span>
-                              </div>
-                            )}
-                            {profile?.website && (
-                              <div className='flex items-center gap-2 text-gray-600 dark:text-gray-300'>
-                                <GlobeAltIcon className='w-5 h-5' />
-                                <a
-                                  href={profile.website}
-                                  target='_blank'
-                                  rel='noopener noreferrer'
-                                  className='text-blue-600 dark:text-blue-400 hover:underline'
-                                >
-                                  Website
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        </CardBody>
-                      </Card>
-                    </div>
-                  )}
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
+                </div>
+              )}
             </div>
           )}
 
@@ -613,41 +615,41 @@ export default function DashboardPage() {
             <Card>
               <CardBody className='p-6'>
                 <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-6'>
-                      Upload Music
-                    </h3>
-                    <FileUpload
-                      onUploadComplete={_jobId => {
-                        // Refresh tracks after successful upload
-                        const fetchTracks = async () => {
-                          try {
-                            const response = await fetch('/api/tracks');
-                            if (response.ok) {
-                              const data = await response.json();
-                              setTracks(data.tracks || []);
-                            }
-                          } catch (error) {
-                            console.error('Error fetching tracks:', error);
-                          }
-                        };
-                        fetchTracks();
-                      }}
-                      onViewLibrary={() => setActiveTab('library')}
-                      onUploadAnother={() => {
-                        // Reset upload state is handled in the component
-                      }}
-                      onTrackCreated={track => {
-                        // Add new track to the list
-                        setTracks(prev => [track, ...prev]);
-                        // Switch to library tab to show the new track
-                        setActiveTab('library');
-                      }}
-                      onTrackUpdated={track => {
-                        // Update existing track in the list
-                        setTracks(prev =>
-                          prev.map(t => (t.id === track.id ? track : t))
-                        );
-                      }}
-                    />
+                  Upload Music
+                </h3>
+                <FileUpload
+                  onUploadComplete={_jobId => {
+                    // Refresh tracks after successful upload
+                    const fetchTracks = async () => {
+                      try {
+                        const response = await fetch('/api/tracks');
+                        if (response.ok) {
+                          const data = await response.json();
+                          setTracks(data.tracks || []);
+                        }
+                      } catch (error) {
+                        console.error('Error fetching tracks:', error);
+                      }
+                    };
+                    fetchTracks();
+                  }}
+                  onViewLibrary={() => setActiveTab('library')}
+                  onUploadAnother={() => {
+                    // Reset upload state is handled in the component
+                  }}
+                  onTrackCreated={track => {
+                    // Add new track to the list
+                    setTracks(prev => [track, ...prev]);
+                    // Switch to library tab to show the new track
+                    setActiveTab('library');
+                  }}
+                  onTrackUpdated={track => {
+                    // Update existing track in the list
+                    setTracks(prev =>
+                      prev.map(t => (t.id === track.id ? track : t))
+                    );
+                  }}
+                />
               </CardBody>
             </Card>
           )}
@@ -656,146 +658,144 @@ export default function DashboardPage() {
           {activeTab === 'library' && (
             <Card>
               <CardBody className='p-6 overflow-visible'>
-                    <div className='flex items-center justify-between mb-6'>
-                      <h3 className='text-xl font-bold text-gray-900 dark:text-white'>
-                        My Music Library
-                      </h3>
-                      <Button
-                        color='primary'
-                        className='flex justify-start'
-                        startContent={<PlusIcon className='w-4 h-4' />}
-                        onPress={() => setActiveTab('upload')}
-                      >
-                        Upload New Track
-                      </Button>
+                <div className='flex items-center justify-between mb-6'>
+                  <h3 className='text-xl font-bold text-gray-900 dark:text-white'>
+                    My Music Library
+                  </h3>
+                  <Button
+                    color='primary'
+                    className='flex justify-start'
+                    startContent={<PlusIcon className='w-4 h-4' />}
+                    onPress={() => setActiveTab('upload')}
+                  >
+                    Upload New Track
+                  </Button>
+                </div>
+
+                {tracks.length === 0 ? (
+                  <div className='text-center py-12'>
+                    <div className='w-20 h-20 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4'>
+                      <MusicalNoteIcon className='w-10 h-10 text-gray-400' />
                     </div>
-
-                    {tracks.length === 0 ? (
-                      <div className='text-center py-12'>
-                        <div className='w-20 h-20 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4'>
-                          <MusicalNoteIcon className='w-10 h-10 text-gray-400' />
+                    <h4 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
+                      No tracks yet
+                    </h4>
+                    <p className='text-gray-500 dark:text-gray-400 mb-6'>
+                      Upload your first track to start building your music
+                      library
+                    </p>
+                    <Button
+                      color='primary'
+                      size='lg'
+                      className='flex justify-start'
+                      startContent={<PlusIcon className='w-5 h-5' />}
+                      onPress={() => setActiveTab('upload')}
+                    >
+                      Upload Music
+                    </Button>
+                  </div>
+                ) : (
+                  <div className='space-y-3 overflow-visible'>
+                    {tracks.map(track => (
+                      <div
+                        key={track.id}
+                        className='flex items-center gap-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors relative'
+                      >
+                        <div className='flex-shrink-0'>
+                          <TrackArtwork
+                            artworkUrl={
+                              track.albumArtwork || track.coverImageUrl
+                            }
+                            title={track.title}
+                            size='md'
+                          />
                         </div>
-                        <h4 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
-                          No tracks yet
-                        </h4>
-                        <p className='text-gray-500 dark:text-gray-400 mb-6'>
-                          Upload your first track to start building your music
-                          library
-                        </p>
-                        <Button
-                          color='primary'
-                          size='lg'
-                          className='flex justify-start'
-                          startContent={<PlusIcon className='w-5 h-5' />}
-                          onPress={() => setActiveTab('upload')}
-                        >
-                          Upload Music
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className='space-y-3 overflow-visible'>
-                        {tracks.map(track => (
-                          <div
-                            key={track.id}
-                            className='flex items-center gap-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors relative'
+
+                        <div className='flex-1 min-w-0'>
+                          <h4 className='font-medium text-gray-900 dark:text-white truncate'>
+                            {track.title}
+                          </h4>
+                          <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400'>
+                            <span className='flex items-center gap-1'>
+                              <PlayIcon className='w-3 h-3' />
+                              {track.playCount?.toLocaleString() || 0} plays
+                            </span>
+                            <span className='flex items-center gap-1'>
+                              <ClockIcon className='w-3 h-3' />
+                              {track.duration
+                                ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}`
+                                : '0:00'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className='flex items-center gap-2'>
+                          <Button
+                            isIconOnly
+                            size='sm'
+                            color='primary'
+                            onPress={() =>
+                              playTrack(track, 'dashboard' as SourceType)
+                            }
                           >
-                            <div className='flex-shrink-0'>
-                              <TrackArtwork
-                                artworkUrl={
-                                  track.albumArtwork || track.coverImageUrl
-                                }
-                                title={track.title}
-                                size='md'
-                              />
-                            </div>
+                            {currentTrack?.id === track.id && isPlaying ? (
+                              <PauseIcon className='w-4 h-4' />
+                            ) : (
+                              <PlayIcon className='w-4 h-4' />
+                            )}
+                          </Button>
 
-                            <div className='flex-1 min-w-0'>
-                              <h4 className='font-medium text-gray-900 dark:text-white truncate'>
-                                {track.title}
-                              </h4>
-                              <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400'>
-                                <span className='flex items-center gap-1'>
-                                  <PlayIcon className='w-3 h-3' />
-                                  {track.playCount?.toLocaleString() || 0} plays
-                                </span>
-                                <span className='flex items-center gap-1'>
-                                  <ClockIcon className='w-3 h-3' />
-                                  {track.duration
-                                    ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}`
-                                    : '0:00'}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className='flex items-center gap-2'>
+                          {/* 3-dot menu with HeroUI Dropdown */}
+                          <Dropdown placement='bottom-end'>
+                            <DropdownTrigger>
                               <Button
                                 isIconOnly
                                 size='sm'
-                                color='primary'
-                                onPress={() =>
-                                  playTrack(track, 'dashboard' as SourceType)
-                                }
+                                variant='light'
+                                className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
                               >
-                                {currentTrack?.id === track.id && isPlaying ? (
-                                  <PauseIcon className='w-4 h-4' />
-                                ) : (
-                                  <PlayIcon className='w-4 h-4' />
-                                )}
+                                <EllipsisVerticalIcon className='w-4 h-4' />
                               </Button>
-
-                              {/* 3-dot menu with HeroUI Dropdown */}
-                              <Dropdown placement='bottom-end'>
-                                <DropdownTrigger>
-                                  <Button
-                                    isIconOnly
-                                    size='sm'
-                                    variant='light'
-                                    className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                                  >
-                                    <EllipsisVerticalIcon className='w-4 h-4' />
-                                  </Button>
-                                </DropdownTrigger>
-                                <DropdownMenu aria-label='Track actions'>
-                                  <DropdownItem
-                                    key='submit'
-                                    startContent={
-                                      <MusicalNoteIcon className='w-4 h-4' />
-                                    }
-                                    onPress={() => {
-                                      setSelectedTrackForSubmit(track);
-                                      setSelectedPlaylistForSubmit(null);
-                                      setShowQuickSubmit(true);
-                                    }}
-                                  >
-                                    Submit to Playlists
-                                  </DropdownItem>
-                                  <DropdownItem
-                                    key='edit'
-                                    startContent={
-                                      <PencilIcon className='w-4 h-4' />
-                                    }
-                                    onPress={() => handleEditTrack(track)}
-                                  >
-                                    Edit Track
-                                  </DropdownItem>
-                                  <DropdownItem
-                                    key='delete'
-                                    className='text-danger'
-                                    color='danger'
-                                    startContent={
-                                      <TrashIcon className='w-4 h-4' />
-                                    }
-                                    onPress={() => confirmDelete(track.id)}
-                                  >
-                                    Delete Track
-                                  </DropdownItem>
-                                </DropdownMenu>
-                              </Dropdown>
-                            </div>
-                          </div>
-                        ))}
+                            </DropdownTrigger>
+                            <DropdownMenu aria-label='Track actions'>
+                              <DropdownItem
+                                key='submit'
+                                startContent={
+                                  <MusicalNoteIcon className='w-4 h-4' />
+                                }
+                                onPress={() => {
+                                  setSelectedTrackForSubmit(track);
+                                  setSelectedPlaylistForSubmit(null);
+                                  setShowQuickSubmit(true);
+                                }}
+                              >
+                                Submit to Playlists
+                              </DropdownItem>
+                              <DropdownItem
+                                key='edit'
+                                startContent={
+                                  <PencilIcon className='w-4 h-4' />
+                                }
+                                onPress={() => handleEditTrack(track)}
+                              >
+                                Edit Track
+                              </DropdownItem>
+                              <DropdownItem
+                                key='delete'
+                                className='text-danger'
+                                color='danger'
+                                startContent={<TrashIcon className='w-4 h-4' />}
+                                onPress={() => confirmDelete(track.id)}
+                              >
+                                Delete Track
+                              </DropdownItem>
+                            </DropdownMenu>
+                          </Dropdown>
+                        </div>
                       </div>
-                    )}
+                    ))}
+                  </div>
+                )}
               </CardBody>
             </Card>
           )}
@@ -803,36 +803,41 @@ export default function DashboardPage() {
           {/* Submissions Tab */}
           {activeTab === 'submissions' && (
             <PlaylistSubmissionsTab
-                  onQuickSubmit={(track, playlist) => {
-                    if (track) {
-                      // Track-based submission
-                      setSelectedTrackForSubmit(track);
-                      setSelectedPlaylistForSubmit(null);
-                      setShowQuickSubmit(true);
-                    } else if (playlist) {
-                      // Playlist-based submission - pass available tracks
-                      setSelectedTrackForSubmit(null);
-                      setSelectedPlaylistForSubmit(playlist);
-                      setShowQuickSubmit(true);
-                    }
-                  }}
+              onQuickSubmit={(track, playlist) => {
+                if (track) {
+                  // Track-based submission
+                  setSelectedTrackForSubmit(track);
+                  setSelectedPlaylistForSubmit(null);
+                  setShowQuickSubmit(true);
+                } else if (playlist) {
+                  // Playlist-based submission - pass available tracks
+                  setSelectedTrackForSubmit(null);
+                  setSelectedPlaylistForSubmit(playlist);
+                  setShowQuickSubmit(true);
+                }
+              }}
             />
+          )}
+
+          {/* Quick Links Tab */}
+          {activeTab === 'quick-links' && (
+            <QuickLinksManager tracks={tracks} profile={profile} />
           )}
 
           {/* Analytics Tab */}
           {activeTab === 'analytics' && (
             <Card>
               <CardBody className='p-8 text-center'>
-                    <div className='w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6'>
-                      <ChartBarIcon className='w-10 h-10 text-white' />
-                    </div>
-                    <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
-                      Analytics Coming Soon
-                    </h3>
-                    <p className='text-gray-500 dark:text-gray-400 max-w-md mx-auto'>
-                      Detailed charts and metrics will be displayed here to help
-                      you track your music performance
-                    </p>
+                <div className='w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6'>
+                  <ChartBarIcon className='w-10 h-10 text-white' />
+                </div>
+                <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
+                  Analytics Coming Soon
+                </h3>
+                <p className='text-gray-500 dark:text-gray-400 max-w-md mx-auto'>
+                  Detailed charts and metrics will be displayed here to help you
+                  track your music performance
+                </p>
               </CardBody>
             </Card>
           )}
@@ -884,7 +889,6 @@ export default function DashboardPage() {
                   artist: editingTrack.artist,
                   album: editingTrack.album,
                   genre: editingTrack.genre,
-                  genreId: (editingTrack as any).genreId || undefined,
                   composer: editingTrack.composer,
                   year: editingTrack.year,
                   releaseDate: editingTrack.releaseDate,

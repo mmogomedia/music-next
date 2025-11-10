@@ -101,6 +101,7 @@ For detailed information, see [Admin Dashboard Rules](./rules/12-admin-dashboard
 The platform features a centralized API client system that eliminates code duplication and provides consistent API communication:
 
 ### **Key Features**
+
 - **Single API Client**: Centralized HTTP methods with automatic authentication
 - **Error Handling**: Custom error types with consistent error responses
 - **Image Upload Utility**: Centralized image upload to Cloudflare R2
@@ -108,6 +109,7 @@ The platform features a centralized API client system that eliminates code dupli
 - **Timeout & Retry**: Built-in request timeout and error handling
 
 ### **Usage Examples**
+
 ```typescript
 import { api } from '@/lib/api-client';
 
@@ -121,6 +123,7 @@ const imageKey = await uploadImageToR2(file);
 ```
 
 ### **Benefits**
+
 - ✅ **Eliminated 150+ lines** of duplicate code
 - ✅ **Consistent error handling** across all components
 - ✅ **Automatic authentication** using NextAuth.js

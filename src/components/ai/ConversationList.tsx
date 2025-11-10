@@ -48,7 +48,9 @@ export default function ConversationList({
   const [editTitle, setEditTitle] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
+  const [conversationToDelete, setConversationToDelete] = useState<
+    string | null
+  >(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
@@ -96,9 +98,12 @@ export default function ConversationList({
     setDeleteError(null);
 
     try {
-      const response = await fetch(`/api/ai/conversations/${conversationToDelete}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `/api/ai/conversations/${conversationToDelete}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (response.ok) {
         // Refresh conversations list
@@ -208,83 +213,88 @@ export default function ConversationList({
           {/* Scrollable conversations list */}
           <div className='flex-1 overflow-y-auto min-h-0 space-y-1'>
             {displayConversations.map(conversation => (
-            <div
-              key={conversation.id}
-              className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
-                activeConversationId === conversation.id
-                  ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-                  : 'hover:bg-gray-50 dark:hover:bg-slate-800 border border-transparent'
-              }`}
-            >
-              {editingId === conversation.id ? (
-                <input
-                  type='text'
-                  value={editTitle}
-                  onChange={e => setEditTitle(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      handleEditSave(conversation.id);
-                    } else if (e.key === 'Escape') {
-                      handleEditCancel();
-                    }
-                  }}
-                  onBlur={() => handleEditSave(conversation.id)}
-                  className='flex-1 text-xs bg-white dark:bg-slate-700 border border-blue-500 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500'
-                />
-              ) : (
-                <>
-                  <button
-                    onClick={() => {
-                      onConversationSelect?.(conversation.id);
+              <div
+                key={conversation.id}
+                className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-lg transition-colors duration-200 ${
+                  activeConversationId === conversation.id
+                    ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
+                    : 'hover:bg-gray-50 dark:hover:bg-slate-800 border border-transparent'
+                }`}
+              >
+                {editingId === conversation.id ? (
+                  <input
+                    type='text'
+                    value={editTitle}
+                    onChange={e => setEditTitle(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        handleEditSave(conversation.id);
+                      } else if (e.key === 'Escape') {
+                        handleEditCancel();
+                      }
                     }}
-                    className='flex-1 text-left min-w-0'
-                  >
-                    <div className='font-medium text-gray-900 dark:text-gray-100 text-sm truncate mb-0.5'>
-                      {conversation.title || 'Untitled Conversation'}
+                    onBlur={() => handleEditSave(conversation.id)}
+                    className='flex-1 text-xs bg-white dark:bg-slate-700 border border-blue-500 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  />
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        onConversationSelect?.(conversation.id);
+                      }}
+                      className='flex-1 text-left min-w-0'
+                    >
+                      <div className='font-medium text-gray-900 dark:text-gray-100 text-sm truncate mb-0.5'>
+                        {conversation.title || 'Untitled Conversation'}
+                      </div>
+                      <div className='flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400'>
+                        <ClockIcon className='w-3 h-3 flex-shrink-0' />
+                        <span>{formatDate(conversation.updatedAt)}</span>
+                      </div>
+                    </button>
+                    <div className='flex-shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity'>
+                      <Dropdown placement='bottom-end'>
+                        <DropdownTrigger>
+                          <Button
+                            isIconOnly
+                            variant='light'
+                            size='sm'
+                            className='min-w-0 w-7 h-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                            aria-label='Conversation options'
+                          >
+                            <EllipsisHorizontalIcon className='w-5 h-5' />
+                          </Button>
+                        </DropdownTrigger>
+                        <DropdownMenu
+                          aria-label='Conversation actions'
+                          variant='flat'
+                        >
+                          <DropdownItem
+                            key='edit'
+                            startContent={
+                              <PencilIcon className='w-3.5 h-3.5' />
+                            }
+                            onPress={() => handleEditStart(conversation)}
+                          >
+                            Edit
+                          </DropdownItem>
+                          <DropdownItem
+                            key='delete'
+                            color='danger'
+                            startContent={<TrashIcon className='w-3.5 h-3.5' />}
+                            onPress={() => handleDeleteClick(conversation.id)}
+                          >
+                            Delete
+                          </DropdownItem>
+                        </DropdownMenu>
+                      </Dropdown>
                     </div>
-                    <div className='flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400'>
-                      <ClockIcon className='w-3 h-3 flex-shrink-0' />
-                      <span>{formatDate(conversation.updatedAt)}</span>
-                    </div>
-                  </button>
-                  <div className='flex-shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity'>
-                    <Dropdown placement='bottom-end'>
-                      <DropdownTrigger>
-                        <Button
-                          isIconOnly
-                          variant='light'
-                          size='sm'
-                          className='min-w-0 w-7 h-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                          aria-label='Conversation options'
-                        >
-                          <EllipsisHorizontalIcon className='w-5 h-5' />
-                        </Button>
-                      </DropdownTrigger>
-                      <DropdownMenu aria-label='Conversation actions' variant='flat'>
-                        <DropdownItem
-                          key='edit'
-                          startContent={<PencilIcon className='w-3.5 h-3.5' />}
-                          onPress={() => handleEditStart(conversation)}
-                        >
-                          Edit
-                        </DropdownItem>
-                        <DropdownItem
-                          key='delete'
-                          color='danger'
-                          startContent={<TrashIcon className='w-3.5 h-3.5' />}
-                          onPress={() => handleDeleteClick(conversation.id)}
-                        >
-                          Delete
-                        </DropdownItem>
-                      </DropdownMenu>
-                    </Dropdown>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
+                  </>
+                )}
+              </div>
+            ))}
           </div>
-          
+
           {/* Load More button - always visible at bottom when there are more conversations */}
           {hasMore && !showAll && (
             <div className='flex-shrink-0 pt-2 border-t border-gray-200 dark:border-slate-700 mt-2'>

@@ -33,7 +33,8 @@ export default function UserDetailsFooter({
 }: UserDetailsFooterProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-  const isOnDashboard = pathname?.startsWith('/admin') || pathname?.startsWith('/dashboard');
+  const isOnDashboard =
+    pathname?.startsWith('/admin') || pathname?.startsWith('/dashboard');
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
 
   const getHealthColor = (health: string) => {
@@ -109,7 +110,11 @@ export default function UserDetailsFooter({
                   key='dashboard'
                   startContent={<HomeIcon className='w-4 h-4' />}
                   as={Link}
-                  href={session?.user?.role === 'ARTIST' ? '/dashboard' : '/admin/dashboard'}
+                  href={
+                    session?.user?.role === 'ARTIST'
+                      ? '/dashboard'
+                      : '/admin/dashboard'
+                  }
                   onPress={onMobileMenuClose}
                 >
                   Go to Dashboard
@@ -176,4 +181,3 @@ export default function UserDetailsFooter({
     </div>
   );
 }
-

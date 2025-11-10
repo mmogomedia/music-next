@@ -165,7 +165,7 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
           {(showAll ? allTopTracks : topTracks).map((track, index) => (
             <div
               key={track.id}
-              className='group bg-white dark:bg-slate-800 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all duration-200 border border-gray-100 dark:border-slate-700'
+              className='group relative overflow-hidden bg-white dark:bg-slate-800 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all duration-200 border border-gray-100 dark:border-slate-700'
             >
               <div className='flex items-center gap-4'>
                 {/* Rank */}
@@ -192,7 +192,7 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
                   <div className='absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover/artwork:opacity-100 transition-opacity duration-200'>
                     <button
                       onClick={() => handlePlay(track)}
-                      className='w-6 h-6 bg-white/90 text-gray-900 rounded-full flex items-center justify-center hover:bg-white transition-all duration-200'
+                      className='w-6 h-6 bg-white/90 text-gray-900 rounded-full flex items-center justify-center hover:bg-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-0'
                     >
                       {currentTrack?.id === track.id && isPlaying ? (
                         <PauseIcon className='w-3 h-3' />
@@ -230,7 +230,7 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
                 {/* Play Button */}
                 <button
                   onClick={() => handlePlay(track)}
-                  className='flex-shrink-0 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100'
+                  className='flex-shrink-0 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 focus-visible:outline-none focus-visible:ring-0'
                 >
                   {currentTrack?.id === track.id && isPlaying ? (
                     <PauseIcon className='w-4 h-4' />
@@ -250,7 +250,9 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
               onClick={() => setShowAll(!showAll)}
               className='px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-200'
             >
-              {showAll ? 'Show Less' : `View All Top Tracks (${allTopTracks.length})`}
+              {showAll
+                ? 'Show Less'
+                : `View All Top Tracks (${allTopTracks.length})`}
             </button>
           </div>
         )}

@@ -29,18 +29,18 @@ export default function MoreMusicSection({
   }
 
   return (
-    <>
-      {/* Divider with "more music" text */}
-      <div className='my-6 flex items-center'>
-        <div className='flex-1 border-t border-gray-200 dark:border-slate-700' />
-        <span className='px-3 text-[11px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-widest'>
-          More Music
-        </span>
-        <div className='flex-1 border-t border-gray-200 dark:border-slate-700' />
+    <div className='my-6 rounded-xl border border-gray-200/80 dark:border-slate-700/80 bg-gray-50/50 dark:bg-slate-800/30 p-4 md:p-6'>
+      {/* Section header */}
+      <div className='mb-4 flex items-center gap-2'>
+        <div className='h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 dark:via-slate-600 to-transparent' />
+        <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider'>
+          Other Songs
+        </h3>
+        <div className='h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 dark:via-slate-600 to-transparent' />
       </div>
 
       {/* Responsive list of tracks */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'>
         {displayTracks.map(track => (
           <TrackCard
             key={track.id}
@@ -49,10 +49,10 @@ export default function MoreMusicSection({
             size='md'
             showDuration
             variant='compact'
-            showActions={false}
+            showActions={true}
           />
         ))}
       </div>
-    </>
+    </div>
   );
 }

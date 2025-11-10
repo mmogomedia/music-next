@@ -105,6 +105,7 @@ export class PlaylistService {
           track.artistProfile?.artistName || track.artist || 'Unknown Artist',
         fileUrl: constructFileUrl(track.filePath),
         coverImageUrl: coverImageUrl ? constructFileUrl(coverImageUrl) : null,
+        isDownloadable: track.isDownloadable,
       };
     });
   }
@@ -274,6 +275,7 @@ export class PlaylistService {
             coverImageUrl: coverImageUrl
               ? constructFileUrl(coverImageUrl)
               : null,
+            isDownloadable: track.isDownloadable,
           },
         };
       }),

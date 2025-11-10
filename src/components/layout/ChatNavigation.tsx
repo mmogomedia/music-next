@@ -220,9 +220,11 @@ export default function ChatNavigation({
           />
 
           {/* Drawer Panel - starts below header */}
-          <div className={`fixed left-0 top-14 bottom-0 w-64 bg-white dark:bg-slate-900 z-[55] shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col lg:hidden ${
-            isOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}>
+          <div
+            className={`fixed left-0 top-14 bottom-0 w-64 bg-white dark:bg-slate-900 z-[55] shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col lg:hidden ${
+              isOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
             {/* Quick Links Section - starts immediately below header */}
             <div className='flex-1 px-4 py-4 flex flex-col min-h-0 overflow-hidden'>
               <div className='mb-6 flex-shrink-0'>

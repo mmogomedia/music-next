@@ -3,27 +3,32 @@
 ## 🔍 Complete HTML Rendering Hierarchy
 
 ### 1. Root Layout (`app/layout.tsx`)
+
 ```html
-<html lang='en' className='dark'>
+<html lang="en" className="dark">
   <body>
-    <main id='content'>{children}</main>
+    <main id="content">{children}</main>
     <ConditionalGlobalMusicPlayer />
   </body>
 </html>
 ```
+
 **Classes**: None (just semantic HTML)
 **Positioning**: Normal document flow
 
 ---
 
 ### 2. Chat Group Layout (`app/(chat)/layout.tsx`)
+
 ```html
-{children} <!-- No wrapper, just passes through -->
+{children}
+<!-- No wrapper, just passes through -->
 ```
 
 ---
 
 ### 3. Chat Page (`app/(chat)/page.tsx`)
+
 ```html
 <ChatLayout />
 ```
@@ -31,6 +36,7 @@
 ---
 
 ### 4. ChatLayout Component (`components/layout/ChatLayout.tsx`)
+
 ```html
 <UnifiedLayout
   sidebar={<ChatNavigation />}
@@ -41,6 +47,7 @@
 ```
 
 **Key Props**:
+
 - `contentClassName='w-full h-full lg:ml-64'` - Adds left margin on desktop
 
 ---
@@ -48,10 +55,15 @@
 ### 5. UnifiedLayout Component (`components/layout/UnifiedLayout.tsx`)
 
 #### Root Container (Line 48)
+
 ```html
-<div className='h-screen bg-gray-50 dark:bg-slate-900 flex relative overflow-hidden'>
+<div
+  className="h-screen bg-gray-50 dark:bg-slate-900 flex relative overflow-hidden"
+></div>
 ```
+
 **Classes Analysis**:
+
 - `h-screen` - Full viewport height (100vh)
 - `flex` - Flexbox container
 - `relative` - Positioning context
@@ -60,16 +72,24 @@
 **Layout**: Flexbox row (default direction)
 
 #### Sidebar (Line 50)
+
 ```html
-{sidebar} <!-- Renders <ChatNavigation /> directly -->
+{sidebar}
+<!-- Renders <ChatNavigation /> directly -->
 ```
+
 **No wrapper** - Sidebar is rendered as-is
 
 #### Main Content Area (Line 53)
+
 ```html
-<div className='flex-1 flex flex-col h-screen transition-all duration-200 w-full overflow-hidden'>
+<div
+  className="flex-1 flex flex-col h-screen transition-all duration-200 w-full overflow-hidden"
+></div>
 ```
+
 **Classes Analysis**:
+
 - `flex-1` - Takes remaining space in flex container
 - `flex flex-col` - Flexbox column for children
 - `h-screen` - Full viewport height
@@ -79,6 +99,7 @@
 **Issue**: This div takes `flex-1` (remaining space), but the sidebar is `fixed`, so it doesn't actually push this content. The sidebar is positioned absolutely.
 
 #### Main Content Element (Line 63-77)
+
 ```html
 <main
   className='flex-1 overflow-y-auto w-full h-full lg:ml-64'
@@ -93,6 +114,7 @@
 ```
 
 **Classes Analysis**:
+
 - `flex-1` - Takes remaining vertical space
 - `overflow-y-auto` - Scrollable content
 - `w-full h-full` - Full width and height
@@ -105,10 +127,13 @@
 ### 6. ChatNavigation Component (Desktop - Line 111)
 
 ```html
-<aside className='fixed left-0 top-0 h-screen w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-30 pb-20'>
+<aside
+  className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-30 pb-20"
+></aside>
 ```
 
 **Classes Analysis**:
+
 - `fixed` - **Removed from normal flow**, positioned relative to viewport
 - `left-0 top-0` - Positioned at top-left corner
 - `h-screen` - Full viewport height
@@ -122,10 +147,13 @@
 ### 7. ChatTopBar Component (Desktop - Line 139)
 
 ```html
-<div className='fixed top-0 left-0 right-0 lg:left-64 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
+<div
+  className="fixed top-0 left-0 right-0 lg:left-64 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm"
+></div>
 ```
 
 **Classes Analysis**:
+
 - `fixed` - Removed from normal flow
 - `top-0 left-0 right-0` - Full width at top
 - `lg:left-64` - **On desktop, starts at 256px from left** (clears sidebar!)
@@ -138,15 +166,17 @@
 ### 8. AIChat Component (Line 349)
 
 ```html
-<div className='w-full h-full flex flex-col'>
-  <ChatTopBar /> <!-- Fixed positioned, works correctly -->
-  <div className='flex-1 overflow-y-auto pt-24 pb-20 space-y-4 px-4 lg:px-6'>
+<div className="w-full h-full flex flex-col">
+  <ChatTopBar />
+  <!-- Fixed positioned, works correctly -->
+  <div className="flex-1 overflow-y-auto pt-24 pb-20 space-y-4 px-4 lg:px-6">
     <!-- Messages content -->
   </div>
 </div>
 ```
 
 **Classes Analysis**:
+
 - `w-full h-full` - Takes full width/height of parent
 - `flex flex-col` - Column layout
 
@@ -167,7 +197,7 @@
    - Takes up 256px width visually
    - But doesn't affect flex layout (fixed elements are out of flow)
 
-3. **Result**: 
+3. **Result**:
    - The `<main>` element has `marginLeft: 0` (from inline style)
    - So it starts at `left: 0`, same as the sidebar
    - Content is hidden behind the sidebar
@@ -175,8 +205,9 @@
 ### Why ChatTopBar Works
 
 ChatTopBar has `lg:left-64` in its **own className**, not overridden by inline styles:
+
 ```html
-<div className='fixed top-0 left-0 right-0 lg:left-64 z-40 ...'>
+<div className="fixed top-0 left-0 right-0 lg:left-64 z-40 ..."></div>
 ```
 
 This correctly positions it at 256px from the left, clearing the sidebar.
@@ -200,6 +231,7 @@ style={{
 ```
 
 Or better yet, make it conditional:
+
 ```typescript
 style={{
   paddingLeft: 0,
@@ -216,6 +248,7 @@ style={{
 ## 📊 Visual Comparison
 
 ### What Works (ChatTopBar)
+
 ```
 ┌─────────────────────────────────────────┐
 │ Sidebar (fixed, left-0, w-64)          │ ChatTopBar (fixed, lg:left-64) │
@@ -224,6 +257,7 @@ style={{
 ```
 
 ### What's Broken (Main Content)
+
 ```
 ┌─────────────────────────────────────────┐
 │ Sidebar (fixed, left-0, w-64)          │ Main Content (marginLeft: 0)   │
@@ -232,6 +266,7 @@ style={{
 ```
 
 ### What Should Happen
+
 ```
 ┌─────────────────────────────────────────┐
 │ Sidebar (fixed, left-0, w-64)          │ Main Content (lg:ml-64)        │
@@ -248,4 +283,3 @@ style={{
 **Fix**: Remove or conditionally apply `marginLeft: 0` so that `lg:ml-64` can take effect on desktop.
 
 **Why ChatTopBar works**: It has `lg:left-64` in its own className without inline style overrides.
-

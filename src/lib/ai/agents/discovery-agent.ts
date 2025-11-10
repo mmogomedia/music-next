@@ -414,6 +414,7 @@ Summary:`;
             ...track,
             fileUrl,
             summary,
+            isDownloadable: track.isDownloadable ?? false,
           };
         })
       );
@@ -479,6 +480,7 @@ Summary:`;
               createdAt: track.createdAt,
               updatedAt: track.updatedAt,
               albumArtwork: track.albumArtwork,
+              isDownloadable: track.isDownloadable ?? false,
             }));
           }
         }

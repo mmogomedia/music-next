@@ -7,44 +7,29 @@ import { FunnelIcon } from '@heroicons/react/24/outline';
 
 interface ChatTopBarProps {
   province?: string;
-  genre?: string;
-  onProvinceChange?: (_value: string) => void;
-  onGenreChange?: (_value: string) => void;
+  onProvinceChange?: (_value: string | undefined) => void;
 }
 
 const provinces = [
-  'Gauteng',
-  'Western Cape',
-  'KwaZulu-Natal',
+  'All',
   'Eastern Cape',
+  'Free State',
+  'Gauteng',
+  'KwaZulu-Natal',
   'Limpopo',
   'Mpumalanga',
-  'North West',
   'Northern Cape',
-  'Free State',
-];
-
-const genres = [
-  'Amapiano',
-  'Afrobeat',
-  'Hip-Hop',
-  'House',
-  'Gqom',
-  'Pop',
-  'R&B',
-  'Jazz',
+  'North West',
+  'Western Cape',
 ];
 
 export default function ChatTopBar({
   province,
-  genre,
   onProvinceChange,
-  onGenreChange,
 }: ChatTopBarProps) {
   const [selectedProvince, setSelectedProvince] = useState<string | undefined>(
     province
   );
-  const [selectedGenre, setSelectedGenre] = useState<string | undefined>(genre);
   const [isMobile, setIsMobile] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -61,18 +46,11 @@ export default function ChatTopBar({
     setSelectedProvince(province);
   }, [province]);
 
-  useEffect(() => {
-    setSelectedGenre(genre);
-  }, [genre]);
-
   const handleProvinceChange = (value: string) => {
-    setSelectedProvince(value);
-    onProvinceChange?.(value);
-  };
-
-  const handleGenreChange = (value: string) => {
-    setSelectedGenre(value);
-    onGenreChange?.(value);
+    // If "All" is selected, pass undefined to clear province context
+    const provinceValue = value === 'All' ? undefined : value;
+    setSelectedProvince(provinceValue);
+    onProvinceChange?.(provinceValue);
   };
 
   // Mobile layout: Filters only (player is in navigation header)
@@ -96,53 +74,42 @@ export default function ChatTopBar({
         {/* Collapsible filters section */}
         {showFilters && (
           <div className='px-3 pb-3 pt-2 border-t border-gray-200/50 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-800/50'>
-            <div className='flex items-center gap-2'>
-              <Select
-                aria-label='Province'
-                placeholder='Province'
-                selectedKeys={selectedProvince ? [selectedProvince] : []}
-                onSelectionChange={keys => {
-                  const val = Array.from(keys)[0] as string;
-                  handleProvinceChange(val);
-                }}
-                className='flex-1'
-                size='sm'
-              >
-                {provinces.map(p => (
-                  <SelectItem key={p}>{p}</SelectItem>
-                ))}
-              </Select>
-              <Select
-                aria-label='Genre'
-                placeholder='Genre'
-                selectedKeys={selectedGenre ? [selectedGenre] : []}
-                onSelectionChange={keys => {
-                  const val = Array.from(keys)[0] as string;
-                  handleGenreChange(val);
-                }}
-                className='flex-1'
-                size='sm'
-              >
-                {genres.map(g => (
-                  <SelectItem key={g}>{g}</SelectItem>
-                ))}
-              </Select>
-            </div>
+            <Select
+              aria-label='Province'
+              placeholder='All Provinces'
+              selectedKeys={selectedProvince ? [selectedProvince] : ['All']}
+              onSelectionChange={keys => {
+                const val = Array.from(keys)[0] as string;
+                handleProvinceChange(val);
+              }}
+              className='w-full'
+              size='sm'
+            >
+              {provinces.map(p => (
+                <SelectItem key={p}>{p}</SelectItem>
+              ))}
+            </Select>
           </div>
         )}
       </div>
     );
   }
 
-  // Desktop layout: filters and mini player side by side
+  // Desktop layout: heading, province filter, and mini player side by side
   return (
     <div className='hidden lg:block sticky top-0 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
       <div className='px-4 py-3 flex items-center gap-4'>
+        {/* Heading */}
+        <h2 className='text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0'>
+          AI Chat Streaming
+        </h2>
+
+        {/* Province filter */}
         <div className='flex items-center gap-2.5 flex-shrink-0'>
           <Select
             aria-label='Province'
-            placeholder='Province'
-            selectedKeys={selectedProvince ? [selectedProvince] : []}
+            placeholder='All Provinces'
+            selectedKeys={selectedProvince ? [selectedProvince] : ['All']}
             onSelectionChange={keys => {
               const val = Array.from(keys)[0] as string;
               handleProvinceChange(val);
@@ -154,26 +121,11 @@ export default function ChatTopBar({
               <SelectItem key={p}>{p}</SelectItem>
             ))}
           </Select>
-          <Select
-            aria-label='Genre'
-            placeholder='Genre'
-            selectedKeys={selectedGenre ? [selectedGenre] : []}
-            onSelectionChange={keys => {
-              const val = Array.from(keys)[0] as string;
-              handleGenreChange(val);
-            }}
-            className='w-36'
-            size='sm'
-          >
-            {genres.map(g => (
-              <SelectItem key={g}>{g}</SelectItem>
-            ))}
-          </Select>
         </div>
 
         <div className='flex-1 flex justify-end min-w-0'>
           <div className='w-full max-w-md'>
-          <MiniPlayer />
+            <MiniPlayer />
           </div>
         </div>
       </div>

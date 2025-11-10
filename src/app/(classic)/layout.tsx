@@ -9,9 +9,5 @@ export default function ClassicGroupLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <UnifiedLayout sidebar={<Sidebar />}>
-      {children}
-    </UnifiedLayout>
-  );
+  return <UnifiedLayout sidebar={<Sidebar />}>{children}</UnifiedLayout>;
 }

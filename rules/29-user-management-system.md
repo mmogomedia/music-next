@@ -7,11 +7,13 @@ The user management system allows administrators to view, manage, and control us
 ## Core Features
 
 ### 1. User Status Management
+
 - **Active Users**: Can log in and access the platform normally
 - **Inactive Users**: Cannot log in, blocked at authentication level
 - **Status Toggle**: Admins can activate/deactivate users instantly
 
 ### 2. User Information Display
+
 - User profile details (name, email, avatar)
 - Role assignment (USER, ARTIST, ADMIN)
 - Premium status
@@ -20,6 +22,7 @@ The user management system allows administrators to view, manage, and control us
 - Activity statistics (tracks, plays, etc.)
 
 ### 3. Search and Filtering
+
 - Search by name, email, or artist name
 - Filter by role (USER, ARTIST, ADMIN)
 - Filter by status (Active, Inactive)
@@ -28,12 +31,14 @@ The user management system allows administrators to view, manage, and control us
 ## Database Schema
 
 ### User Model Updates
+
 ```sql
 -- Added isActive field to users table
 ALTER TABLE users ADD COLUMN isActive BOOLEAN DEFAULT true;
 ```
 
 ### User Model Structure
+
 ```typescript
 model User {
   id                  String               @id @default(cuid())
@@ -55,6 +60,7 @@ model User {
 ## Authentication Integration
 
 ### Login Prevention
+
 ```typescript
 // In auth.ts authorize function
 const user = await prisma.user.findFirst({
@@ -73,6 +79,7 @@ if (!ok) return null;
 ```
 
 ### Session Data
+
 ```typescript
 // JWT and session callbacks include isActive
 return {
@@ -81,18 +88,20 @@ return {
   name: user.name ?? undefined,
   role: user.role,
   isPremium: user.isPremium,
-  isActive: user.isActive,  // NEW FIELD
+  isActive: user.isActive, // NEW FIELD
 } as any;
 ```
 
 ## API Endpoints
 
 ### 1. Get Users List
+
 ```
 GET /api/admin/users
 ```
 
 **Query Parameters:**
+
 - `page`: Page number (default: 1)
 - `limit`: Items per page (default: 10)
 - `search`: Search term for name/email/artist name
@@ -100,6 +109,7 @@ GET /api/admin/users
 - `status`: Filter by status (active, inactive, all)
 
 **Response:**
+
 ```json
 {
   "users": [
@@ -130,11 +140,13 @@ GET /api/admin/users
 ```
 
 ### 2. Get User Details
+
 ```
 GET /api/admin/users/[id]
 ```
 
 **Response:**
+
 ```json
 {
   "user": {
@@ -167,21 +179,24 @@ GET /api/admin/users/[id]
 ```
 
 ### 3. Update User
+
 ```
 PATCH /api/admin/users/[id]
 ```
 
 **Request Body:**
+
 ```json
 {
   "action": "activate|deactivate|update|delete",
-  "name": "New Name",           // for update action
-  "role": "ARTIST",             // for update action
-  "isPremium": true             // for update action
+  "name": "New Name", // for update action
+  "role": "ARTIST", // for update action
+  "isPremium": true // for update action
 }
 ```
 
 **Actions:**
+
 - `activate`: Set isActive to true
 - `deactivate`: Set isActive to false
 - `update`: Update user fields
@@ -190,9 +205,11 @@ PATCH /api/admin/users/[id]
 ## Admin Dashboard Integration
 
 ### User Management Tab
+
 Located at `/admin/dashboard` → Users tab
 
 **Features:**
+
 - User list with search and filters
 - User details modal
 - Action dropdown for each user
@@ -200,6 +217,7 @@ Located at `/admin/dashboard` → Users tab
 - Real-time status updates
 
 ### Quick Actions
+
 - "Manage Users" button on overview tab
 - Direct navigation to users tab
 - User count display in system metrics
@@ -207,6 +225,7 @@ Located at `/admin/dashboard` → Users tab
 ## User Interface Components
 
 ### UserManagement Component
+
 ```typescript
 // Location: /src/components/dashboard/admin/UserManagement.tsx
 interface UserManagementProps {
@@ -215,6 +234,7 @@ interface UserManagementProps {
 ```
 
 **Features:**
+
 - Responsive table layout
 - Search and filter controls
 - Pagination
@@ -224,6 +244,7 @@ interface UserManagementProps {
 - Artist profile integration
 
 ### User Actions
+
 1. **View Details**: Show complete user information
 2. **Edit User**: Update user fields (name, role, premium status)
 3. **Activate/Deactivate**: Toggle user access
@@ -232,16 +253,19 @@ interface UserManagementProps {
 ## Security Considerations
 
 ### Admin-Only Access
+
 - All user management endpoints require ADMIN role
 - Session validation on every request
 - Proper error handling for unauthorized access
 
 ### Data Protection
+
 - Sensitive user data only accessible to admins
 - Audit trail for user status changes (future enhancement)
 - Secure deletion of user data
 
 ### Authentication Bypass Prevention
+
 - isActive check at authentication level
 - No way for deactivated users to regain access
 - Immediate effect on status changes
@@ -251,23 +275,27 @@ interface UserManagementProps {
 ### For Administrators
 
 #### Viewing Users
+
 1. Navigate to Admin Dashboard
 2. Click "Users" tab
 3. Use search and filters to find specific users
 4. Click "View Details" for complete information
 
 #### Managing User Status
+
 1. Find the user in the list
 2. Click the action dropdown (three dots)
 3. Select "Activate" or "Deactivate"
 4. Confirm the action in the modal
 
 #### Editing User Information
+
 1. Click "Edit User" from the action dropdown
 2. Update the desired fields
 3. Save changes
 
 #### Deleting Users
+
 1. Click "Delete User" from the action dropdown
 2. Confirm the permanent deletion
 3. User and all related data will be removed
@@ -275,6 +303,7 @@ interface UserManagementProps {
 ### For Developers
 
 #### Adding New User Fields
+
 1. Update the User model in `schema.prisma`
 2. Create and run migration
 3. Update API endpoints to include new fields
@@ -282,6 +311,7 @@ interface UserManagementProps {
 5. Update authentication if needed
 
 #### Extending User Actions
+
 1. Add new action to API endpoint
 2. Update UserManagement component
 3. Add appropriate UI controls
@@ -290,6 +320,7 @@ interface UserManagementProps {
 ## Testing
 
 ### Manual Testing Checklist
+
 - [ ] Admin can view user list
 - [ ] Search functionality works
 - [ ] Filter by role works
@@ -305,12 +336,14 @@ interface UserManagementProps {
 - [ ] Non-admin users cannot access endpoints
 
 ### Unit Tests
+
 - Test user API endpoints
 - Test authentication with isActive check
 - Test user management component
 - Test search and filter functionality
 
 ### Integration Tests
+
 - Test complete user management flow
 - Test authentication integration
 - Test admin dashboard integration
@@ -318,6 +351,7 @@ interface UserManagementProps {
 ## Future Enhancements
 
 ### Planned Features
+
 1. **Bulk Operations**: Select multiple users for batch actions
 2. **User Activity Logs**: Track user actions and changes
 3. **Email Notifications**: Notify users of status changes
@@ -327,6 +361,7 @@ interface UserManagementProps {
 7. **Temporary Suspensions**: Time-based access restrictions
 
 ### Performance Optimizations
+
 1. **Database Indexing**: Optimize queries for large user lists
 2. **Caching**: Cache user data for faster loading
 3. **Pagination**: Implement cursor-based pagination
@@ -337,22 +372,27 @@ interface UserManagementProps {
 ### Common Issues
 
 **User cannot log in after activation:**
+
 - Check if user is actually active in database
 - Verify authentication code includes isActive check
 - Clear user session and try again
 
 **Admin cannot see users:**
+
 - Verify admin role in session
 - Check API endpoint permissions
 - Verify database connection
 
 **Search not working:**
+
 - Check search query format
 - Verify database indexes
 - Check API endpoint implementation
 
 ### Debug Mode
+
 Enable debug logging in:
+
 - Authentication middleware
 - User API endpoints
 - UserManagement component
@@ -360,17 +400,20 @@ Enable debug logging in:
 ## Maintenance
 
 ### Regular Tasks
+
 1. Monitor user activity and status changes
 2. Review deactivated users for cleanup
 3. Update user management interface as needed
 4. Monitor system performance with large user lists
 
 ### Database Maintenance
+
 1. Regular cleanup of deleted user data
 2. Index optimization for user queries
 3. Archive old user data if needed
 
 ## Related Documentation
+
 - [Authentication System](./02-authentication-setup.md)
 - [Admin Dashboard](./12-admin-dashboard.md)
 - [Database Schema](./03-database-schema.md)

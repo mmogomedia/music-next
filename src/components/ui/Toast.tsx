@@ -1,6 +1,12 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+} from 'react';
 import { CheckCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface Toast {
@@ -11,7 +17,11 @@ interface Toast {
 }
 
 interface ToastContextType {
-  showToast: (message: string, type?: 'success' | 'error' | 'info', duration?: number) => void;
+  showToast: (
+    _message: string,
+    _type?: 'success' | 'error' | 'info',
+    _duration?: number
+  ) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -28,7 +38,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback(
-    (message: string, type: 'success' | 'error' | 'info' = 'success', duration = 3000) => {
+    (
+      message: string,
+      type: 'success' | 'error' | 'info' = 'success',
+      duration = 3000
+    ) => {
       const id = Math.random().toString(36).substring(7);
       const newToast: Toast = { id, message, type, duration };
 
@@ -82,4 +96,3 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     </ToastContext.Provider>
   );
 }
-

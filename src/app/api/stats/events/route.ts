@@ -228,7 +228,7 @@ async function processEventBatch(events: StatEvent[]): Promise<void> {
     // If the table doesn't exist yet, this will fail silently or need to be handled
     if (aiSearchEvents.length > 0) {
       try {
-        await tx.aiSearchEvent.createMany({
+        await tx.aISearchEvent.createMany({
           data: aiSearchEvents,
           skipDuplicates: true,
         });

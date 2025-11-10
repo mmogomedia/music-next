@@ -7,10 +7,11 @@ import GlobalMusicPlayer from './GlobalMusicPlayer';
 export default function ConditionalGlobalMusicPlayer() {
   const pathname = usePathname();
 
-  // Hide global player on chat routes
+  // Hide global player on chat and quick link routes
   const isChatRoute = pathname === '/' || pathname?.startsWith('/chat');
+  const isQuickLinkRoute = pathname?.startsWith('/quick');
 
-  if (isChatRoute) {
+  if (isChatRoute || isQuickLinkRoute) {
     return null;
   }
 

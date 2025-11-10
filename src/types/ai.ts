@@ -24,6 +24,7 @@ export interface ChatRequest {
     artistProfile?: string;
     trackInfo?: string;
     playlistInfo?: string;
+    province?: string;
   };
 }
 

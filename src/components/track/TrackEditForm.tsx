@@ -296,11 +296,15 @@ export default function TrackEditForm({
 
                   <Select
                     label='Genre'
-                    placeholder={loadingGenres ? 'Loading genres...' : 'Select genre'}
+                    placeholder={
+                      loadingGenres ? 'Loading genres...' : 'Select genre'
+                    }
                     selectedKeys={formData.genreId ? [formData.genreId] : []}
                     onSelectionChange={keys => {
                       const selectedId = Array.from(keys)[0] as string;
-                      const selectedGenre = genres.find(g => g.id === selectedId);
+                      const selectedGenre = genres.find(
+                        g => g.id === selectedId
+                      );
                       handleInputChange('genreId', selectedId || undefined);
                       // Also update genre string for backward compatibility
                       handleInputChange('genre', selectedGenre?.name || '');
@@ -309,9 +313,7 @@ export default function TrackEditForm({
                     disabled={loadingGenres}
                   >
                     {genres.map(genre => (
-                      <SelectItem key={genre.id}>
-                        {genre.name}
-                      </SelectItem>
+                      <SelectItem key={genre.id}>{genre.name}</SelectItem>
                     ))}
                   </Select>
                 </div>
@@ -320,7 +322,9 @@ export default function TrackEditForm({
                   label='Description'
                   placeholder='Describe your track...'
                   value={formData.description || ''}
-                  onValueChange={value => handleInputChange('description', value)}
+                  onValueChange={value =>
+                    handleInputChange('description', value)
+                  }
                   rows={3}
                 />
               </div>
@@ -338,8 +342,8 @@ export default function TrackEditForm({
             >
               <div className='space-y-4 pt-4'>
                 <p className='text-sm text-gray-500 dark:text-gray-400'>
-                  Upload artwork for your track. Recommended size: 1000x1000px or
-                  larger.
+                  Upload artwork for your track. Recommended size: 1000x1000px
+                  or larger.
                 </p>
 
                 <ImageUpload
@@ -389,7 +393,9 @@ export default function TrackEditForm({
                     label='Composer'
                     placeholder='Composer name'
                     value={formData.composer || ''}
-                    onValueChange={value => handleInputChange('composer', value)}
+                    onValueChange={value =>
+                      handleInputChange('composer', value)
+                    }
                   />
 
                   <Input
@@ -398,7 +404,10 @@ export default function TrackEditForm({
                     placeholder='2024'
                     value={formData.year?.toString() || ''}
                     onValueChange={value =>
-                      handleInputChange('year', value ? parseInt(value) : undefined)
+                      handleInputChange(
+                        'year',
+                        value ? parseInt(value) : undefined
+                      )
                     }
                     isInvalid={!!errors.year}
                     errorMessage={errors.year}
@@ -408,7 +417,9 @@ export default function TrackEditForm({
                     type='date'
                     label='Release Date'
                     value={formData.releaseDate || ''}
-                    onValueChange={value => handleInputChange('releaseDate', value)}
+                    onValueChange={value =>
+                      handleInputChange('releaseDate', value)
+                    }
                   />
 
                   <Input
@@ -417,7 +428,10 @@ export default function TrackEditForm({
                     placeholder='120'
                     value={formData.bpm?.toString() || ''}
                     onValueChange={value =>
-                      handleInputChange('bpm', value ? parseInt(value) : undefined)
+                      handleInputChange(
+                        'bpm',
+                        value ? parseInt(value) : undefined
+                      )
                     }
                     isInvalid={!!errors.bpm}
                     errorMessage={errors.bpm}
@@ -475,7 +489,9 @@ export default function TrackEditForm({
                   </div>
                   <Switch
                     isSelected={formData.isPublic}
-                    onValueChange={value => handleInputChange('isPublic', value)}
+                    onValueChange={value =>
+                      handleInputChange('isPublic', value)
+                    }
                   />
                 </div>
 

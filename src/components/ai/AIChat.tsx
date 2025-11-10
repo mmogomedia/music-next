@@ -15,6 +15,7 @@ import ChatWelcomePlaceholder from './ChatWelcomePlaceholder';
 import ChatInfoBanner from './ChatInfoBanner';
 import { ResponseRenderer } from './response-renderers';
 import type { AIResponse as StructuredAIResponse } from '@/types/ai-responses';
+import type { QuickLinkChatPayload } from '@/types/quick-links';
 import { formatDistanceToNow } from 'date-fns';
 import { logger } from '@/lib/utils/logger';
 import MoreMusicSection from './MoreMusicSection';
@@ -42,6 +43,7 @@ interface AIChatProps {
     trackInfo?: string;
     playlistInfo?: string;
   };
+  initialQuickLink?: QuickLinkChatPayload | null;
 }
 
 export interface AIChatHandle {
@@ -53,7 +55,12 @@ export interface AIChatHandle {
 
 const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
   (
-    { context, conversationId: propConversationId, onConversationIdChange },
+    {
+      context,
+      conversationId: propConversationId,
+      onConversationIdChange,
+      initialQuickLink,
+    },
     ref
   ) => {
     const { data: session } = useSession();
@@ -65,7 +72,6 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
     const [selectedProvince, setSelectedProvince] = useState<
       string | undefined
     >();
-    const [selectedGenre, setSelectedGenre] = useState<string | undefined>();
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const [isInfoBannerVisible, setIsInfoBannerVisible] = useState(true); // Start minimized (visible)
     const [isInfoBannerExpanded, setIsInfoBannerExpanded] = useState(false);
@@ -75,6 +81,8 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
     const isSubmittingRef = useRef(false);
     const loadedConversationIdRef = useRef<string | undefined>(undefined);
     const { playTrack } = useMusicPlayer();
+    const [quickLinkResponse, setQuickLinkResponse] =
+      useState<StructuredAIResponse | null>(null);
 
     // Detect mobile for responsive layout
     useEffect(() => {
@@ -85,6 +93,57 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
       window.addEventListener('resize', checkMobile);
       return () => window.removeEventListener('resize', checkMobile);
     }, []);
+
+    useEffect(() => {
+      if (!initialQuickLink) {
+        setQuickLinkResponse(null);
+        return;
+      }
+
+      const timestamp = new Date();
+      const quickLinkMeta = initialQuickLink.quickLink;
+
+      if (quickLinkMeta.type === 'TRACK' && initialQuickLink.track) {
+        setQuickLinkResponse({
+          type: 'quick_link_track',
+          message: '',
+          timestamp,
+          data: {
+            quickLink: quickLinkMeta,
+            track: initialQuickLink.track,
+          },
+        } as StructuredAIResponse);
+        return;
+      }
+
+      if (quickLinkMeta.type === 'ALBUM' && initialQuickLink.album) {
+        setQuickLinkResponse({
+          type: 'quick_link_album',
+          message: '',
+          timestamp,
+          data: {
+            quickLink: quickLinkMeta,
+            album: initialQuickLink.album,
+          },
+        } as StructuredAIResponse);
+        return;
+      }
+
+      if (quickLinkMeta.type === 'ARTIST' && initialQuickLink.artist) {
+        setQuickLinkResponse({
+          type: 'quick_link_artist',
+          message: '',
+          timestamp,
+          data: {
+            quickLink: quickLinkMeta,
+            artist: initialQuickLink.artist,
+          },
+        } as StructuredAIResponse);
+        return;
+      }
+
+      setQuickLinkResponse(null);
+    }, [initialQuickLink]);
 
     const performSubmit = useCallback(
       async (msg: string) => {
@@ -107,7 +166,6 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
           const enhancedContext = {
             ...context,
             province: selectedProvince,
-            genre: selectedGenre,
           };
 
           const requestBody: ChatRequest = {
@@ -185,7 +243,6 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
         context,
         propConversationId,
         selectedProvince,
-        selectedGenre,
         selectedProvider,
         onConversationIdChange,
       ]
@@ -266,7 +323,6 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
       setMessage('');
     };
 
-
     // Load conversation messages when propConversationId changes (only if authenticated)
     // Skip loading if we're currently submitting a message to avoid race conditions
     useEffect(() => {
@@ -335,13 +391,13 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
       () => (
         <div className='space-y-6'>
           <WelcomeHeader onGetStarted={() => {}} />
-          <ChatWelcomePlaceholder
-            province={selectedProvince}
-            genre={selectedGenre}
-          />
+          <ChatWelcomePlaceholder province={selectedProvince} />
+          {quickLinkResponse && (
+            <ResponseRenderer response={quickLinkResponse} />
+          )}
         </div>
       ),
-      [selectedProvince, selectedGenre]
+      [quickLinkResponse, selectedProvince]
     );
 
     return (
@@ -349,9 +405,7 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
         {/* Fixed top bar with filters and mini player */}
         <ChatTopBar
           province={selectedProvince}
-          genre={selectedGenre}
           onProvinceChange={setSelectedProvince}
-          onGenreChange={setSelectedGenre}
         />
 
         {/* Scrollable messages area - takes remaining space */}
@@ -571,7 +625,10 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                 aria-label='Send message'
               >
                 {loading ? (
-                  <svg className='w-5 h-5 animate-spin text-white/80' viewBox='0 0 24 24'>
+                  <svg
+                    className='w-5 h-5 animate-spin text-white/80'
+                    viewBox='0 0 24 24'
+                  >
                     <circle
                       className='opacity-25'
                       cx='12'

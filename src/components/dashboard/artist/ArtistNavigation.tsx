@@ -5,21 +5,20 @@ import Link from 'next/link';
 import {
   MusicalNoteIcon,
   ChartBarIcon,
-  ClockIcon,
   PlusIcon,
   UserIcon,
   FolderOpenIcon,
   Bars3Icon,
   XMarkIcon,
+  LinkIcon,
   MusicalNoteIcon as MusicalNoteSolidIcon,
 } from '@heroicons/react/24/outline';
 import {
-  MusicalNoteIcon as MusicalNoteSolidIcon2,
   ChartBarIcon as ChartBarSolidIcon,
-  ClockIcon as ClockSolidIcon,
   PlusIcon as PlusSolidIcon,
   UserIcon as UserSolidIcon,
   FolderOpenIcon as FolderOpenSolidIcon,
+  LinkIcon as LinkSolidIcon,
 } from '@heroicons/react/24/solid';
 import UserDetailsFooter from '@/components/layout/UserDetailsFooter';
 
@@ -78,6 +77,12 @@ export default function ArtistNavigation({
       activeIcon: FolderOpenSolidIcon,
     },
     {
+      id: 'quick-links',
+      name: 'Quick Links',
+      icon: LinkIcon,
+      activeIcon: LinkSolidIcon,
+    },
+    {
       id: 'analytics',
       name: 'Analytics',
       icon: ChartBarIcon,
@@ -94,6 +99,13 @@ export default function ArtistNavigation({
   const handleTabClick = (tabId: string) => {
     onTabChange(tabId);
     if (isMobile) {
+      setIsOpen(false);
+    }
+  };
+
+  const handleOverlayKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
       setIsOpen(false);
     }
   };
@@ -131,7 +143,8 @@ export default function ArtistNavigation({
             </h3>
             <nav className='space-y-2'>
               {navItems.map(item => {
-                const IconComponent = activeTab === item.id ? item.activeIcon : item.icon;
+                const IconComponent =
+                  activeTab === item.id ? item.activeIcon : item.icon;
                 const isActive = activeTab === item.id;
 
                 return (
@@ -201,6 +214,9 @@ export default function ArtistNavigation({
           <div
             className='fixed inset-0 bg-black/50 z-[54] lg:hidden'
             onClick={() => setIsOpen(false)}
+            role='button'
+            tabIndex={0}
+            onKeyDown={handleOverlayKeyDown}
           />
           <div className='fixed left-0 top-0 bottom-0 w-64 bg-white dark:bg-slate-900 z-[55] shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col pb-20 relative'>
             <div className='p-6 border-b border-gray-200 dark:border-slate-700 flex-shrink-0'>
@@ -236,7 +252,8 @@ export default function ArtistNavigation({
                 </h3>
                 <nav className='space-y-2'>
                   {navItems.map(item => {
-                    const IconComponent = activeTab === item.id ? item.activeIcon : item.icon;
+                    const IconComponent =
+                      activeTab === item.id ? item.activeIcon : item.icon;
                     const isActive = activeTab === item.id;
 
                     return (
@@ -275,4 +292,3 @@ export default function ArtistNavigation({
     </>
   );
 }
-

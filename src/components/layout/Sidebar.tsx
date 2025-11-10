@@ -26,31 +26,32 @@ import {
 import MobileHeader from './MobileHeader';
 
 export default function Sidebar() {
-  const [isMobile, setIsMobile] = useState<boolean | null>(null);
+  const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
+  const pathname = usePathname();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+      setIsMobile(window.innerWidth < 1024);
     };
 
     checkMobile();
     window.addEventListener('resize', checkMobile);
+    setIsReady(true);
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Don't render until we know if it's mobile or not
-  if (isMobile === null) {
+  if (!isReady) {
     return null;
   }
 
-  // On mobile, render MobileHeader instead
   if (isMobile) {
     return <MobileHeader />;
   }
-  const { data: session } = useSession();
-  const pathname = usePathname();
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
 
   const menuItems = [
     { name: 'Explore', href: '/', icon: HomeIcon, activeIcon: HomeSolidIcon },

@@ -76,7 +76,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ success: true });
   } catch (error) {
     logger.error('Failed to delete conversation:', error);
-    
+
     if (error instanceof Error) {
       if (error.message.includes('not found')) {
         return NextResponse.json({ error: error.message }, { status: 404 });
@@ -85,7 +85,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({ error: error.message }, { status: 403 });
       }
     }
-    
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

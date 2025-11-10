@@ -32,22 +32,26 @@ COHERE_API_KEY="your-cohere-api-key-here"
 ## Features
 
 ### AI Service Factory
+
 - **Multiple Providers**: Support for OpenAI, Anthropic, Google, and Cohere
 - **Automatic Fallback**: If a provider fails, automatically falls back to another available provider
 - **Provider Selection**: Choose specific providers or let the system auto-select the best available
 - **Unified Interface**: Same API regardless of which provider is used
 
 ### AI Chat Endpoint
+
 - **Endpoint**: `/api/ai/chat`
 - **Method**: POST
 - **Purpose**: Provides AI-powered chat functionality for the Flemoji platform
 
 ### AI Providers Endpoint
+
 - **Endpoint**: `/api/ai/providers`
 - **Method**: GET
 - **Purpose**: Returns list of available AI providers
 
 ### Request Format
+
 ```typescript
 {
   message: string;
@@ -63,6 +67,7 @@ COHERE_API_KEY="your-cohere-api-key-here"
 ```
 
 ### Response Format
+
 ```typescript
 {
   message: string;
@@ -79,6 +84,7 @@ COHERE_API_KEY="your-cohere-api-key-here"
 ## Testing
 
 1. Start your development server:
+
    ```bash
    yarn dev
    ```
@@ -93,14 +99,17 @@ COHERE_API_KEY="your-cohere-api-key-here"
 ## Components
 
 ### AIChat Component
+
 Located at `src/components/ai/AIChat.tsx`, this component provides a user interface for interacting with the AI assistant.
 
 ### Types
+
 AI-related TypeScript types are defined in `src/types/ai.ts`.
 
 ## Configuration
 
 The AI system is configured with:
+
 - **Model**: GPT-3.5-turbo
 - **Temperature**: 0.7 (balanced creativity)
 - **Max Tokens**: 1000
@@ -109,6 +118,7 @@ The AI system is configured with:
 ## Error Handling
 
 The API includes comprehensive error handling for:
+
 - Missing API keys
 - Invalid requests
 - OpenAI API errors

@@ -8,6 +8,9 @@ import { ArtistRenderer } from './artist-renderer';
 import { SearchResultsRenderer } from './search-results-renderer';
 import { ActionExecutor } from './action-executor';
 import { GenreListRenderer } from './genre-list-renderer';
+import { QuickLinkTrackRenderer } from './quick-link-track-renderer';
+import { QuickLinkAlbumRenderer } from './quick-link-album-renderer';
+import { QuickLinkArtistRenderer } from './quick-link-artist-renderer';
 import type { AIResponse } from '@/types/ai-responses';
 import { responseRegistry } from '@/lib/ai/response-registry';
 import { useEffect } from 'react';
@@ -201,6 +204,66 @@ function registerDefaultHandlers() {
       },
     });
   }
+
+  if (!responseRegistry.isRegistered('quick_link_track')) {
+    responseRegistry.register('quick_link_track', {
+      component: QuickLinkTrackRenderer,
+      promptTemplate: 'Use to highlight a single track quick link',
+      schema: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'quick_link_track' },
+          data: { type: 'object' },
+        },
+        required: ['type', 'data'],
+      },
+      metadata: {
+        description: 'Quick link track spotlight',
+        category: 'info',
+        priority: 12,
+      },
+    });
+  }
+
+  if (!responseRegistry.isRegistered('quick_link_album')) {
+    responseRegistry.register('quick_link_album', {
+      component: QuickLinkAlbumRenderer,
+      promptTemplate: 'Use to showcase an album quick link',
+      schema: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'quick_link_album' },
+          data: { type: 'object' },
+        },
+        required: ['type', 'data'],
+      },
+      metadata: {
+        description: 'Quick link album view',
+        category: 'info',
+        priority: 11,
+      },
+    });
+  }
+
+  if (!responseRegistry.isRegistered('quick_link_artist')) {
+    responseRegistry.register('quick_link_artist', {
+      component: QuickLinkArtistRenderer,
+      promptTemplate: 'Use to highlight an artist quick link',
+      schema: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'quick_link_artist' },
+          data: { type: 'object' },
+        },
+        required: ['type', 'data'],
+      },
+      metadata: {
+        description: 'Quick link artist profile',
+        category: 'info',
+        priority: 10,
+      },
+    });
+  }
 }
 
 // Register defaults immediately when module is loaded
@@ -388,6 +451,66 @@ export function ResponseRenderer({
           description: 'List of available genres',
           category: 'discovery',
           priority: 8,
+        },
+      });
+    }
+
+    if (!responseRegistry.isRegistered('quick_link_track')) {
+      responseRegistry.register('quick_link_track', {
+        component: QuickLinkTrackRenderer,
+        promptTemplate: 'Use to highlight a single track quick link',
+        schema: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'quick_link_track' },
+            data: { type: 'object' },
+          },
+          required: ['type', 'data'],
+        },
+        metadata: {
+          description: 'Quick link track spotlight',
+          category: 'info',
+          priority: 12,
+        },
+      });
+    }
+
+    if (!responseRegistry.isRegistered('quick_link_album')) {
+      responseRegistry.register('quick_link_album', {
+        component: QuickLinkAlbumRenderer,
+        promptTemplate: 'Use to showcase an album quick link',
+        schema: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'quick_link_album' },
+            data: { type: 'object' },
+          },
+          required: ['type', 'data'],
+        },
+        metadata: {
+          description: 'Quick link album view',
+          category: 'info',
+          priority: 11,
+        },
+      });
+    }
+
+    if (!responseRegistry.isRegistered('quick_link_artist')) {
+      responseRegistry.register('quick_link_artist', {
+        component: QuickLinkArtistRenderer,
+        promptTemplate: 'Use to highlight an artist quick link',
+        schema: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'quick_link_artist' },
+            data: { type: 'object' },
+          },
+          required: ['type', 'data'],
+        },
+        metadata: {
+          description: 'Quick link artist profile',
+          category: 'info',
+          priority: 10,
         },
       });
     }

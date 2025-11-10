@@ -21,8 +21,8 @@ export default function ChatInfoBanner({
   isMinimized,
   onToggle,
   onClose,
-  }: ChatInfoBannerProps) {
-    const [mounted, setMounted] = useState(false);
+}: ChatInfoBannerProps) {
+  const [mounted, setMounted] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
 
   useEffect(() => {
@@ -101,7 +101,9 @@ export default function ChatInfoBanner({
 
           {isExpanded && (
             <div className='mt-3 space-y-1.5'>
-              <p className='text-[11px] text-gray-600 dark:text-gray-400'>I can help you:</p>
+              <p className='text-[11px] text-gray-600 dark:text-gray-400'>
+                I can help you:
+              </p>
               <ul className='space-y-1.5'>
                 {features.map((feature, idx) => {
                   const Icon = feature.icon;
@@ -202,7 +204,8 @@ export default function ChatInfoBanner({
                 </p>
                 <div className='mt-1.5 px-2 py-1 bg-white/80 dark:bg-slate-800/60 rounded-md border border-blue-200/50 dark:border-blue-800/50'>
                   <p className='text-xs text-gray-700 dark:text-gray-300 italic'>
-                    Example: &quot;Play songs by Caeser&quot; or &quot;Show me amapiano tracks&quot;
+                    Example: &quot;Play songs by Caeser&quot; or &quot;Show me
+                    amapiano tracks&quot;
                   </p>
                 </div>
               </div>

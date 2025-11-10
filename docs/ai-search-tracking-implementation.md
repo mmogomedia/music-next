@@ -42,12 +42,12 @@ model AISearchEvent {
   resultType      String   // 'track_list' (only type that has "other" field)
   timestamp       DateTime @default(now())
   createdAt       DateTime @default(now())
-  
+
   // Relations
   track           Track    @relation("TrackAISearches", fields: [trackId], references: [id], onDelete: Cascade)
   conversation    AIConversation? @relation("AISearchEvents", fields: [conversationId], references: [id], onDelete: SetNull)
   user            User?    @relation("AISearchEvents", fields: [userId], references: [id], onDelete: SetNull)
-  
+
   @@index([trackId])
   @@index([timestamp])
   @@index([conversationId])
@@ -58,6 +58,7 @@ model AISearchEvent {
 ```
 
 **Notes:**
+
 - Only tracks from `other` field will be recorded
 - `resultType` will always be `'track_list'` (only type that has `other` field)
 - `conversationId` may be null for unauthenticated users
@@ -70,7 +71,7 @@ model Track {
   // ... existing fields
   aiSearchCount   Int                  @default(0)  // Total times appeared in AI "other" field
   aiSearchEvents  AISearchEvent[]      @relation("TrackAISearches")
-  
+
   // ... rest of existing fields
 }
 ```
@@ -81,7 +82,7 @@ model Track {
 model User {
   // ... existing fields
   aiSearchEvents  AISearchEvent[]      @relation("AISearchEvents")
-  
+
   // ... rest of existing fields
 }
 ```
@@ -92,7 +93,7 @@ model User {
 model AIConversation {
   // ... existing fields
   aiSearchEvents  AISearchEvent[]      @relation("AISearchEvents")
-  
+
   // ... rest of existing fields
 }
 ```
@@ -105,28 +106,28 @@ Add `totalAISearches` field to all aggregated stats tables:
 model DailyStats {
   // ... existing fields
   totalAISearches Int      @default(0)  // Times track appeared in AI "other" field today
-  
+
   // ... rest of existing fields
 }
 
 model WeeklyStats {
   // ... existing fields
   totalAISearches Int      @default(0)  // Times track appeared in AI "other" field this week
-  
+
   // ... rest of existing fields
 }
 
 model MonthlyStats {
   // ... existing fields
   totalAISearches Int      @default(0)  // Times track appeared in AI "other" field this month
-  
+
   // ... rest of existing fields
 }
 
 model YearlyStats {
   // ... existing fields
   totalAISearches Int      @default(0)  // Times track appeared in AI "other" field this year
-  
+
   // ... rest of existing fields
 }
 ```
@@ -169,6 +170,7 @@ if (otherTracks && otherTracks.length > 0) {
 **Location**: `src/lib/stats.ts`
 
 **Event Interface:**
+
 ```typescript
 export interface AISearchEvent {
   eventType: 'ai_search';
@@ -182,6 +184,7 @@ export interface AISearchEvent {
 ```
 
 **Usage:**
+
 ```typescript
 import { stats, generateSessionId } from '@/lib/stats';
 
@@ -200,6 +203,7 @@ stats.aiSearch({
 ```
 
 **Benefits:**
+
 - **Unified System**: Uses same batching and queueing as other events
 - **Non-blocking**: Events are queued and sent in batches (50 per batch)
 - **Automatic Batching**: StatsCollector handles batching automatically
@@ -207,6 +211,7 @@ stats.aiSearch({
 - **Performance**: Minimizes database round trips via batching
 
 **API Processing:**
+
 - Events are processed by `/api/stats/events` route
 - Creates `AISearchEvent` database records
 - Updates `Track.aiSearchCount` counter
@@ -221,36 +226,40 @@ stats.aiSearch({
 **Integration Point**: After `otherTracks` array is built (line ~444, works for all track results)
 
 **Code Flow:**
+
 1. Build `otherTracks` array (existing code - now works for all track results, not just single track)
 2. If `otherTracks` has items, extract track IDs
-  3. Track each track using the unified stats system (deduplicate within response):
-     ```typescript
-     import { stats, generateSessionId } from '@/lib/stats';
-     
-     // Generate or get session ID (can be shared across tracks in same response)
-     const sessionId = generateSessionId();
-     
-     // Track each unique track that appeared in "other" field (deduplicate)
-     if (otherTracks && otherTracks.length > 0) {
-       const uniqueTrackIds = new Set<string>();
-       for (const track of otherTracks) {
-         if (!uniqueTrackIds.has(track.id)) {
-           uniqueTrackIds.add(track.id);
-           stats.aiSearch({
-             eventType: 'ai_search',
-             trackId: track.id,
-             userId: context?.userId,
-             sessionId: sessionId,
-             conversationId: context?.conversationId,
-             resultType: 'track_list',
-           });
-         }
+3. Track each track using the unified stats system (deduplicate within response):
+
+   ```typescript
+   import { stats, generateSessionId } from '@/lib/stats';
+
+   // Generate or get session ID (can be shared across tracks in same response)
+   const sessionId = generateSessionId();
+
+   // Track each unique track that appeared in "other" field (deduplicate)
+   if (otherTracks && otherTracks.length > 0) {
+     const uniqueTrackIds = new Set<string>();
+     for (const track of otherTracks) {
+       if (!uniqueTrackIds.has(track.id)) {
+         uniqueTrackIds.add(track.id);
+         stats.aiSearch({
+           eventType: 'ai_search',
+           trackId: track.id,
+           userId: context?.userId,
+           sessionId: sessionId,
+           conversationId: context?.conversationId,
+           resultType: 'track_list',
+         });
        }
      }
-     ```
+   }
+   ```
+
 4. Continue with existing return logic
 
 **Error Handling:**
+
 - Tracking is non-blocking (stats collector handles batching)
 - If tracking fails, it's handled internally by the stats collector
 - Use try-catch around stats calls to ensure search results are never delayed
@@ -258,11 +267,13 @@ stats.aiSearch({
 ### 2. Context Access
 
 **Available Context:**
+
 - `conversationId`: From conversation context (may be null for new conversations)
 - `userId`: From user context (may be null for unauthenticated users)
 - `resultType`: Always `'track_list'` for results with `other` field
 
-**Context Source**: 
+**Context Source**:
+
 - Need to check how context flows through the agent
 - May need to pass context explicitly to `convertToolDataToResponse()`
 
@@ -270,7 +281,8 @@ stats.aiSearch({
 
 **Purpose**: Aggregate events into daily/weekly/monthly stats
 
-**Implementation**: 
+**Implementation**:
+
 - Cron job or scheduled task
 - Runs daily to update aggregated stats
 - Can be added in Phase 2 if needed
@@ -305,31 +317,37 @@ stats.aiSearch({
 ## Edge Cases & Considerations
 
 ### 1. Duplicate Tracks in Same Response
+
 - **Scenario**: Same track appears multiple times in `other` array
 - **Decision**: Count once per track per response (deduplicate within same response)
 - **Rationale**: One appearance per response is sufficient to track popularity; avoids inflating counts
 
 ### 2. Track Not Found
+
 - **Scenario**: Track ID in `other` array doesn't exist in database
 - **Decision**: Skip that track, log warning, continue with others
 - **Rationale**: Don't break tracking for invalid data
 
 ### 3. Unauthenticated Users
+
 - **Scenario**: User not logged in, no `conversationId` or `userId`
 - **Decision**: Record events with null `conversationId` and `userId`
 - **Rationale**: Still valuable to track anonymous usage
 
 ### 4. Performance
+
 - **Scenario**: Large batch of tracks to track
 - **Decision**: Use batch insert for events, batch update for counters
 - **Rationale**: Minimize database round trips
 
 ### 5. Transaction Safety
+
 - **Scenario**: Tracking fails partway through
 - **Decision**: Use transactions or ensure idempotency
 - **Rationale**: Data consistency
 
 ### 6. Rate Limiting
+
 - **Scenario**: High volume of AI searches
 - **Decision**: Track asynchronously if needed (Phase 2)
 - **Rationale**: Don't slow down AI responses
@@ -337,18 +355,21 @@ stats.aiSearch({
 ## Testing Strategy
 
 ### Unit Tests
+
 - Test `AISearchTrackingService` methods
 - Test event creation with various contexts
 - Test counter updates
 - Test edge cases (null values, missing tracks, etc.)
 
 ### Integration Tests
+
 - Test discovery agent integration
 - Test that only `other` field is tracked
 - Test that main results are NOT tracked
 - Test with authenticated and unauthenticated users
 
 ### Performance Tests
+
 - Test batch insert performance
 - Test counter update performance
 - Ensure tracking doesn't slow down AI responses
@@ -356,18 +377,21 @@ stats.aiSearch({
 ## Migration Strategy
 
 ### Phase 1: Schema Migration
+
 1. Create migration for `AISearchEvent` table
 2. Add `aiSearchCount` to `Track` model
 3. Add `totalAISearches` to aggregated stats tables
 4. Run migration
 
 ### Phase 2: Implementation
+
 1. Create `AISearchTrackingService`
 2. Integrate into discovery agent
 3. Test thoroughly
 4. Deploy
 
 ### Phase 3: Backfill (Optional)
+
 - If historical data is needed, create script to backfill from conversation messages
 - Parse existing conversation messages to extract `other` field data
 - Create events and update counters
@@ -375,6 +399,7 @@ stats.aiSearch({
 ## Monitoring & Analytics
 
 ### Metrics to Track
+
 - Number of events created per day
 - Average tracks per AI search response
 - Top tracks by AI search appearances
@@ -384,9 +409,9 @@ stats.aiSearch({
 
 ```sql
 -- Top tracks by AI search appearances
-SELECT t.id, t.title, t.artist, t.aiSearchCount 
-FROM tracks t 
-ORDER BY t.aiSearchCount DESC 
+SELECT t.id, t.title, t.artist, t.aiSearchCount
+FROM tracks t
+ORDER BY t.aiSearchCount DESC
 LIMIT 100;
 
 -- Tracks by AI search appearances in last 30 days
@@ -409,6 +434,7 @@ ORDER BY date DESC;
 ## Implementation Checklist
 
 ### Phase 1: Database Schema ✅
+
 - [ ] Create Prisma migration for `AISearchEvent` model
 - [ ] Add `aiSearchCount` field to `Track` model
 - [ ] Add `aiSearchEvents` relation to `Track` model
@@ -421,6 +447,7 @@ ORDER BY date DESC;
 - [ ] Run migration and verify schema
 
 ### Phase 2: Context Enhancement ✅
+
 - [ ] Add `conversationId?: string` to `AgentContext` interface in `base-agent.ts`
 - [ ] Update API route to include `conversationId` in `agentContext`
 - [ ] Update `DiscoveryAgent.process()` to pass context to `convertToolDataToResponse()`
@@ -428,6 +455,7 @@ ORDER BY date DESC;
 - [ ] Test context flow through agent chain
 
 ### Phase 3: Unified Stats Integration ✅
+
 - [x] Add `AISearchEvent` interface to `src/lib/stats.ts`
 - [x] Add `recordAISearch()` method to `StatsCollector`
 - [x] Add `stats.aiSearch()` helper function
@@ -437,6 +465,7 @@ ORDER BY date DESC;
 - [ ] Write unit tests for stats integration
 
 ### Phase 4: Discovery Agent Integration ✅
+
 - [x] Fix discovery agent to populate `otherTracks` for all track results (not just single track)
 - [x] Update filtering to exclude all main result tracks (not just first track)
 - [ ] Review discovery agent context flow
@@ -451,6 +480,7 @@ ORDER BY date DESC;
 - [ ] Write integration tests
 
 ### Phase 5: Testing ✅
+
 - [ ] Unit tests for service layer
 - [ ] Integration tests for discovery agent
 - [ ] Test with authenticated users
@@ -460,6 +490,7 @@ ORDER BY date DESC;
 - [ ] Verify tracking doesn't slow down AI responses
 
 ### Phase 6: Deployment ✅
+
 - [ ] Code review
 - [ ] Deploy to staging
 - [ ] Monitor for errors
@@ -469,6 +500,7 @@ ORDER BY date DESC;
 - [ ] Monitor production metrics
 
 ### Phase 7: Analytics & Monitoring (Optional) ✅
+
 - [ ] Create analytics queries
 - [ ] Set up monitoring dashboards
 - [ ] Create background job for aggregated stats (if needed)
@@ -477,6 +509,7 @@ ORDER BY date DESC;
 ## Future Enhancements
 
 ### Phase 2 Features (Future)
+
 - Background job for aggregated stats updates
 - Analytics API endpoints
 - Dashboard for AI search trends
@@ -484,6 +517,7 @@ ORDER BY date DESC;
 - Rate limiting/throttling for high volume
 
 ### Potential Analytics
+
 - Track which genres appear most in "other" field
 - Track which artists appear most in "other" field
 - Correlate AI search appearances with actual plays
@@ -500,16 +534,19 @@ ORDER BY date DESC;
 ## Context Flow Solution ✅
 
 ### Current State Analysis
+
 - `AgentContext` interface has `userId` but NOT `conversationId`
 - `conversationId` is available in API route but not passed to agents
 - Need to enhance context flow to include `conversationId`
 
 ### Implementation Steps
+
 1. **Update `AgentContext` interface** (`src/lib/ai/agents/base-agent.ts`):
+
    ```typescript
    export interface AgentContext {
      userId?: string;
-     conversationId?: string;  // ADD THIS
+     conversationId?: string; // ADD THIS
      conversationHistory?: AIMessage[];
      filters?: {
        genre?: string;
@@ -519,10 +556,11 @@ ORDER BY date DESC;
    ```
 
 2. **Update API Route** (`src/app/api/ai/chat/route.ts`):
+
    ```typescript
    const agentContext = {
      userId: context?.userId,
-     conversationId: conversationId,  // ADD THIS
+     conversationId: conversationId, // ADD THIS
      filters: built.filters ?? ({} as any),
    };
    ```
@@ -573,13 +611,14 @@ ORDER BY date DESC;
 **Purpose**: Track when tracks appear in AI search results (specifically in the `other` field of track_list responses)
 
 **Usage in Discovery Agent**:
+
 ```typescript
 import { stats, generateSessionId } from '@/lib/stats';
 
 // After building otherTracks array (line ~444 in discovery-agent.ts)
 if (otherTracks && otherTracks.length > 0) {
   const sessionId = generateSessionId();
-  
+
   try {
     // Deduplicate tracks within the same response (count once per track)
     const uniqueTrackIds = new Set<string>();
@@ -604,6 +643,7 @@ if (otherTracks && otherTracks.length > 0) {
 ```
 
 **Key Points**:
+
 - ✅ Integrated into unified stats system
 - ✅ Automatic batching (50 events per batch)
 - ✅ Non-blocking (won't delay AI responses)
@@ -613,12 +653,13 @@ if (otherTracks && otherTracks.length > 0) {
 - ✅ Creates `AISearchEvent` database records
 
 **What Gets Tracked**:
+
 - ✅ Tracks in `other` field (featured/recommended tracks)
 - ❌ Tracks in main `tracks` array (explicitly excluded)
 
 **When to Track**:
+
 - When `otherTracks` array has items (featured tracks in "other" field)
 - Works for all track results (single or multiple tracks)
 - Only for `track_list` response type
 - Count once per track per response (deduplicate within same response)
-

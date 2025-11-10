@@ -42,7 +42,12 @@ interface MusicPlayerContextType {
   stop: () => void;
   next: () => void;
   previous: () => void;
-  setQueue: (_tracks: Track[], _startIndex?: number, _source?: SourceType, _playlistId?: string) => void;
+  setQueue: (
+    _tracks: Track[],
+    _startIndex?: number,
+    _source?: SourceType,
+    _playlistId?: string
+  ) => void;
   addToQueue: (_track: Track, _playNext?: boolean) => void;
   removeFromQueue: (_trackId: string) => void;
   toggleShuffle: () => void;
@@ -73,7 +78,9 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
-  const [repeatMode, setRepeatModeState] = useState<'off' | 'one' | 'all'>('off');
+  const [repeatMode, setRepeatModeState] = useState<'off' | 'one' | 'all'>(
+    'off'
+  );
   const [shuffle, setShuffle] = useState(false);
   const [queue, setQueueState] = useState<Track[]>([]);
   const [queueIndex, setQueueIndex] = useState(0);
@@ -116,9 +123,16 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         const savedShuffle = localStorage.getItem('player:shuffle');
         if (savedVolume !== null) setVolume(parseFloat(savedVolume));
         if (savedMuted !== null) setIsMuted(savedMuted === '1');
-        if (savedRepeat === 'off' || savedRepeat === 'one' || savedRepeat === 'all') setRepeatModeState(savedRepeat);
+        if (
+          savedRepeat === 'off' ||
+          savedRepeat === 'one' ||
+          savedRepeat === 'all'
+        )
+          setRepeatModeState(savedRepeat);
         if (savedShuffle !== null) setShuffle(savedShuffle === '1');
-      } catch {}
+      } catch (error) {
+        logger.warn('Failed to load persisted player settings', error);
+      }
 
       audioRef.current = new Audio();
       audioRef.current.volume = volume;
@@ -147,14 +161,18 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         const repeat = repeatModeRef.current;
         if (repeat === 'one' && track) {
           // Replay the same track
-          playTrack(track, currentSourceRef.current, currentPlaylistIdRef.current);
+          playTrack(
+            track,
+            currentSourceRef.current,
+            currentPlaylistIdRef.current
+          );
           return;
         }
         // Call next using the latest queue state
         const currentQueue = queueRef.current;
         const currentIndex = queueIndexRef.current;
         const isShuffle = shuffleRef.current;
-        
+
         let nextIdx: number | null = null;
         if (currentQueue.length === 0) {
           nextIdx = null;
@@ -171,16 +189,20 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         } else {
           nextIdx = null;
         }
-        
+
         if (nextIdx === null) {
           setIsPlaying(false);
           return;
         }
-        
+
         setQueueIndex(nextIdx);
         const nextTrack = currentQueue[nextIdx];
         if (nextTrack) {
-          playTrack(nextTrack, currentSourceRef.current, currentPlaylistIdRef.current);
+          playTrack(
+            nextTrack,
+            currentSourceRef.current,
+            currentPlaylistIdRef.current
+          );
         }
       };
 
@@ -222,7 +244,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         const currentIndex = queueIndexRef.current;
         const isShuffle = shuffleRef.current;
         const repeat = repeatModeRef.current;
-        
+
         let nextIdx: number | null = null;
         if (currentQueue.length === 0) {
           nextIdx = null;
@@ -239,12 +261,16 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         } else {
           nextIdx = null;
         }
-        
+
         if (nextIdx !== null) {
           setQueueIndex(nextIdx);
           const nextTrack = currentQueue[nextIdx];
           if (nextTrack) {
-            playTrack(nextTrack, currentSourceRef.current, currentPlaylistIdRef.current);
+            playTrack(
+              nextTrack,
+              currentSourceRef.current,
+              currentPlaylistIdRef.current
+            );
           }
         } else {
           setIsPlaying(false);
@@ -258,7 +284,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       audio.addEventListener('pause', handlePause);
       audio.addEventListener('waiting', handleWaiting);
       audio.addEventListener('canplay', handleCanPlay);
-      audio.addEventListener('error', handleError as EventListener);
+      audio.addEventListener('error', handleError);
 
       return () => {
         audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
@@ -268,7 +294,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         audio.removeEventListener('pause', handlePause);
         audio.removeEventListener('waiting', handleWaiting);
         audio.removeEventListener('canplay', handleCanPlay);
-        audio.removeEventListener('error', handleError as EventListener);
+        audio.removeEventListener('error', handleError);
         audio.pause();
         audio.src = '';
       };
@@ -306,29 +332,45 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       localStorage.setItem('player:muted', isMuted ? '1' : '0');
       localStorage.setItem('player:repeat', repeatMode);
       localStorage.setItem('player:shuffle', shuffle ? '1' : '0');
-    } catch {}
+    } catch (error) {
+      logger.warn('Failed to persist player settings', error);
+    }
   }, [volume, isMuted, repeatMode, shuffle]);
 
   // Media Session metadata and actions
   useEffect(() => {
-    if (typeof navigator !== 'undefined' && 'mediaSession' in navigator && currentTrack) {
+    if (
+      typeof navigator !== 'undefined' &&
+      'mediaSession' in navigator &&
+      currentTrack
+    ) {
       try {
         navigator.mediaSession.metadata = new (window as any).MediaMetadata({
           title: currentTrack.title,
           artist: currentTrack.artist || 'Unknown Artist',
           album: '',
           artwork: currentTrack.coverImageUrl
-            ? [{ src: currentTrack.coverImageUrl, sizes: '512x512', type: 'image/png' }]
+            ? [
+                {
+                  src: currentTrack.coverImageUrl,
+                  sizes: '512x512',
+                  type: 'image/png',
+                },
+              ]
             : [],
         });
         navigator.mediaSession.setActionHandler('play', () => playPause());
         navigator.mediaSession.setActionHandler('pause', () => playPause());
-        navigator.mediaSession.setActionHandler('previoustrack', () => previous());
+        navigator.mediaSession.setActionHandler('previoustrack', () =>
+          previous()
+        );
         navigator.mediaSession.setActionHandler('nexttrack', () => next());
         navigator.mediaSession.setActionHandler('seekto', (details: any) => {
           if (typeof details.seekTime === 'number') seekTo(details.seekTime);
         });
-      } catch {}
+      } catch (error) {
+        logger.warn('Failed to update media session metadata', error);
+      }
     }
   }, [currentTrack, currentTime]);
 
@@ -346,10 +388,10 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     if (currentTrack?.id === track.id) {
       // Same track - just restart playback (for repeat 'one' mode)
       // Don't modify the queue - preserve it
-        audioRef.current.pause();
+      audioRef.current.pause();
       audioRef.current.currentTime = 0;
-        audioRef.current.play();
-      
+      audioRef.current.play();
+
       // Track new play start for stats
       playStartTimeRef.current = Date.now();
       trackPlayStart(track.id, source, playlistId);
@@ -434,7 +476,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     const currentIndex = queueIndexRef.current;
     const isShuffle = shuffleRef.current;
     const repeat = repeatModeRef.current;
-    
+
     if (currentQueue.length === 0) return null;
     if (isShuffle && currentQueue.length > 1) {
       let next = currentIndex;
@@ -457,7 +499,11 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     setQueueIndex(nextIdx);
     const nextTrack = queueRef.current[nextIdx];
     if (nextTrack) {
-      playTrack(nextTrack, currentSourceRef.current, currentPlaylistIdRef.current);
+      playTrack(
+        nextTrack,
+        currentSourceRef.current,
+        currentPlaylistIdRef.current
+      );
     }
   };
 
@@ -466,7 +512,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     const currentIndex = queueIndexRef.current;
     const isShuffle = shuffleRef.current;
     const repeat = repeatModeRef.current;
-    
+
     if (isShuffle && currentQueue.length > 1) {
       // In shuffle, pick a different random track
       let prev = currentIndex;
@@ -475,14 +521,29 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       }
       setQueueIndex(prev);
       const prevTrack = currentQueue[prev];
-      if (prevTrack) playTrack(prevTrack, currentSourceRef.current, currentPlaylistIdRef.current);
+      if (prevTrack)
+        playTrack(
+          prevTrack,
+          currentSourceRef.current,
+          currentPlaylistIdRef.current
+        );
       return;
     }
-    const prevIdx = currentIndex > 0 ? currentIndex - 1 : (repeat === 'all' ? currentQueue.length - 1 : -1);
+    const prevIdx =
+      currentIndex > 0
+        ? currentIndex - 1
+        : repeat === 'all'
+          ? currentQueue.length - 1
+          : -1;
     if (prevIdx === -1) return;
     setQueueIndex(prevIdx);
     const prevTrack = currentQueue[prevIdx];
-    if (prevTrack) playTrack(prevTrack, currentSourceRef.current, currentPlaylistIdRef.current);
+    if (prevTrack)
+      playTrack(
+        prevTrack,
+        currentSourceRef.current,
+        currentPlaylistIdRef.current
+      );
   };
 
   const setQueue = (
@@ -555,7 +616,8 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   };
 
   const toggleShuffle = () => setShuffle(s => !s);
-  const setRepeatMode = (mode: 'off' | 'one' | 'all') => setRepeatModeState(mode);
+  const setRepeatMode = (mode: 'off' | 'one' | 'all') =>
+    setRepeatModeState(mode);
 
   const stop = () => {
     if (audioRef.current) {

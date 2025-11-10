@@ -7,7 +7,7 @@ import { logger } from '@/lib/utils/logger';
 export async function GET(_request: NextRequest) {
   // eslint-disable-next-line no-console
   console.log('[API] GET /api/ai/conversations - Request received');
-  
+
   try {
     // eslint-disable-next-line no-console
     console.log('[API] Getting server session...');
@@ -27,7 +27,10 @@ export async function GET(_request: NextRequest) {
     }
 
     // eslint-disable-next-line no-console
-    console.log('[API] Calling conversationStore.getUserConversations for userId:', session.user.id);
+    console.log(
+      '[API] Calling conversationStore.getUserConversations for userId:',
+      session.user.id
+    );
     const conversations = await conversationStore.getUserConversations(
       session.user.id
     );
@@ -35,7 +38,7 @@ export async function GET(_request: NextRequest) {
     // eslint-disable-next-line no-console
     console.log('[API] ✅ Conversations fetched:', {
       count: conversations.length,
-      conversations: conversations.map((c) => ({
+      conversations: conversations.map(c => ({
         id: c.id,
         title: c.title,
         updatedAt: c.updatedAt,

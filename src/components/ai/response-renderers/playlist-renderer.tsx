@@ -5,6 +5,7 @@ import { Button } from '@heroui/react';
 import Image from 'next/image';
 import TrackCard from '@/components/ai/TrackCard';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import type { Track } from '@/types/track';
 
 interface PlaylistRendererProps {
   response: PlaylistResponse;
@@ -22,6 +23,45 @@ export function PlaylistRenderer({
 }: PlaylistRendererProps) {
   const { data: playlist } = response;
   const { playTrack } = useMusicPlayer();
+
+  const normalizeTrack = (track: any): Track => ({
+    id: track.id,
+    title: track.title ?? 'Untitled',
+    filePath: track.filePath ?? '',
+    fileUrl: track.fileUrl ?? '',
+    coverImageUrl: track.coverImageUrl ?? track.albumArtwork ?? undefined,
+    albumArtwork: track.albumArtwork ?? undefined,
+    genre: track.genre ?? undefined,
+    album: track.album ?? undefined,
+    description: track.description ?? undefined,
+    duration:
+      typeof track.duration === 'number' && Number.isFinite(track.duration)
+        ? track.duration
+        : undefined,
+    playCount: track.playCount ?? 0,
+    likeCount: track.likeCount ?? 0,
+    artistId: track.artistId ?? track.artistProfileId ?? '',
+    artistProfileId: track.artistProfileId ?? undefined,
+    userId: track.userId ?? '',
+    createdAt: track.createdAt ?? new Date().toISOString(),
+    updatedAt: track.updatedAt ?? new Date().toISOString(),
+    artist: track.artist ?? track.artistProfile?.artistName ?? 'Unknown Artist',
+    composer: track.composer ?? undefined,
+    year: track.year ?? undefined,
+    releaseDate: track.releaseDate ?? undefined,
+    bpm: track.bpm ?? undefined,
+    isrc: track.isrc ?? undefined,
+    lyrics: track.lyrics ?? undefined,
+    isPublic: track.isPublic ?? true,
+    isDownloadable: track.isDownloadable ?? false,
+    isExplicit: track.isExplicit ?? false,
+    watermarkId: track.watermarkId ?? undefined,
+    copyrightInfo: track.copyrightInfo ?? undefined,
+    licenseType: track.licenseType ?? undefined,
+    distributionRights: track.distributionRights ?? undefined,
+    downloadCount: track.downloadCount ?? undefined,
+    shareCount: track.shareCount ?? undefined,
+  });
 
   const handlePlay = () => {
     if (onPlayPlaylist) {
@@ -45,26 +85,26 @@ export function PlaylistRenderer({
         // Navigate to playlist page (if exists)
         if (playlist.id) {
           // TODO: Navigate to playlist detail page
-          console.log('Open playlist:', playlist.id);
         }
         break;
       case 'save_playlist':
         // TODO: Implement save playlist functionality
-        console.log('Save playlist action:', action);
         break;
       case 'share_track':
         if (navigator.share) {
-          navigator.share({
-            title: playlist.name,
-            text: `Check out "${playlist.name}" playlist`,
-            url: window.location.href,
-          }).catch(() => {
-            // Share failed or cancelled
-          });
+          navigator
+            .share({
+              title: playlist.name,
+              text: `Check out "${playlist.name}" playlist`,
+              url: window.location.href,
+            })
+            .catch(() => {
+              // Share failed or cancelled
+            });
         }
         break;
       default:
-        console.log('Unhandled action type:', action.type);
+        break;
     }
   };
 
@@ -132,16 +172,19 @@ export function PlaylistRenderer({
             Tracks
           </h4>
           <div className='space-y-2'>
-            {playlist.tracks.slice(0, 6).map(item => (
-              <TrackCard
-                key={item.track.id}
-                track={item.track}
-                variant='compact'
-                size='md'
-                showDuration
-                onPlay={handlePlayTrack}
-              />
-            ))}
+            {playlist.tracks.slice(0, 6).map(item => {
+              const track = normalizeTrack(item.track);
+              return (
+                <TrackCard
+                  key={track.id}
+                  track={track}
+                  variant='compact'
+                  size='md'
+                  showDuration
+                  onPlay={handlePlayTrack}
+                />
+              );
+            })}
           </div>
         </div>
       )}

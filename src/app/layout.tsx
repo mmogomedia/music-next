@@ -28,10 +28,10 @@ export default function RootLayout({
         <SessionProvider>
           <MusicPlayerProvider>
             <ToastProvider>
-            <HeroUIProviderWrapper>
-              <main id='content'>{children}</main>
-              <ConditionalGlobalMusicPlayer />
-            </HeroUIProviderWrapper>
+              <HeroUIProviderWrapper>
+                <main id='content'>{children}</main>
+                <ConditionalGlobalMusicPlayer />
+              </HeroUIProviderWrapper>
             </ToastProvider>
           </MusicPlayerProvider>
         </SessionProvider>

@@ -5,16 +5,18 @@
 **Result:** Database is working correctly and contains conversations.
 
 **Findings:**
+
 - ✅ Database connection successful
 - ✅ User `dev@dev.com` (cmfjavu7x0000qxvbujj2x2zz) has **10 conversations**
 - ✅ All conversations have valid data (ID, title, messages, timestamps)
 - ✅ Database queries work correctly
 
 **Sample Conversations:**
+
 1. "Caeser music" (conv_1762077000179_zk9yfq7h5)
 2. "I am looking for a track called Awukhuzeki" (conv_1761982893658_ayxva6zcd)
 3. "I want a song called Isela" (conv_1761982295098_ho3kjfcmi)
-... and 7 more
+   ... and 7 more
 
 ## 🔍 Root Cause: Frontend API Call Not Triggering
 
@@ -50,6 +52,7 @@ When you refresh the landing page, you should see logs like:
 ```
 
 **If you DON'T see these logs:**
+
 - Component might not be mounting
 - Session might not be loading
 - Check for JavaScript errors
@@ -57,31 +60,39 @@ When you refresh the landing page, you should see logs like:
 ### 2. Check Network Tab
 
 After refresh, look for:
+
 - `GET /api/ai/conversations` request
 - Status should be 200
 - Response should contain `{ conversations: [...] }`
 
 **If request is missing:**
+
 - `fetchConversations()` is not being called
 - Check console logs to see where it stops
 
 **If request returns 401:**
+
 - Session issue - cookies not being sent
 - Server-side session not matching client
 
 **If request returns 200 with empty array:**
+
 - Wrong userId being queried
 - Database query issue (but we verified DB is fine)
 
 ### 3. Verify Session
 
 Check in browser console:
+
 ```javascript
 // In browser console
-fetch('/api/auth/session').then(r => r.json()).then(console.log)
+fetch('/api/auth/session')
+  .then(r => r.json())
+  .then(console.log);
 ```
 
 Should return:
+
 ```json
 {
   "user": {
@@ -95,6 +106,7 @@ Should return:
 ### 4. Manual API Test
 
 Test the API directly:
+
 ```bash
 # Get session cookie first, then:
 curl -H "Cookie: next-auth.session-token=YOUR_TOKEN" http://localhost:3000/api/ai/conversations
