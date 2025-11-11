@@ -142,7 +142,7 @@ export default async function QuickLinkPage({
   const viewInChatHref = `/?quickLinkSlug=${quickLink.slug}`;
 
   return (
-    <div className='relative h-screen overflow-hidden bg-white text-slate-900'>
+    <div className='relative min-h-screen bg-white text-slate-900'>
       <div className='absolute inset-0 pointer-events-none'>
         <div className='absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(63,131,248,0.12),_transparent_45%),_radial-gradient(circle_at_bottom_right,_rgba(139,92,246,0.12),_transparent_40%)]' />
         {backgroundShapes.map((shape, idx) => (
@@ -167,9 +167,9 @@ export default async function QuickLinkPage({
         ))}
       </div>
 
-      <div className='relative z-10 h-full px-4 sm:px-6 lg:px-10 py-10 sm:py-14'>
-        <div className='mx-auto flex h-full max-w-6xl flex-col gap-6 overflow-hidden'>
-          <header className='space-y-5 flex-shrink-0'>
+      <div className='relative z-10 px-4 sm:px-6 lg:px-10 py-10 sm:py-14'>
+        <div className='mx-auto max-w-6xl space-y-6'>
+          <header className='space-y-5'>
             <div className='inline-flex items-center px-4 py-2 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.08)] rounded-full border border-slate-100 text-xs font-semibold uppercase tracking-[0.35em] text-slate-600'>
               {quickLink.type === 'TRACK'
                 ? 'Track Spotlight'
@@ -211,8 +211,8 @@ export default async function QuickLinkPage({
             </div>
           </header>
 
-          <section className='relative flex-1 overflow-hidden'>
-            <div className='h-full w-full overflow-y-auto pr-1 sm:pr-2'>
+          <section className='relative'>
+            <div className='w-full'>
               {quickLink.type === 'TRACK' && data.track ? (
                 <QuickLinkTrackView
                   track={data.track}
