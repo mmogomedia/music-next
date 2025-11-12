@@ -13,9 +13,14 @@ import { ChatOpenAI, AzureChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import type { AIProvider } from '@/types/ai-service';
+import type {
+  TrackListResponse,
+  PlaylistGridResponse,
+} from '@/types/ai-responses';
 import {
   executeToolCallLoop,
   extractTextContent,
+  type ExecutedToolResult,
 } from '@/lib/ai/tool-executor';
 
 const RECOMMENDATION_SYSTEM_PROMPT = `You are a music recommendation assistant for Flemoji, a South African music streaming platform.
@@ -23,19 +28,28 @@ const RECOMMENDATION_SYSTEM_PROMPT = `You are a music recommendation assistant f
 Your role is to provide personalized music recommendations based on user preferences, listening history, and current trends.
 
 Available data sources:
-- TRENDING: Current trending tracks
-- GENRE STATS: Statistics by genre
-- PROVINCE STATS: Regional music statistics
+- TRENDING: Current trending tracks (use get_trending_tracks tool)
+- GENRE STATS: Statistics by genre (use get_genre_stats tool)
+- PROVINCE STATS: Regional music statistics (use get_province_stats tool)
+- TOP CHARTS: Popular tracks (use get_top_charts tool)
+- FEATURED PLAYLISTS: Curated playlists (use get_featured_playlists tool)
 - USER HISTORY: User's listening patterns (if available)
+
+IMPORTANT - You MUST use tools to gather data:
+1. Always call get_trending_tracks or get_top_charts to find popular music
+2. Use get_genre_stats or get_province_stats to understand what's popular in specific genres/regions
+3. Use search_tracks or get_tracks_by_genre to find specific tracks
+4. Use get_featured_playlists or get_playlists_by_genre to find playlists
 
 When responding:
 - Be enthusiastic about helping users discover new music
-- Base recommendations on data and trends
-- Explain why you're recommending specific tracks/artists
+- Base recommendations on REAL DATA from tools - don't make up tracks or artists
+- Explain why you're recommending specific tracks/artists (mention play counts, trending scores, genre popularity)
 - Provide context about genres and regions
 - Keep recommendations diverse and interesting
+- Use the tools available to gather real data before responding
 
-You have access to analytics tools to provide data-driven recommendations. Use them to suggest music that matches user preferences.`;
+You have access to analytics and discovery tools. USE THEM to provide data-driven recommendations based on actual Flemoji data.`;
 
 export class RecommendationAgent extends BaseAgent {
   private model: any;
@@ -110,6 +124,12 @@ export class RecommendationAgent extends BaseAgent {
         execution.finalMessage.content
       );
 
+      // Convert tool results to structured response
+      const structuredResponse = await this.convertToolResultsToResponse(
+        execution.toolResults,
+        context
+      );
+
       const metadata = {
         agent: this.name,
         iterations: execution.iterations,
@@ -121,20 +141,20 @@ export class RecommendationAgent extends BaseAgent {
         toolExecutionTruncated: execution.toolExecutionTruncated || undefined,
       };
 
-      const data =
-        execution.toolResults.length > 0
-          ? execution.toolResults.map(tool => ({
-              tool: tool.name,
-              result: tool.parsedResult ?? tool.rawResult,
-              error: tool.error,
-            }))
-          : undefined;
+      // If we have a structured response, return it with the message
+      if (structuredResponse) {
+        return {
+          ...structuredResponse,
+          message: responseContent || structuredResponse.message,
+          metadata,
+        };
+      }
 
+      // Fallback to text response with tool data
       return {
         message:
           responseContent ||
           'Here are some recommendations based on the latest analytics.',
-        data,
         metadata,
       };
     } catch (error) {
@@ -148,5 +168,158 @@ export class RecommendationAgent extends BaseAgent {
         },
       };
     }
+  }
+
+  /**
+   * Convert tool results to structured AI response format
+   */
+  private async convertToolResultsToResponse(
+    results: ExecutedToolResult[],
+    _context?: AgentContext
+  ): Promise<AgentResponse | null> {
+    if (results.length === 0) return null;
+
+    // Convert tool results to tool data format
+    const toolData = results.map(result => ({
+      tool: result.name,
+      data:
+        result.parsedResult ??
+        (result.rawResult && typeof result.rawResult === 'string'
+          ? JSON.parse(result.rawResult)
+          : {}),
+    }));
+
+    return this.convertToolDataToResponse(toolData);
+  }
+
+  /**
+   * Convert raw tool data to structured AI response format
+   */
+  private async convertToolDataToResponse(
+    toolData: any[]
+  ): Promise<AgentResponse | null> {
+    if (toolData.length === 0) return null;
+
+    // Aggregate across tool outputs
+    const aggregated: {
+      tracks: any[];
+      playlists: any[];
+      meta: Record<string, any>;
+    } = { tracks: [], playlists: [], meta: {} };
+
+    for (const item of toolData) {
+      const toolName = item.tool;
+      const data = item.data || {};
+
+      switch (toolName) {
+        case 'get_trending_tracks':
+        case 'get_top_charts':
+        case 'search_tracks':
+        case 'get_tracks_by_genre': {
+          if (Array.isArray(data.tracks)) {
+            aggregated.tracks.push(...data.tracks);
+          }
+          if (data.genre) aggregated.meta.genre = data.genre;
+          if (typeof data.count === 'number') {
+            aggregated.meta.totalTracks = data.count;
+          }
+          break;
+        }
+        case 'get_featured_playlists':
+        case 'get_playlists_by_genre':
+        case 'get_playlists_by_province': {
+          if (Array.isArray(data.playlists)) {
+            aggregated.playlists.push(...data.playlists);
+          }
+          if (data.genre) aggregated.meta.genre = data.genre;
+          if (data.province) aggregated.meta.province = data.province;
+          if (typeof data.count === 'number') {
+            aggregated.meta.totalPlaylists = data.count;
+          }
+          break;
+        }
+        case 'get_playlist': {
+          if (data.playlist) {
+            aggregated.playlists.push(data.playlist);
+          }
+          break;
+        }
+        case 'get_genre_stats':
+        case 'get_province_stats': {
+          // Analytics stats can inform recommendations but don't directly create responses
+          // They're used by the LLM to make better recommendations
+          break;
+        }
+        default: {
+          // ignore other tools
+          break;
+        }
+      }
+    }
+
+    // De-duplicate aggregated items by id
+    const dedupeById = (arr: any[]) => {
+      const seen = new Set<string>();
+      const out: any[] = [];
+      for (const item of arr) {
+        const id = (item && item.id) as string | undefined;
+        const key = id || JSON.stringify(item);
+        if (!seen.has(key)) {
+          seen.add(key);
+          out.push(item);
+        }
+      }
+      return out;
+    };
+
+    aggregated.tracks = dedupeById(aggregated.tracks);
+    aggregated.playlists = dedupeById(aggregated.playlists);
+
+    // If we have tracks, return track_list
+    if (aggregated.tracks.length > 0) {
+      // Ensure fileUrl is constructed for tracks
+      const { constructFileUrl } = await import('@/lib/url-utils');
+      const tracksWithUrls = aggregated.tracks.map(track => ({
+        ...track,
+        fileUrl:
+          track.fileUrl ||
+          (track.filePath ? constructFileUrl(track.filePath) : ''),
+        isDownloadable: track.isDownloadable ?? false,
+      }));
+
+      return {
+        type: 'track_list',
+        message: '',
+        timestamp: new Date(),
+        data: {
+          tracks: tracksWithUrls,
+          metadata: {
+            genre: aggregated.meta.genre,
+            province: aggregated.meta.province,
+            total: aggregated.tracks.length,
+          },
+        },
+      } as TrackListResponse;
+    }
+
+    // If we have playlists, return playlist_grid
+    if (aggregated.playlists.length > 0) {
+      return {
+        type: 'playlist_grid',
+        message: '',
+        timestamp: new Date(),
+        data: {
+          playlists: aggregated.playlists,
+          metadata: {
+            genre: aggregated.meta.genre,
+            province: aggregated.meta.province,
+            total: aggregated.playlists.length,
+          },
+        },
+      } as PlaylistGridResponse;
+    }
+
+    // No structured data to return
+    return null;
   }
 }
