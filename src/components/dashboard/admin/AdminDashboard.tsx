@@ -3,13 +3,11 @@
 import { useState } from 'react';
 import {
   ExclamationTriangleIcon,
-  CheckCircleIcon,
   EyeIcon,
   ShieldCheckIcon,
   BellIcon,
   MusicalNoteIcon,
   UserGroupIcon,
-  ClockIcon,
   ChartBarIcon,
   Cog6ToothIcon,
   ArrowDownTrayIcon,
@@ -29,6 +27,7 @@ import UnifiedLayout from '@/components/layout/UnifiedLayout';
 import { useAdminDashboardStats } from '@/hooks/useAdminDashboardStats';
 import { Playlist } from '@/types/playlist';
 import { Track } from '@/types/track';
+import RecentActivity from '@/components/dashboard/RecentActivity';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -62,7 +61,6 @@ export default function AdminDashboard() {
     platformHealth: 'healthy' as 'healthy' | 'warning' | 'critical',
   };
 
-  const recentActivity = stats?.recentActivity || [];
   const pendingActions = stats?.pendingActions || [];
 
   const getPriorityColor = (priority: string) => {
@@ -358,47 +356,11 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                     <div className='p-6'>
-                      <div className='space-y-4'>
-                        {recentActivity.map(activity => {
-                          const getIcon = (iconName: string) => {
-                            switch (iconName) {
-                              case 'UserGroupIcon':
-                                return UserGroupIcon;
-                              case 'MusicalNoteIcon':
-                                return MusicalNoteIcon;
-                              case 'ClockIcon':
-                                return ClockIcon;
-                              case 'ExclamationTriangleIcon':
-                                return ExclamationTriangleIcon;
-                              case 'CheckCircleIcon':
-                                return CheckCircleIcon;
-                              default:
-                                return ClockIcon;
-                            }
-                          };
-                          const Icon = getIcon(activity.icon);
-                          return (
-                            <div
-                              key={activity.id}
-                              className='flex items-start space-x-3'
-                            >
-                              <div
-                                className={`w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center flex-shrink-0`}
-                              >
-                                <Icon className={`w-4 h-4 ${activity.color}`} />
-                              </div>
-                              <div className='flex-1 min-w-0'>
-                                <p className='text-sm text-gray-900 dark:text-white'>
-                                  {activity.message}
-                                </p>
-                                <p className='text-xs text-gray-500 dark:text-gray-400'>
-                                  {activity.timestamp}
-                                </p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <RecentActivity
+                        activity={stats?.recentActivity}
+                        useSSE={true}
+                        scope='admin'
+                      />
                     </div>
                   </div>
                 </div>

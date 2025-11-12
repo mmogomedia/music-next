@@ -37,6 +37,25 @@ interface DashboardStats {
       };
       timestamp: string;
     }>;
+    downloads: Array<{
+      type: string;
+      track: {
+        id: string;
+        title: string;
+        artist: string;
+      };
+      timestamp: string;
+    }>;
+    pageVisits: Array<{
+      type: string;
+      track: {
+        id: string;
+        title: string;
+        artist: string;
+      };
+      timestamp: string;
+      slug: string;
+    }>;
   };
   topTracks: Array<{
     trackId: string;

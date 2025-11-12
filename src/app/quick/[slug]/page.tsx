@@ -1,4 +1,4 @@
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import {
@@ -93,6 +93,23 @@ export default async function QuickLinkPage({
 
   const quickLink = data.quickLink;
 
+  const cookieStore = cookies();
+  const visitCookieKey = `ql_visit_${quickLink.slug}`;
+  const lastVisitCookie = cookieStore.get(visitCookieKey);
+  const now = Date.now();
+  const VISIT_DEDUP_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+
+  let shouldRecordVisit = true;
+  if (lastVisitCookie) {
+    const lastVisitTime = Number(lastVisitCookie.value);
+    if (
+      !Number.isNaN(lastVisitTime) &&
+      now - lastVisitTime < VISIT_DEDUP_WINDOW_MS
+    ) {
+      shouldRecordVisit = false;
+    }
+  }
+
   if (!quickLink.isActive) {
     return (
       <div className='relative flex h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-slate-100 px-6 text-center text-slate-700'>
@@ -130,11 +147,21 @@ export default async function QuickLinkPage({
       : undefined;
 
   try {
-    await recordQuickLinkEvent(resolvedParams.slug, {
-      event: 'visit',
-      referrer,
-      campaign,
-    });
+    if (shouldRecordVisit) {
+      await recordQuickLinkEvent(resolvedParams.slug, {
+        event: 'visit',
+        referrer,
+        campaign,
+      });
+
+      cookieStore.set(visitCookieKey, String(now), {
+        httpOnly: false,
+        sameSite: 'lax',
+        secure: true,
+        path: '/',
+        maxAge: 60 * 60 * 24, // keep marker for a day
+      });
+    }
   } catch (error) {
     console.error('Failed to record quick link visit', error);
   }

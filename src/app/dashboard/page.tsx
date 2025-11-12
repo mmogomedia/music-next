@@ -34,6 +34,7 @@ import ArtistProfileForm from '@/components/artist/ArtistProfileForm';
 import StatsGrid from '@/components/dashboard/StatsGrid';
 import RecentTracks from '@/components/dashboard/RecentTracks';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import TopPerformingTracks from '@/components/dashboard/TopPerformingTracks';
 import PlaylistSubmissionsTab from '@/components/dashboard/artist/PlaylistSubmissionsTab';
 import QuickSubmitModal from '@/components/dashboard/artist/QuickSubmitModal';
 import TrackArtwork from '@/components/music/TrackArtwork';
@@ -219,9 +220,12 @@ export default function DashboardPage() {
   const displayStats = stats?.overview || {
     totalTracks: tracks.length,
     totalPlays: tracks.reduce((sum, track) => sum + (track.playCount || 0), 0),
-    totalLikes: 0,
+    totalLikes: tracks.reduce((sum, track) => sum + (track.likeCount || 0), 0),
     totalShares: 0,
-    totalDownloads: 0,
+    totalDownloads: tracks.reduce(
+      (sum, track) => sum + (track.downloadCount || 0),
+      0
+    ),
     totalSaves: 0,
     uniqueListeners: 0,
     avgDuration: 0,
@@ -389,24 +393,45 @@ export default function DashboardPage() {
                   <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
                 </div>
               ) : statsError ? (
-                <div className='text-center text-red-600 dark:text-red-400'>
+                <div className='text-center text-red-600 dark:text-red-400 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800'>
                   Error loading stats: {statsError}
                 </div>
               ) : (
-                <StatsGrid stats={displayStats} growth={stats?.growthMetrics} />
+                <>
+                  <StatsGrid
+                    stats={{
+                      totalTracks: displayStats.totalTracks,
+                      totalPlays: displayStats.totalPlays,
+                      totalLikes: displayStats.totalLikes,
+                      totalDownloads: displayStats.totalDownloads,
+                      uniqueListeners: displayStats.uniqueListeners,
+                    }}
+                    growth={stats?.growthMetrics}
+                  />
+
+                  {stats?.topTracks && stats.topTracks.length > 0 && (
+                    <div className='mt-6'>
+                      <TopPerformingTracks
+                        topTracks={stats.topTracks}
+                        onViewAll={() => setActiveTab('library')}
+                      />
+                    </div>
+                  )}
+
+                  <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                    <RecentTracks
+                      tracks={recentTracks}
+                      onViewAll={() => setActiveTab('library')}
+                      onPlay={playTrack}
+                    />
+
+                    <RecentActivity
+                      activity={stats?.recentActivity}
+                      useSSE={true}
+                    />
+                  </div>
+                </>
               )}
-
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                <RecentTracks
-                  tracks={recentTracks}
-                  onViewAll={() => setActiveTab('library')}
-                  onPlay={playTrack}
-                />
-
-                {stats?.recentActivity && (
-                  <RecentActivity activity={stats.recentActivity} />
-                )}
-              </div>
             </div>
           )}
 

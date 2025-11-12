@@ -9,7 +9,7 @@
 
 import { BaseAgent, type AgentContext, type AgentResponse } from './base-agent';
 import { discoveryTools } from '@/lib/ai/tools';
-import { ChatOpenAI } from '@langchain/openai';
+import { ChatOpenAI, AzureChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { logger } from '@/lib/utils/logger';
@@ -49,11 +49,20 @@ You have access to comprehensive music discovery tools. Use them to provide accu
 export class DiscoveryAgent extends BaseAgent {
   private model: any;
 
-  constructor(provider: AIProvider = 'openai') {
+  constructor(provider: AIProvider = 'azure-openai') {
     super('DiscoveryAgent', DISCOVERY_SYSTEM_PROMPT);
 
     // Initialize model based on provider
     switch (provider) {
+      case 'azure-openai':
+        this.model = new AzureChatOpenAI({
+          azureOpenAIApiDeploymentName:
+            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
+          azureOpenAIApiVersion:
+            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
+          temperature: 1,
+        });
+        break;
       case 'openai':
         this.model = new ChatOpenAI({
           modelName: 'gpt-4o-mini',
@@ -73,9 +82,12 @@ export class DiscoveryAgent extends BaseAgent {
         });
         break;
       default:
-        this.model = new ChatOpenAI({
-          modelName: 'gpt-4o-mini',
-          temperature: 0.7,
+        this.model = new AzureChatOpenAI({
+          azureOpenAIApiDeploymentName:
+            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
+          azureOpenAIApiVersion:
+            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
+          temperature: 1,
         });
     }
   }
@@ -137,12 +149,18 @@ export class DiscoveryAgent extends BaseAgent {
       };
     } catch (error) {
       console.error('DiscoveryAgent error:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : JSON.stringify(error);
+      const baseMessage =
+        'I apologize, but I encountered an error while searching for music. Please try again.';
       return {
         message:
-          'I apologize, but I encountered an error while searching for music. Please try again.',
+          process.env.NODE_ENV !== 'production'
+            ? `${baseMessage} (debug: ${errorMessage})`
+            : baseMessage,
         metadata: {
           agent: this.name,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: errorMessage,
         },
       };
     }
@@ -294,6 +312,14 @@ export class DiscoveryAgent extends BaseAgent {
 
       // Generate summaries for all tracks and ensure fileUrl is present
       const { constructFileUrl } = await import('@/lib/url-utils');
+
+      // Check if Azure OpenAI is properly configured before attempting summaries
+      const azureConfigured =
+        process.env.AZURE_OPENAI_API_KEY &&
+        process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME &&
+        (process.env.AZURE_OPENAI_ENDPOINT ||
+          process.env.AZURE_OPENAI_API_INSTANCE_NAME);
+
       const tracksWithSummaries = await Promise.all(
         aggregated.tracks.map(async track => {
           let summary: string | undefined;
@@ -303,19 +329,23 @@ export class DiscoveryAgent extends BaseAgent {
             track.fileUrl ||
             (track.filePath ? constructFileUrl(track.filePath) : '');
 
-          try {
-            const { aiService } = await import('@/lib/ai/ai-service');
-            const trackData = {
-              title: track.title,
-              artist: track.artist || 'Unknown Artist',
-              genre: track.genre || 'Unknown Genre',
-              playCount: track.playCount || 0,
-              likeCount: track.likeCount || 0,
-              duration: track.duration,
-              album: track.album,
-            };
+          if (azureConfigured) {
+            try {
+              // Use AzureChatOpenAI directly (same as main agents) to ensure consistent config
+              const { AzureChatOpenAI } = await import('@langchain/openai');
+              const { HumanMessage } = await import('@langchain/core/messages');
 
-            const summaryPrompt = `Create a brief, engaging summary (2-3 sentences) for this South African track on Flemoji:
+              const trackData = {
+                title: track.title,
+                artist: track.artist || 'Unknown Artist',
+                genre: track.genre || 'Unknown Genre',
+                playCount: track.playCount || 0,
+                likeCount: track.likeCount || 0,
+                duration: track.duration,
+                album: track.album,
+              };
+
+              const summaryPrompt = `Create a brief, engaging summary (2-3 sentences) for this South African track on Flemoji:
 
 Title: ${trackData.title}
 Artist: ${trackData.artist}
@@ -333,24 +363,25 @@ Write a concise summary that:
 
 Summary:`;
 
-            const summaryResponse = await aiService.chat(
-              [{ role: 'user', content: summaryPrompt }],
-              {
-                provider: 'openai',
-                config: {
-                  temperature: 0.7,
-                  maxTokens: 200,
-                },
-                fallback: true,
-              }
-            );
+              // Use same config pattern as main agents - LangChain reads env vars automatically
+              const summaryModel = new AzureChatOpenAI({
+                azureOpenAIApiDeploymentName:
+                  process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
+                azureOpenAIApiVersion:
+                  process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
+                temperature: 1, // Azure OpenAI gpt-5-mini only supports temperature: 1
+              });
 
-            if (summaryResponse?.content) {
-              summary = summaryResponse.content.trim();
+              const summaryResponse = await summaryModel.invoke([
+                new HumanMessage(summaryPrompt),
+              ]);
+
+              if (summaryResponse?.content) {
+                summary = String(summaryResponse.content).trim();
+              }
+            } catch (error) {
+              // If summary generation fails, just continue without it
             }
-          } catch (error) {
-            // If summary generation fails, just continue without it
-            logger.error('Error generating track summary:', error);
           }
 
           return {
@@ -381,20 +412,32 @@ Summary:`;
                 featuredPlaylist.id
               );
 
-              if (playlist && playlist.tracks.length > 0) {
-                const uniqueTracks = playlist.tracks
-                  .map(pt => pt.track)
-                  .filter(t => t && !mainTrackIds.has(t.id))
-                  .filter(t => !allFeaturedTracks.some(ft => ft.id === t.id));
+              if (!playlist) continue;
+
+              if (playlist && playlist.tracks && playlist.tracks.length > 0) {
+                // Map playlist tracks to actual track objects
+                const playlistTrackObjects = playlist.tracks
+                  .map(pt => {
+                    // Handle both { track: {...} } and direct track objects
+                    const track = pt.track || pt;
+                    return track;
+                  })
+                  .filter(t => t !== null && t !== undefined);
+
+                // Filter out tracks that are already in main results
+                const tracksNotInMain = playlistTrackObjects.filter(
+                  t => t && t.id && !mainTrackIds.has(t.id)
+                );
+
+                // Filter out duplicates within featured tracks
+                const uniqueTracks = tracksNotInMain.filter(
+                  t => !allFeaturedTracks.some(ft => ft.id === t.id)
+                );
 
                 allFeaturedTracks.push(...uniqueTracks);
               }
             } catch (playlistError) {
               // Continue to next playlist if this one fails
-              logger.error(
-                `Error fetching featured playlist ${featuredPlaylist.id}:`,
-                playlistError
-              );
             }
           }
 
@@ -429,7 +472,6 @@ Summary:`;
         }
       } catch (error) {
         // If featured tracks fetch fails, just continue without them
-        logger.error('Error fetching featured tracks:', error);
       }
 
       // Track AI search events for tracks in "other" field

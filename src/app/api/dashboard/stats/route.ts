@@ -258,6 +258,8 @@ async function getRecentActivity(trackIds: string[], startDate: Date) {
     return {
       plays: [],
       likes: [],
+      downloads: [],
+      pageVisits: [],
     };
   }
 
@@ -298,6 +300,42 @@ async function getRecentActivity(trackIds: string[], startDate: Date) {
     take: 5,
   });
 
+  const recentDownloads = await prisma.downloadEvent.findMany({
+    where: {
+      trackId: { in: trackIds },
+      timestamp: { gte: startDate },
+    },
+    include: {
+      track: {
+        select: {
+          id: true,
+          title: true,
+          artist: true,
+        },
+      },
+    },
+    orderBy: { timestamp: 'desc' },
+    take: 5,
+  });
+
+  const recentPageVisits = await prisma.quickLink.findMany({
+    where: {
+      trackId: { in: trackIds },
+      lastVisitedAt: { gte: startDate },
+    },
+    include: {
+      track: {
+        select: {
+          id: true,
+          title: true,
+          artist: true,
+        },
+      },
+    },
+    orderBy: { lastVisitedAt: 'desc' },
+    take: 5,
+  });
+
   return {
     plays: recentPlays.map(play => ({
       type: 'play',
@@ -310,6 +348,21 @@ async function getRecentActivity(trackIds: string[], startDate: Date) {
       track: like.track,
       timestamp: like.timestamp,
     })),
+    downloads: recentDownloads
+      .filter(download => download.track)
+      .map(download => ({
+        type: 'download' as const,
+        track: download.track!,
+        timestamp: download.timestamp,
+      })),
+    pageVisits: recentPageVisits
+      .filter(visit => visit.track && visit.lastVisitedAt)
+      .map(visit => ({
+        type: 'page_visit' as const,
+        track: visit.track!,
+        timestamp: visit.lastVisitedAt!,
+        slug: visit.slug,
+      })),
   };
 }
 
