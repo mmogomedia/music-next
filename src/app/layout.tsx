@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import HeroUIProviderWrapper from '@/components/providers/HeroUIProvider';
 import SessionProvider from '@/components/providers/SessionProvider';
@@ -66,6 +67,7 @@ export default function RootLayout({
           </MusicPlayerProvider>
         </SessionProvider>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
