@@ -44,19 +44,85 @@ export async function generateMetadata({
     return {};
   }
 
-  const baseTitle = data.quickLink.title;
-  const baseDescription =
-    data.quickLink.description ||
-    (data.quickLink.type === 'TRACK'
-      ? 'Listen to this track on Flemoji.'
-      : data.quickLink.type === 'ARTIST'
-        ? 'Discover this artist on Flemoji.'
-        : 'Explore this album on Flemoji.');
+  const quickLink = data.quickLink;
+  let baseTitle = quickLink.title;
+  let baseDescription = quickLink.description;
+  let image: string | null = null;
 
-  const image =
-    data.track?.coverImageUrl ||
-    data.track?.albumArtwork ||
-    (data.album?.tracks[0]?.albumArtwork ?? null);
+  // Build metadata based on quick link type
+  if (quickLink.type === 'TRACK' && data.track) {
+    // Use track metadata
+    const artistName = data.track.artist || 'Unknown Artist';
+    baseTitle = baseTitle || `${data.track.title} by ${artistName}`;
+    baseDescription =
+      baseDescription ||
+      `Listen to "${data.track.title}" by ${artistName}${
+        data.track.genre ? ` • ${data.track.genre}` : ''
+      }${data.track.description ? ` • ${data.track.description.slice(0, 100)}` : ''} on Flemoji.`;
+    image = data.track.coverImageUrl || data.track.albumArtwork || null;
+  } else if (quickLink.type === 'ARTIST' && data.artist?.profile) {
+    // Use artist metadata
+    const artistName = data.artist.profile.artistName || 'Artist';
+    baseTitle = baseTitle || `${artistName} on Flemoji`;
+    const bioExcerpt = data.artist.profile.bio
+      ? data.artist.profile.bio.slice(0, 150).replace(/\n/g, ' ')
+      : '';
+    baseDescription =
+      baseDescription ||
+      `Discover ${artistName}${
+        data.artist.profile.genre ? ` • ${data.artist.profile.genre}` : ''
+      }${bioExcerpt ? ` • ${bioExcerpt}` : ''} on Flemoji.`;
+    // Use artist profile image or cover image
+    image =
+      data.artist.profile.profileImage ||
+      data.artist.profile.coverImage ||
+      null;
+  } else if (quickLink.type === 'ALBUM' && data.album) {
+    // Use album metadata
+    const artistName = data.album.artist?.artistName || 'Unknown Artist';
+    baseTitle = baseTitle || `${data.album.albumName} by ${artistName}`;
+    baseDescription =
+      baseDescription ||
+      `Explore "${data.album.albumName}" by ${artistName}${
+        data.album.tracks.length > 0
+          ? ` • ${data.album.tracks.length} track${data.album.tracks.length > 1 ? 's' : ''}`
+          : ''
+      } on Flemoji.`;
+    // Use first track's artwork, or artist cover image as fallback
+    image =
+      data.album.tracks[0]?.albumArtwork ||
+      data.album.tracks[0]?.coverImageUrl ||
+      data.album.artist?.coverImage ||
+      data.album.artist?.profileImage ||
+      null;
+  } else {
+    // Fallback metadata
+    baseDescription =
+      baseDescription ||
+      (quickLink.type === 'TRACK'
+        ? 'Listen to this track on Flemoji.'
+        : quickLink.type === 'ARTIST'
+          ? 'Discover this artist on Flemoji.'
+          : 'Explore this album on Flemoji.');
+  }
+
+  // Ensure image is an absolute URL (service already converts via ensureAbsoluteUrl/constructFileUrl)
+  // Just verify it's absolute, if not convert relative URLs to absolute
+  const imageUrl = image
+    ? image.startsWith('http://') || image.startsWith('https://')
+      ? image
+      : image.startsWith('/')
+        ? `https://flemoji.co.za${image}`
+        : `https://flemoji.co.za/${image}`
+    : null;
+
+  // Determine OpenGraph type based on quick link type
+  const ogType =
+    quickLink.type === 'TRACK'
+      ? 'music.song'
+      : quickLink.type === 'ARTIST'
+        ? 'profile'
+        : 'website';
 
   return {
     title: `${baseTitle} • Flemoji`,
@@ -65,13 +131,16 @@ export async function generateMetadata({
       title: `${baseTitle} • Flemoji`,
       description: baseDescription,
       url: `https://flemoji.co.za/quick/${resolvedParams.slug}`,
-      images: image ? [{ url: image, width: 1200, height: 630 }] : undefined,
+      type: ogType,
+      images: imageUrl
+        ? [{ url: imageUrl, width: 1200, height: 630, alt: baseTitle }]
+        : undefined,
     },
     twitter: {
       card: 'summary_large_image',
       title: `${baseTitle} • Flemoji`,
       description: baseDescription,
-      images: image ? [image] : undefined,
+      images: imageUrl ? [imageUrl] : undefined,
     },
   };
 }

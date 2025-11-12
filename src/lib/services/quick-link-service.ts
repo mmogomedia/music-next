@@ -15,9 +15,29 @@ const slugify = (value: string) =>
 
 const ensureAbsoluteUrl = (value?: string | null) => {
   if (!value) return null;
+  // Already absolute URL - return as-is
   if (value.startsWith('http://') || value.startsWith('https://')) return value;
-  if (value.startsWith('/')) return value;
-  return constructFileUrl(value);
+
+  // Try to construct URL from file path (handles paths with or without leading slash)
+  const constructedUrl = constructFileUrl(value);
+
+  // If constructFileUrl successfully converted it to an absolute URL, use it
+  if (
+    constructedUrl &&
+    (constructedUrl.startsWith('http://') ||
+      constructedUrl.startsWith('https://'))
+  ) {
+    return constructedUrl;
+  }
+
+  // If value starts with / and constructFileUrl didn't convert it,
+  // it might be a relative URL on the same domain - convert to absolute
+  if (value.startsWith('/')) {
+    return `https://flemoji.co.za${value}`;
+  }
+
+  // Fallback: return constructed URL if available, otherwise return original
+  return constructedUrl || value;
 };
 
 const QuickLinkEventSchema = z.object({
@@ -359,7 +379,15 @@ export async function getQuickLinkLandingData(
     return {
       quickLink,
       artist: {
-        profile: quickLink.artistProfile,
+        profile: quickLink.artistProfile
+          ? {
+              ...quickLink.artistProfile,
+              profileImage: ensureAbsoluteUrl(
+                quickLink.artistProfile.profileImage
+              ),
+              coverImage: ensureAbsoluteUrl(quickLink.artistProfile.coverImage),
+            }
+          : null,
         socialLinks:
           (quickLink.artistProfile.socialLinks as Record<
             string,
