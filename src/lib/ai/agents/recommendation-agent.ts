@@ -127,7 +127,8 @@ export class RecommendationAgent extends BaseAgent {
       // Convert tool results to structured response
       const structuredResponse = await this.convertToolResultsToResponse(
         execution.toolResults,
-        context
+        context,
+        message
       );
 
       const metadata = {
@@ -175,7 +176,8 @@ export class RecommendationAgent extends BaseAgent {
    */
   private async convertToolResultsToResponse(
     results: ExecutedToolResult[],
-    _context?: AgentContext
+    context?: AgentContext,
+    userMessage?: string
   ): Promise<AgentResponse | null> {
     if (results.length === 0) return null;
 
@@ -189,16 +191,67 @@ export class RecommendationAgent extends BaseAgent {
           : {}),
     }));
 
-    return this.convertToolDataToResponse(toolData);
+    return this.convertToolDataToResponse(toolData, userMessage);
+  }
+
+  /**
+   * Extract track names/IDs from user message for filtering
+   */
+  private extractTrackFromMessage(message: string): {
+    trackIds: string[];
+    trackTitles: string[];
+  } {
+    // Simple extraction - look for quoted strings or common patterns
+    const trackIds: string[] = [];
+    const trackTitles: string[] = [];
+
+    // Extract quoted strings (e.g., "Isela", 'Isela')
+    const quotedMatches = message.match(/["']([^"']+)["']/g);
+    if (quotedMatches) {
+      trackTitles.push(
+        ...quotedMatches.map(m => m.replace(/["']/g, '').trim())
+      );
+    }
+
+    // Extract after "similar to", "like", "similar tracks to"
+    const similarPatterns = [
+      /similar (?:tracks?|songs?|music) (?:to|for) ["']?([^"'\n]+)["']?/i,
+      /(?:tracks?|songs?|music) (?:similar|like) (?:to|as) ["']?([^"'\n]+)["']?/i,
+      /similar to ["']?([^"'\n]+)["']?/i,
+    ];
+
+    for (const pattern of similarPatterns) {
+      const match = message.match(pattern);
+      if (match && match[1]) {
+        trackTitles.push(match[1].trim());
+      }
+    }
+
+    return { trackIds, trackTitles };
   }
 
   /**
    * Convert raw tool data to structured AI response format
    */
   private async convertToolDataToResponse(
-    toolData: any[]
+    toolData: any[],
+    userMessage?: string
   ): Promise<AgentResponse | null> {
     if (toolData.length === 0) return null;
+
+    // Extract track info from user message to filter it out
+    const excludeTracks: { ids: Set<string>; titles: Set<string> } = {
+      ids: new Set(),
+      titles: new Set(),
+    };
+
+    if (userMessage) {
+      const extracted = this.extractTrackFromMessage(userMessage);
+      extracted.trackIds.forEach(id => excludeTracks.ids.add(id));
+      extracted.trackTitles.forEach(title =>
+        excludeTracks.titles.add(title.toLowerCase())
+      );
+    }
 
     // Aggregate across tool outputs
     const aggregated: {
@@ -274,6 +327,24 @@ export class RecommendationAgent extends BaseAgent {
 
     aggregated.tracks = dedupeById(aggregated.tracks);
     aggregated.playlists = dedupeById(aggregated.playlists);
+
+    // Filter out tracks mentioned in the query
+    if (excludeTracks.ids.size > 0 || excludeTracks.titles.size > 0) {
+      aggregated.tracks = aggregated.tracks.filter(track => {
+        // Exclude by ID
+        if (track.id && excludeTracks.ids.has(track.id)) {
+          return false;
+        }
+        // Exclude by title (case-insensitive)
+        if (
+          track.title &&
+          excludeTracks.titles.has(track.title.toLowerCase())
+        ) {
+          return false;
+        }
+        return true;
+      });
+    }
 
     // If we have tracks, return track_list
     if (aggregated.tracks.length > 0) {

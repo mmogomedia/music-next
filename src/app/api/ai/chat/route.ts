@@ -79,11 +79,21 @@ export async function POST(request: NextRequest) {
         'I understand you want to explore music. Let me help you with that!';
 
       // Create response with structured data if available
+      // If agentResponse has a type field, include the full structured response
       const chatResponse: ChatResponse = {
         message: responseMessage,
         conversationId,
         timestamp: new Date(),
-        data: agentResponse.data, // Include structured data from agent
+        data:
+          agentResponse.type && agentResponse.data
+            ? {
+                type: agentResponse.type,
+                message: agentResponse.message || '',
+                timestamp: agentResponse.timestamp || new Date(),
+                data: agentResponse.data,
+                metadata: agentResponse.metadata,
+              }
+            : agentResponse.data, // Fallback to just data if no type
       };
 
       // Store assistant response and update preferences
