@@ -30,7 +30,7 @@ export class RouterAgent {
   private playbackAgent: PlaybackAgent;
   private recommendationAgent: RecommendationAgent;
 
-  constructor(provider: AIProvider = 'openai') {
+  constructor(provider: AIProvider = 'azure-openai') {
     this.discoveryAgent = new DiscoveryAgent(provider);
     this.playbackAgent = new PlaybackAgent(provider);
     this.recommendationAgent = new RecommendationAgent(provider);

@@ -28,6 +28,9 @@ This guide provides instructions for testing the AI agent system and LangChain t
 
 1. **Environment Variables**
    - At least one AI provider API key configured:
+     - `AZURE_OPENAI_API_KEY` (recommended)
+     - `AZURE_OPENAI_ENDPOINT`
+     - `AZURE_OPENAI_API_DEPLOYMENT_NAME`
      - `OPENAI_API_KEY`
      - `ANTHROPIC_API_KEY`
      - `GOOGLE_GENERATIVE_AI_API_KEY`

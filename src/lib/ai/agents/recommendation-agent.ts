@@ -9,7 +9,7 @@
 
 import { BaseAgent, type AgentContext, type AgentResponse } from './base-agent';
 import { analyticsTools, discoveryTools } from '@/lib/ai/tools';
-import { ChatOpenAI } from '@langchain/openai';
+import { ChatOpenAI, AzureChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import type { AIProvider } from '@/types/ai-service';
@@ -40,11 +40,20 @@ You have access to analytics tools to provide data-driven recommendations. Use t
 export class RecommendationAgent extends BaseAgent {
   private model: any;
 
-  constructor(provider: AIProvider = 'openai') {
+  constructor(provider: AIProvider = 'azure-openai') {
     super('RecommendationAgent', RECOMMENDATION_SYSTEM_PROMPT);
 
     // Initialize model based on provider
     switch (provider) {
+      case 'azure-openai':
+        this.model = new AzureChatOpenAI({
+          azureOpenAIApiDeploymentName:
+            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
+          azureOpenAIApiVersion:
+            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
+          temperature: 1,
+        });
+        break;
       case 'openai':
         this.model = new ChatOpenAI({
           modelName: 'gpt-4o-mini',
@@ -64,9 +73,12 @@ export class RecommendationAgent extends BaseAgent {
         });
         break;
       default:
-        this.model = new ChatOpenAI({
-          modelName: 'gpt-4o-mini',
-          temperature: 0.7,
+        this.model = new AzureChatOpenAI({
+          azureOpenAIApiDeploymentName:
+            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
+          azureOpenAIApiVersion:
+            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
+          temperature: 1,
         });
     }
   }

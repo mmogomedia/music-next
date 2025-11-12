@@ -108,10 +108,24 @@ export async function POST(request: NextRequest) {
     } catch (agentError) {
       logger.error('Agent execution error:', agentError);
 
+      const errorMessage =
+        agentError instanceof Error
+          ? agentError.message
+          : typeof agentError === 'string'
+            ? agentError
+            : JSON.stringify(agentError);
+
+      const baseMessage =
+        "I'm here to help you discover great South African music! Try asking me to find tracks, artists, or playlists.";
+
+      const fallbackMessage =
+        process.env.NODE_ENV !== 'production'
+          ? `${baseMessage} (debug: ${errorMessage})`
+          : baseMessage;
+
       // Fallback response
       const chatResponse: ChatResponse = {
-        message:
-          "I'm here to help you discover great South African music! Try asking me to find tracks, artists, or playlists.",
+        message: fallbackMessage,
         conversationId,
         timestamp: new Date(),
       };

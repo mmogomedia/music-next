@@ -6,6 +6,7 @@ import {
 } from '@/types/ai-service';
 import { OpenAIService } from './openai-service';
 import { AnthropicService } from './anthropic-service';
+import { AzureOpenAIService } from './azure-openai-service';
 
 export class AIServiceFactoryImpl implements AIServiceFactory {
   private static instance: AIServiceFactoryImpl;
@@ -38,6 +39,9 @@ export class AIServiceFactoryImpl implements AIServiceFactory {
       case 'anthropic':
         service = new AnthropicService(fullConfig);
         break;
+      case 'azure-openai':
+        service = new AzureOpenAIService(fullConfig);
+        break;
       default:
         throw new Error(`Unsupported AI provider: ${provider}`);
     }
@@ -49,6 +53,16 @@ export class AIServiceFactoryImpl implements AIServiceFactory {
   getAvailableProviders(): AIProvider[] {
     const providers: AIProvider[] = [];
 
+    // Check Azure OpenAI first so it becomes preferred if configured
+    if (
+      process.env.AZURE_OPENAI_API_KEY &&
+      (process.env.AZURE_OPENAI_ENDPOINT ||
+        process.env.AZURE_OPENAI_API_INSTANCE_NAME) &&
+      process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME
+    ) {
+      providers.push('azure-openai');
+    }
+
     // Check OpenAI
     if (process.env.OPENAI_API_KEY) {
       providers.push('openai');
@@ -57,6 +71,16 @@ export class AIServiceFactoryImpl implements AIServiceFactory {
     // Check Anthropic
     if (process.env.ANTHROPIC_API_KEY) {
       providers.push('anthropic');
+    }
+
+    // Check Google
+    if (process.env.GOOGLE_API_KEY) {
+      providers.push('google');
+    }
+
+    // Check Cohere
+    if (process.env.COHERE_API_KEY) {
+      providers.push('cohere');
     }
 
     return providers;
@@ -84,6 +108,19 @@ export class AIServiceFactoryImpl implements AIServiceFactory {
         temperature: 0.7,
         maxTokens: 1000,
         apiKey: process.env.ANTHROPIC_API_KEY || '',
+      },
+      'azure-openai': {
+        provider: 'azure-openai',
+        model: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-4o-mini',
+        temperature: 1,
+        apiKey: process.env.AZURE_OPENAI_API_KEY || '',
+        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        azureInstanceName: process.env.AZURE_OPENAI_API_INSTANCE_NAME,
+        azureDeploymentName: process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
+        azureEmbeddingsDeploymentName:
+          process.env.AZURE_OPENAI_API_EMBEDDINGS_DEPLOYMENT_NAME,
+        azureApiVersion:
+          process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
       },
       google: {
         provider: 'google',

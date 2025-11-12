@@ -22,12 +22,12 @@ import {
 export const searchTracksTool = new DynamicStructuredTool({
   name: 'search_tracks',
   description:
-    'Search for music tracks by title, artist name, or description. Returns a list of matching tracks with metadata.',
+    'Search for music tracks by title, artist name, or description. Returns a list of matching tracks with metadata. IMPORTANT: When searching for tracks with multiple artists (e.g., "Caeser x MLT zA"), you should also search for each individual artist separately to find all their tracks. Split multi-artist names by "x", "&", "feat", "ft", "featuring", or commas.',
   schema: z.object({
     query: z
       .string()
       .describe(
-        'Search query string (track title, artist name, or description)'
+        'Search query string (track title, artist name, or description). For multi-artist tracks, search for each artist individually as well.'
       ),
     genre: z
       .string()

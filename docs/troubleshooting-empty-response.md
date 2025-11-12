@@ -53,9 +53,12 @@ curl -X POST http://localhost:3000/api/ai/chat \
 
 ```bash
 # Make sure your API key is set
+cat .env.local | grep AZURE_OPENAI_API_KEY
+# or, if using OpenAI directly
 cat .env.local | grep OPENAI_API_KEY
 
 # Should show:
+# AZURE_OPENAI_API_KEY=...
 # OPENAI_API_KEY=sk-...
 ```
 

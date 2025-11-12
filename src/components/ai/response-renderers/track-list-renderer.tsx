@@ -25,7 +25,7 @@ export function TrackListRenderer({
   onPlayTrack,
   onAction,
 }: TrackListRendererProps) {
-  const { tracks } = response.data;
+  const { tracks, other } = response.data;
   const [openSummaries, setOpenSummaries] = useState<Set<string>>(new Set());
 
   const normalizeTrack = (track: any): Track & { summary?: string } => ({
@@ -211,6 +211,30 @@ export function TrackListRenderer({
           );
         })}
       </div>
+
+      {/* Other/Featured Tracks Section */}
+      {other && other.length > 0 && (
+        <div className='mt-6 pt-6 border-t border-gray-200 dark:border-slate-700'>
+          <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 uppercase tracking-wide'>
+            More Music You Might Like
+          </h3>
+          <div className='space-y-3'>
+            {other.map(track => {
+              const trackWithSummary = normalizeTrack(track);
+              return (
+                <TrackCard
+                  key={track.id}
+                  track={trackWithSummary}
+                  onPlay={handlePlayTrack}
+                  size='md'
+                  showDuration
+                  variant='default'
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Actions */}
       {response.actions && response.actions.length > 0 && (

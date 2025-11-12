@@ -1,4 +1,9 @@
-export type AIProvider = 'openai' | 'anthropic' | 'google' | 'cohere';
+export type AIProvider =
+  | 'openai'
+  | 'anthropic'
+  | 'google'
+  | 'cohere'
+  | 'azure-openai';
 
 export interface AIConfig {
   provider: AIProvider;
@@ -7,6 +12,11 @@ export interface AIConfig {
   maxTokens?: number;
   apiKey: string;
   baseURL?: string;
+  azureEndpoint?: string;
+  azureInstanceName?: string;
+  azureDeploymentName?: string;
+  azureEmbeddingsDeploymentName?: string;
+  azureApiVersion?: string;
 }
 
 export interface AIMessage {
