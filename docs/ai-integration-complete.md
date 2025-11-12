@@ -94,7 +94,7 @@ The AI chat endpoint is now **fully integrated** and returning **actual database
 
 1. **RouterAgent** - Routes queries to appropriate agent
 2. **DiscoveryAgent** - Handles search, browse, discovery queries
-   - Returns: `track_list`, `playlist_grid`, `artist`, `search_results`
+   - Returns: `genre_list`, `track_list`, `playlist_grid`, `artist`, `search_results`
    - Features: Track summaries, multi-artist handling, featured tracks
 3. **PlaybackAgent** - Handles playback control
    - Returns: `action`, `track_list` with actions
