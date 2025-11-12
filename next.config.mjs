@@ -10,6 +10,7 @@ const nextConfig = {
       { protocol: 'https', hostname: 'profile-images.flemoji.com' },
       { protocol: 'https', hostname: 'profile-image.flemoji.com' },
       { protocol: 'https', hostname: 'asset.flemoji.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
   },
   async rewrites() {

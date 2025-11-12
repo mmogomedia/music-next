@@ -1,11 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PauseIcon } from '@heroicons/react/24/outline';
+import { PauseIcon, EllipsisVerticalIcon } from '@heroicons/react/24/outline';
 import {
   PlayIcon as PlaySolidIcon,
   TrophyIcon,
 } from '@heroicons/react/24/solid';
+import {
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+} from '@heroui/react';
 import { Track } from '@/types/track';
 import { SourceType } from '@/types/stats';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
@@ -22,7 +28,7 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
   >();
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
-  const { currentTrack, isPlaying, playTrack } = useMusicPlayer();
+  const { currentTrack, isPlaying, playTrack, addToQueue } = useMusicPlayer();
 
   useEffect(() => {
     fetchTopTracks();
@@ -66,6 +72,10 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
   const handlePlay = (track: Track) => {
     playTrack(track, 'playlist' as SourceType, topTenPlaylistId);
     onTrackPlay?.(track);
+  };
+
+  const handleAddToQueue = (track: Track) => {
+    addToQueue(track);
   };
 
   if (loading) {
@@ -167,77 +177,119 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
               key={track.id}
               className='group relative overflow-hidden bg-white dark:bg-slate-800 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-all duration-200 border border-gray-100 dark:border-slate-700'
             >
-              <div className='flex items-center gap-4'>
-                {/* Rank */}
-                <div className='flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs'>
-                  {index + 1}
-                </div>
-
-                {/* Track Artwork */}
-                <div className='relative group/artwork flex-shrink-0'>
-                  <div className='w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-lg overflow-hidden'>
-                    {track.coverImageUrl ? (
-                      <img
-                        src={track.coverImageUrl}
-                        alt={track.title}
-                        className='w-full h-full object-cover group-hover/artwork:scale-105 transition-transform duration-200'
-                      />
-                    ) : (
-                      <div className='w-full h-full flex items-center justify-center'>
-                        <PlaySolidIcon className='w-5 h-5 text-gray-400 dark:text-slate-400' />
-                      </div>
-                    )}
+              <div className='flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4'>
+                <div className='flex items-center gap-3 sm:gap-4 flex-1 min-w-0'>
+                  {/* Rank */}
+                  <div className='flex-shrink-0 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xs'>
+                    {index + 1}
                   </div>
-                  {/* Play Overlay */}
-                  <div className='absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover/artwork:opacity-100 transition-opacity duration-200'>
-                    <button
-                      onClick={() => handlePlay(track)}
-                      className='w-6 h-6 bg-white/90 text-gray-900 rounded-full flex items-center justify-center hover:bg-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-0'
-                    >
-                      {currentTrack?.id === track.id && isPlaying ? (
-                        <PauseIcon className='w-3 h-3' />
+
+                  {/* Track Artwork */}
+                  <div className='relative group/artwork flex-shrink-0'>
+                    <div className='w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-lg overflow-hidden'>
+                      {track.coverImageUrl ? (
+                        <img
+                          src={track.coverImageUrl}
+                          alt={track.title}
+                          className='w-full h-full object-cover group-hover/artwork:scale-105 transition-transform duration-200'
+                        />
                       ) : (
-                        <PlaySolidIcon className='w-3 h-3 ml-0.5' />
+                        <div className='w-full h-full flex items-center justify-center'>
+                          <PlaySolidIcon className='w-5 h-5 text-gray-400 dark:text-slate-400' />
+                        </div>
                       )}
-                    </button>
+                    </div>
+                    {/* Play Overlay */}
+                    <div className='absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center opacity-0 group-hover/artwork:opacity-100 transition-opacity duration-200'>
+                      <button
+                        onClick={() => handlePlay(track)}
+                        className='w-6 h-6 bg-white/90 text-gray-900 rounded-full flex items-center justify-center hover:bg-white transition-all duration-200 focus-visible:outline-none focus-visible:ring-0'
+                      >
+                        {currentTrack?.id === track.id && isPlaying ? (
+                          <PauseIcon className='w-3 h-3' />
+                        ) : (
+                          <PlaySolidIcon className='w-3 h-3 ml-0.5' />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Track Info */}
+                  <div className='flex-1 min-w-0'>
+                    <h3 className='font-medium text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200'>
+                      {track.title}
+                    </h3>
+                    <p className='text-sm text-gray-500 dark:text-gray-400 truncate'>
+                      {track.artist}
+                    </p>
+
+                    {/* Genre - mobile */}
+                    <div className='mt-1 sm:hidden'>
+                      <span className='inline-flex items-center px-2 py-0.5 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 rounded text-[10px] font-medium'>
+                        {track.genre}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Genre - desktop */}
+                  <div className='hidden sm:block flex-shrink-0'>
+                    <span className='px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 rounded text-xs font-medium'>
+                      {track.genre}
+                    </span>
                   </div>
                 </div>
 
-                {/* Track Info */}
-                <div className='flex-1 min-w-0'>
-                  <h3 className='font-medium text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200'>
-                    {track.title}
-                  </h3>
-                  <p className='text-sm text-gray-500 dark:text-gray-400 truncate'>
-                    {track.artist}
-                  </p>
-                </div>
+                <div className='flex items-center justify-between sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto'>
+                  {/* Duration */}
+                  <div className='text-xs sm:text-sm text-gray-500 dark:text-gray-400'>
+                    {Math.floor((track.duration || 0) / 60)}:
+                    {(track.duration || 0) % 60 < 10 ? '0' : ''}
+                    {(track.duration || 0) % 60}
+                  </div>
 
-                {/* Genre */}
-                <div className='hidden sm:block flex-shrink-0'>
-                  <span className='px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 rounded text-xs font-medium'>
-                    {track.genre}
-                  </span>
-                </div>
+                  {/* Play Button - desktop */}
+                  <button
+                    onClick={() => handlePlay(track)}
+                    className='hidden sm:flex flex-shrink-0 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 focus-visible:outline-none focus-visible:ring-0'
+                  >
+                    {currentTrack?.id === track.id && isPlaying ? (
+                      <PauseIcon className='w-4 h-4' />
+                    ) : (
+                      <PlaySolidIcon className='w-4 h-4 ml-0.5' />
+                    )}
+                  </button>
 
-                {/* Duration */}
-                <div className='flex-shrink-0 text-sm text-gray-500 dark:text-gray-400'>
-                  {Math.floor((track.duration || 0) / 60)}:
-                  {(track.duration || 0) % 60 < 10 ? '0' : ''}
-                  {(track.duration || 0) % 60}
+                  {/* Mobile Actions Menu */}
+                  <div className='sm:hidden flex-shrink-0'>
+                    <Dropdown placement='bottom-end'>
+                      <DropdownTrigger>
+                        <button
+                          type='button'
+                          aria-label='Track actions'
+                          className='p-2 rounded-full border border-gray-200 dark:border-slate-600 text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors'
+                        >
+                          <EllipsisVerticalIcon className='w-4 h-4' />
+                        </button>
+                      </DropdownTrigger>
+                      <DropdownMenu aria-label='Track actions' variant='flat'>
+                        <DropdownItem
+                          key='play'
+                          onPress={() => handlePlay(track)}
+                        >
+                          {currentTrack?.id === track.id && isPlaying
+                            ? 'Pause'
+                            : 'Play'}
+                        </DropdownItem>
+                        <DropdownItem
+                          key='queue'
+                          onPress={() => handleAddToQueue(track)}
+                        >
+                          Add to queue
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </Dropdown>
+                  </div>
                 </div>
-
-                {/* Play Button */}
-                <button
-                  onClick={() => handlePlay(track)}
-                  className='flex-shrink-0 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 focus-visible:outline-none focus-visible:ring-0'
-                >
-                  {currentTrack?.id === track.id && isPlaying ? (
-                    <PauseIcon className='w-4 h-4' />
-                  ) : (
-                    <PlaySolidIcon className='w-4 h-4 ml-0.5' />
-                  )}
-                </button>
               </div>
             </div>
           ))}

@@ -21,6 +21,11 @@ import type {
   ArtistResponse,
   SearchResultsResponse,
 } from '@/types/ai-responses';
+import {
+  executeToolCallLoop,
+  extractTextContent,
+  type ExecutedToolResult,
+} from '@/lib/ai/tool-executor';
 
 const DISCOVERY_SYSTEM_PROMPT = `You are a music discovery assistant for Flemoji, a South African music streaming platform.
 
@@ -80,37 +85,55 @@ export class DiscoveryAgent extends BaseAgent {
     context?: AgentContext
   ): Promise<AgentResponse> {
     try {
-      // Bind tools to the model
-      const agent = this.model.bindTools(discoveryTools);
-
       // Build context message if filters are provided
       const contextMessage = this.formatContext(context);
       const fullMessage = contextMessage
         ? `${message}${contextMessage ? `\n\nContext: ${contextMessage}` : ''}`
         : message;
 
-      // Get response from the agent
-      const response = await agent.invoke([
-        { role: 'system', content: this.systemPrompt },
-        { role: 'user', content: fullMessage },
-      ]);
+      const execution = await executeToolCallLoop({
+        model: this.model,
+        tools: discoveryTools,
+        messages: [
+          { role: 'system', content: this.systemPrompt },
+          { role: 'user', content: fullMessage },
+        ],
+      });
 
-      // Debug: Agent responded; tool calls will be handled below
+      const textContent = extractTextContent(execution.finalMessage.content);
+      const messageText =
+        textContent ||
+        (execution.toolResults.length > 0
+          ? this.buildFallbackMessage(execution.toolResults)
+          : 'I found some information for you. Let me help you explore that!');
 
-      // Parse tool calls if any
-      if (response.tool_calls && response.tool_calls.length > 0) {
-        return this.handleToolCalls(response, context);
+      const metadata = {
+        agent: this.name,
+        iterations: execution.iterations,
+        toolCalls: execution.toolResults.map(tool => ({
+          name: tool.name,
+          args: tool.args,
+          error: tool.error,
+        })),
+        toolExecutionTruncated: execution.toolExecutionTruncated || undefined,
+      };
+
+      if (execution.toolResults.length === 0) {
+        return {
+          message: messageText,
+          metadata,
+        };
       }
 
-      // Return text response
-      const content = response.content as string;
+      const structuredData = await this.convertToolResultsToResponse(
+        execution.toolResults,
+        context
+      );
+
       return {
-        message:
-          content ||
-          'I found some information for you. Let me help you explore that!',
-        metadata: {
-          agent: this.name,
-        },
+        message: messageText,
+        data: structuredData || undefined,
+        metadata,
       };
     } catch (error) {
       console.error('DiscoveryAgent error:', error);
@@ -125,103 +148,23 @@ export class DiscoveryAgent extends BaseAgent {
     }
   }
 
-  private async handleToolCalls(
-    response: any,
+  private buildFallbackMessage(toolResults: ExecutedToolResult[]): string {
+    const toolNames = Array.from(
+      new Set(toolResults.map(result => result.name))
+    ).join(', ');
+    return `I found results using ${toolNames || 'the available tools'}! Here's what I discovered:`;
+  }
+
+  private async convertToolResultsToResponse(
+    results: ExecutedToolResult[],
     context?: AgentContext
-  ): Promise<AgentResponse> {
-    try {
-      // Execute tool calls and get results
-      const toolResults = await Promise.all(
-        response.tool_calls.map(async (toolCall: any) => {
-          const tool = discoveryTools.find(t => t.name === toolCall.name);
-          if (!tool) {
-            return {
-              toolName: toolCall.name,
-              result: 'Tool not found',
-            };
-          }
+  ): Promise<AIResponse | null> {
+    const toolData = results.map(result => ({
+      tool: result.name,
+      data: result.parsedResult ?? result.rawResult,
+    }));
 
-          try {
-            // Parse the tool arguments (may already be an object or a string)
-            let args = toolCall.args;
-            if (typeof args === 'string') {
-              try {
-                args = JSON.parse(args);
-              } catch {
-                args = {};
-              }
-            }
-
-            // Debug: Executing tool with parsed args
-
-            // Execute the tool
-            const result = await (tool as unknown as any).invoke(args);
-
-            return {
-              toolName: toolCall.name,
-              result: result,
-            };
-          } catch (error) {
-            console.error(`Error executing tool ${toolCall.name}:`, error);
-            return {
-              toolName: toolCall.name,
-              result: { error: 'Tool execution failed' },
-            };
-          }
-        })
-      );
-
-      // Parse tool results to get structured data
-      const data = toolResults.map(tr => {
-        try {
-          return {
-            tool: tr.toolName,
-            data:
-              typeof tr.result === 'string' ? JSON.parse(tr.result) : tr.result,
-          };
-        } catch {
-          return {
-            tool: tr.toolName,
-            data: tr.result,
-          };
-        }
-      });
-
-      // Convert tool results to structured response format
-      const structuredData = await this.convertToolDataToResponse(
-        data,
-        context
-      );
-
-      // Check if we have text response
-      const hasText = response.content && response.content.trim().length > 0;
-
-      // Get the tool names for the message
-      const toolNames =
-        response.tool_calls?.map((tc: any) => tc.name).join(', ') || 'tools';
-
-      return {
-        message: hasText
-          ? (response.content as string)
-          : `I found results using ${toolNames}! Here's what I discovered:`,
-        data: structuredData,
-        metadata: {
-          agent: this.name,
-          toolCalls: response.tool_calls,
-          executed: true,
-        },
-      };
-    } catch (error) {
-      console.error('Error handling tool calls:', error);
-      return {
-        message:
-          'I encountered an issue while searching. Let me try a different approach.',
-        metadata: {
-          agent: this.name,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        },
-      };
-    }
+    return this.convertToolDataToResponse(toolData, context);
   }
 
   /**

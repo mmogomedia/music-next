@@ -13,6 +13,10 @@ import { ChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import type { AIProvider } from '@/types/ai-service';
+import {
+  executeToolCallLoop,
+  extractTextContent,
+} from '@/lib/ai/tool-executor';
 
 const RECOMMENDATION_SYSTEM_PROMPT = `You are a music recommendation assistant for Flemoji, a South African music streaming platform.
 
@@ -75,32 +79,51 @@ export class RecommendationAgent extends BaseAgent {
       // Combine analytics and discovery tools for recommendations
       const recommendationTools = [...analyticsTools, ...discoveryTools];
 
-      // Bind tools to the model
-      const agent = this.model.bindTools(recommendationTools);
-
       // Build context message if filters are provided
       const contextMessage = this.formatContext(context);
       const fullMessage = contextMessage
         ? `${message}${contextMessage ? `\n\nContext: ${contextMessage}` : ''}`
         : message;
 
-      // Get response from the agent
-      const response = await agent.invoke([
-        { role: 'system', content: this.systemPrompt },
-        { role: 'user', content: fullMessage },
-      ]);
+      const execution = await executeToolCallLoop({
+        model: this.model,
+        tools: recommendationTools,
+        messages: [
+          { role: 'system', content: this.systemPrompt },
+          { role: 'user', content: fullMessage },
+        ],
+      });
 
-      // Parse tool calls if any
-      if (response.tool_calls && response.tool_calls.length > 0) {
-        return this.handleToolCalls(response);
-      }
+      const responseContent = extractTextContent(
+        execution.finalMessage.content
+      );
 
-      // Return text response
+      const metadata = {
+        agent: this.name,
+        iterations: execution.iterations,
+        toolCalls: execution.toolResults.map(tool => ({
+          name: tool.name,
+          args: tool.args,
+          error: tool.error,
+        })),
+        toolExecutionTruncated: execution.toolExecutionTruncated || undefined,
+      };
+
+      const data =
+        execution.toolResults.length > 0
+          ? execution.toolResults.map(tool => ({
+              tool: tool.name,
+              result: tool.parsedResult ?? tool.rawResult,
+              error: tool.error,
+            }))
+          : undefined;
+
       return {
-        message: response.content as string,
-        metadata: {
-          agent: this.name,
-        },
+        message:
+          responseContent ||
+          'Here are some recommendations based on the latest analytics.',
+        data,
+        metadata,
       };
     } catch (error) {
       console.error('RecommendationAgent error:', error);
@@ -113,17 +136,5 @@ export class RecommendationAgent extends BaseAgent {
         },
       };
     }
-  }
-
-  private async handleToolCalls(response: any): Promise<AgentResponse> {
-    // For now, return the text response
-    // In a full implementation, we would execute the tool calls
-    return {
-      message: response.content as string,
-      metadata: {
-        agent: this.name,
-        toolCalls: response.tool_calls,
-      },
-    };
   }
 }

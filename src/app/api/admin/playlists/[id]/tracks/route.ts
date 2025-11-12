@@ -219,3 +219,95 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     );
   }
 }
+
+export async function PUT(request: NextRequest, { params }: RouteParams) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check if user is admin
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+
+    if (user?.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const { trackIds } = await request.json();
+
+    if (!trackIds || !Array.isArray(trackIds) || trackIds.length === 0) {
+      return NextResponse.json(
+        { error: 'Track IDs array is required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if playlist exists
+    const playlist = await prisma.playlist.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        tracks: {
+          select: { id: true, trackId: true },
+        },
+      },
+    });
+
+    if (!playlist) {
+      return NextResponse.json(
+        { error: 'Playlist not found' },
+        { status: 404 }
+      );
+    }
+
+    // Verify all track IDs exist in the playlist
+    const existingTrackIds = playlist.tracks.map(pt => pt.trackId);
+    const missingTracks = trackIds.filter(
+      trackId => !existingTrackIds.includes(trackId)
+    );
+
+    if (missingTracks.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Some tracks not found in playlist: ${missingTracks.join(', ')}`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Reorder tracks
+    await prisma.$transaction(async tx => {
+      for (let i = 0; i < trackIds.length; i++) {
+        const trackId = trackIds[i];
+        const playlistTrack = playlist.tracks.find(
+          pt => pt.trackId === trackId
+        );
+        if (playlistTrack) {
+          await tx.playlistTrack.update({
+            where: { id: playlistTrack.id },
+            data: { order: i + 1 },
+          });
+        }
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Successfully reordered tracks in playlist "${playlist.name}"`,
+      playlistId: id,
+    });
+  } catch (error) {
+    console.error('Error reordering tracks:', error);
+    return NextResponse.json(
+      { error: 'Failed to reorder tracks' },
+      { status: 500 }
+    );
+  }
+}
