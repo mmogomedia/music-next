@@ -93,7 +93,7 @@ export default async function QuickLinkPage({
 
   const quickLink = data.quickLink;
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const visitCookieKey = `ql_visit_${quickLink.slug}`;
   const lastVisitCookie = cookieStore.get(visitCookieKey);
   const now = Date.now();

@@ -165,10 +165,10 @@ export async function GET(_request: NextRequest) {
           track: {
             id: event.track!.id,
             title: event.track!.title,
-            artist: event.track!.artist,
+            artist: event.track!.artist || 'Unknown Artist',
           },
           timestamp: event.timestamp.toISOString(),
-          source: event.source,
+          source: event.source || undefined,
         })),
       likes: recentLikeEvents
         .filter(event => event.track)
@@ -177,7 +177,7 @@ export async function GET(_request: NextRequest) {
           track: {
             id: event.track!.id,
             title: event.track!.title,
-            artist: event.track!.artist,
+            artist: event.track!.artist || 'Unknown Artist',
           },
           timestamp: event.timestamp.toISOString(),
         })),
@@ -188,7 +188,7 @@ export async function GET(_request: NextRequest) {
           track: {
             id: event.track!.id,
             title: event.track!.title,
-            artist: event.track!.artist,
+            artist: event.track!.artist || 'Unknown Artist',
           },
           timestamp: event.timestamp.toISOString(),
         })),
@@ -199,7 +199,7 @@ export async function GET(_request: NextRequest) {
           track: {
             id: visit.track!.id,
             title: visit.track!.title,
-            artist: visit.track!.artist,
+            artist: visit.track!.artist || 'Unknown Artist',
           },
           timestamp: visit.lastVisitedAt!.toISOString(),
           slug: visit.slug,

@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 
-interface AdminActivityTrack {
-  id: string;
-  title: string;
-  artist: string;
-}
-
 interface AdminActivityItem {
   type: string;
-  track: AdminActivityTrack;
+  track: {
+    id: string;
+    title: string;
+    artist: string;
+  };
   timestamp: string;
   source?: string;
   slug?: string;

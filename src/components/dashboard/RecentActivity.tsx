@@ -33,7 +33,7 @@ interface RecentActivityProps {
         artist: string;
       };
       timestamp: string;
-      source: string;
+      source?: string;
     }>;
     likes: Array<{
       type: string;
@@ -61,7 +61,7 @@ interface RecentActivityProps {
         artist: string;
       };
       timestamp: string;
-      slug: string;
+      slug?: string;
     }>;
   };
   useSSE?: boolean; // Enable SSE for real-time updates

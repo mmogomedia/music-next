@@ -94,7 +94,7 @@ export default function TopPerformingTracks({
                 </div>
 
                 <TrackArtwork
-                  artworkUrl={item.track.coverImageUrl}
+                  artworkUrl={item.track.coverImageUrl || undefined}
                   title={item.track.title}
                   size='sm'
                 />

@@ -337,29 +337,49 @@ async function getRecentActivity(trackIds: string[], startDate: Date) {
   });
 
   return {
-    plays: recentPlays.map(play => ({
-      type: 'play',
-      track: play.track,
-      timestamp: play.timestamp,
-      source: play.source,
-    })),
-    likes: recentLikes.map(like => ({
-      type: 'like',
-      track: like.track,
-      timestamp: like.timestamp,
-    })),
+    plays: recentPlays
+      .filter(play => play.track)
+      .map(play => ({
+        type: 'play' as const,
+        track: {
+          id: play.track!.id,
+          title: play.track!.title,
+          artist: play.track!.artist || 'Unknown Artist',
+        },
+        timestamp: play.timestamp,
+        source: play.source,
+      })),
+    likes: recentLikes
+      .filter(like => like.track)
+      .map(like => ({
+        type: 'like' as const,
+        track: {
+          id: like.track!.id,
+          title: like.track!.title,
+          artist: like.track!.artist || 'Unknown Artist',
+        },
+        timestamp: like.timestamp,
+      })),
     downloads: recentDownloads
       .filter(download => download.track)
       .map(download => ({
         type: 'download' as const,
-        track: download.track!,
+        track: {
+          id: download.track!.id,
+          title: download.track!.title,
+          artist: download.track!.artist || 'Unknown Artist',
+        },
         timestamp: download.timestamp,
       })),
     pageVisits: recentPageVisits
       .filter(visit => visit.track && visit.lastVisitedAt)
       .map(visit => ({
         type: 'page_visit' as const,
-        track: visit.track!,
+        track: {
+          id: visit.track!.id,
+          title: visit.track!.title,
+          artist: visit.track!.artist || 'Unknown Artist',
+        },
         timestamp: visit.lastVisitedAt!,
         slug: visit.slug,
       })),
