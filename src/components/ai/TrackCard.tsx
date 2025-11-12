@@ -175,6 +175,11 @@ export default function TrackCard({
     if (track.likeCount !== undefined) {
       stats.push(`Likes: ${track.likeCount}`);
     }
+    if (track.downloadCount !== undefined) {
+      stats.push(
+        `Downloads: ${track.downloadCount.toLocaleString?.() ?? track.downloadCount}`
+      );
+    }
     if (track.genre) {
       stats.push(`Genre: ${track.genre}`);
     }
@@ -326,6 +331,13 @@ export default function TrackCard({
                     <path d='M8 5v14l11-7z' />
                   </svg>
                   {track.playCount.toLocaleString?.() ?? track.playCount}
+                </span>
+              )}
+              {typeof track.downloadCount === 'number' && (
+                <span className='flex items-center gap-1'>
+                  <ArrowDownTrayIcon className='w-3 h-3' />
+                  {track.downloadCount.toLocaleString?.() ??
+                    track.downloadCount}
                 </span>
               )}
               {track.genre && (
@@ -641,6 +653,13 @@ export default function TrackCard({
                         <path d='M8 5v14l11-7z' />
                       </svg>
                       {track.playCount.toLocaleString?.() ?? track.playCount}
+                    </span>
+                  )}
+                  {typeof track.downloadCount === 'number' && (
+                    <span className='flex items-center gap-1'>
+                      <ArrowDownTrayIcon className='w-3.5 h-3.5' />
+                      {track.downloadCount.toLocaleString?.() ??
+                        track.downloadCount}
                     </span>
                   )}
                   {track.genre && (
