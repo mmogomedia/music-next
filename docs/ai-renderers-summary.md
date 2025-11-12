@@ -20,16 +20,6 @@ The Flemoji AI system has **11 response renderers** available to render differen
 | `quick_link_album`  | `QuickLinkAlbumRenderer`  | `src/components/ai/response-renderers/quick-link-album-renderer.tsx`  | ✅ Active |
 | `quick_link_artist` | `QuickLinkArtistRenderer` | `src/components/ai/response-renderers/quick-link-artist-renderer.tsx` | ✅ Active |
 
-## Additional Renderers (Not in Main Registry)
-
-The following renderers exist but are not registered in the main response registry:
-
-| Renderer Component        | Location                                                              | Purpose                     |
-| ------------------------- | --------------------------------------------------------------------- | --------------------------- |
-| `SmartLinkTrackRenderer`  | `src/components/ai/response-renderers/smart-link-track-renderer.tsx`  | Smart link track rendering  |
-| `SmartLinkAlbumRenderer`  | `src/components/ai/response-renderers/smart-link-album-renderer.tsx`  | Smart link album rendering  |
-| `SmartLinkArtistRenderer` | `src/components/ai/response-renderers/smart-link-artist-renderer.tsx` | Smart link artist rendering |
-
 ## Renderer Registration
 
 All renderers are registered in `src/components/ai/response-renderers/index.tsx` using the `responseRegistry` system. The registry:
