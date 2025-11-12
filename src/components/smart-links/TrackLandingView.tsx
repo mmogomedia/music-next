@@ -17,6 +17,7 @@ import type { TrackLandingData } from '@/lib/services/quick-link-service';
 import { mapLandingTrackToPlayerTrack } from '@/components/quick-links/utils';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { useToast } from '@/components/ui/Toast';
+import { useStats } from '@/hooks/useStats';
 
 const PLATFORM_LABELS: Record<string, string> = {
   SPOTIFY: 'Spotify',
@@ -52,6 +53,7 @@ export default function TrackLandingView({
   const { playTrack, playPause, currentTrack, isPlaying, addToQueue } =
     useMusicPlayer();
   const { showToast } = useToast();
+  const { trackDownload } = useStats({ source: 'landing' });
   const [isDownloading, setIsDownloading] = useState(false);
 
   const playerTrack: Track = useMemo(
@@ -99,6 +101,7 @@ export default function TrackLandingView({
     setIsDownloading(true);
     try {
       recordEvent('download');
+      trackDownload(track.id);
       const link = document.createElement('a');
       link.href = track.fileUrl;
       link.download = `${track.title || 'track'}.mp3`;

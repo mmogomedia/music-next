@@ -12,6 +12,7 @@ import {
   ClockIcon,
   ChartBarIcon,
   Cog6ToothIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import {
   UserGroupIcon as UserGroupSolidIcon,
@@ -55,6 +56,8 @@ export default function AdminDashboard() {
     totalArtists: 0,
     totalTracks: 0,
     totalPlays: 0,
+    totalDownloads: 0,
+    totalPageViews: 0,
     totalRevenue: 0,
     platformHealth: 'healthy' as 'healthy' | 'warning' | 'critical',
   };
@@ -151,7 +154,7 @@ export default function AdminDashboard() {
             {/* System Metrics */}
             {!loading && !error && (
               <>
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6'>
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
                   <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
                     <div className='flex items-center'>
                       <div className='flex-shrink-0'>
@@ -219,6 +222,42 @@ export default function AdminDashboard() {
                         </p>
                         <p className='text-2xl font-bold text-gray-900 dark:text-white'>
                           {systemMetrics.totalPlays.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center'>
+                      <div className='flex-shrink-0'>
+                        <div className='w-8 h-8 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg flex items-center justify-center'>
+                          <ArrowDownTrayIcon className='w-5 h-5 text-indigo-600 dark:text-indigo-400' />
+                        </div>
+                      </div>
+                      <div className='ml-4'>
+                        <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                          Total Downloads
+                        </p>
+                        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                          {(systemMetrics.totalDownloads || 0).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center'>
+                      <div className='flex-shrink-0'>
+                        <div className='w-8 h-8 bg-pink-100 dark:bg-pink-900/20 rounded-lg flex items-center justify-center'>
+                          <EyeIcon className='w-5 h-5 text-pink-600 dark:text-pink-400' />
+                        </div>
+                      </div>
+                      <div className='ml-4'>
+                        <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                          Total Page Views
+                        </p>
+                        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                          {(systemMetrics.totalPageViews || 0).toLocaleString()}
                         </p>
                       </div>
                     </div>

@@ -22,6 +22,8 @@ export async function GET(_request: NextRequest) {
       recentTracks,
       recentSubmissions,
       playEvents,
+      downloadEvents,
+      quickLinks,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.artistProfile.count(),
@@ -67,6 +69,12 @@ export async function GET(_request: NextRequest) {
         },
       }),
       prisma.playEvent.count(),
+      prisma.downloadEvent.count(),
+      prisma.quickLink.aggregate({
+        _sum: {
+          totalVisits: true,
+        },
+      }),
     ]);
 
     // Calculate platform health based on recent activity
@@ -152,11 +160,15 @@ export async function GET(_request: NextRequest) {
       },
     ];
 
+    const totalPageViews = quickLinks._sum.totalVisits ?? 0;
+
     const systemMetrics = {
       totalUsers,
       totalArtists,
       totalTracks,
       totalPlays: playEvents,
+      totalDownloads: downloadEvents,
+      totalPageViews,
       totalRevenue: 0, // TODO: Implement revenue tracking
       platformHealth,
     };

@@ -6,6 +6,8 @@ interface AdminDashboardStats {
     totalArtists: number;
     totalTracks: number;
     totalPlays: number;
+    totalDownloads?: number;
+    totalPageViews?: number;
     totalRevenue: number;
     platformHealth: 'healthy' | 'warning' | 'critical';
   };

@@ -28,7 +28,7 @@ export default function ChatWelcomePlaceholder({
 
         if (fRes && fRes.ok) {
           const fJson = await fRes.json();
-          const tracks = (fJson.tracks || []).slice(0, 3).map((t: any) => ({
+          const tracks = (fJson.tracks || []).slice(0, 4).map((t: any) => ({
             id: String(t.id),
             title: t.title || 'Untitled',
             artist: t.artist || 'Unknown Artist',
@@ -133,15 +133,15 @@ export default function ChatWelcomePlaceholder({
             </div>
           </div>
 
-          {/* Featured tracks grid - max 3 in one row */}
+          {/* Featured tracks grid - max 4 in one row */}
           {loading ? (
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-              {Array.from({ length: 3 }).map((_, i) => (
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+              {Array.from({ length: 4 }).map((_, i) => (
                 <PlaceholderCard key={i} isFeatured />
               ))}
             </div>
           ) : featured.length > 0 ? (
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
               {featured.map((track, idx) => (
                 <TrackCard
                   key={track.id}
@@ -189,13 +189,13 @@ export default function ChatWelcomePlaceholder({
           )}
         </div>
         {loading ? (
-          <div className='space-y-2'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
             {Array.from({ length: 10 }).map((_, i) => (
               <PlaceholderCard key={i} />
             ))}
           </div>
         ) : topTen.length > 0 ? (
-          <div className='space-y-2'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
             {topTen.map(track => (
               <TrackCard
                 key={track.id}

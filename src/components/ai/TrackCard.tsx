@@ -4,6 +4,7 @@ import React from 'react';
 import { Track } from '@/types/track';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { useToast } from '@/components/ui/Toast';
+import { useStats } from '@/hooks/useStats';
 import TrackArtwork from '@/components/music/TrackArtwork';
 import {
   PlayIcon,
@@ -44,6 +45,7 @@ export default function TrackCard({
 }: TrackCardProps) {
   const { currentTrack, isPlaying, playPause, addToQueue } = useMusicPlayer();
   const { showToast } = useToast();
+  const { trackDownload } = useStats({ source: 'landing' });
   const isCurrentlyPlaying = currentTrack?.id === track.id && isPlaying;
   const isCurrentTrack = currentTrack?.id === track.id;
 
@@ -103,6 +105,9 @@ export default function TrackCard({
       onDownload(track, url);
       return;
     }
+
+    // Track download to stats system
+    trackDownload(track.id);
 
     try {
       // Fetch the file as a blob to trigger download
