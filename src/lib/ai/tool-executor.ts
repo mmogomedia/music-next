@@ -155,8 +155,11 @@ export async function executeToolCallLoop({
           error: `Tool "${toolCall.name}" not found`,
         };
 
+        const toolCallId =
+          toolCall.id || `tool-call-${Date.now()}-${Math.random()}`;
+
         toolResults.push({
-          toolCallId: toolCall.id,
+          toolCallId,
           name: toolCall.name,
           args: parsedArgs,
           rawResult: errorPayload,
@@ -166,7 +169,7 @@ export async function executeToolCallLoop({
 
         conversation.push(
           new ToolMessage({
-            tool_call_id: toolCall.id,
+            tool_call_id: toolCallId,
             content: JSON.stringify(errorPayload),
           })
         );
@@ -187,8 +190,11 @@ export async function executeToolCallLoop({
         parsedResult = rawResult;
       }
 
+      const toolCallId =
+        toolCall.id || `tool-call-${Date.now()}-${Math.random()}`;
+
       toolResults.push({
-        toolCallId: toolCall.id,
+        toolCallId,
         name: toolCall.name,
         args: parsedArgs,
         rawResult,
@@ -203,7 +209,7 @@ export async function executeToolCallLoop({
 
       conversation.push(
         new ToolMessage({
-          tool_call_id: toolCall.id,
+          tool_call_id: toolCallId,
           content: toolContent,
         })
       );
