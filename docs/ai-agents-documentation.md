@@ -66,6 +66,7 @@ Structured Response
 - **BROWSE:** Explore playlists by genre or province
 - **DISCOVER:** Find trending tracks and top charts
 - **ARTIST:** Get information about specific artists
+- **GENRES:** List available genres on the platform
 
 **Tools Used:**
 
@@ -73,7 +74,26 @@ Structured Response
 
 **Response Types Returned:**
 
-1. **`track_list`** - List of tracks
+1. **`genre_list`** - List of available genres
+
+   ```typescript
+   {
+     type: 'genre_list',
+     data: {
+       genres: GenreInfo[],
+       metadata?: {
+         total?: number
+       }
+     }
+   }
+   ```
+
+   - **When:** User asks about available genres, "what genres exist", "show me genres"
+   - **Tool:** `get_genres`
+   - **Fields:**
+     - `genres: GenreInfo[]` - List of genres with id, name, slug, description, colorHex, icon, trackCount
+
+2. **`track_list`** - List of tracks
 
    ```typescript
    {
@@ -95,7 +115,7 @@ Structured Response
      - "other" field contains featured tracks from playlists (if available)
      - Handles multi-artist tracks (splits by "x", "&", "feat", etc.)
 
-2. **`playlist_grid`** - Grid of playlists
+3. **`playlist_grid`** - Grid of playlists
 
    ```typescript
    {
@@ -113,7 +133,7 @@ Structured Response
 
    - **When:** Playlist browse queries, genre playlists, province playlists
 
-3. **`artist`** - Artist profile
+4. **`artist`** - Artist profile
 
    ```typescript
    {
@@ -124,7 +144,8 @@ Structured Response
 
    - **When:** Artist queries, "tell me about [artist]"
 
-4. **`search_results`** - Mixed results (tracks + artists)
+5. **`search_results`** - Mixed results (tracks + artists)
+
    ```typescript
    {
      type: 'search_results',
@@ -193,6 +214,7 @@ Structured Response
    - **When:** User requests to play music
 
 2. **`track_list`** - Tracks to play
+
    ```typescript
    {
      type: 'track_list',
@@ -251,6 +273,7 @@ Structured Response
    - **When:** User asks for recommendations
 
 2. **`playlist_grid`** - Recommended playlists
+
    ```typescript
    {
      type: 'playlist_grid',
@@ -319,6 +342,20 @@ Structured Response
 - **Fields:**
   - `action: Action` - Action to execute
   - `success?: boolean`
+
+#### GenreListResponse
+
+- **Fields:**
+  - `genres: GenreInfo[]` - List of genres
+  - `metadata?: { total? }`
+- **GenreInfo Fields:**
+  - `id: string`
+  - `name: string`
+  - `slug: string`
+  - `description?: string`
+  - `colorHex?: string`
+  - `icon?: string`
+  - `trackCount?: number`
 
 ---
 
