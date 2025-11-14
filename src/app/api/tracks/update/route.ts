@@ -62,7 +62,7 @@ export async function PUT(request: NextRequest) {
 
     // Validate no duplicates between primary and featured
     if (primaryArtistIds && featuredArtistIds) {
-      const duplicates = primaryArtistIds.filter(id =>
+      const duplicates = primaryArtistIds.filter((id: string) =>
         featuredArtistIds.includes(id)
       );
       if (duplicates.length > 0) {
