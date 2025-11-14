@@ -282,9 +282,10 @@ export function PlaylistRenderer({
     });
   };
 
-  const handleAddTrack = (track: Track) => {
+  const handleAddTrack = (track: Track | any) => {
+    const normalizedTrack = normalizeTrack(track);
     setSelectedTracks(prev => {
-      if (prev.some(item => item.id === track.id)) {
+      if (prev.some(item => item.id === normalizedTrack.id)) {
         showToast('Track already added to playlist', 'info');
         return prev;
       }
@@ -296,7 +297,7 @@ export function PlaylistRenderer({
         return prev;
       }
       setIsSaved(false);
-      return [...prev, track];
+      return [...prev, normalizedTrack];
     });
   };
 

@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import { useSession } from 'next-auth/react';
 import { ChatRequest, ChatResponse, AIError, AIProvider } from '@/types/ai';
+import type { Track } from '@/types/track';
 import ChatTopBar from './ChatTopBar';
 import WelcomeHeader from './WelcomeHeader';
 import ChatWelcomePlaceholder from './ChatWelcomePlaceholder';
@@ -485,7 +486,41 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                           } as StructuredAIResponse
                         }
                         onPlayTrack={(_trackId: string, track: any) => {
-                          playTrack(track);
+                          // Normalize track to ensure all required properties are present
+                          const normalizedTrack: Track = {
+                            id: track.id,
+                            title: track.title ?? 'Untitled',
+                            filePath: track.filePath ?? '',
+                            fileUrl: track.fileUrl ?? '',
+                            coverImageUrl:
+                              track.coverImageUrl ??
+                              track.albumArtwork ??
+                              undefined,
+                            albumArtwork: track.albumArtwork ?? undefined,
+                            genre: track.genre ?? undefined,
+                            album: track.album ?? undefined,
+                            description: track.description ?? undefined,
+                            duration:
+                              typeof track.duration === 'number' &&
+                              Number.isFinite(track.duration)
+                                ? track.duration
+                                : undefined,
+                            playCount: track.playCount ?? 0,
+                            likeCount: track.likeCount ?? 0,
+                            artistId:
+                              track.artistId ?? track.artistProfileId ?? '',
+                            artistProfileId: track.artistProfileId ?? undefined,
+                            userId: track.userId ?? '',
+                            createdAt:
+                              track.createdAt ?? new Date().toISOString(),
+                            updatedAt:
+                              track.updatedAt ?? new Date().toISOString(),
+                            artist:
+                              track.artist ??
+                              track.artistProfile?.artistName ??
+                              'Unknown Artist',
+                          };
+                          playTrack(normalizedTrack);
                         }}
                         onAction={(action: any) => {
                           // Handle actions from response renderers
@@ -505,7 +540,48 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                                     (t: any) => t.id === action.data.trackId
                                   );
                                   if (track) {
-                                    playTrack(track);
+                                    // Normalize track to ensure all required properties are present
+                                    const normalizedTrack: Track = {
+                                      id: track.id,
+                                      title: track.title ?? 'Untitled',
+                                      filePath: track.filePath ?? '',
+                                      fileUrl: track.fileUrl ?? '',
+                                      coverImageUrl:
+                                        track.coverImageUrl ??
+                                        track.albumArtwork ??
+                                        undefined,
+                                      albumArtwork:
+                                        track.albumArtwork ?? undefined,
+                                      genre: track.genre ?? undefined,
+                                      album: track.album ?? undefined,
+                                      description:
+                                        track.description ?? undefined,
+                                      duration:
+                                        typeof track.duration === 'number' &&
+                                        Number.isFinite(track.duration)
+                                          ? track.duration
+                                          : undefined,
+                                      playCount: track.playCount ?? 0,
+                                      likeCount: track.likeCount ?? 0,
+                                      artistId:
+                                        track.artistId ??
+                                        track.artistProfileId ??
+                                        '',
+                                      artistProfileId:
+                                        track.artistProfileId ?? undefined,
+                                      userId: track.userId ?? '',
+                                      createdAt:
+                                        track.createdAt ??
+                                        new Date().toISOString(),
+                                      updatedAt:
+                                        track.updatedAt ??
+                                        new Date().toISOString(),
+                                      artist:
+                                        track.artist ??
+                                        track.artistProfile?.artistName ??
+                                        'Unknown Artist',
+                                    };
+                                    playTrack(normalizedTrack);
                                   }
                                 }
                               }
