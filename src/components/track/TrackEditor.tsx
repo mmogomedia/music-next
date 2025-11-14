@@ -834,7 +834,6 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
               <div className='flex items-start gap-4'>
                 <div className='flex-shrink-0'>
                   <ImageUpload
-                    id='albumArtwork'
                     label=''
                     preview={
                       values.albumArtwork
