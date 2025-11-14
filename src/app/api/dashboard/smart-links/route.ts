@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
       // Ensure album exists via tracks
       const albumTracks = await prisma.track.count({
         where: {
-          userId: profile.userId,
+          userId: profile.userId || undefined,
           artistProfileId: data.albumArtistId,
           album: { equals: data.albumName, mode: 'insensitive' },
           isPublic: true,
