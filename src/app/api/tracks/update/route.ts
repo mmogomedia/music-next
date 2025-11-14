@@ -143,7 +143,9 @@ export async function PUT(request: NextRequest) {
           )
         )
         .filter(
-          (a): a is { id: string; artistName: string } => a !== undefined
+          (
+            a: { id: string; artistName: string } | undefined
+          ): a is { id: string; artistName: string } => a !== undefined
         );
       legacyArtist = sortedArtists
         .map((a: { id: string; artistName: string }) => a.artistName)
