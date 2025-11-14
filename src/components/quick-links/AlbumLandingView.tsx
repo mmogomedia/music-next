@@ -194,7 +194,9 @@ export default function QuickLinkAlbumView({
                         {track.title}
                       </p>
                       <p className='text-xs text-slate-500'>
-                        <ArtistDisplay track={track as any} />
+                        <ArtistDisplay
+                          track={mapLandingTrackToPlayerTrack(track)}
+                        />
                       </p>
                       <div className='flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.3em] text-slate-400 mt-1'>
                         <span>{track.genre ?? 'Genre'}</span>

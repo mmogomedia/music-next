@@ -197,7 +197,9 @@ export default function QuickLinkArtistView({
                       {track.title}
                     </p>
                     <p className='text-xs text-slate-300'>
-                      <ArtistDisplay track={track as any} />
+                      <ArtistDisplay
+                        track={mapLandingTrackToPlayerTrack(track)}
+                      />
                     </p>
                   </div>
                 </div>

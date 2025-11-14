@@ -186,7 +186,7 @@ export default function TrackLandingView({
         <div className='flex-1 p-6 sm:p-8 space-y-6 bg-white'>
           <div className='space-y-2'>
             <p className='text-sm uppercase tracking-widest text-blue-500 font-semibold truncate'>
-              <ArtistDisplay track={track as any} />
+              <ArtistDisplay track={playerTrack} />
             </p>
             <h2 className='text-3xl sm:text-4xl font-bold text-slate-900 leading-tight break-words line-clamp-2'>
               {track.title}

@@ -10,6 +10,35 @@ import { constructFileUrl } from '@/lib/url-utils';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import ArtistDisplay from '@/components/track/ArtistDisplay';
 
+// Normalize track to ensure all required properties are present
+const normalizeTrack = (track: any): Track => ({
+  id: track.id,
+  title: track.title ?? 'Untitled',
+  filePath: track.filePath ?? '',
+  fileUrl: track.fileUrl ?? '',
+  coverImageUrl: track.coverImageUrl ?? track.albumArtwork ?? undefined,
+  albumArtwork: track.albumArtwork ?? undefined,
+  genre: track.genre ?? undefined,
+  album: track.album ?? undefined,
+  description: track.description ?? undefined,
+  duration:
+    typeof track.duration === 'number' && Number.isFinite(track.duration)
+      ? track.duration
+      : undefined,
+  playCount: track.playCount ?? 0,
+  likeCount: track.likeCount ?? 0,
+  artistId: track.artistId ?? track.artistProfileId ?? '',
+  artistProfileId: track.artistProfileId ?? undefined,
+  userId: track.userId ?? '',
+  createdAt: track.createdAt ?? new Date().toISOString(),
+  updatedAt: track.updatedAt ?? new Date().toISOString(),
+  artist: track.artist ?? track.artistProfile?.artistName ?? 'Unknown Artist',
+  primaryArtistIds: track.primaryArtistIds ?? undefined,
+  featuredArtistIds: track.featuredArtistIds ?? undefined,
+  primaryArtists: track.primaryArtists ?? undefined,
+  featuredArtists: track.featuredArtists ?? undefined,
+});
+
 interface MusicStreamingProps {
   onTrackPlay?: (_track: Track) => void;
   onPlaylistClick?: (_playlist: Playlist) => void;
@@ -370,18 +399,19 @@ export default function MusicStreaming({
                       {activePlaylist.tracks.map((playlistTrack, index) => {
                         const track = playlistTrack.track;
                         if (!track) return null;
+                        const normalizedTrack = normalizeTrack(track);
 
                         return (
                           <div
                             key={playlistTrack.id}
                             className='group px-6 py-3 hover:bg-slate-700/30 transition-colors duration-200 cursor-pointer'
-                            onClick={() => handlePlay(track as Track)}
+                            onClick={() => handlePlay(normalizedTrack)}
                             role='button'
                             tabIndex={0}
                             onKeyDown={e =>
-                              e.key === 'Enter' && handlePlay(track as Track)
+                              e.key === 'Enter' && handlePlay(normalizedTrack)
                             }
-                            aria-label={`Play ${track.title} by ${track.artist}`}
+                            aria-label={`Play ${normalizedTrack.title} by ${normalizedTrack.artist}`}
                           >
                             <div className='grid grid-cols-12 gap-4 items-center'>
                               {/* Track Number */}
@@ -397,10 +427,10 @@ export default function MusicStreaming({
                               {/* Track Info */}
                               <div className='col-span-5 flex items-center gap-3'>
                                 <div className='w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0'>
-                                  {track.coverImageUrl ? (
+                                  {normalizedTrack.coverImageUrl ? (
                                     <img
-                                      src={track.coverImageUrl}
-                                      alt={track.title}
+                                      src={normalizedTrack.coverImageUrl}
+                                      alt={normalizedTrack.title}
                                       className='w-full h-full object-cover rounded-lg'
                                     />
                                   ) : (
@@ -409,17 +439,17 @@ export default function MusicStreaming({
                                 </div>
                                 <div className='min-w-0 flex-1'>
                                   <h3 className='font-medium text-white truncate group-hover:text-blue-400 transition-colors'>
-                                    {track.title}
+                                    {normalizedTrack.title}
                                   </h3>
                                   <p className='text-sm text-slate-400 truncate'>
-                                    {track.genre}
+                                    {normalizedTrack.genre}
                                   </p>
                                 </div>
                               </div>
 
                               {/* Artist */}
                               <div className='col-span-3 text-slate-300 text-sm truncate'>
-                                <ArtistDisplay track={track} />
+                                <ArtistDisplay track={normalizedTrack} />
                               </div>
 
                               {/* Album */}
@@ -429,9 +459,14 @@ export default function MusicStreaming({
 
                               {/* Duration */}
                               <div className='col-span-1 text-right text-slate-400 text-sm'>
-                                {Math.floor((track.duration || 0) / 60)}:
-                                {(track.duration || 0) % 60 < 10 ? '0' : ''}
-                                {(track.duration || 0) % 60}
+                                {Math.floor(
+                                  (normalizedTrack.duration || 0) / 60
+                                )}
+                                :
+                                {(normalizedTrack.duration || 0) % 60 < 10
+                                  ? '0'
+                                  : ''}
+                                {(normalizedTrack.duration || 0) % 60}
                               </div>
                             </div>
 

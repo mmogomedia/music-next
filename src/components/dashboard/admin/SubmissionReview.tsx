@@ -315,7 +315,52 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
                 {/* Submissions for this date */}
                 <div className='space-y-4'>
                   {groupedSubmissions[date].map(submission => {
-                    const track = submission.track;
+                    const submissionTrack = submission.track;
+                    // Normalize track to ensure all required properties are present
+                    const track: Track = {
+                      id: submissionTrack.id,
+                      title: submissionTrack.title,
+                      filePath: submissionTrack.filePath ?? '',
+                      fileUrl: submissionTrack.fileUrl ?? '',
+                      coverImageUrl:
+                        submissionTrack.coverImageUrl ??
+                        submissionTrack.albumArtwork ??
+                        undefined,
+                      albumArtwork: submissionTrack.albumArtwork ?? undefined,
+                      genre: submissionTrack.genre ?? undefined,
+                      album: submissionTrack.album ?? undefined,
+                      description: submissionTrack.description ?? undefined,
+                      duration:
+                        typeof submissionTrack.duration === 'number' &&
+                        Number.isFinite(submissionTrack.duration)
+                          ? submissionTrack.duration
+                          : undefined,
+                      playCount: submissionTrack.playCount ?? 0,
+                      likeCount: submissionTrack.likeCount ?? 0,
+                      artistId:
+                        submissionTrack.artistId ??
+                        submissionTrack.artistProfileId ??
+                        '',
+                      artistProfileId:
+                        submissionTrack.artistProfileId ?? undefined,
+                      userId: submissionTrack.userId ?? '',
+                      createdAt:
+                        submissionTrack.createdAt ?? new Date().toISOString(),
+                      updatedAt:
+                        submissionTrack.updatedAt ?? new Date().toISOString(),
+                      artist:
+                        submissionTrack.artist ??
+                        submissionTrack.artistProfile?.artistName ??
+                        'Unknown Artist',
+                      primaryArtistIds:
+                        submissionTrack.primaryArtistIds ?? undefined,
+                      featuredArtistIds:
+                        submissionTrack.featuredArtistIds ?? undefined,
+                      primaryArtists:
+                        submissionTrack.primaryArtists ?? undefined,
+                      featuredArtists:
+                        submissionTrack.featuredArtists ?? undefined,
+                    };
                     const playlistName = getPlaylistName(submission.playlistId);
 
                     return (
@@ -358,7 +403,7 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
                               <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-2'>
                                 <div className='flex items-center gap-1'>
                                   <UserIcon className='w-4 h-4' />
-                                  <ArtistDisplay track={track as any} />
+                                  <ArtistDisplay track={track} />
                                 </div>
                                 <div className='flex items-center gap-1'>
                                   <CalendarIcon className='w-4 h-4' />
