@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import type { PlaylistResponse } from '@/types/ai-responses';
 import {
   Button,
@@ -251,11 +251,11 @@ export function PlaylistRenderer({
   const handlePlay = () => {
     if (isCompiledPlaylist) {
       if (selectedTracks.length === 0) {
-        showToast('Add at least one track to play', 'warning');
+        showToast('Add at least one track to play', 'info');
         return;
       }
-      setQueue(selectedTracks, 0, 'ai');
-      playTrack(selectedTracks[0], 'ai');
+      setQueue(selectedTracks, 0, 'playlist');
+      playTrack(selectedTracks[0], 'playlist');
     } else if (onPlayPlaylist) {
       onPlayPlaylist(playlist.id);
     }
@@ -266,10 +266,10 @@ export function PlaylistRenderer({
     if (isCompiledPlaylist) {
       const startIndex = selectedTracks.findIndex(t => t.id === track.id);
       if (startIndex >= 0) {
-        setQueue(selectedTracks, startIndex, 'ai');
+        setQueue(selectedTracks, startIndex, 'playlist');
       }
     }
-    playTrack(track, 'ai');
+    playTrack(track, 'playlist');
   };
 
   const handleRemoveTrack = (trackId: string) => {
@@ -291,7 +291,7 @@ export function PlaylistRenderer({
       if (playlist.maxTracks && prev.length >= playlist.maxTracks) {
         showToast(
           `Playlist is limited to ${playlist.maxTracks} tracks`,
-          'warning'
+          'info'
         );
         return prev;
       }
@@ -319,7 +319,7 @@ export function PlaylistRenderer({
 
   const handleOpenSaveModal = () => {
     if (!session?.user?.id) {
-      showToast('Please sign in to save playlists', 'warning');
+      showToast('Please sign in to save playlists', 'info');
       return;
     }
     setIsSaveModalOpen(true);
@@ -585,12 +585,14 @@ export function PlaylistRenderer({
                       variant='bordered'
                       disallowEmptySelection={false}
                     >
-                      <SelectItem key='none'>No genre</SelectItem>
-                      {genres.map(genre => (
-                        <SelectItem key={genre.slug} textValue={genre.name}>
-                          {genre.name}
-                        </SelectItem>
-                      ))}
+                      <Fragment>
+                        <SelectItem key='none'>No genre</SelectItem>
+                        {genres.map(genre => (
+                          <SelectItem key={genre.slug} textValue={genre.name}>
+                            {genre.name}
+                          </SelectItem>
+                        ))}
+                      </Fragment>
                     </Select>
                   </div>
 
