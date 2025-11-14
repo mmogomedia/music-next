@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import {
   PauseIcon,
   HeartIcon,
@@ -433,10 +434,14 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
             {/* Track Artwork - Quarter Width */}
             <div className='w-1/4 relative group overflow-hidden rounded-2xl'>
               {currentTrack?.coverImageUrl ? (
-                <img
+                <Image
                   src={currentTrack.coverImageUrl}
                   alt={currentTrack.title}
+                  width={400}
+                  height={400}
+                  priority
                   className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
+                  unoptimized
                 />
               ) : (
                 <div className='w-full h-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center'>

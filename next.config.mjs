@@ -12,6 +12,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'asset.flemoji.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
   },
   async rewrites() {
     return [

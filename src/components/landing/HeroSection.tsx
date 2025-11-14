@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { PauseIcon, HeartIcon, ShareIcon } from '@heroicons/react/24/outline';
 import { PlayIcon as PlaySolidIcon } from '@heroicons/react/24/solid';
 import { Playlist } from '@/types/playlist';
@@ -129,10 +130,10 @@ export default function HeroSection({
 
             {/* Title */}
             <div>
-              <h1 className='text-5xl lg:text-7xl font-bold mb-6 leading-tight font-["Poppins"] text-gradient-blue'>
+              <h1 className='text-5xl lg:text-7xl font-bold mb-6 leading-tight font-poppins text-gradient-blue'>
                 {playlist.name}
               </h1>
-              <p className='text-xl lg:text-2xl text-white/80 leading-relaxed font-["Poppins"]'>
+              <p className='text-xl lg:text-2xl text-white/80 leading-relaxed font-poppins'>
                 {playlist.description}
               </p>
             </div>
@@ -199,10 +200,14 @@ export default function HeroSection({
             <div className='relative w-full max-w-md mx-auto'>
               <div className='aspect-square bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-3xl backdrop-blur-sm border border-white/20 p-8 shadow-2xl'>
                 {playlist.coverImage ? (
-                  <img
+                  <Image
                     src={constructFileUrl(playlist.coverImage)}
                     alt={playlist.name}
+                    width={800}
+                    height={800}
+                    priority
                     className='w-full h-full object-cover rounded-2xl shadow-xl'
+                    unoptimized
                   />
                 ) : (
                   <div className='w-full h-full flex items-center justify-center'>

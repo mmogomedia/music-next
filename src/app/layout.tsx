@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import { Inter, Poppins, JetBrains_Mono } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
@@ -9,6 +10,28 @@ import { MusicPlayerProvider } from '@/contexts/MusicPlayerContext';
 import ConditionalGlobalMusicPlayer from '@/components/music/ConditionalGlobalMusicPlayer';
 import BProgressProvider from '@/components/ui/BProgressProvider';
 import { ToastProvider } from '@/components/ui/Toast';
+
+// Optimize font loading
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+
+const poppins = Poppins({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  display: 'swap',
+  variable: '--font-poppins',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  display: 'swap',
+  variable: '--font-jetbrains-mono',
+});
 
 const siteUrl = 'https://flemoji.com';
 const shareImage = '/social-card.png';
@@ -50,8 +73,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang='en' suppressHydrationWarning className='dark'>
-      <body suppressHydrationWarning>
+    <html
+      lang='en'
+      suppressHydrationWarning
+      className={`dark ${inter.variable} ${poppins.variable} ${jetbrainsMono.variable}`}
+    >
+      <body suppressHydrationWarning className={inter.className}>
         <a href='#content' className='skip-link'>
           Skip to content
         </a>
