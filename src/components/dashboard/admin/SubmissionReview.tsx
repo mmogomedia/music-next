@@ -395,7 +395,7 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
                                     {track?.title || 'Unknown Track'}
                                   </h4>
                                   <CompletionBadge
-                                    completion={
+                                    percentage={
                                       track?.completionPercentage ?? 0
                                     }
                                   />
