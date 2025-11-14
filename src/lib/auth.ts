@@ -5,6 +5,9 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
@@ -30,18 +33,69 @@ export const authOptions: NextAuthOptions = {
         const identifier = credentials?.identifier;
         const password = credentials?.password;
         if (!identifier || !password) return null;
+
         const user = await prisma.user.findFirst({
           where: {
             OR: [{ email: identifier }, { name: identifier }],
           },
         });
-        if (!user || !user.password) return null;
+
+        if (!user || !user.password) {
+          // Don't reveal if user exists (security best practice)
+          return null;
+        }
 
         // Check if user is active
-        if (!user.isActive) return null;
+        if (!user.isActive) {
+          throw new Error('Account is inactive');
+        }
 
+        // Check if account is locked
+        if (user.lockedUntil && new Date() < user.lockedUntil) {
+          const minutesRemaining = Math.ceil(
+            (user.lockedUntil.getTime() - Date.now()) / (60 * 1000)
+          );
+          throw new Error(
+            `Account is temporarily locked. Please try again in ${minutesRemaining} minute(s).`
+          );
+        }
+
+        // Verify password
         const ok = await bcrypt.compare(password, user.password);
-        if (!ok) return null;
+        if (!ok) {
+          // Increment failed login attempts
+          const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+          const updateData: {
+            failedLoginAttempts: number;
+            lockedUntil?: Date;
+          } = {
+            failedLoginAttempts: failedAttempts,
+          };
+
+          // Lock account if max attempts reached
+          if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
+            updateData.lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS);
+          }
+
+          await prisma.user.update({
+            where: { id: user.id },
+            data: updateData,
+          });
+
+          return null;
+        }
+
+        // Successful login - reset failed attempts and unlock account
+        if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              failedLoginAttempts: 0,
+              lockedUntil: null,
+            },
+          });
+        }
+
         return {
           id: user.id,
           email: user.email,
@@ -67,6 +121,17 @@ export const authOptions: NextAuthOptions = {
         // If user exists but is inactive, deny sign in
         if (dbUser && !dbUser.isActive) {
           return false;
+        }
+
+        // Reset failed login attempts on successful OAuth login
+        if (dbUser && (dbUser.failedLoginAttempts > 0 || dbUser.lockedUntil)) {
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: {
+              failedLoginAttempts: 0,
+              lockedUntil: null,
+            },
+          });
         }
       }
 

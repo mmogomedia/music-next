@@ -9,6 +9,9 @@ function LoginFormContent() {
   const params = useSearchParams();
   const callbackUrl = params?.get('callbackUrl') || '/dashboard';
   const authError = params?.get('error');
+  const verified = params?.get('verified');
+  const registered = params?.get('registered');
+  const reset = params?.get('reset');
 
   return (
     <main className='min-h-screen flex items-center justify-center relative overflow-hidden'>
@@ -18,6 +21,29 @@ function LoginFormContent() {
       <div className='relative w-full max-w-md mx-auto px-4 sm:px-6'>
         <Card className='glass shadow-2xl border-0'>
           <CardBody className='p-8'>
+            {verified && (
+              <div className='mb-6 p-4 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-lg'>
+                <p className='text-success-600 dark:text-success-400 text-sm text-center'>
+                  Email verified successfully! You can now sign in.
+                </p>
+              </div>
+            )}
+            {registered && (
+              <div className='mb-6 p-4 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-lg'>
+                <p className='text-success-600 dark:text-success-400 text-sm text-center'>
+                  Account created! Please check your email to verify your
+                  account.
+                </p>
+              </div>
+            )}
+            {reset && (
+              <div className='mb-6 p-4 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-lg'>
+                <p className='text-success-600 dark:text-success-400 text-sm text-center'>
+                  Password reset successfully! You can now sign in with your new
+                  password.
+                </p>
+              </div>
+            )}
             {authError && (
               <div className='mb-6 p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg'>
                 <p className='text-danger-600 dark:text-danger-400 text-sm text-center'>

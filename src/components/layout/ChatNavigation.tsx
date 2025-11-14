@@ -110,70 +110,78 @@ export default function ChatNavigation({
   // Desktop Sidebar
   if (!isMobile) {
     return (
-      <aside className='w-64 flex-shrink-0 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-30 pb-20 sticky top-0'>
-        {/* Logo Section */}
-        <div className='p-6 border-b border-gray-200 dark:border-slate-700 flex-shrink-0'>
-          <Link href='/' className='flex items-center gap-3 group'>
-            <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200'>
-              <MusicalNoteIcon className='w-6 h-6 text-white' />
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent'>
-                Flemoji
-              </span>
-              <span className='text-xs text-gray-500 dark:text-gray-400'>
-                Music Discovery
-              </span>
-            </div>
-          </Link>
-        </div>
-
-        {/* Quick Links + Conversations Section */}
-        <div className='flex-1 px-4 py-6 flex flex-col min-h-0 overflow-hidden pb-24'>
-          <div className='mb-6 flex-shrink-0'>
-            <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-3'>
-              Quick Actions
-            </h3>
-            <nav className='flex flex-wrap gap-2'>
-              {quickLinks.map(link => {
-                const IconComponent = isActive(`/${link.id}`)
-                  ? link.activeIcon
-                  : link.icon;
-
-                return (
-                  <button
-                    key={link.id}
-                    onClick={() => handleQuickLinkClick(link.message)}
-                    className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 bg-gray-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 border border-transparent hover:border-blue-200 dark:hover:border-blue-800'
-                  >
-                    <IconComponent className='w-3.5 h-3.5 flex-shrink-0' />
-                    <span>{link.title}</span>
-                  </button>
-                );
-              })}
-            </nav>
+      <>
+        <aside className='w-64 flex-shrink-0 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-30 pb-20 sticky top-0'>
+          {/* Logo Section */}
+          <div className='p-6 border-b border-gray-200 dark:border-slate-700 flex-shrink-0'>
+            <Link href='/' className='flex items-center gap-3 group'>
+              <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200'>
+                <MusicalNoteIcon className='w-6 h-6 text-white' />
+              </div>
+              <div className='flex flex-col'>
+                <span className='text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent'>
+                  Flemoji
+                </span>
+                <span className='text-xs text-gray-500 dark:text-gray-400'>
+                  Music Discovery
+                </span>
+              </div>
+            </Link>
           </div>
 
-          {/* Conversations Section - scrollable */}
-          <div className='mt-8 pt-6 border-t border-gray-200 dark:border-slate-700 flex-1 min-h-0 flex flex-col'>
-            <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 px-3 flex-shrink-0'>
-              Recent Conversations
-            </h3>
-            <ConversationList
-              onConversationSelect={onConversationSelect}
-              activeConversationId={getConversationId?.()}
-              onSignInClick={() => {}}
-              onSignInModalOpen={setIsSignInModalOpen}
-              isSignInModalOpen={isSignInModalOpen}
-            />
-          </div>
-        </div>
+          {/* Quick Links + Conversations Section */}
+          <div className='flex-1 px-4 py-6 flex flex-col min-h-0 overflow-hidden pb-24'>
+            <div className='mb-6 flex-shrink-0'>
+              <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-3'>
+                Quick Actions
+              </h3>
+              <nav className='flex flex-wrap gap-2'>
+                {quickLinks.map(link => {
+                  const IconComponent = isActive(`/${link.id}`)
+                    ? link.activeIcon
+                    : link.icon;
 
-        {/* Auth Status Footer - Absolutely positioned at bottom */}
-        <div className='absolute bottom-0 left-0 right-0 px-4 py-3.5 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900'>
-          <UserDetailsFooter />
-        </div>
-      </aside>
+                  return (
+                    <button
+                      key={link.id}
+                      onClick={() => handleQuickLinkClick(link.message)}
+                      className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 bg-gray-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 border border-transparent hover:border-blue-200 dark:hover:border-blue-800'
+                    >
+                      <IconComponent className='w-3.5 h-3.5 flex-shrink-0' />
+                      <span>{link.title}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </div>
+
+            {/* Conversations Section - scrollable */}
+            <div className='mt-8 pt-6 border-t border-gray-200 dark:border-slate-700 flex-1 min-h-0 flex flex-col'>
+              <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 px-3 flex-shrink-0'>
+                Recent Conversations
+              </h3>
+              <ConversationList
+                onConversationSelect={onConversationSelect}
+                activeConversationId={getConversationId?.()}
+                onSignInClick={() => {}}
+                onSignInModalOpen={setIsSignInModalOpen}
+                isSignInModalOpen={isSignInModalOpen}
+              />
+            </div>
+          </div>
+
+          {/* Auth Status Footer - Absolutely positioned at bottom */}
+          <div className='absolute bottom-0 left-0 right-0 px-4 py-3.5 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900'>
+            <UserDetailsFooter />
+          </div>
+        </aside>
+
+        {/* Sign In Modal - Rendered outside sidebar */}
+        <SignInModal
+          isOpen={isSignInModalOpen}
+          onClose={() => setIsSignInModalOpen(false)}
+        />
+      </>
     );
   }
 

@@ -2,7 +2,14 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Modal, ModalContent, ModalHeader, ModalBody } from '@heroui/react';
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Link as HeroUILink,
+} from '@heroui/react';
 import SignInForm from './SignInForm';
 
 interface SignInModalProps {
@@ -22,6 +29,11 @@ export default function SignInModal({
     onClose();
     // Refresh the router to update the session state
     router.refresh();
+  };
+
+  const handleSignUpClick = () => {
+    onClose();
+    router.push('/register');
   };
 
   return (
@@ -48,6 +60,18 @@ export default function SignInModal({
             showTitle={false}
           />
         </ModalBody>
+        <ModalFooter className='justify-center pt-0'>
+          <p className='text-sm text-foreground/70'>
+            Don&apos;t have an account?{' '}
+            <HeroUILink
+              as='button'
+              className='text-sm cursor-pointer'
+              onPress={handleSignUpClick}
+            >
+              Sign up
+            </HeroUILink>
+          </p>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );

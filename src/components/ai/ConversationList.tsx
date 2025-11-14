@@ -218,15 +218,16 @@ export default function ConversationList({
           <button
             onClick={e => {
               e.stopPropagation(); // Prevent event bubbling
-              // Open modal first
+              e.preventDefault(); // Prevent any default behavior
+              // Open modal immediately - this updates the parent state
               setIsSignInModalOpen(true);
-              // Close menu after a delay to allow modal to render
+              // Close menu after a short delay to allow modal to render
               // The modal uses a portal so it won't be affected by drawer unmounting
-              requestAnimationFrame(() => {
+              if (onSignInClick) {
                 setTimeout(() => {
-                  onSignInClick?.();
-                }, 150);
-              });
+                  onSignInClick();
+                }, 100);
+              }
             }}
             className='inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition-colors duration-200'
           >

@@ -74,6 +74,7 @@
     "react-dom": "^19.1.1",
     "react-dropzone": "^14.3.8",
     "react-image-crop": "^11.0.10",
+    "resend": "^6.4.2",
     "tailwind-merge": "^2.5.2",
     "zod": "^4.1.12"
   },
