@@ -76,7 +76,28 @@ export class LyricsProcessingAgent extends BaseAgent {
   }
 
   /**
-   * Process lyrics: detect language, translate if needed, and generate summary
+   * Process lyrics: public entry point conforming to BaseAgent
+   */
+  async process(
+    lyrics: string,
+    context?: { language?: string }
+  ): Promise<{
+    message: string;
+    data: {
+      detectedLanguage: string;
+      translatedLyrics?: string | null;
+      summary: string;
+    };
+  }> {
+    const result = await this.processLyrics(lyrics, context?.language);
+    return {
+      message: result.summary,
+      data: result,
+    };
+  }
+
+  /**
+   * Internal helper for direct lyrics processing
    */
   async processLyrics(
     lyrics: string,

@@ -1,3 +1,5 @@
+import type { ArtistProfile } from './artist-profile';
+
 export interface Track {
   id: string;
   title: string;
@@ -20,6 +22,9 @@ export interface Track {
   artist?: string; // Legacy field - kept for backward compatibility
   primaryArtistIds?: string[]; // Array of ArtistProfile IDs (ordered)
   featuredArtistIds?: string[]; // Array of ArtistProfile IDs
+  primaryArtists?: ArtistProfile[]; // Populated artist objects (ordered)
+  featuredArtists?: ArtistProfile[]; // Populated featured artist objects
+  artistProfile?: ArtistProfile | null; // Legacy single artist profile
   composer?: string;
   year?: number;
   releaseDate?: string;
