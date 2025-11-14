@@ -11,25 +11,28 @@ import ConditionalGlobalMusicPlayer from '@/components/music/ConditionalGlobalMu
 import BProgressProvider from '@/components/ui/BProgressProvider';
 import { ToastProvider } from '@/components/ui/Toast';
 
-// Optimize font loading
+// Optimize font loading - only essential weights for faster FCP
 const inter = Inter({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800'],
+  weight: ['400', '600', '700'],
   display: 'swap',
+  preload: true,
   variable: '--font-inter',
 });
 
 const poppins = Poppins({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  weight: ['400', '600', '700'],
   display: 'swap',
+  preload: false, // Load after Inter
   variable: '--font-poppins',
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400'],
   display: 'swap',
+  preload: false, // Load last
   variable: '--font-jetbrains-mono',
 });
 
