@@ -316,6 +316,8 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
                 <div className='space-y-4'>
                   {groupedSubmissions[date].map(submission => {
                     const submissionTrack = submission.track;
+                    if (!submissionTrack) return null;
+
                     // Normalize track to ensure all required properties are present
                     const track: Track = {
                       id: submissionTrack.id,
