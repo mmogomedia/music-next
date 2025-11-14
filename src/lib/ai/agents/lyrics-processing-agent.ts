@@ -9,7 +9,7 @@
  * @module LyricsProcessingAgent
  */
 
-import { BaseAgent } from './base-agent';
+import { BaseAgent, type AgentContext, type AgentResponse } from './base-agent';
 import { AzureChatOpenAI } from '@langchain/openai';
 import type { AIProvider } from '@/types/ai-service';
 
@@ -79,17 +79,12 @@ export class LyricsProcessingAgent extends BaseAgent {
    * Process lyrics: public entry point conforming to BaseAgent
    */
   async process(
-    lyrics: string,
-    context?: { language?: string }
-  ): Promise<{
-    message: string;
-    data: {
-      detectedLanguage: string;
-      translatedLyrics?: string | null;
-      summary: string;
-    };
-  }> {
-    const result = await this.processLyrics(lyrics, context?.language);
+    message: string,
+    context?: AgentContext
+  ): Promise<AgentResponse> {
+    // Extract language from context if provided (extended context for lyrics processing)
+    const language = (context as any)?.language;
+    const result = await this.processLyrics(message, language);
     return {
       message: result.summary,
       data: result,
