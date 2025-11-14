@@ -35,11 +35,17 @@ interface Conversation {
 interface ConversationListProps {
   onConversationSelect?: (_conversationId: string) => void;
   activeConversationId?: string;
+  onSignInClick?: () => void;
+  onSignInModalOpen?: (_open: boolean) => void;
+  isSignInModalOpen?: boolean;
 }
 
 export default function ConversationList({
   onConversationSelect,
   activeConversationId,
+  onSignInClick,
+  onSignInModalOpen,
+  isSignInModalOpen: externalIsSignInModalOpen,
 }: ConversationListProps) {
   const { data: session, status } = useSession();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -53,7 +59,22 @@ export default function ConversationList({
   >(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [internalIsSignInModalOpen, setInternalIsSignInModalOpen] =
+    useState(false);
+
+  // Use external state if provided, otherwise use internal state
+  const isSignInModalOpen =
+    externalIsSignInModalOpen !== undefined
+      ? externalIsSignInModalOpen
+      : internalIsSignInModalOpen;
+
+  const setIsSignInModalOpen = (open: boolean) => {
+    if (onSignInModalOpen) {
+      onSignInModalOpen(open);
+    } else {
+      setInternalIsSignInModalOpen(open);
+    }
+  };
 
   const fetchConversations = useCallback(async () => {
     if (!session?.user?.id) {
@@ -195,7 +216,18 @@ export default function ConversationList({
             in.
           </p>
           <button
-            onClick={() => setIsSignInModalOpen(true)}
+            onClick={e => {
+              e.stopPropagation(); // Prevent event bubbling
+              // Open modal first
+              setIsSignInModalOpen(true);
+              // Close menu after a delay to allow modal to render
+              // The modal uses a portal so it won't be affected by drawer unmounting
+              requestAnimationFrame(() => {
+                setTimeout(() => {
+                  onSignInClick?.();
+                }, 150);
+              });
+            }}
             className='inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition-colors duration-200'
           >
             Sign In
@@ -366,10 +398,13 @@ export default function ConversationList({
         </ModalContent>
       </Modal>
 
-      <SignInModal
-        isOpen={isSignInModalOpen}
-        onClose={() => setIsSignInModalOpen(false)}
-      />
+      {/* Only render SignInModal if state is managed internally (not passed from parent) */}
+      {externalIsSignInModalOpen === undefined && (
+        <SignInModal
+          isOpen={isSignInModalOpen}
+          onClose={() => setIsSignInModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

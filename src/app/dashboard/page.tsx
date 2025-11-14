@@ -38,6 +38,8 @@ import TopPerformingTracks from '@/components/dashboard/TopPerformingTracks';
 import PlaylistSubmissionsTab from '@/components/dashboard/artist/PlaylistSubmissionsTab';
 import QuickSubmitModal from '@/components/dashboard/artist/QuickSubmitModal';
 import TrackArtwork from '@/components/music/TrackArtwork';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
+import CompletionBadge from '@/components/track/CompletionBadge';
 import { useArtistProfile } from '@/hooks/useArtistProfile';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import {
@@ -737,9 +739,26 @@ export default function DashboardPage() {
                         </div>
 
                         <div className='flex-1 min-w-0'>
-                          <h4 className='font-medium text-gray-900 dark:text-white truncate'>
+                          <h4 className='font-medium text-gray-900 dark:text-white truncate mb-1'>
                             {track.title}
                           </h4>
+                          <div className='flex items-center gap-2 flex-wrap mb-1'>
+                            <p className='text-sm text-gray-500 dark:text-gray-400'>
+                              <ArtistDisplay track={track} />
+                            </p>
+                            {track.completionPercentage !== undefined && (
+                              <>
+                                <span className='text-xs text-gray-400 dark:text-gray-500'>
+                                  •
+                                </span>
+                                <CompletionBadge
+                                  percentage={track.completionPercentage}
+                                  size='sm'
+                                  className='flex-shrink-0'
+                                />
+                              </>
+                            )}
+                          </div>
                           <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400'>
                             <span className='flex items-center gap-1'>
                               <PlayIcon className='w-3 h-3' />
@@ -912,8 +931,11 @@ export default function DashboardPage() {
                   id: editingTrack.id,
                   title: editingTrack.title,
                   artist: editingTrack.artist,
+                  primaryArtistIds: editingTrack.primaryArtistIds || [],
+                  featuredArtistIds: editingTrack.featuredArtistIds || [],
                   album: editingTrack.album,
                   genre: editingTrack.genre,
+                  genreId: editingTrack.genreId,
                   composer: editingTrack.composer,
                   year: editingTrack.year,
                   releaseDate: editingTrack.releaseDate,

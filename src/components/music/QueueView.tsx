@@ -5,6 +5,7 @@ import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import TrackArtwork from './TrackArtwork';
 import { XMarkIcon, PlayIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Track } from '@/types/track';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 interface QueueViewProps {
   isOpen: boolean;
@@ -163,7 +164,7 @@ export default function QueueView({ isOpen, onClose }: QueueViewProps) {
                         {track.title}
                       </div>
                       <div className='text-sm text-gray-500 dark:text-gray-400 truncate'>
-                        {track.artist || 'Unknown Artist'}
+                        <ArtistDisplay track={track} />
                       </div>
                     </div>
 

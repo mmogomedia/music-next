@@ -408,6 +408,7 @@ async function getTopPerformingTracks(trackIds: string[], startDate: Date) {
       artist: true,
       playCount: true,
       coverImageUrl: true,
+      completionPercentage: true,
     },
   });
 

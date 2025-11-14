@@ -5,6 +5,8 @@ import { PlayIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import TrackArtwork from '@/components/music/TrackArtwork';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { SourceType } from '@/types/stats';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
+import CompletionBadge from '@/components/track/CompletionBadge';
 
 interface TopPerformingTracksProps {
   topTracks: Array<{
@@ -16,6 +18,7 @@ interface TopPerformingTracksProps {
       artist: string;
       playCount: number;
       coverImageUrl: string | null;
+      completionPercentage?: number;
     } | null;
   }>;
   onViewAll?: () => void;
@@ -100,12 +103,26 @@ export default function TopPerformingTracks({
                 />
 
                 <div className='flex-1 min-w-0'>
-                  <h5 className='font-medium text-gray-900 dark:text-white truncate'>
+                  <h5 className='font-medium text-gray-900 dark:text-white truncate mb-1'>
                     {item.track.title}
                   </h5>
-                  <p className='text-sm text-gray-500 dark:text-gray-400'>
-                    {item.track.artist || 'Unknown Artist'}
-                  </p>
+                  <div className='flex items-center gap-2 flex-wrap'>
+                    <p className='text-sm text-gray-500 dark:text-gray-400'>
+                      <ArtistDisplay legacyArtist={item.track.artist} />
+                    </p>
+                    {item.track.completionPercentage !== undefined && (
+                      <>
+                        <span className='text-xs text-gray-400 dark:text-gray-500'>
+                          •
+                        </span>
+                        <CompletionBadge
+                          percentage={item.track.completionPercentage}
+                          size='sm'
+                          className='flex-shrink-0'
+                        />
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className='flex items-center gap-4 flex-shrink-0'>

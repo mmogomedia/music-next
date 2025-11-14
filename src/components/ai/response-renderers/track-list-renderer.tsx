@@ -25,8 +25,9 @@ export function TrackListRenderer({
   onPlayTrack,
   onAction,
 }: TrackListRendererProps) {
-  const { tracks, other } = response.data;
+  const { tracks } = response.data;
   const [openSummaries, setOpenSummaries] = useState<Set<string>>(new Set());
+  const [openReasons, setOpenReasons] = useState<Set<string>>(new Set());
 
   const normalizeTrack = (track: any): Track & { summary?: string } => ({
     id: track.id,
@@ -66,6 +67,7 @@ export function TrackListRenderer({
     downloadCount: track.downloadCount ?? undefined,
     shareCount: track.shareCount ?? undefined,
     summary: track.summary ?? undefined,
+    reason: track.reason ?? undefined, // Include reason for recommendations
   });
 
   const handlePlayTrack = (track: Track) => {
@@ -76,6 +78,18 @@ export function TrackListRenderer({
 
   const toggleSummary = (trackId: string) => {
     setOpenSummaries(prev => {
+      const next = new Set(prev);
+      if (next.has(trackId)) {
+        next.delete(trackId);
+      } else {
+        next.add(trackId);
+      }
+      return next;
+    });
+  };
+
+  const toggleReason = (trackId: string) => {
+    setOpenReasons(prev => {
       const next = new Set(prev);
       if (next.has(trackId)) {
         next.delete(trackId);
@@ -154,7 +168,9 @@ export function TrackListRenderer({
         {tracks.map(track => {
           const trackWithSummary = normalizeTrack(track);
           const hasSummary = !!trackWithSummary.summary;
-          const isOpen = openSummaries.has(track.id);
+          const hasReason = !!trackWithSummary.reason;
+          const isSummaryOpen = openSummaries.has(track.id);
+          const isReasonOpen = openReasons.has(track.id);
 
           return (
             <div key={track.id} className='space-y-2'>
@@ -166,6 +182,66 @@ export function TrackListRenderer({
                 variant='default'
               />
 
+              {/* Reason Drawer - Show for recommendation reasons (if no summary) */}
+              {hasReason && !hasSummary && (
+                <div className='relative border-l-2 border-purple-200 dark:border-purple-800/50 ml-2'>
+                  {/* Toggle Button */}
+                  <button
+                    type='button'
+                    onClick={() => toggleReason(track.id)}
+                    className='w-full flex items-center gap-3 py-3 px-4 hover:bg-purple-50/50 dark:hover:bg-purple-900/10 transition-colors rounded-r-lg group'
+                    aria-label={
+                      isReasonOpen
+                        ? 'Hide recommendation reason'
+                        : 'Show recommendation reason'
+                    }
+                  >
+                    <div className='flex-shrink-0 -ml-2'>
+                      <div className='rounded-full bg-purple-100/80 dark:bg-purple-900/30 p-1.5 group-hover:bg-purple-200/80 dark:group-hover:bg-purple-800/40 transition-colors'>
+                        {/* AI Icon - Neural network / Brain style */}
+                        <svg
+                          className='w-5 h-5 text-purple-600 dark:text-purple-400'
+                          fill='none'
+                          stroke='currentColor'
+                          viewBox='0 0 24 24'
+                          xmlns='http://www.w3.org/2000/svg'
+                        >
+                          <path
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                            strokeWidth={2}
+                            d='M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    <span className='flex-1 text-left text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wider'>
+                      AI Recommendation
+                    </span>
+                    {isReasonOpen ? (
+                      <ChevronUpIcon className='w-4 h-4 text-purple-400 dark:text-purple-500 flex-shrink-0' />
+                    ) : (
+                      <ChevronDownIcon className='w-4 h-4 text-purple-400 dark:text-purple-500 flex-shrink-0' />
+                    )}
+                  </button>
+
+                  {/* Drawer Content */}
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      isReasonOpen
+                        ? 'max-h-96 opacity-100'
+                        : 'max-h-0 opacity-0'
+                    }`}
+                  >
+                    <div className='py-4 pl-6 pr-4'>
+                      <p className='text-sm text-purple-700 dark:text-purple-300 leading-relaxed italic font-light tracking-wide'>
+                        {trackWithSummary.reason}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Summary Drawer - Show for each track with summary */}
               {hasSummary && (
                 <div className='relative border-l-2 border-gray-200 dark:border-slate-700 ml-2'>
@@ -175,7 +251,9 @@ export function TrackListRenderer({
                     onClick={() => toggleSummary(track.id)}
                     className='w-full flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors rounded-r-lg group'
                     aria-label={
-                      isOpen ? 'Hide track summary' : 'Show track summary'
+                      isSummaryOpen
+                        ? 'Hide track summary'
+                        : 'Show track summary'
                     }
                   >
                     <div className='flex-shrink-0 -ml-2'>
@@ -186,7 +264,7 @@ export function TrackListRenderer({
                     <span className='flex-1 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
                       Track Summary
                     </span>
-                    {isOpen ? (
+                    {isSummaryOpen ? (
                       <ChevronUpIcon className='w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0' />
                     ) : (
                       <ChevronDownIcon className='w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0' />
@@ -196,7 +274,9 @@ export function TrackListRenderer({
                   {/* Drawer Content */}
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                      isSummaryOpen
+                        ? 'max-h-96 opacity-100'
+                        : 'max-h-0 opacity-0'
                     }`}
                   >
                     <div className='py-4 pl-6 pr-4'>
@@ -211,30 +291,6 @@ export function TrackListRenderer({
           );
         })}
       </div>
-
-      {/* Other/Featured Tracks Section */}
-      {other && other.length > 0 && (
-        <div className='mt-6 pt-6 border-t border-gray-200 dark:border-slate-700'>
-          <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4 uppercase tracking-wide'>
-            More Music You Might Like
-          </h3>
-          <div className='space-y-3'>
-            {other.map(track => {
-              const trackWithSummary = normalizeTrack(track);
-              return (
-                <TrackCard
-                  key={track.id}
-                  track={trackWithSummary}
-                  onPlay={handlePlayTrack}
-                  size='md'
-                  showDuration
-                  variant='default'
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Actions */}
       {response.actions && response.actions.length > 0 && (

@@ -93,6 +93,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   const currentTrackRef = useRef<Track | null>(null);
   const currentSourceRef = useRef<SourceType>('player');
   const currentPlaylistIdRef = useRef<string | undefined>(undefined);
+  const preloadAudioRef = useRef<HTMLAudioElement | null>(null);
 
   // Stats tracking - will be updated dynamically based on source
   const [currentSource, setCurrentSource] = useState<SourceType>('player');
@@ -137,6 +138,10 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       audioRef.current = new Audio();
       audioRef.current.volume = volume;
       audioRef.current.muted = isMuted;
+
+      // Initialize preload audio element for next track
+      preloadAudioRef.current = new Audio();
+      preloadAudioRef.current.preload = 'auto';
 
       // Add event listeners
       const audio = audioRef.current;
@@ -297,6 +302,12 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         audio.removeEventListener('error', handleError);
         audio.pause();
         audio.src = '';
+        // Cleanup preload audio element
+        if (preloadAudioRef.current) {
+          preloadAudioRef.current.pause();
+          preloadAudioRef.current.src = '';
+          preloadAudioRef.current = null;
+        }
       };
     }
   }, [volume, isMuted]);
@@ -304,15 +315,23 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
   // Keep refs in sync with state
   useEffect(() => {
     queueRef.current = queue;
+    // Preload next track when queue changes
+    preloadNextTrack();
   }, [queue]);
   useEffect(() => {
     queueIndexRef.current = queueIndex;
+    // Preload next track when queue index changes
+    preloadNextTrack();
   }, [queueIndex]);
   useEffect(() => {
     repeatModeRef.current = repeatMode;
+    // Preload next track when repeat mode changes (next track might be different)
+    preloadNextTrack();
   }, [repeatMode]);
   useEffect(() => {
     shuffleRef.current = shuffle;
+    // Preload next track when shuffle mode changes (next track might be different)
+    preloadNextTrack();
   }, [shuffle]);
   useEffect(() => {
     currentTrackRef.current = currentTrack;
@@ -438,6 +457,9 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       // Track new track play start
       playStartTimeRef.current = Date.now();
       trackPlayStart(track.id, source, playlistId);
+
+      // Preload next track in queue
+      preloadNextTrack();
     }
   };
 
@@ -488,6 +510,42 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     if (currentIndex < currentQueue.length - 1) return currentIndex + 1;
     if (repeat === 'all') return 0;
     return null;
+  };
+
+  /**
+   * Preload the next track in the queue for seamless playback
+   */
+  const preloadNextTrack = () => {
+    if (!preloadAudioRef.current) return;
+
+    const nextIdx = resolveNextIndex();
+    if (nextIdx === null) {
+      // No next track - clear preload
+      preloadAudioRef.current.src = '';
+      return;
+    }
+
+    const nextTrack = queueRef.current[nextIdx];
+    if (!nextTrack) {
+      preloadAudioRef.current.src = '';
+      return;
+    }
+
+    // Construct fileUrl for next track
+    const nextTrackUrl =
+      nextTrack.fileUrl ||
+      (nextTrack.filePath ? constructFileUrl(nextTrack.filePath) : '');
+
+    if (!nextTrackUrl) {
+      preloadAudioRef.current.src = '';
+      return;
+    }
+
+    // Only preload if it's a different track
+    if (preloadAudioRef.current.src !== nextTrackUrl) {
+      preloadAudioRef.current.src = nextTrackUrl;
+      preloadAudioRef.current.load(); // Force browser to start loading
+    }
   };
 
   const next = () => {

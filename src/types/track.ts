@@ -17,13 +17,16 @@ export interface Track {
   updatedAt: string | Date;
 
   // Additional metadata
-  artist?: string;
+  artist?: string; // Legacy field - kept for backward compatibility
+  primaryArtistIds?: string[]; // Array of ArtistProfile IDs (ordered)
+  featuredArtistIds?: string[]; // Array of ArtistProfile IDs
   composer?: string;
   year?: number;
   releaseDate?: string;
   bpm?: number;
   isrc?: string;
   lyrics?: string;
+  genreId?: string; // Genre reference ID
 
   // Privacy & Access Control
   isPublic?: boolean;
@@ -40,4 +43,11 @@ export interface Track {
   // Analytics
   downloadCount?: number;
   shareCount?: number;
+
+  // Recommendation reasons (for AI recommendations)
+  reason?: string;
+
+  // Completion & Language
+  completionPercentage?: number; // 0-100
+  language?: string; // ISO 639-1 code
 }

@@ -11,6 +11,7 @@ import type { TrackLandingData } from '@/lib/services/quick-link-service';
 import { mapLandingTrackToPlayerTrack } from '@/components/quick-links/utils';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { useToast } from '@/components/ui/Toast';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 const PLATFORM_LABELS: Record<string, string> = {
   SPOTIFY: 'Spotify',
@@ -192,7 +193,9 @@ export default function QuickLinkAlbumView({
                       <p className='text-sm font-semibold text-slate-900'>
                         {track.title}
                       </p>
-                      <p className='text-xs text-slate-500'>{track.artist}</p>
+                      <p className='text-xs text-slate-500'>
+                        <ArtistDisplay track={track as any} />
+                      </p>
                       <div className='flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.3em] text-slate-400 mt-1'>
                         <span>{track.genre ?? 'Genre'}</span>
                         <span>•</span>

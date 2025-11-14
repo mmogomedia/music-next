@@ -15,6 +15,8 @@ import {
   ShareIcon,
 } from '@heroicons/react/24/outline';
 import { constructFileUrl } from '@/lib/url-utils';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
+import CompletionBadge from '@/components/track/CompletionBadge';
 
 interface TrackCardProps {
   track: Track;
@@ -297,19 +299,28 @@ export default function TrackCard({
           <div className='flex-1 min-w-0'>
             <div className='flex items-start justify-between gap-2 mb-1'>
               <div className='flex-1 min-w-0'>
-                <div
-                  className={`${textSizeClasses[size]} font-semibold truncate ${
-                    isCurrentTrack
-                      ? 'text-blue-600 dark:text-blue-400'
-                      : 'text-gray-900 dark:text-white'
-                  }`}
-                >
-                  {track.title}
+                <div className='flex items-center gap-2'>
+                  <div
+                    className={`${textSizeClasses[size]} font-semibold truncate flex-1 ${
+                      isCurrentTrack
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : 'text-gray-900 dark:text-white'
+                    }`}
+                  >
+                    {track.title}
+                  </div>
+                  {track.completionPercentage !== undefined && (
+                    <CompletionBadge
+                      percentage={track.completionPercentage}
+                      size='sm'
+                      variant='flat'
+                    />
+                  )}
                 </div>
                 <div
                   className={`${subTextSizeClasses[size]} text-gray-600 dark:text-gray-400 truncate`}
                 >
-                  {track.artist || 'Unknown Artist'}
+                  <ArtistDisplay track={track} />
                 </div>
               </div>
               {showDuration && durationSeconds && (
@@ -466,11 +477,20 @@ export default function TrackCard({
                   : 'text-gray-900 dark:text-white'
               }`}
             >
-              {track.title}
+              <div className='flex items-center gap-2'>
+                <span className='truncate flex-1'>{track.title}</span>
+                {track.completionPercentage !== undefined && (
+                  <CompletionBadge
+                    percentage={track.completionPercentage}
+                    size='sm'
+                    variant='flat'
+                  />
+                )}
+              </div>
             </div>
             <div className='flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400'>
               <span className='truncate'>
-                {track.artist || 'Unknown Artist'}
+                <ArtistDisplay track={track} />
               </span>
               {showDuration && normalizeDuration(track.duration) && (
                 <>
@@ -616,14 +636,22 @@ export default function TrackCard({
             <div className='flex flex-1 flex-col justify-between bg-white dark:bg-slate-900 px-5 pb-5 pt-4'>
               <div className='space-y-3 text-gray-900 dark:text-white'>
                 <div className='space-y-1'>
-                  <p className='text-lg font-semibold leading-tight'>
-                    {track.title}
-                  </p>
+                  <div className='flex items-center gap-2'>
+                    <p className='text-lg font-semibold leading-tight flex-1'>
+                      {track.title}
+                    </p>
+                    {track.completionPercentage !== undefined && (
+                      <CompletionBadge
+                        percentage={track.completionPercentage}
+                        size='sm'
+                        variant='flat'
+                      />
+                    )}
+                  </div>
                   <p className='text-xs text-gray-600 dark:text-gray-300 truncate uppercase tracking-wide'>
-                    {track.artist || 'Unknown Artist'}
+                    <ArtistDisplay track={track} />
                   </p>
                 </div>
-
                 <div className='flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 flex-wrap'>
                   {showDuration && durationSeconds && (
                     <span className='flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-300'>

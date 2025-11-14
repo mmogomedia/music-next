@@ -12,6 +12,7 @@ import { Track } from '@/types/track';
 import { Playlist } from '@/types/playlist';
 import { SourceType } from '@/types/stats';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 interface ProvincialPlaylistsProps {
   onTrackPlay?: (_track: Track) => void;
@@ -297,7 +298,7 @@ export default function ProvincialPlaylists({
                       {track.title}
                     </h3>
                     <p className='text-sm text-gray-500 dark:text-gray-400 truncate'>
-                      {track.artist}
+                      <ArtistDisplay track={track} />
                     </p>
                   </div>
 

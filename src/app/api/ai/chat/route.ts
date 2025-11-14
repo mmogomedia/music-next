@@ -79,21 +79,21 @@ export async function POST(request: NextRequest) {
         'I understand you want to explore music. Let me help you with that!';
 
       // Create response with structured data if available
-      // If agentResponse has a type field, include the full structured response
+      // Check if agentResponse.data is an AIResponse with type field
+      const responseData = agentResponse.data;
+      const hasStructuredType =
+        responseData &&
+        typeof responseData === 'object' &&
+        'type' in responseData &&
+        'data' in responseData;
+
       const chatResponse: ChatResponse = {
         message: responseMessage,
         conversationId,
         timestamp: new Date(),
-        data:
-          agentResponse.type && agentResponse.data
-            ? {
-                type: agentResponse.type,
-                message: agentResponse.message || '',
-                timestamp: agentResponse.timestamp || new Date(),
-                data: agentResponse.data,
-                metadata: agentResponse.metadata,
-              }
-            : agentResponse.data, // Fallback to just data if no type
+        data: hasStructuredType
+          ? responseData // Already has type and data structure
+          : responseData, // Fallback to just data
       };
 
       // Store assistant response and update preferences

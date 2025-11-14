@@ -18,6 +18,7 @@ import type {
   AIResponse,
   TrackListResponse,
   PlaylistGridResponse,
+  PlaylistResponse,
   ArtistResponse,
   SearchResultsResponse,
 } from '@/types/ai-responses';
@@ -32,10 +33,15 @@ const DISCOVERY_SYSTEM_PROMPT = `You are a music discovery assistant for Flemoji
 Your role is to help users discover new music, search for tracks and artists, browse playlists, and explore different genres and regions.
 
 Available actions:
-- SEARCH: Find tracks by title, artist, or description
-- BROWSE: Explore playlists by genre or province
-- DISCOVER: Find trending tracks and top charts
-- ARTIST: Get information about specific artists
+- SEARCH: Find tracks by title, artist, or description (use search_tracks tool)
+- BROWSE: Explore playlists by genre or province (use get_playlists_by_genre tool)
+- DISCOVER: Find trending tracks and top charts (use get_trending_tracks, get_top_charts tools)
+- ARTIST: Get information about specific artists (use get_artist, search_artists tools)
+- COMPILE PLAYLIST: When user asks to "compile", "create", "make", or "build" a playlist:
+  * You MUST use get_tracks_by_genre or search_tracks to find tracks
+  * DO NOT use get_genres or get_playlists_by_genre when compiling
+  * Search for tracks matching the genre/criteria mentioned
+  * The system will automatically compile the tracks into a playlist
 
 When responding:
 - Be enthusiastic about helping users discover South African music
@@ -43,6 +49,7 @@ When responding:
 - Suggest similar artists or tracks when appropriate
 - Keep responses conversational and engaging
 - Use the tools available to gather real data before responding
+- IMPORTANT: When users ask to compile/create a playlist, you MUST search for tracks using get_tracks_by_genre or search_tracks - do NOT just list genres
 
 You have access to comprehensive music discovery tools. Use them to provide accurate, helpful information.`;
 
@@ -139,7 +146,8 @@ export class DiscoveryAgent extends BaseAgent {
 
       const structuredData = await this.convertToolResultsToResponse(
         execution.toolResults,
-        context
+        context,
+        message // Pass original message to detect compile intent
       );
 
       return {
@@ -175,14 +183,33 @@ export class DiscoveryAgent extends BaseAgent {
 
   private async convertToolResultsToResponse(
     results: ExecutedToolResult[],
-    context?: AgentContext
+    context?: AgentContext,
+    userMessage?: string
   ): Promise<AIResponse | null> {
     const toolData = results.map(result => ({
       tool: result.name,
       data: result.parsedResult ?? result.rawResult,
     }));
 
-    return this.convertToolDataToResponse(toolData, context);
+    return this.convertToolDataToResponse(toolData, context, userMessage);
+  }
+
+  /**
+   * Detect if user wants to compile/create a playlist
+   */
+  private detectCompileIntent(message: string): boolean {
+    const lowerMessage = message.toLowerCase();
+    const compileKeywords = [
+      'compile',
+      'create',
+      'make',
+      'build',
+      'put together',
+      'assemble',
+      'curate',
+      'generate',
+    ];
+    return compileKeywords.some(keyword => lowerMessage.includes(keyword));
   }
 
   /**
@@ -190,7 +217,8 @@ export class DiscoveryAgent extends BaseAgent {
    */
   private async convertToolDataToResponse(
     toolData: any[],
-    context?: AgentContext
+    context?: AgentContext,
+    userMessage?: string
   ): Promise<AIResponse | null> {
     if (toolData.length === 0) return null;
 
@@ -210,11 +238,26 @@ export class DiscoveryAgent extends BaseAgent {
         case 'search_tracks':
         case 'get_tracks_by_genre':
         case 'get_trending_tracks': {
-          if (Array.isArray(data.tracks))
-            aggregated.tracks.push(...data.tracks);
-          if (data.genre) aggregated.meta.genre = data.genre;
-          if (typeof data.count === 'number')
-            aggregated.meta.totalTracks = data.count;
+          // Handle both parsed JSON objects and string JSON
+          let tracksData = data;
+          if (typeof data === 'string') {
+            try {
+              tracksData = JSON.parse(data);
+            } catch {
+              // If parsing fails, use data as is
+            }
+          }
+
+          // Handle different response structures
+          if (Array.isArray(tracksData)) {
+            aggregated.tracks.push(...tracksData);
+          } else if (tracksData && Array.isArray(tracksData.tracks)) {
+            aggregated.tracks.push(...tracksData.tracks);
+          }
+
+          if (tracksData?.genre) aggregated.meta.genre = tracksData.genre;
+          if (typeof tracksData?.count === 'number')
+            aggregated.meta.totalTracks = tracksData.count;
           break;
         }
         case 'get_top_charts':
@@ -286,6 +329,59 @@ export class DiscoveryAgent extends BaseAgent {
     aggregated.tracks = dedupeById(aggregated.tracks);
     aggregated.artists = dedupeById(aggregated.artists);
     aggregated.playlists = dedupeById(aggregated.playlists);
+
+    // Check if user wants to compile a playlist
+    const wantsToCompile = userMessage && this.detectCompileIntent(userMessage);
+    const hasTracks = aggregated.tracks.length > 0;
+
+    // If user wants to compile, create a compiled playlist (even if empty)
+    // This takes priority over returning a track_list, even if there are existing playlists
+    if (wantsToCompile) {
+      // If no tracks found, try to get some tracks by genre from the user message
+      if (!hasTracks && userMessage) {
+        const genre = this.extractGenreFromMessage(userMessage);
+        if (genre) {
+          // Try to fetch tracks by genre one more time
+          try {
+            const { MusicService } = await import('@/lib/services');
+            const genreTracks = await MusicService.getTracksByGenre(genre, 50);
+            if (genreTracks && genreTracks.length > 0) {
+              aggregated.tracks.push(
+                ...genreTracks.map(track => ({
+                  id: track.id,
+                  title: track.title,
+                  artist:
+                    track.artist ||
+                    track.artistProfile?.artistName ||
+                    'Unknown Artist',
+                  genre: track.genre,
+                  duration: track.duration,
+                  playCount: track.playCount,
+                  likeCount: track.likeCount,
+                  coverImageUrl: track.coverImageUrl,
+                  filePath: track.filePath,
+                  artistId: track.artistProfileId,
+                  userId: track.userId,
+                  createdAt: track.createdAt,
+                  updatedAt: track.updatedAt,
+                  albumArtwork: track.albumArtwork,
+                  isDownloadable: track.isDownloadable,
+                }))
+              );
+              aggregated.meta.genre = genre;
+            }
+          } catch (error) {
+            // If genre fetch fails, continue with empty tracks
+          }
+        }
+      }
+
+      return await this.compilePlaylistFromTracks(
+        aggregated.tracks,
+        aggregated.meta,
+        userMessage
+      );
+    }
 
     // If we have both tracks and artists, return mixed search results
     if (aggregated.tracks.length > 0 && aggregated.artists.length > 0) {
@@ -576,5 +672,102 @@ Summary:`;
     // Fallback to first tool's raw data
     const first = toolData[0];
     return (first?.data as AIResponse) ?? null;
+  }
+
+  /**
+   * Compile a playlist from tracks
+   */
+  private async compilePlaylistFromTracks(
+    tracks: any[],
+    meta: Record<string, any>,
+    userMessage?: string
+  ): Promise<PlaylistResponse> {
+    const { constructFileUrl } = await import('@/lib/url-utils');
+
+    // Extract genre from meta or user message
+    const genre = meta.genre || this.extractGenreFromMessage(userMessage || '');
+    const playlistName = genre ? `${genre} Playlist` : 'Curated Playlist';
+
+    // Prepare tracks with proper structure
+    const playlistTracks = tracks.slice(0, 50).map((track, index) => {
+      const coverImageUrl =
+        track.coverImageUrl || track.albumArtwork
+          ? constructFileUrl(track.coverImageUrl || track.albumArtwork)
+          : null;
+
+      return {
+        track: {
+          ...track,
+          fileUrl: track.fileUrl || constructFileUrl(track.filePath),
+          coverImageUrl,
+          artistProfile: track.artistProfile || null,
+        },
+        order: index + 1,
+      };
+    });
+
+    // Get cover image from first track or use a default
+    const coverImage =
+      playlistTracks[0]?.track?.coverImageUrl ||
+      playlistTracks[0]?.track?.albumArtwork ||
+      '';
+
+    // Create virtual playlist object
+    const compiledPlaylist = {
+      id: `compiled-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: playlistName,
+      description: `A curated ${genre ? genre.toLowerCase() : ''} playlist compiled just for you.`,
+      coverImage: coverImage || '',
+      maxTracks: 50,
+      currentTracks: playlistTracks.length,
+      status: 'ACTIVE' as const,
+      submissionStatus: 'CLOSED' as const,
+      maxSubmissionsPerArtist: 1,
+      province: meta.province || null,
+      createdBy: 'system',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      order: 0,
+      playlistTypeId: '', // Virtual playlist, no type
+      tracks: playlistTracks,
+    };
+
+    return {
+      type: 'playlist',
+      message: `I've compiled a ${genre ? genre.toLowerCase() : ''} playlist with ${playlistTracks.length} tracks for you!`,
+      timestamp: new Date(),
+      data: compiledPlaylist,
+    } as PlaylistResponse;
+  }
+
+  /**
+   * Extract genre from user message
+   */
+  private extractGenreFromMessage(message: string): string | null {
+    const lowerMessage = message.toLowerCase();
+    const genres = [
+      'amapiano',
+      'afropop',
+      'afrobeat',
+      'hip hop',
+      'hiphop',
+      'trap',
+      'house',
+      '3 step',
+      '3-step',
+      'gqom',
+      'kwaito',
+      'afro house',
+    ];
+
+    for (const genre of genres) {
+      if (lowerMessage.includes(genre)) {
+        // Return the genre as-is (will be matched by MusicService)
+        // MusicService handles case-insensitive matching and aliases
+        return genre;
+      }
+    }
+
+    return null;
   }
 }

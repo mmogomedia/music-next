@@ -128,7 +128,8 @@ export class RecommendationAgent extends BaseAgent {
       const structuredResponse = await this.convertToolResultsToResponse(
         execution.toolResults,
         context,
-        message
+        message,
+        responseContent // Pass response content to extract reasons
       );
 
       const metadata = {
@@ -143,10 +144,12 @@ export class RecommendationAgent extends BaseAgent {
       };
 
       // If we have a structured response, return it with the message
+      // The structuredResponse is an AIResponse (has type, data, etc.)
+      // We need to wrap it in AgentResponse format
       if (structuredResponse) {
         return {
-          ...structuredResponse,
-          message: responseContent || structuredResponse.message,
+          message: responseContent || structuredResponse.message || '',
+          data: structuredResponse, // Put the full AIResponse in data field
           metadata,
         };
       }
@@ -172,12 +175,88 @@ export class RecommendationAgent extends BaseAgent {
   }
 
   /**
+   * Extract track reasons from AI response message
+   */
+  private extractTrackReasons(
+    message: string,
+    tracks: any[]
+  ): Map<string, string> {
+    const reasons = new Map<string, string>();
+
+    if (!message || tracks.length === 0) return reasons;
+
+    // Pattern 1: "Track Name — Artist - Why: reason"
+    // Pattern 2: "1) Track Name — Artist - Why: reason"
+    // Pattern 3: "- Track Name — Artist\n  - Why: reason"
+    const patterns = [
+      // Numbered list with dash
+      /(?:^\d+[).]?\s*[-–—]?\s*)([^—–-]+?)\s*[—–-]\s*([^—–-]+?)\s*[-–—]\s*[Ww]hy:\s*([^\n]+)/gm,
+      // Dash list with Why
+      /(?:^[-•]\s*)([^—–-]+?)\s*[—–-]\s*([^—–-]+?)\s*[-–—]\s*[Ww]hy:\s*([^\n]+)/gm,
+      // Just track name with Why on next line
+      /([A-Za-z0-9\s'"]+?)\s*[—–-]\s*([A-Za-z0-9\s&x]+?)\s*\n\s*[-–—]\s*[Ww]hy:\s*([^\n]+)/gm,
+    ];
+
+    for (const pattern of patterns) {
+      const matches = [...message.matchAll(pattern)];
+      for (const match of matches) {
+        const trackTitle = match[1]?.trim();
+        const reason = match[3]?.trim();
+
+        if (trackTitle && reason) {
+          // Find matching track (case-insensitive, partial match)
+          const matchingTrack = tracks.find(
+            t =>
+              t.title &&
+              t.title.toLowerCase().includes(trackTitle.toLowerCase())
+          );
+
+          if (matchingTrack && !reasons.has(matchingTrack.id)) {
+            reasons.set(matchingTrack.id, reason);
+          }
+        }
+      }
+    }
+
+    // Also try to extract reasons from structured sections
+    // Look for "Why:" or "reason:" followed by text before next track
+    const whySections = message.split(/\n\s*(?:[-•]\s*)?[A-Z]/);
+    for (const section of whySections) {
+      const whyMatch = section.match(/[Ww]hy:\s*([^\n]+)/);
+      if (whyMatch) {
+        const reason = whyMatch[1].trim();
+        // Try to find the track mentioned before this "Why"
+        const linesBeforeWhy = section.split(/[Ww]hy:/)[0];
+        const trackMatch = linesBeforeWhy.match(
+          /([A-Za-z0-9\s'"]+?)\s*[—–-]\s*([A-Za-z0-9\s&x]+)/
+        );
+
+        if (trackMatch) {
+          const trackTitle = trackMatch[1]?.trim();
+          const matchingTrack = tracks.find(
+            t =>
+              t.title &&
+              t.title.toLowerCase().includes(trackTitle.toLowerCase())
+          );
+
+          if (matchingTrack && !reasons.has(matchingTrack.id)) {
+            reasons.set(matchingTrack.id, reason);
+          }
+        }
+      }
+    }
+
+    return reasons;
+  }
+
+  /**
    * Convert tool results to structured AI response format
    */
   private async convertToolResultsToResponse(
     results: ExecutedToolResult[],
     context?: AgentContext,
-    userMessage?: string
+    userMessage?: string,
+    aiMessage?: string
   ): Promise<AgentResponse | null> {
     if (results.length === 0) return null;
 
@@ -191,7 +270,7 @@ export class RecommendationAgent extends BaseAgent {
           : {}),
     }));
 
-    return this.convertToolDataToResponse(toolData, userMessage);
+    return this.convertToolDataToResponse(toolData, userMessage, aiMessage);
   }
 
   /**
@@ -235,7 +314,8 @@ export class RecommendationAgent extends BaseAgent {
    */
   private async convertToolDataToResponse(
     toolData: any[],
-    userMessage?: string
+    userMessage?: string,
+    aiMessage?: string
   ): Promise<AgentResponse | null> {
     if (toolData.length === 0) return null;
 
@@ -348,7 +428,19 @@ export class RecommendationAgent extends BaseAgent {
 
     // If we have tracks, return track_list
     if (aggregated.tracks.length > 0) {
-      // Ensure fileUrl is constructed for tracks
+      // Extract reasons from AI message if this is a recommendation
+      const isRecommendation =
+        userMessage &&
+        (userMessage.toLowerCase().includes('recommend') ||
+          userMessage.toLowerCase().includes('suggest') ||
+          userMessage.toLowerCase().includes('similar'));
+
+      const trackReasons =
+        isRecommendation && aiMessage
+          ? this.extractTrackReasons(aiMessage, aggregated.tracks)
+          : new Map<string, string>();
+
+      // Ensure fileUrl is constructed for tracks and attach reasons
       const { constructFileUrl } = await import('@/lib/url-utils');
       const tracksWithUrls = aggregated.tracks.map(track => ({
         ...track,
@@ -356,6 +448,7 @@ export class RecommendationAgent extends BaseAgent {
           track.fileUrl ||
           (track.filePath ? constructFileUrl(track.filePath) : ''),
         isDownloadable: track.isDownloadable ?? false,
+        reason: trackReasons.get(track.id) || undefined, // Attach reason if available
       }));
 
       return {

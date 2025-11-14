@@ -21,8 +21,12 @@ export async function GET() {
       include: {
         artistProfile: {
           select: {
+            id: true,
             artistName: true,
+            slug: true,
             profileImage: true,
+            coverImage: true,
+            isUnclaimed: true,
           },
         },
       },
@@ -31,11 +35,84 @@ export async function GET() {
       },
     });
 
-    // Construct full URLs from file paths
-    const tracksWithUrls = tracks.map(track => ({
-      ...track,
-      fileUrl: constructFileUrl(track.filePath),
-    }));
+    // Collect all unique artist IDs
+    const allArtistIds = new Set<string>();
+    tracks.forEach(track => {
+      track.primaryArtistIds?.forEach(id => allArtistIds.add(id));
+      track.featuredArtistIds?.forEach(id => allArtistIds.add(id));
+    });
+
+    // Fetch all artist profiles in one query
+    const artistProfiles =
+      Array.from(allArtistIds).length > 0
+        ? await prisma.artistProfile.findMany({
+            where: { id: { in: Array.from(allArtistIds) } },
+            select: {
+              id: true,
+              artistName: true,
+              slug: true,
+              profileImage: true,
+              coverImage: true,
+              isUnclaimed: true,
+              bio: true,
+              location: true,
+              website: true,
+              genre: true,
+              isVerified: true,
+              totalPlays: true,
+              totalLikes: true,
+              totalFollowers: true,
+            },
+          })
+        : [];
+
+    // Enrich tracks with artist data
+    const tracksWithUrls = tracks.map(track => {
+      const primaryArtists = (track.primaryArtistIds || [])
+        .map(id => artistProfiles.find(a => a.id === id))
+        .filter((a): a is (typeof artistProfiles)[0] => a !== undefined)
+        .map(artist => ({
+          ...artist,
+          profileImage: artist.profileImage
+            ? constructFileUrl(artist.profileImage)
+            : null,
+          coverImage: artist.coverImage
+            ? constructFileUrl(artist.coverImage)
+            : null,
+        }));
+
+      const featuredArtists = (track.featuredArtistIds || [])
+        .map(id => artistProfiles.find(a => a.id === id))
+        .filter((a): a is (typeof artistProfiles)[0] => a !== undefined)
+        .map(artist => ({
+          ...artist,
+          profileImage: artist.profileImage
+            ? constructFileUrl(artist.profileImage)
+            : null,
+          coverImage: artist.coverImage
+            ? constructFileUrl(artist.coverImage)
+            : null,
+        }));
+
+      return {
+        ...track,
+        fileUrl: constructFileUrl(track.filePath),
+        primaryArtists,
+        featuredArtists,
+        // Legacy fields for backward compatibility
+        artistProfile: track.artistProfile
+          ? {
+              ...track.artistProfile,
+              profileImage: track.artistProfile.profileImage
+                ? constructFileUrl(track.artistProfile.profileImage)
+                : null,
+              coverImage: track.artistProfile.coverImage
+                ? constructFileUrl(track.artistProfile.coverImage)
+                : null,
+            }
+          : null,
+      };
+    });
 
     return NextResponse.json({
       tracks: tracksWithUrls,

@@ -12,6 +12,7 @@ import {
 import { Track } from '@/types/track';
 import { SourceType } from '@/types/stats';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 interface GenrePlaylistsProps {
   onTrackPlay?: (_track: Track) => void;
@@ -357,7 +358,7 @@ export default function GenrePlaylists({ onTrackPlay }: GenrePlaylistsProps) {
                     {track.title}
                   </h4>
                   <p className='text-xs text-gray-500 dark:text-gray-400 truncate'>
-                    {track.artist}
+                    <ArtistDisplay track={track} />
                   </p>
                 </div>
 

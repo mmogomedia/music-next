@@ -24,6 +24,7 @@ import { constructFileUrl } from '@/lib/url-utils';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { Track } from '@/types/track';
 import { SourceType } from '@/types/stats';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 interface SubmissionReviewProps {
   onClose?: () => void;
@@ -357,7 +358,7 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
                               <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-2'>
                                 <div className='flex items-center gap-1'>
                                   <UserIcon className='w-4 h-4' />
-                                  {track?.artist || 'Unknown Artist'}
+                                  <ArtistDisplay track={track as any} />
                                 </div>
                                 <div className='flex items-center gap-1'>
                                   <CalendarIcon className='w-4 h-4' />

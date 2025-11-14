@@ -4,6 +4,7 @@ import React from 'react';
 import { Button } from '@heroui/react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import TrackArtwork from './TrackArtwork';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 import {
   ArrowPathIcon,
   ArrowUturnLeftIcon,
@@ -522,7 +523,7 @@ export default function MiniPlayer() {
                                 {track.title}
                               </div>
                               <div className='text-[10px] text-gray-500 dark:text-gray-400 truncate'>
-                                {track.artist || 'Unknown Artist'}
+                                <ArtistDisplay track={track} />
                               </div>
                             </div>
 

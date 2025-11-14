@@ -8,6 +8,7 @@ import { Track } from '@/types/track';
 import { SourceType } from '@/types/stats';
 import { constructFileUrl } from '@/lib/url-utils';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 interface MusicStreamingProps {
   onTrackPlay?: (_track: Track) => void;
@@ -418,7 +419,7 @@ export default function MusicStreaming({
 
                               {/* Artist */}
                               <div className='col-span-3 text-slate-300 text-sm truncate'>
-                                {track.artist}
+                                <ArtistDisplay track={track} />
                               </div>
 
                               {/* Album */}

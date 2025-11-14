@@ -15,6 +15,7 @@ import {
 import { Track } from '@/types/track';
 import { SourceType } from '@/types/stats';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 interface TopTenTracksProps {
   onTrackPlay?: (_track: Track) => void;
@@ -220,7 +221,7 @@ export default function TopTenTracks({ onTrackPlay }: TopTenTracksProps) {
                       {track.title}
                     </h3>
                     <p className='text-sm text-gray-500 dark:text-gray-400 truncate'>
-                      {track.artist}
+                      <ArtistDisplay track={track} />
                     </p>
 
                     {/* Genre - mobile */}

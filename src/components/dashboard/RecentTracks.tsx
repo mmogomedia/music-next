@@ -4,6 +4,8 @@ import { Card, CardBody, Button } from '@heroui/react';
 import { MusicalNoteIcon, PlayIcon } from '@heroicons/react/24/outline';
 import { Track } from '@/types/track';
 import TrackArtwork from '@/components/music/TrackArtwork';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
+import CompletionBadge from '@/components/track/CompletionBadge';
 
 interface RecentTracksProps {
   tracks: Track[];
@@ -71,24 +73,47 @@ export default function RecentTracks({
                     size='sm'
                   />
                   <div className='flex-1 min-w-0'>
-                    <h5 className='font-medium text-gray-900 dark:text-white truncate'>
+                    <h5 className='font-medium text-gray-900 dark:text-white truncate mb-1'>
                       {track.title}
                     </h5>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      {track.artist || 'Unknown Artist'} •{' '}
-                      {formatDate(track.createdAt.toString())}
-                    </p>
+                    <div className='flex items-center gap-2 flex-wrap'>
+                      <p className='text-sm text-gray-500 dark:text-gray-400'>
+                        <ArtistDisplay track={track} />
+                      </p>
+                      <span className='text-xs text-gray-400 dark:text-gray-500'>
+                        •
+                      </span>
+                      <span className='text-xs text-gray-500 dark:text-gray-400'>
+                        {formatDate(track.createdAt.toString())}
+                      </span>
+                      <span className='text-xs text-gray-400 dark:text-gray-500'>
+                        •
+                      </span>
+                      <span className='text-xs text-gray-500 dark:text-gray-400'>
+                        {formatDuration(track.duration || 0)}
+                      </span>
+                      {track.completionPercentage !== undefined && (
+                        <>
+                          <span className='text-xs text-gray-400 dark:text-gray-500'>
+                            •
+                          </span>
+                          <CompletionBadge
+                            percentage={track.completionPercentage}
+                            size='sm'
+                            className='flex-shrink-0'
+                          />
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className='flex items-center gap-2 flex-shrink-0'>
-                  <div className='text-right'>
+                <div className='flex items-center gap-3 flex-shrink-0'>
+                  <div className='text-right hidden sm:block'>
                     <div className='text-sm font-medium text-gray-900 dark:text-white'>
-                      {formatDuration(track.duration || 0)}
+                      {track.playCount.toLocaleString()}
                     </div>
-                    <div className='flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400'>
-                      <span>{track.playCount} plays</span>
-                      <span>•</span>
-                      <span>{track.likeCount || 0} likes</span>
+                    <div className='text-xs text-gray-500 dark:text-gray-400'>
+                      plays
                     </div>
                   </div>
                   <Button
@@ -96,6 +121,7 @@ export default function RecentTracks({
                     variant='light'
                     isIconOnly
                     onPress={() => onPlay(track)}
+                    className='flex-shrink-0'
                   >
                     <PlayIcon className='w-4 h-4' />
                   </Button>

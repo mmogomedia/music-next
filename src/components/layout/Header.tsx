@@ -223,7 +223,11 @@ export default function Header() {
         </div>
         {menuItems.map(item => (
           <NavbarMenuItem key={item.name}>
-            <Link className='w-full' href={item.href}>
+            <Link
+              className='w-full'
+              href={item.href}
+              onClick={() => setIsMenuOpen(false)}
+            >
               {item.name}
             </Link>
           </NavbarMenuItem>
@@ -231,12 +235,22 @@ export default function Header() {
         {session ? (
           <>
             <NavbarMenuItem key='m-dashboard'>
-              <Link className='w-full' href='/dashboard'>
+              <Link
+                className='w-full'
+                href='/dashboard'
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Dashboard
               </Link>
             </NavbarMenuItem>
             <NavbarMenuItem key='m-signout'>
-              <button className='w-full text-left' onClick={() => signOut()}>
+              <button
+                className='w-full text-left'
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  signOut();
+                }}
+              >
                 Sign out
               </button>
             </NavbarMenuItem>
@@ -244,12 +258,20 @@ export default function Header() {
         ) : (
           <>
             <NavbarMenuItem key='m-login'>
-              <Link className='w-full' href='/login'>
+              <Link
+                className='w-full'
+                href='/login'
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Login
               </Link>
             </NavbarMenuItem>
             <NavbarMenuItem key='m-register'>
-              <Link className='w-full' href='/register'>
+              <Link
+                className='w-full'
+                href='/register'
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Sign Up
               </Link>
             </NavbarMenuItem>

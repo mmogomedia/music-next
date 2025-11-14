@@ -32,6 +32,7 @@ import {
 import { useToast } from '@/components/ui/Toast';
 import type { Track } from '@/types/track';
 import type { ArtistProfile } from '@/types/artist-profile';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 const QUICK_LINK_TYPE_LABELS: Record<QuickLinkTypeValue, string> = {
   TRACK: 'Track',
@@ -759,7 +760,7 @@ export default function QuickLinksManager({
                                 {track.title}
                               </span>
                               <span className='text-xs text-gray-500 dark:text-gray-400'>
-                                {track.artist || 'Unknown artist'}
+                                <ArtistDisplay track={track} />
                               </span>
                             </div>
                           </SelectItem>

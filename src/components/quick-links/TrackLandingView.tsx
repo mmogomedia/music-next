@@ -18,6 +18,7 @@ import { mapLandingTrackToPlayerTrack } from '@/components/quick-links/utils';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { useToast } from '@/components/ui/Toast';
 import { useStats } from '@/hooks/useStats';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 const PLATFORM_LABELS: Record<string, string> = {
   SPOTIFY: 'Spotify',
@@ -185,7 +186,7 @@ export default function TrackLandingView({
         <div className='flex-1 p-6 sm:p-8 space-y-6 bg-white'>
           <div className='space-y-2'>
             <p className='text-sm uppercase tracking-widest text-blue-500 font-semibold truncate'>
-              {track.artist || 'Artist'}
+              <ArtistDisplay track={track as any} />
             </p>
             <h2 className='text-3xl sm:text-4xl font-bold text-slate-900 leading-tight break-words line-clamp-2'>
               {track.title}

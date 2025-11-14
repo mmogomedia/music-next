@@ -9,6 +9,7 @@ import {
   EyeIcon,
 } from '@heroicons/react/24/outline';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 interface ActivityItem {
   id: string;
@@ -383,8 +384,9 @@ export default function RecentActivity({
                     )}
                   </div>
                   <div className='text-xs text-gray-500 dark:text-gray-400'>
-                    {getActivityLabel(item.activityType)} • {item.track.artist}{' '}
-                    • {formatTimeAgo(item.timestamp)}
+                    {getActivityLabel(item.activityType)} •{' '}
+                    <ArtistDisplay legacyArtist={item.track.artist} /> •{' '}
+                    {formatTimeAgo(item.timestamp)}
                   </div>
                 </div>
               </div>

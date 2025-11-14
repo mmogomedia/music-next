@@ -22,6 +22,7 @@ import { uploadImageToR2 } from '@/lib/image-upload';
 import { api } from '@/lib/api-client';
 import { useToast } from '@/components/ui/Toast';
 import Image from 'next/image';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 interface PlaylistFormDynamicProps {
   isOpen: boolean;
@@ -805,7 +806,7 @@ export default function PlaylistFormDynamic({
                               {track.title}
                             </div>
                             <div className='text-xs text-gray-500 dark:text-gray-400 truncate'>
-                              {track.artist || 'Unknown Artist'}
+                              <ArtistDisplay track={track} />
                             </div>
                           </div>
                           <div className='flex items-center gap-1'>
@@ -898,7 +899,7 @@ export default function PlaylistFormDynamic({
                                   {track.title}
                                 </div>
                                 <div className='text-xs text-gray-500 dark:text-gray-400 truncate'>
-                                  {track.artist || 'Unknown Artist'}
+                                  <ArtistDisplay track={track} />
                                 </div>
                               </div>
                               <button

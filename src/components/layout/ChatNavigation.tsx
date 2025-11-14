@@ -20,6 +20,7 @@ import Link from 'next/link';
 import ConversationList from '@/components/ai/ConversationList';
 import UserDetailsFooter from '@/components/layout/UserDetailsFooter';
 import MiniPlayer from '@/components/music/MiniPlayer';
+import SignInModal from '@/components/auth/SignInModal';
 
 interface QuickLink {
   id: string;
@@ -43,6 +44,7 @@ export default function ChatNavigation({
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -160,6 +162,9 @@ export default function ChatNavigation({
             <ConversationList
               onConversationSelect={onConversationSelect}
               activeConversationId={getConversationId?.()}
+              onSignInClick={() => {}}
+              onSignInModalOpen={setIsSignInModalOpen}
+              isSignInModalOpen={isSignInModalOpen}
             />
           </div>
         </div>
@@ -238,7 +243,10 @@ export default function ChatNavigation({
                     return (
                       <button
                         key={link.id}
-                        onClick={() => handleQuickLinkClick(link.message)}
+                        onClick={() => {
+                          setIsOpen(false);
+                          handleQuickLinkClick(link.message);
+                        }}
                         className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 bg-gray-100 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 border border-transparent hover:border-blue-200 dark:hover:border-blue-800'
                       >
                         <IconComponent className='w-3.5 h-3.5 flex-shrink-0' />
@@ -261,6 +269,9 @@ export default function ChatNavigation({
                       onConversationSelect?.(id);
                     }}
                     activeConversationId={getConversationId?.()}
+                    onSignInClick={() => setIsOpen(false)}
+                    onSignInModalOpen={setIsSignInModalOpen}
+                    isSignInModalOpen={isSignInModalOpen}
                   />
                 </div>
               </div>
@@ -273,6 +284,12 @@ export default function ChatNavigation({
           </div>
         </>
       )}
+
+      {/* Sign In Modal - Rendered outside drawer so it persists when drawer closes */}
+      <SignInModal
+        isOpen={isSignInModalOpen}
+        onClose={() => setIsSignInModalOpen(false)}
+      />
     </>
   );
 }
