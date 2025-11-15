@@ -112,16 +112,18 @@ export default function SignInForm({
     <div className={className}>
       {showTitle && (
         <div className='text-center mb-6'>
-          <h1 className='text-3xl font-bold mb-2 text-white'>Welcome back</h1>
-          <p className='text-white/70 text-sm'>
+          <h1 className='text-3xl font-bold mb-2 text-gray-900'>
+            Welcome back
+          </h1>
+          <p className='text-gray-600 text-sm'>
             Sign in to your account to continue
           </p>
         </div>
       )}
 
       {error && (
-        <div className='mb-4 p-3 bg-red-500/20 border border-red-400/30 rounded-xl backdrop-blur-sm'>
-          <p className='text-red-300 text-sm text-center'>{error}</p>
+        <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-xl'>
+          <p className='text-red-700 text-sm text-center'>{error}</p>
         </div>
       )}
 
@@ -134,9 +136,9 @@ export default function SignInForm({
           size='md'
           classNames={{
             inputWrapper:
-              'bg-white/5 border-white/20 hover:border-blue-400/50 focus-within:border-blue-400',
-            input: 'text-white placeholder:text-white/50',
-            label: 'text-white/80',
+              'border-gray-300 hover:border-blue-400 focus-within:border-blue-500',
+            input: 'text-gray-900',
+            label: 'text-gray-700',
           }}
           isRequired
           errorMessage={fieldErrors.identifier}
@@ -152,9 +154,9 @@ export default function SignInForm({
             size='md'
             classNames={{
               inputWrapper:
-                'bg-white/5 border-white/20 hover:border-blue-400/50 focus-within:border-blue-400',
-              input: 'text-white placeholder:text-white/50',
-              label: 'text-white/80',
+                'border-gray-300 hover:border-blue-400 focus-within:border-blue-500',
+              input: 'text-gray-900',
+              label: 'text-gray-700',
             }}
             isRequired
             errorMessage={fieldErrors.password}
@@ -209,7 +211,7 @@ export default function SignInForm({
               onValueChange={setRememberMe}
               size='sm'
               classNames={{
-                label: 'text-white/80 text-xs',
+                label: 'text-gray-700 text-xs',
               }}
             >
               Remember me
@@ -217,7 +219,7 @@ export default function SignInForm({
             <HeroUILink
               as={Link}
               href='/forgot-password'
-              className='text-xs text-blue-400 hover:text-blue-300'
+              className='text-xs text-blue-600 hover:text-blue-700'
             >
               Forgot password?
             </HeroUILink>
@@ -232,12 +234,12 @@ export default function SignInForm({
         </Button>
       </form>
 
-      <Divider className='my-6 bg-white/20' />
+      <Divider className='my-6 bg-gray-200' />
 
       <Button
         variant='bordered'
         size='md'
-        className='w-full border-2 border-white/30 hover:border-blue-400/50 hover:bg-blue-500/10 transition-all duration-300 hover:scale-105 font-semibold text-white'
+        className='w-full border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 hover:scale-105 font-semibold text-gray-700'
         onPress={() => signIn('google', { callbackUrl, redirect: !onSuccess })}
       >
         Continue with Google
@@ -245,12 +247,12 @@ export default function SignInForm({
 
       {showTitle && (
         <div className='mt-4 text-center'>
-          <p className='text-sm text-white/70'>
+          <p className='text-sm text-gray-600'>
             Don&apos;t have an account?{' '}
             <HeroUILink
               as={Link}
               href='/register'
-              className='text-sm text-blue-400 hover:text-blue-300'
+              className='text-sm text-blue-600 hover:text-blue-700'
             >
               Sign up
             </HeroUILink>
