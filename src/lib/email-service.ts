@@ -1,11 +1,16 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization - only create Resend instance when API key is available
+let resend: Resend | null = null;
 
-if (!process.env.RESEND_API_KEY) {
-  console.warn(
-    'RESEND_API_KEY is not set. Email functionality will be disabled.'
-  );
+function getResendInstance(): Resend | null {
+  if (!process.env.RESEND_API_KEY) {
+    return null;
+  }
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
 }
 
 export interface SendEmailOptions {
@@ -33,7 +38,9 @@ export interface SendEmailResult {
 export async function sendEmail(
   options: SendEmailOptions
 ): Promise<SendEmailResult> {
-  if (!process.env.RESEND_API_KEY) {
+  const resendInstance = getResendInstance();
+
+  if (!resendInstance) {
     console.error('RESEND_API_KEY is not configured');
     return {
       success: false,
@@ -57,7 +64,7 @@ export async function sendEmail(
     if (options.replyTo) emailData.replyTo = options.replyTo;
     if (options.tags) emailData.tags = options.tags;
 
-    const { data, error } = await resend.emails.send(emailData);
+    const { data, error } = await resendInstance.emails.send(emailData);
 
     if (error) {
       console.error('Resend email error:', error);
