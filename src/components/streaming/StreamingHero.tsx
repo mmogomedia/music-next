@@ -441,7 +441,8 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
                   height={400}
                   priority
                   className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-500'
-                  unoptimized
+                  sizes='(max-width: 768px) 25vw, 400px'
+                  quality={85}
                 />
               ) : (
                 <div className='w-full h-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center'>

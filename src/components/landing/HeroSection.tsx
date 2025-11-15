@@ -211,7 +211,8 @@ export default function HeroSection({
                     height={800}
                     priority
                     className='w-full h-full object-cover rounded-2xl shadow-xl'
-                    unoptimized
+                    sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 800px'
+                    quality={85}
                   />
                 ) : (
                   <div className='w-full h-full flex items-center justify-center'>

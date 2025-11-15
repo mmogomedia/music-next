@@ -68,6 +68,11 @@ export const metadata: Metadata = {
     description: 'Listen, upload, and share music with Flemoji.',
     images: [shareImage],
   },
+  other: {
+    // Resource hints for performance
+    'dns-prefetch':
+      'https://asset.flemoji.com, https://audio.flemoji.com, https://profile-images.flemoji.com',
+  },
 };
 
 export default function RootLayout({
@@ -96,6 +101,7 @@ export default function RootLayout({
             </ToastProvider>
           </MusicPlayerProvider>
         </SessionProvider>
+        {/* Analytics moved to bottom - loaded after page content with defer */}
         <SpeedInsights />
         <Analytics />
       </body>
