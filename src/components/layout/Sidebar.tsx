@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import {
   MusicalNoteIcon,
@@ -23,12 +23,35 @@ import {
   ChartBarIcon as ChartBarSolidIcon,
   UserGroupIcon as UserGroupSolidIcon,
 } from '@heroicons/react/24/solid';
+import MobileHeader from './MobileHeader';
 
 export default function Sidebar() {
   const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
   const pathname = usePathname();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const [isMobile, setIsMobile] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    setIsReady(true);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  if (!isReady) {
+    return null;
+  }
+
+  if (isMobile) {
+    return <MobileHeader />;
+  }
 
   const menuItems = [
     { name: 'Explore', href: '/', icon: HomeIcon, activeIcon: HomeSolidIcon },

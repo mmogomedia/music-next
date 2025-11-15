@@ -24,6 +24,66 @@ import { constructFileUrl } from '@/lib/url-utils';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { Track } from '@/types/track';
 import { SourceType } from '@/types/stats';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
+import CompletionBadge from '@/components/track/CompletionBadge';
+
+const normalizeSubmissionTrack = (submissionTrack: any): Track => {
+  const baseTrack: Track = {
+    id: submissionTrack.id,
+    title: submissionTrack.title ?? 'Untitled',
+    filePath: submissionTrack.filePath ?? '',
+    fileUrl: submissionTrack.fileUrl ?? '',
+    coverImageUrl:
+      submissionTrack.coverImageUrl ??
+      submissionTrack.albumArtwork ??
+      undefined,
+    albumArtwork: submissionTrack.albumArtwork ?? undefined,
+    genre: submissionTrack.genre ?? undefined,
+    album: submissionTrack.album ?? undefined,
+    description: submissionTrack.description ?? undefined,
+    duration:
+      typeof submissionTrack.duration === 'number' &&
+      Number.isFinite(submissionTrack.duration)
+        ? submissionTrack.duration
+        : undefined,
+    playCount: submissionTrack.playCount ?? 0,
+    likeCount: submissionTrack.likeCount ?? 0,
+    artistId: submissionTrack.artistId ?? submissionTrack.artistProfileId ?? '',
+    artistProfileId: submissionTrack.artistProfileId ?? undefined,
+    userId: submissionTrack.userId ?? '',
+    createdAt: submissionTrack.createdAt ?? new Date().toISOString(),
+    updatedAt: submissionTrack.updatedAt ?? new Date().toISOString(),
+    artist:
+      submissionTrack.artist ??
+      submissionTrack.artistProfile?.artistName ??
+      'Unknown Artist',
+    primaryArtistIds: submissionTrack.primaryArtistIds ?? undefined,
+    featuredArtistIds: submissionTrack.featuredArtistIds ?? undefined,
+    genreId: submissionTrack.genreId ?? undefined,
+    isPublic: submissionTrack.isPublic ?? true,
+    isDownloadable: submissionTrack.isDownloadable ?? false,
+    isExplicit: submissionTrack.isExplicit ?? false,
+    watermarkId: submissionTrack.watermarkId ?? undefined,
+    copyrightInfo: submissionTrack.copyrightInfo ?? undefined,
+    licenseType: submissionTrack.licenseType ?? undefined,
+    distributionRights: submissionTrack.distributionRights ?? undefined,
+    downloadCount: submissionTrack.downloadCount ?? undefined,
+    shareCount: submissionTrack.shareCount ?? undefined,
+    completionPercentage: submissionTrack.completionPercentage ?? undefined,
+    language: submissionTrack.language ?? undefined,
+  };
+
+  const trackWithArtists = baseTrack as Track & {
+    primaryArtists?: any[];
+    featuredArtists?: any[];
+  };
+
+  trackWithArtists.primaryArtists = submissionTrack.primaryArtists ?? undefined;
+  trackWithArtists.featuredArtists =
+    submissionTrack.featuredArtists ?? undefined;
+
+  return trackWithArtists;
+};
 
 interface SubmissionReviewProps {
   onClose?: () => void;
@@ -149,24 +209,7 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
   };
 
   const handlePlayTrack = (submissionTrack: any) => {
-    // Convert submission track to Track type for the global player
-    const track: Track = {
-      id: submissionTrack.id,
-      title: submissionTrack.title,
-      artist: submissionTrack.artist || 'Unknown Artist',
-      filePath: submissionTrack.filePath,
-      fileUrl: submissionTrack.fileUrl, // Constructed by API from filePath
-      coverImageUrl: submissionTrack.coverImageUrl,
-      albumArtwork: submissionTrack.albumArtwork,
-      genre: submissionTrack.genre,
-      duration: submissionTrack.duration,
-      playCount: submissionTrack.playCount || 0,
-      artistId: submissionTrack.artistProfileId || '', // Use artistProfileId from schema
-      userId: '', // Not available in submission track data
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
+    const track = normalizeSubmissionTrack(submissionTrack);
     playTrack(track, 'admin' as SourceType);
   };
 
@@ -314,7 +357,10 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
                 {/* Submissions for this date */}
                 <div className='space-y-4'>
                   {groupedSubmissions[date].map(submission => {
-                    const track = submission.track;
+                    const submissionTrack = submission.track;
+                    if (!submissionTrack) return null;
+
+                    const track = normalizeSubmissionTrack(submissionTrack);
                     const playlistName = getPlaylistName(submission.playlistId);
 
                     return (
@@ -344,9 +390,16 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
                             {/* Track Info */}
                             <div className='flex-1 min-w-0'>
                               <div className='flex items-center gap-2 mb-1'>
-                                <h4 className='text-lg font-semibold text-gray-900 dark:text-white truncate'>
-                                  {track?.title || 'Unknown Track'}
-                                </h4>
+                                <div className='flex items-center gap-2 flex-wrap'>
+                                  <h4 className='text-lg font-semibold text-gray-900 dark:text-white truncate'>
+                                    {track?.title || 'Unknown Track'}
+                                  </h4>
+                                  <CompletionBadge
+                                    percentage={
+                                      track?.completionPercentage ?? 0
+                                    }
+                                  />
+                                </div>
                                 <span
                                   className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(submission.status)}`}
                                 >
@@ -357,7 +410,7 @@ export default function SubmissionReview({ onClose }: SubmissionReviewProps) {
                               <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-2'>
                                 <div className='flex items-center gap-1'>
                                   <UserIcon className='w-4 h-4' />
-                                  {track?.artist || 'Unknown Artist'}
+                                  <ArtistDisplay track={track} />
                                 </div>
                                 <div className='flex items-center gap-1'>
                                   <CalendarIcon className='w-4 h-4' />

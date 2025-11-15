@@ -1,8 +1,12 @@
 'use client';
 
-import React from 'react';
+import { Suspense } from 'react';
 import ChatLayout from '@/components/layout/ChatLayout';
 
 export default function HomePage() {
-  return <ChatLayout />;
+  return (
+    <Suspense fallback={null}>
+      <ChatLayout />
+    </Suspense>
+  );
 }

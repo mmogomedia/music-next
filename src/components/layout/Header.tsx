@@ -27,9 +27,11 @@ import {
   SunIcon,
   MoonIcon,
 } from '@heroicons/react/24/outline';
+import SignInModal from '@/components/auth/SignInModal';
 
 export default function Header() {
   const { data: session } = useSession();
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { resolvedTheme, setTheme } = useNextTheme();
   const isDark = resolvedTheme === 'dark';
@@ -184,16 +186,15 @@ export default function Header() {
         ) : (
           <>
             <NavbarItem>
-              <Link href='/login'>
-                <Button
-                  variant='light'
-                  color='default'
-                  size='sm'
-                  className='font-medium hover:bg-primary/5 transition-all duration-200 text-sm'
-                >
-                  Login
-                </Button>
-              </Link>
+              <Button
+                variant='light'
+                color='default'
+                size='sm'
+                className='font-medium hover:bg-primary/5 transition-all duration-200 text-sm'
+                onPress={() => setIsSignInModalOpen(true)}
+              >
+                Login
+              </Button>
             </NavbarItem>
             <NavbarItem>
               <Link href='/register'>
@@ -222,7 +223,11 @@ export default function Header() {
         </div>
         {menuItems.map(item => (
           <NavbarMenuItem key={item.name}>
-            <Link className='w-full' href={item.href}>
+            <Link
+              className='w-full'
+              href={item.href}
+              onClick={() => setIsMenuOpen(false)}
+            >
               {item.name}
             </Link>
           </NavbarMenuItem>
@@ -230,12 +235,22 @@ export default function Header() {
         {session ? (
           <>
             <NavbarMenuItem key='m-dashboard'>
-              <Link className='w-full' href='/dashboard'>
+              <Link
+                className='w-full'
+                href='/dashboard'
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Dashboard
               </Link>
             </NavbarMenuItem>
             <NavbarMenuItem key='m-signout'>
-              <button className='w-full text-left' onClick={() => signOut()}>
+              <button
+                className='w-full text-left'
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  signOut();
+                }}
+              >
                 Sign out
               </button>
             </NavbarMenuItem>
@@ -243,18 +258,31 @@ export default function Header() {
         ) : (
           <>
             <NavbarMenuItem key='m-login'>
-              <Link className='w-full' href='/login'>
+              <Link
+                className='w-full'
+                href='/login'
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Login
               </Link>
             </NavbarMenuItem>
             <NavbarMenuItem key='m-register'>
-              <Link className='w-full' href='/register'>
+              <Link
+                className='w-full'
+                href='/register'
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Sign Up
               </Link>
             </NavbarMenuItem>
           </>
         )}
       </NavbarMenu>
+
+      <SignInModal
+        isOpen={isSignInModalOpen}
+        onClose={() => setIsSignInModalOpen(false)}
+      />
     </Navbar>
   );
 }

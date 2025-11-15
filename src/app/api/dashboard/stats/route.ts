@@ -254,7 +254,14 @@ async function getAggregatedStats(
 }
 
 async function getRecentActivity(trackIds: string[], startDate: Date) {
-  if (trackIds.length === 0) return [];
+  if (trackIds.length === 0) {
+    return {
+      plays: [],
+      likes: [],
+      downloads: [],
+      pageVisits: [],
+    };
+  }
 
   const recentPlays = await prisma.playEvent.findMany({
     where: {
@@ -293,18 +300,89 @@ async function getRecentActivity(trackIds: string[], startDate: Date) {
     take: 5,
   });
 
+  const recentDownloads = await prisma.downloadEvent.findMany({
+    where: {
+      trackId: { in: trackIds },
+      timestamp: { gte: startDate },
+    },
+    include: {
+      track: {
+        select: {
+          id: true,
+          title: true,
+          artist: true,
+        },
+      },
+    },
+    orderBy: { timestamp: 'desc' },
+    take: 5,
+  });
+
+  const recentPageVisits = await prisma.quickLink.findMany({
+    where: {
+      trackId: { in: trackIds },
+      lastVisitedAt: { gte: startDate },
+    },
+    include: {
+      track: {
+        select: {
+          id: true,
+          title: true,
+          artist: true,
+        },
+      },
+    },
+    orderBy: { lastVisitedAt: 'desc' },
+    take: 5,
+  });
+
   return {
-    plays: recentPlays.map(play => ({
-      type: 'play',
-      track: play.track,
-      timestamp: play.timestamp,
-      source: play.source,
-    })),
-    likes: recentLikes.map(like => ({
-      type: 'like',
-      track: like.track,
-      timestamp: like.timestamp,
-    })),
+    plays: recentPlays
+      .filter(play => play.track)
+      .map(play => ({
+        type: 'play' as const,
+        track: {
+          id: play.track!.id,
+          title: play.track!.title,
+          artist: play.track!.artist || 'Unknown Artist',
+        },
+        timestamp: play.timestamp,
+        source: play.source,
+      })),
+    likes: recentLikes
+      .filter(like => like.track)
+      .map(like => ({
+        type: 'like' as const,
+        track: {
+          id: like.track!.id,
+          title: like.track!.title,
+          artist: like.track!.artist || 'Unknown Artist',
+        },
+        timestamp: like.timestamp,
+      })),
+    downloads: recentDownloads
+      .filter(download => download.track)
+      .map(download => ({
+        type: 'download' as const,
+        track: {
+          id: download.track!.id,
+          title: download.track!.title,
+          artist: download.track!.artist || 'Unknown Artist',
+        },
+        timestamp: download.timestamp,
+      })),
+    pageVisits: recentPageVisits
+      .filter(visit => visit.track && visit.lastVisitedAt)
+      .map(visit => ({
+        type: 'page_visit' as const,
+        track: {
+          id: visit.track!.id,
+          title: visit.track!.title,
+          artist: visit.track!.artist || 'Unknown Artist',
+        },
+        timestamp: visit.lastVisitedAt!,
+        slug: visit.slug,
+      })),
   };
 }
 
@@ -330,6 +408,7 @@ async function getTopPerformingTracks(trackIds: string[], startDate: Date) {
       artist: true,
       playCount: true,
       coverImageUrl: true,
+      completionPercentage: true,
     },
   });
 

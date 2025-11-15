@@ -9,10 +9,14 @@
 
 import { BaseAgent, type AgentContext, type AgentResponse } from './base-agent';
 import { playbackTools } from '@/lib/ai/tools';
-import { ChatOpenAI } from '@langchain/openai';
+import { ChatOpenAI, AzureChatOpenAI } from '@langchain/openai';
 import { ChatAnthropic } from '@langchain/anthropic';
 import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import type { AIProvider } from '@/types/ai-service';
+import {
+  executeToolCallLoop,
+  extractTextContent,
+} from '@/lib/ai/tool-executor';
 
 const PLAYBACK_SYSTEM_PROMPT = `You are a music playback control assistant for Flemoji, a South African music streaming platform.
 
@@ -36,11 +40,20 @@ You have access to playback control tools. Use them to execute user requests.`;
 export class PlaybackAgent extends BaseAgent {
   private model: any;
 
-  constructor(provider: AIProvider = 'openai') {
+  constructor(provider: AIProvider = 'azure-openai') {
     super('PlaybackAgent', PLAYBACK_SYSTEM_PROMPT);
 
     // Initialize model based on provider
     switch (provider) {
+      case 'azure-openai':
+        this.model = new AzureChatOpenAI({
+          azureOpenAIApiDeploymentName:
+            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
+          azureOpenAIApiVersion:
+            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
+          temperature: 1,
+        });
+        break;
       case 'openai':
         this.model = new ChatOpenAI({
           modelName: 'gpt-4o-mini',
@@ -60,9 +73,12 @@ export class PlaybackAgent extends BaseAgent {
         });
         break;
       default:
-        this.model = new ChatOpenAI({
-          modelName: 'gpt-4o-mini',
-          temperature: 0.5,
+        this.model = new AzureChatOpenAI({
+          azureOpenAIApiDeploymentName:
+            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
+          azureOpenAIApiVersion:
+            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
+          temperature: 1,
         });
     }
   }
@@ -72,32 +88,58 @@ export class PlaybackAgent extends BaseAgent {
     context?: AgentContext
   ): Promise<AgentResponse> {
     try {
-      // Bind tools to the model
-      const agent = this.model.bindTools(playbackTools);
-
       // Build context message if filters are provided
       const contextMessage = this.formatContext(context);
       const fullMessage = contextMessage
         ? `${message}${contextMessage ? `\n\nContext: ${contextMessage}` : ''}`
         : message;
 
-      // Get response from the agent
-      const response = await agent.invoke([
-        { role: 'system', content: this.systemPrompt },
-        { role: 'user', content: fullMessage },
-      ]);
+      const execution = await executeToolCallLoop({
+        model: this.model,
+        tools: playbackTools,
+        messages: [
+          { role: 'system', content: this.systemPrompt },
+          { role: 'user', content: fullMessage },
+        ],
+      });
 
-      // Parse tool calls if any
-      if (response.tool_calls && response.tool_calls.length > 0) {
-        return this.handleToolCalls(response);
-      }
+      const responseContent = extractTextContent(
+        execution.finalMessage.content
+      );
 
-      // Return text response
+      const actions = execution.toolResults
+        .map(tool => {
+          const parsed = tool.parsedResult ?? tool.rawResult;
+          if (
+            parsed &&
+            typeof parsed === 'object' &&
+            'action' in (parsed as any)
+          ) {
+            return (parsed as any).action;
+          }
+          return undefined;
+        })
+        .filter(Boolean);
+
+      const metadata = {
+        agent: this.name,
+        iterations: execution.iterations,
+        toolCalls: execution.toolResults.map(tool => ({
+          name: tool.name,
+          args: tool.args,
+          error: tool.error,
+        })),
+        toolExecutionTruncated: execution.toolExecutionTruncated || undefined,
+      };
+
       return {
-        message: response.content as string,
-        metadata: {
-          agent: this.name,
-        },
+        message:
+          responseContent ||
+          (actions.length > 0
+            ? 'Playback actions are ready for execution.'
+            : 'How can I assist with playback?'),
+        actions: actions.length > 0 ? actions : undefined,
+        metadata,
       };
     } catch (error) {
       console.error('PlaybackAgent error:', error);
@@ -110,17 +152,5 @@ export class PlaybackAgent extends BaseAgent {
         },
       };
     }
-  }
-
-  private async handleToolCalls(response: any): Promise<AgentResponse> {
-    // For now, return the text response
-    // In a full implementation, we would execute the tool calls
-    return {
-      message: response.content as string,
-      metadata: {
-        agent: this.name,
-        toolCalls: response.tool_calls,
-      },
-    };
   }
 }

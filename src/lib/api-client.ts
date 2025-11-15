@@ -244,6 +244,8 @@ export const api = {
       apiClient.delete(`/api/admin/playlists/${playlistId}/tracks`, {
         body: { trackIds },
       }),
+    reorderPlaylistTracks: (playlistId: string, trackIds: string[]) =>
+      apiClient.put(`/api/admin/playlists/${playlistId}/tracks`, { trackIds }),
   },
 
   // Track APIs

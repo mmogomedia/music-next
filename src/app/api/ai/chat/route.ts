@@ -46,7 +46,12 @@ export async function POST(request: NextRequest) {
     );
     const agentContext = {
       userId: context?.userId,
-      filters: built.filters ?? ({} as any),
+      conversationId: conversationId,
+      filters: {
+        ...built.filters,
+        // Add province from request context if provided
+        ...(context?.province && { province: context.province }),
+      },
     };
 
     // Map context to filters if needed
@@ -74,11 +79,21 @@ export async function POST(request: NextRequest) {
         'I understand you want to explore music. Let me help you with that!';
 
       // Create response with structured data if available
+      // Check if agentResponse.data is an AIResponse with type field
+      const responseData = agentResponse.data;
+      const hasStructuredType =
+        responseData &&
+        typeof responseData === 'object' &&
+        'type' in responseData &&
+        'data' in responseData;
+
       const chatResponse: ChatResponse = {
         message: responseMessage,
         conversationId,
         timestamp: new Date(),
-        data: agentResponse.data, // Include structured data from agent
+        data: hasStructuredType
+          ? responseData // Already has type and data structure
+          : responseData, // Fallback to just data
       };
 
       // Store assistant response and update preferences
@@ -103,10 +118,24 @@ export async function POST(request: NextRequest) {
     } catch (agentError) {
       logger.error('Agent execution error:', agentError);
 
+      const errorMessage =
+        agentError instanceof Error
+          ? agentError.message
+          : typeof agentError === 'string'
+            ? agentError
+            : JSON.stringify(agentError);
+
+      const baseMessage =
+        "I'm here to help you discover great South African music! Try asking me to find tracks, artists, or playlists.";
+
+      const fallbackMessage =
+        process.env.NODE_ENV !== 'production'
+          ? `${baseMessage} (debug: ${errorMessage})`
+          : baseMessage;
+
       // Fallback response
       const chatResponse: ChatResponse = {
-        message:
-          "I'm here to help you discover great South African music! Try asking me to find tracks, artists, or playlists.",
+        message: fallbackMessage,
         conversationId,
         timestamp: new Date(),
       };

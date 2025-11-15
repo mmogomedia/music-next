@@ -18,6 +18,11 @@ export function getPublicUrlBase(): string {
     return process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
   }
 
+  // In server environments, NEXT_PUBLIC vars are also available on process.env
+  if (process.env.NEXT_PUBLIC_R2_PUBLIC_URL) {
+    return process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
+  }
+
   // Try server-side environment variable (for server components and API routes)
   if (process.env.R2_PUBLIC_URL) {
     const url = process.env.R2_PUBLIC_URL;
@@ -47,9 +52,8 @@ export function getPublicUrlBase(): string {
  * @param filePath - The file path stored in the database (e.g., "audio/userId/fileId.mp3" or "image/userId/fileId.jpg")
  * @returns The complete URL for accessing the file
  */
-export function constructFileUrl(filePath: string): string {
+export function constructFileUrl(filePath?: string | null): string {
   if (!filePath) {
-    console.error('constructFileUrl: filePath is undefined or null');
     return '';
   }
 

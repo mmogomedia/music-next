@@ -102,11 +102,92 @@ export class AnalyticsService {
    */
   static async getGenreStats(genre?: string): Promise<GenreStats[]> {
     if (genre) {
-      // Get stats for specific genre
+      // Normalize the genre input
+      const normalizedGenre = genre.toLowerCase().trim();
+      const slugVariations = [
+        normalizedGenre,
+        normalizedGenre.replace(/\s+/g, '-'),
+        normalizedGenre.replace(/-/g, ''),
+        normalizedGenre.replace(/\s+/g, ''),
+      ];
+
+      // Get all active genres to check aliases manually
+      const allGenres = await prisma.genre.findMany({
+        where: { isActive: true },
+        select: { id: true, slug: true, name: true, aliases: true },
+      });
+
+      // Find matching genre
+      let resolved: { id: string } | null = null;
+      for (const g of allGenres) {
+        if (slugVariations.includes(g.slug.toLowerCase())) {
+          resolved = { id: g.id };
+          break;
+        }
+        if (g.name.toLowerCase() === normalizedGenre) {
+          resolved = { id: g.id };
+          break;
+        }
+        if (g.aliases && Array.isArray(g.aliases)) {
+          const normalizedAliases = g.aliases.map(a =>
+            typeof a === 'string' ? a.toLowerCase() : ''
+          );
+          if (
+            normalizedAliases.includes(normalizedGenre) ||
+            slugVariations.some(v => normalizedAliases.includes(v))
+          ) {
+            resolved = { id: g.id };
+            break;
+          }
+        }
+      }
+
+      // Build OR conditions for genre filtering
+      const genreConditions: any[] = [];
+
+      if (resolved) {
+        // Check tracks with genreId (new schema)
+        genreConditions.push({ genreId: resolved.id });
+
+        // Also check legacy genre string field
+        const genreName = allGenres.find(g => g.id === resolved!.id)?.name;
+        const genreAliases =
+          allGenres.find(g => g.id === resolved!.id)?.aliases || [];
+
+        const genreStrings = [genre, normalizedGenre, ...slugVariations];
+        if (genreName) {
+          genreStrings.push(genreName, genreName.toLowerCase());
+        }
+        if (genreAliases && Array.isArray(genreAliases)) {
+          genreStrings.push(
+            ...genreAliases,
+            ...genreAliases.map(a =>
+              typeof a === 'string' ? a.toLowerCase() : ''
+            )
+          );
+        }
+
+        const uniqueGenreStrings = Array.from(
+          new Set(genreStrings.filter(s => s && s.length > 0))
+        );
+
+        genreConditions.push(
+          ...uniqueGenreStrings.map(genreStr => ({
+            genre: { equals: genreStr, mode: 'insensitive' },
+          }))
+        );
+      } else {
+        // Fallback to legacy genre field only
+        genreConditions.push({
+          genre: { contains: genre, mode: 'insensitive' },
+        });
+      }
+
+      // Get stats for specific genre (checking both genreId and legacy genre field)
       const tracks = await prisma.track.findMany({
         where: {
-          genre: { contains: genre, mode: 'insensitive' },
           isPublic: true,
+          OR: genreConditions.length > 0 ? genreConditions : undefined,
         },
         orderBy: {
           playCount: 'desc',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { PauseIcon, HeartIcon, ShareIcon } from '@heroicons/react/24/outline';
 import { PlayIcon as PlaySolidIcon } from '@heroicons/react/24/solid';
 import { Playlist } from '@/types/playlist';
@@ -48,22 +49,26 @@ export default function HeroSection({
     }
   };
 
+  // Render static background immediately for faster FCP
+  const staticBackground = (
+    <div className='absolute inset-0'>
+      <div className='absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20'></div>
+      <div className='absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl'></div>
+      <div className='absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl'></div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className='relative min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden'>
-        {/* Animated Background */}
-        <div className='absolute inset-0'>
-          <div className='absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20 animate-pulse'></div>
-          <div className='absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-bounce'></div>
-          <div className='absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-bounce delay-1000'></div>
-        </div>
-
-        {/* Loading Content */}
+        {staticBackground}
+        {/* Loading Content - Simplified for faster render */}
         <div className='relative z-10 flex items-center justify-center min-h-screen px-4'>
-          <div className='text-center'>
-            <div className='w-32 h-32 bg-white/10 rounded-full mx-auto mb-8 animate-pulse'></div>
-            <div className='h-12 bg-white/20 rounded w-80 mx-auto mb-4 animate-pulse'></div>
-            <div className='h-6 bg-white/20 rounded w-64 mx-auto animate-pulse'></div>
+          <div className='text-center text-white'>
+            <h1 className='text-4xl font-bold mb-4'>Welcome to Flemoji</h1>
+            <p className='text-xl text-white/80'>
+              Discover amazing music from South Africa
+            </p>
           </div>
         </div>
       </div>
@@ -129,10 +134,10 @@ export default function HeroSection({
 
             {/* Title */}
             <div>
-              <h1 className='text-5xl lg:text-7xl font-bold mb-6 leading-tight font-["Poppins"] text-gradient-blue'>
+              <h1 className='text-5xl lg:text-7xl font-bold mb-6 leading-tight font-poppins text-gradient-blue'>
                 {playlist.name}
               </h1>
-              <p className='text-xl lg:text-2xl text-white/80 leading-relaxed font-["Poppins"]'>
+              <p className='text-xl lg:text-2xl text-white/80 leading-relaxed font-poppins'>
                 {playlist.description}
               </p>
             </div>
@@ -199,10 +204,14 @@ export default function HeroSection({
             <div className='relative w-full max-w-md mx-auto'>
               <div className='aspect-square bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-3xl backdrop-blur-sm border border-white/20 p-8 shadow-2xl'>
                 {playlist.coverImage ? (
-                  <img
+                  <Image
                     src={constructFileUrl(playlist.coverImage)}
                     alt={playlist.name}
+                    width={800}
+                    height={800}
+                    priority
                     className='w-full h-full object-cover rounded-2xl shadow-xl'
+                    unoptimized
                   />
                 ) : (
                   <div className='w-full h-full flex items-center justify-center'>

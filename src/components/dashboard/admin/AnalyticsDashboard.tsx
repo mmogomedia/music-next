@@ -10,6 +10,8 @@ import {
   ArrowDownTrayIcon,
   BookmarkIcon,
 } from '@heroicons/react/24/outline';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
+import CompletionBadge from '@/components/track/CompletionBadge';
 
 interface AnalyticsData {
   totalPlays?: number;
@@ -21,7 +23,11 @@ interface AnalyticsData {
   topTracks?: Array<{
     trackId: string;
     _count: { id: number };
-    track?: { title: string; artist: string } | null;
+    track?: {
+      title: string;
+      artist: string;
+      completionPercentage?: number;
+    } | null;
   }>;
   sourceBreakdown?: Array<{
     source: string;
@@ -316,12 +322,21 @@ export default function AnalyticsDashboard() {
                       <div className='w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold'>
                         {rank}
                       </div>
-                      <div>
-                        <p className='font-medium text-gray-900 dark:text-white'>
-                          {track.track?.title || 'Unknown Track'}
-                        </p>
+                      <div className='flex-1 min-w-0'>
+                        <div className='flex items-center gap-2'>
+                          <p className='font-medium text-gray-900 dark:text-white truncate flex-1'>
+                            {track.track?.title || 'Unknown Track'}
+                          </p>
+                          {track.track?.completionPercentage !== undefined && (
+                            <CompletionBadge
+                              percentage={track.track.completionPercentage}
+                              size='sm'
+                              variant='flat'
+                            />
+                          )}
+                        </div>
                         <p className='text-sm text-gray-500 dark:text-gray-400'>
-                          {track.track?.artist || 'Unknown Artist'}
+                          <ArtistDisplay legacyArtist={track.track?.artist} />
                         </p>
                       </div>
                     </div>

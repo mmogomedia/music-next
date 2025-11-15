@@ -1,3 +1,5 @@
+import type { ArtistProfile } from './artist-profile';
+
 export interface Track {
   id: string;
   title: string;
@@ -17,13 +19,19 @@ export interface Track {
   updatedAt: string | Date;
 
   // Additional metadata
-  artist?: string;
+  artist?: string; // Legacy field - kept for backward compatibility
+  primaryArtistIds?: string[]; // Array of ArtistProfile IDs (ordered)
+  featuredArtistIds?: string[]; // Array of ArtistProfile IDs
+  primaryArtists?: ArtistProfile[]; // Populated artist objects (ordered)
+  featuredArtists?: ArtistProfile[]; // Populated featured artist objects
+  artistProfile?: ArtistProfile | null; // Legacy single artist profile
   composer?: string;
   year?: number;
   releaseDate?: string;
   bpm?: number;
   isrc?: string;
   lyrics?: string;
+  genreId?: string; // Genre reference ID
 
   // Privacy & Access Control
   isPublic?: boolean;
@@ -40,4 +48,11 @@ export interface Track {
   // Analytics
   downloadCount?: number;
   shareCount?: number;
+
+  // Recommendation reasons (for AI recommendations)
+  reason?: string;
+
+  // Completion & Language
+  completionPercentage?: number; // 0-100
+  language?: string; // ISO 639-1 code
 }

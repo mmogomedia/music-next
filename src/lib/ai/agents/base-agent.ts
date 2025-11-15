@@ -28,6 +28,7 @@ export interface BaseAgentInterface {
  */
 export interface AgentContext {
   userId?: string;
+  conversationId?: string;
   conversationHistory?: AIMessage[];
   filters?: {
     genre?: string;

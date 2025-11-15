@@ -11,6 +11,14 @@ import {
   handleFileUploadError,
 } from '@/lib/api-error-handler';
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '120mb',
+    },
+  },
+};
+
 export async function POST(request: NextRequest) {
   try {
     // Check authentication

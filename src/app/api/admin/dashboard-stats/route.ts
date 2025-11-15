@@ -22,6 +22,12 @@ export async function GET(_request: NextRequest) {
       recentTracks,
       recentSubmissions,
       playEvents,
+      downloadEvents,
+      quickLinks,
+      recentPlayEvents,
+      recentDownloadEvents,
+      recentQuickLinkVisits,
+      recentLikeEvents,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.artistProfile.count(),
@@ -67,6 +73,70 @@ export async function GET(_request: NextRequest) {
         },
       }),
       prisma.playEvent.count(),
+      prisma.downloadEvent.count(),
+      prisma.quickLink.aggregate({
+        _sum: {
+          totalVisits: true,
+        },
+      }),
+      prisma.playEvent.findMany({
+        orderBy: { timestamp: 'desc' },
+        take: 10,
+        include: {
+          track: {
+            select: {
+              id: true,
+              title: true,
+              artist: true,
+            },
+          },
+        },
+      }),
+      prisma.downloadEvent.findMany({
+        orderBy: { timestamp: 'desc' },
+        take: 10,
+        include: {
+          track: {
+            select: {
+              id: true,
+              title: true,
+              artist: true,
+            },
+          },
+        },
+      }),
+      prisma.quickLink.findMany({
+        orderBy: { lastVisitedAt: 'desc' },
+        take: 10,
+        include: {
+          track: {
+            select: {
+              id: true,
+              title: true,
+              artist: true,
+            },
+          },
+        },
+        where: {
+          lastVisitedAt: { not: null },
+        },
+      }),
+      prisma.likeEvent.findMany({
+        where: {
+          action: 'like',
+        },
+        orderBy: { timestamp: 'desc' },
+        take: 10,
+        include: {
+          track: {
+            select: {
+              id: true,
+              title: true,
+              artist: true,
+            },
+          },
+        },
+      }),
     ]);
 
     // Calculate platform health based on recent activity
@@ -87,8 +157,56 @@ export async function GET(_request: NextRequest) {
       platformHealth = 'critical';
     }
 
-    // Format recent activity
-    const formattedRecentActivity = [
+    const recentActivityStructured = {
+      plays: recentPlayEvents
+        .filter(event => event.track)
+        .map(event => ({
+          type: 'play' as const,
+          track: {
+            id: event.track!.id,
+            title: event.track!.title,
+            artist: event.track!.artist || 'Unknown Artist',
+          },
+          timestamp: event.timestamp.toISOString(),
+          source: event.source || undefined,
+        })),
+      likes: recentLikeEvents
+        .filter(event => event.track)
+        .map(event => ({
+          type: 'like' as const,
+          track: {
+            id: event.track!.id,
+            title: event.track!.title,
+            artist: event.track!.artist || 'Unknown Artist',
+          },
+          timestamp: event.timestamp.toISOString(),
+        })),
+      downloads: recentDownloadEvents
+        .filter(event => event.track)
+        .map(event => ({
+          type: 'download' as const,
+          track: {
+            id: event.track!.id,
+            title: event.track!.title,
+            artist: event.track!.artist || 'Unknown Artist',
+          },
+          timestamp: event.timestamp.toISOString(),
+        })),
+      pageVisits: recentQuickLinkVisits
+        .filter(visit => visit.track && visit.lastVisitedAt)
+        .map(visit => ({
+          type: 'page_visit' as const,
+          track: {
+            id: visit.track!.id,
+            title: visit.track!.title,
+            artist: visit.track!.artist || 'Unknown Artist',
+          },
+          timestamp: visit.lastVisitedAt!.toISOString(),
+          slug: visit.slug,
+        })),
+    };
+
+    const recentActivityFeed = [
       ...recentUsers.map(user => ({
         id: `user-${user.id}`,
         type: 'user_registration',
@@ -113,7 +231,33 @@ export async function GET(_request: NextRequest) {
         icon: 'ClockIcon',
         color: 'text-purple-600',
       })),
-    ].slice(0, 10);
+      ...recentActivityStructured.plays.map(play =>
+        mapActivityItem({
+          id: `play-${play.track.id}-${play.timestamp.toString()}`,
+          type: 'play',
+          track: play.track,
+          timestamp: play.timestamp,
+          source: play.source,
+        })
+      ),
+      ...recentActivityStructured.downloads.map(download =>
+        mapActivityItem({
+          id: `download-${download.track.id}-${download.timestamp.toString()}`,
+          type: 'download',
+          track: download.track,
+          timestamp: download.timestamp,
+        })
+      ),
+      ...recentActivityStructured.pageVisits.map(visit =>
+        mapActivityItem({
+          id: `page_visit-${visit.track.id}-${visit.timestamp.toString()}`,
+          type: 'page_visit',
+          track: visit.track,
+          timestamp: visit.timestamp,
+          slug: visit.slug,
+        })
+      ),
+    ].slice(0, 20);
 
     // Calculate pending actions
     const pendingSubmissions = await prisma.playlistSubmission.count({
@@ -152,11 +296,15 @@ export async function GET(_request: NextRequest) {
       },
     ];
 
+    const totalPageViews = quickLinks._sum.totalVisits ?? 0;
+
     const systemMetrics = {
       totalUsers,
       totalArtists,
       totalTracks,
       totalPlays: playEvents,
+      totalDownloads: downloadEvents,
+      totalPageViews,
       totalRevenue: 0, // TODO: Implement revenue tracking
       platformHealth,
     };
@@ -165,7 +313,13 @@ export async function GET(_request: NextRequest) {
       success: true,
       data: {
         systemMetrics,
-        recentActivity: formattedRecentActivity,
+        recentActivity: {
+          plays: recentActivityStructured.plays,
+          likes: recentActivityStructured.likes,
+          downloads: recentActivityStructured.downloads,
+          pageVisits: recentActivityStructured.pageVisits,
+        },
+        recentActivityFeed,
         pendingActions,
         totalPlaylists,
         totalSubmissions,
@@ -195,5 +349,67 @@ function formatTimeAgo(date: Date): string {
   } else {
     const days = Math.floor(diffInSeconds / 86400);
     return `${days} day${days > 1 ? 's' : ''} ago`;
+  }
+}
+
+function mapActivityItem(activity: {
+  id: string;
+  type: 'play' | 'like' | 'download' | 'page_visit';
+  track: { id: string; title: string; artist: string };
+  timestamp: string | Date;
+  source?: string;
+  slug?: string;
+}) {
+  const timestampString =
+    typeof activity.timestamp === 'string'
+      ? activity.timestamp
+      : activity.timestamp.toISOString();
+
+  switch (activity.type) {
+    case 'play':
+      return {
+        id: activity.id,
+        type: 'play',
+        message: `Track played: "${activity.track.title}" by ${activity.track.artist}`,
+        timestamp: formatTimeAgo(new Date(timestampString)),
+        icon: 'MusicalNoteIcon',
+        color: 'text-blue-600',
+      };
+    case 'download':
+      return {
+        id: activity.id,
+        type: 'download',
+        message: `Track downloaded: "${activity.track.title}" by ${activity.track.artist}`,
+        timestamp: formatTimeAgo(new Date(timestampString)),
+        icon: 'ArrowDownTrayIcon',
+        color: 'text-indigo-600',
+      };
+    case 'page_visit':
+      return {
+        id: activity.id,
+        type: 'page_visit',
+        message: `Quick link viewed for track "${activity.track.title}"`,
+        timestamp: formatTimeAgo(new Date(timestampString)),
+        icon: 'EyeIcon',
+        color: 'text-pink-600',
+      };
+    case 'like':
+      return {
+        id: activity.id,
+        type: 'like',
+        message: `Track liked: "${activity.track.title}" by ${activity.track.artist}`,
+        timestamp: formatTimeAgo(new Date(timestampString)),
+        icon: 'HeartIcon',
+        color: 'text-red-600',
+      };
+    default:
+      return {
+        id: activity.id,
+        type: activity.type,
+        message: activity.track.title,
+        timestamp: formatTimeAgo(new Date(timestampString)),
+        icon: 'ClockIcon',
+        color: 'text-gray-500',
+      };
   }
 }

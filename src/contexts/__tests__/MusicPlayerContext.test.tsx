@@ -20,8 +20,10 @@ const TestComponent = () => {
   const mockTrack = {
     id: '1',
     title: 'Test Track',
+    filePath: 'test.mp3',
     fileUrl: 'https://example.com/test.mp3',
     artistId: 'artist1',
+    userId: 'user1',
     playCount: 0,
     duration: 180,
     genre: 'Test',

@@ -31,6 +31,7 @@ export default withAuth(
       '/terms',
       '/help',
       '/faq',
+      '/unauthorized',
 
       // Public API endpoints
       '/api/health',
@@ -117,6 +118,7 @@ export default withAuth(
           '/terms',
           '/help',
           '/faq',
+          '/unauthorized',
 
           // Public API endpoints
           '/api/health',

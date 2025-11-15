@@ -1,15 +1,35 @@
 import { useState, useEffect } from 'react';
 
+interface AdminActivityItem {
+  type: string;
+  track: {
+    id: string;
+    title: string;
+    artist: string;
+  };
+  timestamp: string;
+  source?: string;
+  slug?: string;
+}
+
 interface AdminDashboardStats {
   systemMetrics: {
     totalUsers: number;
     totalArtists: number;
     totalTracks: number;
     totalPlays: number;
+    totalDownloads?: number;
+    totalPageViews?: number;
     totalRevenue: number;
     platformHealth: 'healthy' | 'warning' | 'critical';
   };
-  recentActivity: Array<{
+  recentActivity: {
+    plays: AdminActivityItem[];
+    likes: AdminActivityItem[];
+    downloads: AdminActivityItem[];
+    pageVisits: AdminActivityItem[];
+  };
+  recentActivityFeed: Array<{
     id: string;
     type: string;
     message: string;

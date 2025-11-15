@@ -10,7 +10,6 @@ import {
   PlusIcon,
 } from '@heroicons/react/24/outline';
 import TrackEditModal from '@/components/track/TrackEditModal';
-import Ably from 'ably';
 
 interface FileUploadProps {
   onUploadComplete?: (_jobId: string) => void;
@@ -36,7 +35,40 @@ export default function FileUpload({
   const [, setUploadedFilePath] = useState<string>('');
   const [uploadedTrackId, setUploadedTrackId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const ablyChannelRef = useRef<Ably.RealtimeChannel | null>(null);
+
+  const uploadFileToR2 = (url: string, file: File) =>
+    new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', url, true);
+      xhr.setRequestHeader('Content-Type', file.type);
+
+      xhr.upload.onprogress = event => {
+        if (event.lengthComputable) {
+          const percent = event.total > 0 ? event.loaded / event.total : 0;
+          const progressValue = 20 + Math.round(percent * 60);
+          setUploadProgress(progressValue);
+          setUploadStatus(
+            `Uploading to cloud storage... ${Math.round(percent * 100)}%`
+          );
+        }
+      };
+
+      xhr.onerror = () => {
+        reject(new Error('Network error during upload'));
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          const responseText =
+            xhr.responseText || `Upload failed with status ${xhr.status}`;
+          reject(new Error(responseText));
+        }
+      };
+
+      xhr.send(file);
+    });
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -71,51 +103,11 @@ export default function FileUpload({
       }
 
       const { jobId: newJobId, uploadUrl, key } = await initResponse.json();
-      setUploadStatus('Connecting to real-time updates...');
-      setUploadProgress(10);
-
-      // Step 2: Connect to Ably for realtime updates (original flow)
-      const ablyAuthResponse = await fetch(`/api/ably/auth?jobId=${newJobId}`);
-      if (!ablyAuthResponse.ok) {
-        throw new Error('Failed to authenticate with realtime service');
-      }
-
-      const ably = new Ably.Realtime({
-        authUrl: '/api/ably/auth',
-        authParams: { jobId: newJobId },
-      });
-
-      ablyChannelRef.current = ably.channels.get(`upload:${newJobId}`, {
-        params: { rewind: '1' },
-      });
-
-      ablyChannelRef.current.subscribe(message => {
-        if (message.name === 'progress') {
-          setUploadProgress(message.data.progress);
-        } else if (message.name === 'status') {
-          setUploadStatus(message.data.status);
-        }
-      });
-
-      setUploadStatus('Uploading to cloud storage...');
+      setUploadStatus('Preparing upload...');
       setUploadProgress(20);
 
-      // Step 3: Upload via server (to avoid CORS)
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('jobId', newJobId);
-      formData.append('uploadUrl', uploadUrl);
-      formData.append('key', key);
-
-      const uploadResponse = await fetch('/api/uploads/server-upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        throw new Error(errorData.error || 'Upload failed');
-      }
+      // Step 3: Upload directly to R2 using the presigned URL
+      await uploadFileToR2(uploadUrl, selectedFile);
 
       setUploadStatus('Upload complete, processing...');
       setUploadProgress(90);

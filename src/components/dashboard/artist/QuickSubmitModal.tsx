@@ -18,6 +18,7 @@ import { Playlist } from '@/types/playlist';
 import { Track } from '@/types/track';
 import { api } from '@/lib/api-client';
 import { constructFileUrl } from '@/lib/url-utils';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 interface QuickSubmitModalProps {
   isOpen: boolean;
@@ -494,7 +495,7 @@ export default function QuickSubmitModal({
                                     {track.title}
                                   </h5>
                                   <p className='text-sm text-gray-500 dark:text-gray-400 truncate'>
-                                    {track.artist || 'Unknown Artist'}
+                                    <ArtistDisplay track={track} />
                                   </p>
                                   <p className='text-xs text-gray-400 dark:text-gray-500'>
                                     {track.genre} • {track.duration}

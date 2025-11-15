@@ -2,17 +2,15 @@
 
 import { useState } from 'react';
 import {
-  UserGroupIcon,
-  MusicalNoteIcon,
-  ChartBarIcon,
-  Cog6ToothIcon,
   ExclamationTriangleIcon,
-  CheckCircleIcon,
   EyeIcon,
   ShieldCheckIcon,
   BellIcon,
-  QueueListIcon,
-  ClockIcon,
+  MusicalNoteIcon,
+  UserGroupIcon,
+  ChartBarIcon,
+  Cog6ToothIcon,
+  ArrowDownTrayIcon,
 } from '@heroicons/react/24/outline';
 import {
   UserGroupIcon as UserGroupSolidIcon,
@@ -23,9 +21,13 @@ import UnifiedPlaylistManagement from './UnifiedPlaylistManagement';
 import SubmissionReview from './SubmissionReview';
 import TrackManagement from './TrackManagement';
 import UserManagement from './UserManagement';
+import GenreManagement from './GenreManagement';
+import AdminNavigation from './AdminNavigation';
+import UnifiedLayout from '@/components/layout/UnifiedLayout';
 import { useAdminDashboardStats } from '@/hooks/useAdminDashboardStats';
 import { Playlist } from '@/types/playlist';
 import { Track } from '@/types/track';
+import RecentActivity from '@/components/dashboard/RecentActivity';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -53,35 +55,13 @@ export default function AdminDashboard() {
     totalArtists: 0,
     totalTracks: 0,
     totalPlays: 0,
+    totalDownloads: 0,
+    totalPageViews: 0,
     totalRevenue: 0,
     platformHealth: 'healthy' as 'healthy' | 'warning' | 'critical',
   };
 
-  const recentActivity = stats?.recentActivity || [];
   const pendingActions = stats?.pendingActions || [];
-
-  const tabs = [
-    { id: 'overview', name: 'Overview', icon: ChartBarIcon },
-    { id: 'users', name: 'Users', icon: UserGroupIcon },
-    { id: 'content', name: 'Content', icon: MusicalNoteIcon },
-    { id: 'playlists', name: 'Playlists', icon: QueueListIcon },
-    { id: 'submissions', name: 'Submissions', icon: ClockIcon },
-    { id: 'analytics', name: 'Analytics', icon: ChartBarIcon },
-    { id: 'settings', name: 'Settings', icon: Cog6ToothIcon },
-  ];
-
-  const getHealthColor = (health: string) => {
-    switch (health) {
-      case 'healthy':
-        return 'text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400';
-      case 'warning':
-        return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'critical':
-        return 'text-red-600 bg-red-100 dark:bg-red-900/20 dark:text-red-400';
-      default:
-        return 'text-gray-600 bg-gray-100 dark:bg-gray-900/20 dark:text-gray-400';
-    }
-  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -96,69 +76,52 @@ export default function AdminDashboard() {
     }
   };
 
-  return (
-    <div className='min-h-screen bg-gray-50 dark:bg-slate-900 pb-20'>
-      {/* Header */}
-      <div className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='py-6'>
-            <div className='flex items-center justify-between'>
-              <div>
-                <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
-                  Admin Dashboard
-                </h1>
-                <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-                  Manage your platform and monitor system health
-                </p>
-              </div>
-              <div className='flex items-center space-x-4'>
-                <div
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${getHealthColor(systemMetrics.platformHealth)}`}
-                >
-                  {systemMetrics.platformHealth === 'healthy' &&
-                    'System Healthy'}
-                  {systemMetrics.platformHealth === 'warning' &&
-                    'System Warning'}
-                  {systemMetrics.platformHealth === 'critical' &&
-                    'System Critical'}
-                </div>
-                <button className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2'>
-                  <BellIcon className='w-4 h-4' />
-                  Notifications
-                </button>
-              </div>
-            </div>
+  const tabNames: Record<string, string> = {
+    overview: 'Overview',
+    users: 'Users',
+    content: 'Content',
+    genres: 'Genres',
+    playlists: 'Playlists',
+    submissions: 'Submissions',
+    analytics: 'Analytics',
+    settings: 'Settings',
+  };
+
+  const header = (
+    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
+      <div className='py-4 px-4 sm:px-6'>
+        <div className='flex items-center justify-between'>
+          <div>
+            <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+              {tabNames[activeTab] || 'Admin Dashboard'}
+            </h1>
+            <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
+              {activeTab === 'overview'
+                ? 'Manage your platform and monitor system health'
+                : `Manage ${tabNames[activeTab]?.toLowerCase()}`}
+            </p>
           </div>
+          <button className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2'>
+            <BellIcon className='w-4 h-4' />
+            <span className='hidden sm:inline'>Notifications</span>
+          </button>
         </div>
       </div>
+    </header>
+  );
 
-      {/* Navigation Tabs */}
-      <div className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <nav className='flex space-x-8'>
-            {tabs.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 flex items-center gap-2 ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className='w-4 h-4' />
-                  {tab.name}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+  return (
+    <UnifiedLayout
+      sidebar={
+        <AdminNavigation
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          systemHealth={systemMetrics.platformHealth}
+        />
+      }
+      header={header}
+    >
+      <div className='w-full py-8 px-4 sm:px-6'>
         {activeTab === 'overview' && (
           <div className='space-y-8'>
             {/* Loading State */}
@@ -189,7 +152,7 @@ export default function AdminDashboard() {
             {/* System Metrics */}
             {!loading && !error && (
               <>
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6'>
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
                   <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
                     <div className='flex items-center'>
                       <div className='flex-shrink-0'>
@@ -257,6 +220,42 @@ export default function AdminDashboard() {
                         </p>
                         <p className='text-2xl font-bold text-gray-900 dark:text-white'>
                           {systemMetrics.totalPlays.toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center'>
+                      <div className='flex-shrink-0'>
+                        <div className='w-8 h-8 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg flex items-center justify-center'>
+                          <ArrowDownTrayIcon className='w-5 h-5 text-indigo-600 dark:text-indigo-400' />
+                        </div>
+                      </div>
+                      <div className='ml-4'>
+                        <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                          Total Downloads
+                        </p>
+                        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                          {(systemMetrics.totalDownloads || 0).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='flex items-center'>
+                      <div className='flex-shrink-0'>
+                        <div className='w-8 h-8 bg-pink-100 dark:bg-pink-900/20 rounded-lg flex items-center justify-center'>
+                          <EyeIcon className='w-5 h-5 text-pink-600 dark:text-pink-400' />
+                        </div>
+                      </div>
+                      <div className='ml-4'>
+                        <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+                          Total Page Views
+                        </p>
+                        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                          {(systemMetrics.totalPageViews || 0).toLocaleString()}
                         </p>
                       </div>
                     </div>
@@ -357,47 +356,11 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                     <div className='p-6'>
-                      <div className='space-y-4'>
-                        {recentActivity.map(activity => {
-                          const getIcon = (iconName: string) => {
-                            switch (iconName) {
-                              case 'UserGroupIcon':
-                                return UserGroupIcon;
-                              case 'MusicalNoteIcon':
-                                return MusicalNoteIcon;
-                              case 'ClockIcon':
-                                return ClockIcon;
-                              case 'ExclamationTriangleIcon':
-                                return ExclamationTriangleIcon;
-                              case 'CheckCircleIcon':
-                                return CheckCircleIcon;
-                              default:
-                                return ClockIcon;
-                            }
-                          };
-                          const Icon = getIcon(activity.icon);
-                          return (
-                            <div
-                              key={activity.id}
-                              className='flex items-start space-x-3'
-                            >
-                              <div
-                                className={`w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center flex-shrink-0`}
-                              >
-                                <Icon className={`w-4 h-4 ${activity.color}`} />
-                              </div>
-                              <div className='flex-1 min-w-0'>
-                                <p className='text-sm text-gray-900 dark:text-white'>
-                                  {activity.message}
-                                </p>
-                                <p className='text-xs text-gray-500 dark:text-gray-400'>
-                                  {activity.timestamp}
-                                </p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <RecentActivity
+                        activity={stats?.recentActivity}
+                        useSSE={true}
+                        scope='admin'
+                      />
                     </div>
                   </div>
                 </div>
@@ -496,6 +459,8 @@ export default function AdminDashboard() {
           <TrackManagement onTrackPlay={handleTrackPlay} />
         )}
 
+        {activeTab === 'genres' && <GenreManagement />}
+
         {activeTab === 'playlists' && (
           <UnifiedPlaylistManagement
             onEditPlaylist={handleEditPlaylist}
@@ -545,6 +510,6 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-    </div>
+    </UnifiedLayout>
   );
 }

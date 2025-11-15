@@ -1,22 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
 @import '@bprogress/core/css';
 
 /* Custom BProgress Styling */
 .bprogress .bar {
-  background: #3B82F6 !important; /* Blue color matching your theme */
+  background: #3b82f6 !important; /* Blue color matching your theme */
   height: 3px !important;
   z-index: 9999 !important;
 }
 
 .bprogress .peg {
-  box-shadow: 0 0 10px #3B82F6, 0 0 5px #3B82F6 !important;
+  box-shadow:
+    0 0 10px #3b82f6,
+    0 0 5px #3b82f6 !important;
 }
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Toast Animation */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 /* Landing Page Styles */
 @import '../styles/landing.css';
@@ -33,11 +44,8 @@
 html,
 body {
   height: 100%;
-  font-family:
-    'Inter',
-    system-ui,
-    -apple-system,
-    sans-serif;
+  overflow-x: hidden;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   scroll-behavior: smooth;
 }
 
@@ -128,7 +136,8 @@ body {
 
 /* Music bounce animation for playing indicator */
 @keyframes music-bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: scaleY(0.3);
     opacity: 0.7;
   }

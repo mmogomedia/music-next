@@ -99,7 +99,7 @@ export class ConversationStore {
             userId,
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'asc' },
         take: limit,
       });
 
@@ -118,9 +118,22 @@ export class ConversationStore {
   async getUserConversations(
     userId: string
   ): Promise<Array<{ id: string; title: string | null; updatedAt: Date }>> {
-    if (!userId) return [];
+    logger.debug(
+      '[ConversationStore] getUserConversations called with userId:',
+      userId
+    );
+
+    if (!userId) {
+      logger.warn(
+        '[ConversationStore] ❌ No userId provided, returning empty array'
+      );
+      return [];
+    }
 
     try {
+      logger.debug(
+        '[ConversationStore] Querying database for conversations...'
+      );
       const conversations = await prisma.aIConversation.findMany({
         where: { userId },
         orderBy: { updatedAt: 'desc' },
@@ -132,10 +145,52 @@ export class ConversationStore {
         },
       });
 
+      logger.info('[ConversationStore] ✅ Database query successful:', {
+        count: conversations.length,
+        conversations: conversations.map(c => ({
+          id: c.id,
+          title: c.title,
+          updatedAt: c.updatedAt.toISOString(),
+        })),
+      });
+
       return conversations;
     } catch (error) {
       logger.error('Failed to get user conversations:', error);
       return [];
+    }
+  }
+
+  async deleteConversation(
+    userId: string,
+    conversationId: string
+  ): Promise<void> {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    try {
+      // Verify the conversation belongs to the user before deleting
+      const conversation = await prisma.aIConversation.findUnique({
+        where: { id: conversationId },
+        select: { userId: true },
+      });
+
+      if (!conversation) {
+        throw new Error('Conversation not found');
+      }
+
+      if (conversation.userId !== userId) {
+        throw new Error('Unauthorized: Conversation does not belong to user');
+      }
+
+      // Delete conversation (messages will be cascade deleted)
+      await prisma.aIConversation.delete({
+        where: { id: conversationId },
+      });
+    } catch (error) {
+      logger.error('Failed to delete conversation:', error);
+      throw error;
     }
   }
 }

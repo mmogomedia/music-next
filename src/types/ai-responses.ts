@@ -63,6 +63,8 @@ export interface TrackListResponse extends BaseAIResponse {
   type: 'track_list';
   data: {
     tracks: TrackWithArtist[];
+    other?: TrackWithArtist[]; // Additional/featured tracks (e.g., for single track results)
+    summary?: string; // AI-generated summary for single track results
     metadata?: {
       genre?: string;
       province?: string;
@@ -124,6 +126,105 @@ export interface SearchResultsResponse extends BaseAIResponse {
 }
 
 /**
+ * Genre information
+ */
+export interface GenreInfo {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  colorHex?: string;
+  icon?: string;
+  trackCount?: number;
+}
+
+/**
+ * Response containing a list of available genres
+ */
+export interface GenreListResponse extends BaseAIResponse {
+  type: 'genre_list';
+  data: {
+    genres: GenreInfo[];
+    metadata?: {
+      total?: number;
+    };
+  };
+  actions?: Action[];
+}
+
+export interface QuickLinkMeta {
+  id: string;
+  slug: string;
+  title: string;
+  description?: string | null;
+  type: 'TRACK' | 'ARTIST' | 'ALBUM';
+  isPrerelease?: boolean;
+}
+
+export interface QuickLinkTrackData {
+  id: string;
+  title: string;
+  artist?: string | null;
+  album?: string | null;
+  albumArtwork?: string | null;
+  coverImageUrl?: string | null;
+  duration?: number | null;
+  description?: string | null;
+  genre?: string | null;
+  bpm?: number | null;
+  releaseDate?: string | null;
+  isDownloadable?: boolean;
+  filePath: string;
+  fileUrl?: string | null;
+  streamingLinks: {
+    platform: string;
+    url: string;
+  }[];
+}
+
+export interface QuickLinkTrackResponse extends BaseAIResponse {
+  type: 'quick_link_track';
+  data: {
+    quickLink: QuickLinkMeta;
+    track: QuickLinkTrackData;
+  };
+  actions?: Action[];
+}
+
+export interface QuickLinkAlbumResponse extends BaseAIResponse {
+  type: 'quick_link_album';
+  data: {
+    quickLink: QuickLinkMeta;
+    album: {
+      albumName: string;
+      artistName?: string | null;
+      artistSlug?: string | null;
+      tracks: QuickLinkTrackData[];
+    };
+  };
+  actions?: Action[];
+}
+
+export interface QuickLinkArtistResponse extends BaseAIResponse {
+  type: 'quick_link_artist';
+  data: {
+    quickLink: QuickLinkMeta;
+    artist: {
+      artistName: string;
+      bio?: string | null;
+      profileImage?: string | null;
+      location?: string | null;
+      genre?: string | null;
+      slug?: string | null;
+      socialLinks?: Record<string, unknown> | null;
+      streamingLinks?: Record<string, unknown> | null;
+      topTracks: QuickLinkTrackData[];
+    };
+  };
+  actions?: Action[];
+}
+
+/**
  * Response for playback actions
  */
 export interface ActionResponse extends BaseAIResponse {
@@ -142,7 +243,11 @@ export type AIResponse =
   | PlaylistGridResponse
   | ArtistResponse
   | SearchResultsResponse
-  | ActionResponse;
+  | ActionResponse
+  | GenreListResponse
+  | QuickLinkTrackResponse
+  | QuickLinkAlbumResponse
+  | QuickLinkArtistResponse;
 
 /**
  * Registry of available response types
@@ -155,6 +260,10 @@ export const RESPONSE_TYPES = {
   artist: 'artist',
   search_results: 'search_results',
   action: 'action',
+  genre_list: 'genre_list',
+  quick_link_track: 'quick_link_track',
+  quick_link_album: 'quick_link_album',
+  quick_link_artist: 'quick_link_artist',
 } as const;
 
 /**
@@ -216,4 +325,28 @@ export function isActionResponse(
 
 export function isTextResponse(response: AIResponse): response is TextResponse {
   return response.type === 'text';
+}
+
+export function isGenreListResponse(
+  response: AIResponse
+): response is GenreListResponse {
+  return response.type === 'genre_list';
+}
+
+export function isQuickLinkTrackResponse(
+  response: AIResponse
+): response is QuickLinkTrackResponse {
+  return response.type === 'quick_link_track';
+}
+
+export function isQuickLinkAlbumResponse(
+  response: AIResponse
+): response is QuickLinkAlbumResponse {
+  return response.type === 'quick_link_album';
+}
+
+export function isQuickLinkArtistResponse(
+  response: AIResponse
+): response is QuickLinkArtistResponse {
+  return response.type === 'quick_link_artist';
 }

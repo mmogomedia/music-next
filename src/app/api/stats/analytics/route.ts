@@ -480,6 +480,7 @@ async function getGlobalAnalytics(startDate: Date, metric: string) {
           id: true,
           title: true,
           artist: true,
+          completionPercentage: true,
           artistProfile: { select: { artistName: true } },
         },
       });
@@ -492,6 +493,7 @@ async function getGlobalAnalytics(startDate: Date, metric: string) {
             ? {
                 title: track.title,
                 artist: track.artist || track.artistProfile?.artistName,
+                completionPercentage: track.completionPercentage,
               }
             : null,
         };

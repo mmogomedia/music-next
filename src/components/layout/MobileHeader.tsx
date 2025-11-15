@@ -10,8 +10,6 @@ import {
   NavbarContent,
   NavbarItem,
   NavbarMenuToggle,
-  NavbarMenu,
-  NavbarMenuItem,
   Button,
   Input,
   Avatar,
@@ -26,7 +24,15 @@ import {
   UserIcon,
   Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
+  HomeIcon,
+  ChartBarIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
+import {
+  HomeIcon as HomeSolidIcon,
+  ChartBarIcon as ChartBarSolidIcon,
+  UserGroupIcon as UserGroupSolidIcon,
+} from '@heroicons/react/24/solid';
 
 export default function MobileHeader() {
   const { data: session } = useSession();
@@ -34,16 +40,39 @@ export default function MobileHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const menuItems = [
-    { name: 'Explore', href: '/' },
-    { name: 'Albums', href: '/albums' },
-    { name: 'Genres', href: '/genres' },
-    { name: 'Artists', href: '/artists' },
-    { name: 'Recent', href: '/recent' },
-    { name: 'Playlists', href: '/playlists' },
-    { name: 'Favorites', href: '/favorites' },
-    { name: 'Local', href: '/local' },
-    { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Explore', href: '/', icon: HomeIcon, activeIcon: HomeSolidIcon },
+    {
+      name: 'Albums',
+      href: '/albums',
+      icon: ChartBarIcon,
+      activeIcon: ChartBarSolidIcon,
+    },
+    {
+      name: 'Genres',
+      href: '/genres',
+      icon: UserGroupIcon,
+      activeIcon: UserGroupSolidIcon,
+    },
+    {
+      name: 'Artists',
+      href: '/artists',
+      icon: UserGroupIcon,
+      activeIcon: UserGroupSolidIcon,
+    },
+    {
+      name: 'Dashboard',
+      href: '/dashboard',
+      icon: ChartBarIcon,
+      activeIcon: ChartBarSolidIcon,
+    },
   ];
+
+  const isActive = (href: string) => {
+    if (href === '/') {
+      return pathname === '/';
+    }
+    return pathname?.startsWith(href);
+  };
 
   return (
     <Navbar
@@ -155,76 +184,161 @@ export default function MobileHeader() {
         )}
       </NavbarContent>
 
-      <NavbarMenu className='bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
-        <div className='px-4 py-2'>
-          <Input
-            size='sm'
-            placeholder='Search...'
-            variant='bordered'
-            classNames={{
-              inputWrapper:
-                'bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-600',
-              input: 'text-gray-900 dark:text-gray-100',
+      {/* Custom Mobile Drawer */}
+      {isMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className='fixed inset-0 bg-black/50 z-[60] lg:hidden'
+            onClick={() => setIsMenuOpen(false)}
+            role='button'
+            tabIndex={0}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setIsMenuOpen(false);
+              }
             }}
-            startContent={
-              <MagnifyingGlassIcon className='w-4 h-4 text-gray-400' />
-            }
           />
-        </div>
-        {menuItems.map(item => (
-          <NavbarMenuItem key={item.name}>
-            <Link
-              className={`w-full px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
-                pathname?.startsWith(item.href)
-                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                  : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-slate-800'
-              }`}
-              href={item.href}
-            >
-              {item.name}
-            </Link>
-          </NavbarMenuItem>
-        ))}
-        {session ? (
-          <>
-            <NavbarMenuItem key='m-dashboard'>
-              <Link
-                className='w-full px-4 py-3 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all duration-200'
-                href='/dashboard'
-              >
-                Dashboard
-              </Link>
-            </NavbarMenuItem>
-            <NavbarMenuItem key='m-signout'>
-              <button
-                className='w-full text-left px-4 py-3 rounded-lg font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200'
-                onClick={() => signOut()}
-              >
-                Sign out
-              </button>
-            </NavbarMenuItem>
-          </>
-        ) : (
-          <>
-            <NavbarMenuItem key='m-login'>
-              <Link
-                className='w-full px-4 py-3 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all duration-200'
-                href='/login'
-              >
-                Login
-              </Link>
-            </NavbarMenuItem>
-            <NavbarMenuItem key='m-register'>
-              <Link
-                className='w-full px-4 py-3 rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all duration-200'
-                href='/register'
-              >
-                Sign Up
-              </Link>
-            </NavbarMenuItem>
-          </>
-        )}
-      </NavbarMenu>
+
+          {/* Drawer Panel - slides in from left, starts below header */}
+          <div
+            className={`fixed left-0 top-16 bottom-0 w-64 bg-white dark:bg-slate-900 z-[60] shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col lg:hidden ${
+              isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+          >
+            {/* Drawer Content - starts just below header */}
+            <div className='flex-1 overflow-y-auto pt-4'>
+              {/* Search Section */}
+              <div className='px-4 pb-4'>
+                <Input
+                  size='sm'
+                  placeholder='Search...'
+                  variant='bordered'
+                  classNames={{
+                    inputWrapper:
+                      'bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-600',
+                    input: 'text-gray-900 dark:text-gray-100',
+                  }}
+                  startContent={
+                    <MagnifyingGlassIcon className='w-4 h-4 text-gray-400' />
+                  }
+                />
+              </div>
+
+              {/* MENU Section */}
+              <div className='px-4 pb-6'>
+                <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 px-3'>
+                  MENU
+                </h3>
+                <nav className='space-y-1'>
+                  {menuItems.map(item => {
+                    const active = isActive(item.href);
+                    const IconComponent = active ? item.activeIcon : item.icon;
+
+                    return (
+                      <Link
+                        key={item.name}
+                        href={item.href}
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-3 rounded-lg font-medium transition-all duration-200 ${
+                          active
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400'
+                        }`}
+                      >
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            active
+                              ? 'bg-blue-600 dark:bg-blue-400'
+                              : 'bg-transparent'
+                          }`}
+                        />
+                        <IconComponent className='w-5 h-5' />
+                        <span className='text-sm'>{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </div>
+
+              {/* ACCOUNT Section - Only show for non-authenticated users */}
+              {!session && (
+                <div className='px-4 pb-6'>
+                  <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 px-3'>
+                    ACCOUNT
+                  </h3>
+                  <nav className='space-y-1'>
+                    <Link
+                      href='/login'
+                      onClick={() => setIsMenuOpen(false)}
+                      className='flex items-center gap-3 px-3 py-3 rounded-lg font-medium transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400'
+                    >
+                      <UserIcon className='w-5 h-5' />
+                      <span className='text-sm'>Login</span>
+                    </Link>
+                    <Link
+                      href='/register'
+                      onClick={() => setIsMenuOpen(false)}
+                      className='flex items-center gap-3 px-3 py-3 rounded-lg font-medium transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400'
+                    >
+                      <UserIcon className='w-5 h-5' />
+                      <span className='text-sm'>Sign Up</span>
+                    </Link>
+                  </nav>
+                </div>
+              )}
+
+              {/* User Profile Section - Only show for authenticated users */}
+              {session && (
+                <div className='mt-auto px-4 pb-4 border-t border-gray-200 dark:border-slate-700 pt-4'>
+                  <div className='flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors'>
+                    <div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm'>
+                      {session.user?.image ? (
+                        <Avatar
+                          src={session.user.image}
+                          alt={session.user.name || 'User'}
+                          size='sm'
+                        />
+                      ) : (
+                        <UserIcon className='w-5 h-5 text-white' />
+                      )}
+                    </div>
+                    <div className='flex-1 text-left min-w-0'>
+                      <p className='font-medium text-gray-900 dark:text-white text-sm truncate'>
+                        {session.user?.name || session.user?.email || 'User'}
+                      </p>
+                      <p className='text-xs text-gray-500 dark:text-gray-400 truncate'>
+                        {session.user?.email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className='mt-2 space-y-1'>
+                    <Link
+                      href='/dashboard'
+                      onClick={() => setIsMenuOpen(false)}
+                      className='flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors'
+                    >
+                      <Cog6ToothIcon className='w-4 h-4' />
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        signOut();
+                      }}
+                      className='flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full text-left'
+                    >
+                      <ArrowRightOnRectangleIcon className='w-4 h-4' />
+                      Sign out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </Navbar>
   );
 }

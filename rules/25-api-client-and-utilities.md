@@ -9,8 +9,9 @@ This document describes the centralized API client system and utility functions 
 ### **Code Duplication Elimination**
 
 The platform previously had scattered `fetch()` calls throughout components, leading to:
+
 - ❌ Inconsistent error handling
-- ❌ Repeated authentication logic  
+- ❌ Repeated authentication logic
 - ❌ No centralized request/response interceptors
 - ❌ Hardcoded API endpoints
 - ❌ No retry logic or timeout handling
@@ -19,6 +20,7 @@ The platform previously had scattered `fetch()` calls throughout components, lea
 ### **Centralized Solution**
 
 Created a comprehensive API client system that provides:
+
 - ✅ Single source of truth for all API calls
 - ✅ Automatic authentication handling
 - ✅ Consistent error handling with custom error types
@@ -36,6 +38,7 @@ Created a comprehensive API client system that provides:
 The main API client provides a centralized way to make HTTP requests with automatic authentication, error handling, and consistent response formatting.
 
 **Key Features:**
+
 - **Authentication**: Automatic NextAuth.js session handling
 - **Error Handling**: Custom `ApiError` class with status codes
 - **Request/Response**: Automatic JSON parsing and formatting
@@ -48,6 +51,7 @@ The main API client provides a centralized way to make HTTP requests with automa
 Centralized image upload functionality that eliminates duplicate upload logic across components.
 
 **Key Features:**
+
 - **R2 Storage**: Direct integration with Cloudflare R2
 - **File Path Storage**: Returns file path (key) for database storage
 - **Error Handling**: Consistent error messages and handling
@@ -59,19 +63,19 @@ Organized API methods by feature area for easy access:
 
 ```typescript
 // Playlist APIs
-api.playlists.getTopTen()
-api.playlists.getFeatured()
-api.playlists.getGenre()
-api.playlists.getAvailable(type)
+api.playlists.getTopTen();
+api.playlists.getFeatured();
+api.playlists.getGenre();
+api.playlists.getAvailable(type);
 
-// Admin APIs  
-api.admin.getPlaylists()
-api.admin.createPlaylist(data)
-api.admin.updatePlaylist(id, data)
-api.admin.deletePlaylist(id)
+// Admin APIs
+api.admin.getPlaylists();
+api.admin.createPlaylist(data);
+api.admin.updatePlaylist(id, data);
+api.admin.deletePlaylist(id);
 
 // Upload APIs
-api.upload.image(file)
+api.upload.image(file);
 ```
 
 ## 🔧 Technical Implementation
@@ -81,15 +85,36 @@ api.upload.image(file)
 ```typescript
 class ApiClient {
   // Core HTTP methods
-  async get<T>(endpoint: string, options?: RequestOptions): Promise<ApiResponse<T>>
-  async post<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<ApiResponse<T>>
-  async put<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<ApiResponse<T>>
-  async delete<T>(endpoint: string, options?: RequestOptions): Promise<ApiResponse<T>>
-  async patch<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<ApiResponse<T>>
+  async get<T>(
+    endpoint: string,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>>;
+  async post<T>(
+    endpoint: string,
+    body?: any,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>>;
+  async put<T>(
+    endpoint: string,
+    body?: any,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>>;
+  async delete<T>(
+    endpoint: string,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>>;
+  async patch<T>(
+    endpoint: string,
+    body?: any,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>>;
 
   // Internal request handling
-  private async makeRequest<T>(endpoint: string, options: RequestOptions): Promise<ApiResponse<T>>
-  private async getAuthHeaders(): Promise<Record<string, string>>
+  private async makeRequest<T>(
+    endpoint: string,
+    options: RequestOptions
+  ): Promise<ApiResponse<T>>;
+  private async getAuthHeaders(): Promise<Record<string, string>>;
 }
 ```
 
@@ -99,10 +124,10 @@ All API responses follow a consistent format:
 
 ```typescript
 interface ApiResponse<T = any> {
-  data: T;           // The actual response data
-  success: boolean;  // Whether the request was successful
-  error?: string;    // Error message if applicable
-  status: number;    // HTTP status code
+  data: T; // The actual response data
+  success: boolean; // Whether the request was successful
+  error?: string; // Error message if applicable
+  status: number; // HTTP status code
 }
 ```
 
@@ -112,10 +137,10 @@ Custom error class for better error management:
 
 ```typescript
 class ApiError extends Error {
-  public status: number;  // HTTP status code
-  public data?: any;      // Additional error data
+  public status: number; // HTTP status code
+  public data?: any; // Additional error data
 
-  constructor(message: string, status: number, data?: any)
+  constructor(message: string, status: number, data?: any);
 }
 ```
 
@@ -169,7 +194,7 @@ src/components/
 const response = await fetch('/api/admin/playlists', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(data)
+  body: JSON.stringify(data),
 });
 
 if (!response.ok) {
@@ -272,7 +297,7 @@ const playlists = await api.playlists.getTopTen();
 // Create playlist
 const newPlaylist = await api.admin.createPlaylist({
   name: 'My Playlist',
-  description: 'A great playlist'
+  description: 'A great playlist',
 });
 
 // Upload image

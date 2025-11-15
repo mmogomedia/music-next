@@ -32,6 +32,8 @@ import { api } from '@/lib/api-client';
 import { constructFileUrl } from '@/lib/url-utils';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { SourceType } from '@/types/stats';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
+import CompletionBadge from '@/components/track/CompletionBadge';
 
 interface TrackManagementProps {
   onTrackPlay?: (_track: Track) => void;
@@ -312,11 +314,20 @@ export default function TrackManagement({ onTrackPlay }: TrackManagementProps) {
                       )}
                     </div>
                     <div className='min-w-0 flex-1'>
-                      <h4 className='font-medium text-gray-900 dark:text-white truncate'>
-                        {track.title}
-                      </h4>
+                      <div className='flex items-center gap-2'>
+                        <h4 className='font-medium text-gray-900 dark:text-white truncate flex-1'>
+                          {track.title}
+                        </h4>
+                        {track.completionPercentage !== undefined && (
+                          <CompletionBadge
+                            percentage={track.completionPercentage}
+                            size='sm'
+                            variant='flat'
+                          />
+                        )}
+                      </div>
                       <p className='text-sm text-gray-500 dark:text-gray-400 truncate'>
-                        {track.artist || 'Unknown Artist'}
+                        <ArtistDisplay track={track} />
                       </p>
                     </div>
                   </div>
