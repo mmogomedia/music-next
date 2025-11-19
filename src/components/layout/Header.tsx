@@ -70,10 +70,10 @@ export default function Header() {
             <Image
               src='/main_logo.png'
               alt='Flemoji'
-              width={130}
-              height={32}
+              width={220}
+              height={60}
               priority
-              className='h-8 w-auto hidden lg:block'
+              className='h-12 w-auto hidden lg:block'
             />
           </Link>
         </NavbarBrand>

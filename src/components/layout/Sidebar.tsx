@@ -101,10 +101,10 @@ export default function Sidebar() {
             <Image
               src='/main_logo.png'
               alt='Flemoji'
-              width={140}
-              height={32}
+              width={200}
+              height={48}
               priority
-              className='h-8 w-auto'
+              className='h-12 w-auto'
             />
           </Link>
           <button
