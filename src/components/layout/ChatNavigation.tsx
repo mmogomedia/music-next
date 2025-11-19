@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import {
   MusicalNoteIcon,
   FireIcon,
@@ -114,18 +115,15 @@ export default function ChatNavigation({
         <aside className='w-64 flex-shrink-0 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-30 pb-20 sticky top-0'>
           {/* Logo Section */}
           <div className='p-6 border-b border-gray-200 dark:border-slate-700 flex-shrink-0'>
-            <Link href='/' className='flex items-center gap-3 group'>
-              <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200'>
-                <MusicalNoteIcon className='w-6 h-6 text-white' />
-              </div>
-              <div className='flex flex-col'>
-                <span className='text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent'>
-                  Flemoji
-                </span>
-                <span className='text-xs text-gray-500 dark:text-gray-400'>
-                  Music Discovery
-                </span>
-              </div>
+            <Link href='/' className='flex items-center'>
+              <Image
+                src='/main_logo.png'
+                alt='Flemoji'
+                width={140}
+                height={32}
+                priority
+                className='h-8 w-auto'
+              />
             </Link>
           </div>
 
@@ -206,12 +204,15 @@ export default function ChatNavigation({
 
           {/* Logo - Center */}
           <Link href='/' className='flex items-center gap-2 flex-shrink-0'>
-            <div className='w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center shadow-lg'>
-              <MusicalNoteIcon className='w-5 h-5 text-white' />
-            </div>
-            <span className='text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent hidden sm:inline'>
-              Flemoji
-            </span>
+            <Image
+              src='/logo_symbol.png'
+              alt='Flemoji symbol'
+              width={32}
+              height={32}
+              priority
+              className='h-8 w-8 rounded-lg'
+            />
+            <span className='sr-only'>Flemoji</span>
           </Link>
 
           {/* Player - Takes remaining space */}

@@ -7,7 +7,6 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import {
-  MusicalNoteIcon,
   HomeIcon,
   ChartBarIcon,
   UserGroupIcon,
@@ -98,18 +97,15 @@ export default function Sidebar() {
       {/* Logo Section */}
       <div className='p-6 border-b border-gray-200 dark:border-slate-700'>
         <div className='flex items-center justify-between'>
-          <Link href='/' className='flex items-center gap-3 group'>
-            <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-200'>
-              <MusicalNoteIcon className='w-6 h-6 text-white' />
-            </div>
-            <div>
-              <p className='font-bold text-xl text-gray-900 dark:text-white'>
-                Flemoji
-              </p>
-              <p className='text-xs text-gray-500 dark:text-gray-400 -mt-1'>
-                Music
-              </p>
-            </div>
+          <Link href='/' className='flex items-center gap-3'>
+            <Image
+              src='/main_logo.png'
+              alt='Flemoji'
+              width={140}
+              height={32}
+              priority
+              className='h-8 w-auto'
+            />
           </Link>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
