@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy - Flemoji',
@@ -10,18 +11,30 @@ export default function PrivacyPage() {
   const lastUpdated = '2025-01-13';
 
   return (
-    <div className='min-h-screen bg-gray-50 dark:bg-slate-900'>
+    <div className='min-h-screen bg-white'>
       <div className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
-        <div className='bg-white dark:bg-slate-800 rounded-lg shadow-lg p-8 md:p-12'>
-          <h1 className='text-4xl font-bold mb-4 text-gray-900 dark:text-white'>
+        <div className='bg-white rounded-3xl border border-gray-200 shadow-2xl p-8 md:p-12'>
+          <div className='text-center mb-8'>
+            <Link href='/' className='inline-block mb-4'>
+              <Image
+                src='/main_logo.png'
+                alt='Flemoji'
+                width={200}
+                height={60}
+                priority
+                className='h-12 w-auto mx-auto'
+              />
+            </Link>
+          </div>
+          <h1 className='text-4xl font-bold mb-4 text-gray-900'>
             Privacy Policy
           </h1>
-          <p className='text-gray-600 dark:text-gray-400 mb-8'>
+          <p className='text-gray-600 mb-8'>
             Last updated: {lastUpdated}
           </p>
 
-          <div className='mb-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg'>
-            <p className='text-sm text-blue-800 dark:text-blue-200'>
+          <div className='mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg'>
+            <p className='text-sm text-blue-800'>
               <strong>Data Controller:</strong> Flemoji (Pty) Ltd
               <br />
               <strong>Compliance:</strong> This Privacy Policy complies with the
@@ -31,15 +44,15 @@ export default function PrivacyPage() {
             </p>
           </div>
 
-          <nav className='mb-8 pb-8 border-b border-gray-200 dark:border-slate-700'>
-            <h2 className='text-lg font-semibold mb-4 text-gray-900 dark:text-white'>
+          <nav className='mb-8 pb-8 border-b border-gray-200'>
+            <h2 className='text-lg font-semibold mb-4 text-gray-900'>
               Table of Contents
             </h2>
             <ul className='space-y-2 text-sm'>
               <li>
                 <a
                   href='#introduction'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 hover:text-blue-700 hover:underline'
                 >
                   1. Introduction
                 </a>
@@ -47,7 +60,7 @@ export default function PrivacyPage() {
               <li>
                 <a
                   href='#information-we-collect'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   2. Information We Collect
                 </a>
@@ -55,7 +68,7 @@ export default function PrivacyPage() {
               <li>
                 <a
                   href='#how-we-use'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   3. How We Use Your Information
                 </a>
@@ -63,7 +76,7 @@ export default function PrivacyPage() {
               <li>
                 <a
                   href='#data-sharing'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   4. Data Sharing
                 </a>
@@ -71,7 +84,7 @@ export default function PrivacyPage() {
               <li>
                 <a
                   href='#data-security'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   5. Data Security
                 </a>
@@ -79,7 +92,7 @@ export default function PrivacyPage() {
               <li>
                 <a
                   href='#your-rights'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   6. Your Rights
                 </a>
@@ -87,7 +100,7 @@ export default function PrivacyPage() {
               <li>
                 <a
                   href='#cookies'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   7. Cookies & Tracking
                 </a>
@@ -95,7 +108,7 @@ export default function PrivacyPage() {
               <li>
                 <a
                   href='#children'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   8. Children&apos;s Privacy
                 </a>
@@ -103,7 +116,7 @@ export default function PrivacyPage() {
               <li>
                 <a
                   href='#international-transfers'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   9. International Transfers
                 </a>
@@ -111,7 +124,7 @@ export default function PrivacyPage() {
               <li>
                 <a
                   href='#data-retention'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   10. Data Retention
                 </a>
@@ -119,7 +132,7 @@ export default function PrivacyPage() {
               <li>
                 <a
                   href='#changes'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   11. Changes to Privacy Policy
                 </a>
@@ -127,7 +140,7 @@ export default function PrivacyPage() {
               <li>
                 <a
                   href='#contact'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   12. Contact & Complaints
                 </a>
@@ -135,39 +148,39 @@ export default function PrivacyPage() {
             </ul>
           </nav>
 
-          <div className='prose prose-lg dark:prose-invert max-w-none'>
+          <div className='prose prose-lg prose-invert max-w-none'>
             <section id='introduction' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 1. Introduction
               </h2>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 At Flemoji, we are committed to protecting your privacy and
                 personal information. This Privacy Policy explains how we
                 collect, use, disclose, and safeguard your information when you
                 use our music streaming platform.
               </p>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 This policy applies to all users of Flemoji, including visitors,
                 registered users, and artists. By using our Service, you agree
                 to the collection and use of information in accordance with this
                 policy.
               </p>
-              <p className='text-gray-700 dark:text-gray-300'>
+              <p className='text-gray-700 text-gray-300'>
                 <strong>Effective Date:</strong> {lastUpdated}
               </p>
             </section>
 
             <section id='information-we-collect' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 2. Information We Collect
               </h2>
-              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-white'>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 text-white'>
                 2.1 Personal Information
               </h3>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 We collect information that you provide directly to us:
               </p>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>
                   <strong>Account Information:</strong> Name, email address,
                   password (hashed), profile picture
@@ -186,13 +199,13 @@ export default function PrivacyPage() {
                   and other content you upload
                 </li>
               </ul>
-              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-white'>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 text-white'>
                 2.2 Usage Data
               </h3>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 We automatically collect information about how you use Flemoji:
               </p>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>Listening history and preferences</li>
                 <li>Play counts, likes, shares, and downloads</li>
                 <li>Search queries and interactions</li>
@@ -200,10 +213,10 @@ export default function PrivacyPage() {
                 <li>IP address and location data</li>
                 <li>Cookies and similar tracking technologies</li>
               </ul>
-              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-white'>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 text-white'>
                 2.3 Cookies and Tracking
               </h3>
-              <p className='text-gray-700 dark:text-gray-300'>
+              <p className='text-gray-700 text-gray-300'>
                 We use cookies and similar technologies to enhance your
                 experience, analyze usage, and assist with marketing efforts.
                 See Section 7 for more details.
@@ -211,13 +224,13 @@ export default function PrivacyPage() {
             </section>
 
             <section id='how-we-use' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 3. How We Use Your Information
               </h2>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 We use the information we collect for the following purposes:
               </p>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>
                   <strong>Service Provision:</strong> To provide, maintain, and
                   improve our music streaming service
@@ -248,10 +261,10 @@ export default function PrivacyPage() {
                   security issues and fraudulent activity
                 </li>
               </ul>
-              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-white'>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 text-white'>
                 3.1 Legal Basis (GDPR)
               </h3>
-              <p className='text-gray-700 dark:text-gray-300'>
+              <p className='text-gray-700 text-gray-300'>
                 For users in the European Union, we process your personal data
                 based on: (1) your consent, (2) performance of a contract, (3)
                 our legitimate interests, or (4) compliance with legal
@@ -260,52 +273,52 @@ export default function PrivacyPage() {
             </section>
 
             <section id='data-sharing' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 4. Data Sharing
               </h2>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 We do not sell your personal information. We may share your
                 information in the following circumstances:
               </p>
-              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-white'>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 text-white'>
                 4.1 Service Providers
               </h3>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 We may share information with third-party service providers who
                 perform services on our behalf, such as:
               </p>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>Payment processors</li>
                 <li>Cloud hosting and storage providers</li>
                 <li>Email service providers</li>
                 <li>Analytics and marketing services</li>
               </ul>
-              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-white'>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 text-white'>
                 4.2 Legal Requirements
               </h3>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 We may disclose your information if required by law, court
                 order, or government regulation, or to protect our rights,
                 property, or safety.
               </p>
-              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-white'>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 text-white'>
                 4.3 Business Transfers
               </h3>
-              <p className='text-gray-700 dark:text-gray-300'>
+              <p className='text-gray-700 text-gray-300'>
                 In the event of a merger, acquisition, or sale of assets, your
                 information may be transferred to the acquiring entity.
               </p>
             </section>
 
             <section id='data-security' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 5. Data Security
               </h2>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 We implement appropriate technical and organizational measures
                 to protect your personal information:
               </p>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>
                   <strong>Encryption:</strong> Data transmitted over the
                   internet is encrypted using SSL/TLS
@@ -327,7 +340,7 @@ export default function PrivacyPage() {
                   assessments and updates
                 </li>
               </ul>
-              <p className='text-gray-700 dark:text-gray-300'>
+              <p className='text-gray-700 text-gray-300'>
                 However, no method of transmission over the internet or
                 electronic storage is 100% secure. While we strive to protect
                 your data, we cannot guarantee absolute security.
@@ -335,14 +348,14 @@ export default function PrivacyPage() {
             </section>
 
             <section id='your-rights' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 6. Your Rights
               </h2>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 Under POPIA and GDPR, you have the following rights regarding
                 your personal information:
               </p>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>
                   <strong>Right to Access:</strong> Request a copy of your
                   personal data
@@ -372,11 +385,11 @@ export default function PrivacyPage() {
                   for data processing where applicable
                 </li>
               </ul>
-              <p className='text-gray-700 dark:text-gray-300'>
+              <p className='text-gray-700 text-gray-300'>
                 To exercise these rights, please contact us at{' '}
                 <a
                   href='mailto:tatenda@flemoji.com'
-                  className='text-blue-600 dark:text-blue-400 hover:underline'
+                  className='text-blue-600 text-blue-400 hover:underline'
                 >
                   tatenda@flemoji.com
                 </a>
@@ -385,23 +398,23 @@ export default function PrivacyPage() {
             </section>
 
             <section id='cookies' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 7. Cookies & Tracking
               </h2>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 We use cookies and similar tracking technologies to:
               </p>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>Remember your preferences and settings</li>
                 <li>Authenticate your account</li>
                 <li>Analyze usage and improve our service</li>
                 <li>Provide personalized content and recommendations</li>
                 <li>Measure the effectiveness of marketing campaigns</li>
               </ul>
-              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-white'>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 text-white'>
                 7.1 Cookie Types
               </h3>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>
                   <strong>Essential Cookies:</strong> Required for the service
                   to function
@@ -415,7 +428,7 @@ export default function PrivacyPage() {
                   advertisements
                 </li>
               </ul>
-              <p className='text-gray-700 dark:text-gray-300'>
+              <p className='text-gray-700 text-gray-300'>
                 You can control cookies through your browser settings. However,
                 disabling certain cookies may affect the functionality of our
                 service.
@@ -423,39 +436,39 @@ export default function PrivacyPage() {
             </section>
 
             <section id='children' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 8. Children&apos;s Privacy
               </h2>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 Flemoji is not intended for children under the age of 13. We do
                 not knowingly collect personal information from children under
                 13.
               </p>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 If you are a parent or guardian and believe your child has
                 provided us with personal information, please contact us
                 immediately. We will delete such information upon verification.
               </p>
-              <p className='text-gray-700 dark:text-gray-300'>
+              <p className='text-gray-700 text-gray-300'>
                 For users between 13 and 18, we recommend parental supervision
                 and consent when using our service.
               </p>
             </section>
 
             <section id='international-transfers' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 9. International Transfers
               </h2>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 Your information may be transferred to and processed in
                 countries outside of South Africa, including the United States
                 and European Union, where our service providers are located.
               </p>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 We ensure that appropriate safeguards are in place to protect
                 your data, including:
               </p>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>
                   Standard contractual clauses approved by data protection
                   authorities
@@ -463,46 +476,46 @@ export default function PrivacyPage() {
                 <li>Compliance with applicable data protection laws</li>
                 <li>Regular security assessments of service providers</li>
               </ul>
-              <p className='text-gray-700 dark:text-gray-300'>
+              <p className='text-gray-700 text-gray-300'>
                 By using Flemoji, you consent to the transfer of your
                 information as described in this policy.
               </p>
             </section>
 
             <section id='data-retention' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 10. Data Retention
               </h2>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 We retain your personal information for as long as necessary to:
               </p>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>Provide our services to you</li>
                 <li>Comply with legal obligations</li>
                 <li>Resolve disputes and enforce agreements</li>
                 <li>Maintain security and prevent fraud</li>
               </ul>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 When you delete your account, we will delete or anonymize your
                 personal information, except where we are required to retain it
                 for legal purposes.
               </p>
-              <p className='text-gray-700 dark:text-gray-300'>
+              <p className='text-gray-700 text-gray-300'>
                 Some information, such as aggregated analytics data, may be
                 retained indefinitely in anonymized form.
               </p>
             </section>
 
             <section id='changes' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 11. Changes to Privacy Policy
               </h2>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 We may update this Privacy Policy from time to time to reflect
                 changes in our practices or legal requirements. We will notify
                 you of material changes by:
               </p>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>Email notification to your registered email address</li>
                 <li>Prominent notice on our website</li>
                 <li>
@@ -510,60 +523,60 @@ export default function PrivacyPage() {
                   policy
                 </li>
               </ul>
-              <p className='text-gray-700 dark:text-gray-300'>
+              <p className='text-gray-700 text-gray-300'>
                 Your continued use of Flemoji after changes become effective
                 constitutes acceptance of the updated Privacy Policy.
               </p>
             </section>
 
             <section id='contact' className='mb-8'>
-              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-white'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 text-white'>
                 12. Contact & Complaints
               </h2>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 If you have questions, concerns, or wish to exercise your rights
                 regarding this Privacy Policy, please contact us:
               </p>
-              <div className='bg-gray-50 dark:bg-slate-700 p-4 rounded-lg mb-4'>
-                <p className='text-gray-700 dark:text-gray-300 mb-2'>
+              <div className='bg-gray-50 p-4 rounded-lg mb-4'>
+                <p className='text-gray-700 text-gray-300 mb-2'>
                   <strong>Data Protection Officer:</strong>
                 </p>
-                <p className='text-gray-700 dark:text-gray-300 mb-2'>
+                <p className='text-gray-700 text-gray-300 mb-2'>
                   <strong>Email:</strong>{' '}
                   <a
                     href='mailto:tatenda@flemoji.com'
-                    className='text-blue-600 dark:text-blue-400 hover:underline'
+                    className='text-blue-600 text-blue-400 hover:underline'
                   >
                     tatenda@flemoji.com
                   </a>
                 </p>
-                <p className='text-gray-700 dark:text-gray-300 mb-2'>
+                <p className='text-gray-700 text-gray-300 mb-2'>
                   <strong>Support Email:</strong>{' '}
                   <a
                     href='mailto:tatenda@flemoji.com'
-                    className='text-blue-600 dark:text-blue-400 hover:underline'
+                    className='text-blue-600 text-blue-400 hover:underline'
                   >
                     tatenda@flemoji.com
                   </a>
                 </p>
-                <p className='text-gray-700 dark:text-gray-300'>
+                <p className='text-gray-700 text-gray-300'>
                   <strong>Website:</strong>{' '}
                   <Link
                     href='/'
-                    className='text-blue-600 dark:text-blue-400 hover:underline'
+                    className='text-blue-600 text-blue-400 hover:underline'
                   >
                     https://flemoji.com
                   </Link>
                 </p>
               </div>
-              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-white'>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 text-white'>
                 12.1 Complaints
               </h3>
-              <p className='text-gray-700 dark:text-gray-300 mb-4'>
+              <p className='text-gray-700 text-gray-300 mb-4'>
                 If you are not satisfied with how we handle your personal
                 information, you have the right to lodge a complaint with:
               </p>
-              <ul className='list-disc pl-6 mb-4 text-gray-700 dark:text-gray-300 space-y-2'>
+              <ul className='list-disc pl-6 mb-4 text-gray-700 text-gray-300 space-y-2'>
                 <li>
                   <strong>South Africa:</strong> Information Regulator (POPIA)
                   <br />
@@ -572,7 +585,7 @@ export default function PrivacyPage() {
                     href='https://www.justice.gov.za/inforeg/'
                     target='_blank'
                     rel='noopener noreferrer'
-                    className='text-blue-600 dark:text-blue-400 hover:underline'
+                    className='text-blue-600 text-blue-400 hover:underline'
                   >
                     https://www.justice.gov.za/inforeg/
                   </a>
@@ -585,8 +598,8 @@ export default function PrivacyPage() {
             </section>
           </div>
 
-          <div className='mt-12 pt-8 border-t border-gray-200 dark:border-slate-700'>
-            <p className='text-sm text-gray-600 dark:text-gray-400 text-center'>
+          <div className='mt-12 pt-8 border-t border-gray-200 border-slate-700'>
+            <p className='text-sm text-gray-600 text-gray-400 text-center'>
               © {new Date().getFullYear()} Flemoji. All rights reserved.
             </p>
           </div>

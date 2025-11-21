@@ -68,10 +68,15 @@ export const metadata: Metadata = {
     description: 'Listen, upload, and share music with Flemoji.',
     images: [shareImage],
   },
+  appleWebApp: {
+    capable: true,
+    title: 'Flemoji',
+  },
   other: {
     // Resource hints for performance
     'dns-prefetch':
       'https://asset.flemoji.com, https://audio.flemoji.com, https://profile-images.flemoji.com',
+    'apple-mobile-web-app-title': 'Flemoji',
   },
 };
 

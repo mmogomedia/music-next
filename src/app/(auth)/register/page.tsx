@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Input, Checkbox, Link as HeroUILink } from '@heroui/react';
+import { Button, Input, Link as HeroUILink } from '@heroui/react';
 import Link from 'next/link';
 import { registerSchema } from '@/lib/validations/auth';
 import PasswordStrength from '@/components/auth/PasswordStrength';
+import AuthPageHeader from '@/components/auth/AuthPageHeader';
 import type { ZodIssue } from 'zod';
 
 export default function RegisterPage() {
@@ -13,9 +14,6 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  const [marketingConsent, setMarketingConsent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +27,11 @@ export default function RegisterPage() {
     setError(null);
     setFieldErrors({});
     setOk(false);
+
+    // Automatically set consent to true (implied by clicking the button)
+    const termsAccepted = true;
+    const privacyAccepted = true;
+    const marketingConsent = false;
 
     // Validate with Zod
     const validationResult = registerSchema.safeParse({
@@ -59,6 +62,7 @@ export default function RegisterPage() {
         body: JSON.stringify({
           email,
           password,
+          confirmPassword,
           name: name || undefined,
           termsAccepted,
           privacyAccepted,
@@ -93,8 +97,9 @@ export default function RegisterPage() {
 
   return (
     <main className='min-h-screen flex items-center justify-center relative overflow-hidden bg-white py-8'>
-      <div className='relative z-10 w-full max-w-md mx-auto px-4 sm:px-6'>
+      <div className='relative z-10 w-full max-w-2xl mx-auto px-4 sm:px-8'>
         <div className='bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto'>
+          <AuthPageHeader />
           <div className='text-center mb-6'>
             <h1 className='text-3xl font-bold mb-2 text-gray-900'>
               Join Flemoji
@@ -165,9 +170,9 @@ export default function RegisterPage() {
                 isRequired
                 classNames={{
                   inputWrapper:
-                    'bg-white/5 border-white/20 hover:border-blue-400/50 focus-within:border-blue-400',
-                  input: 'text-white placeholder:text-white/50',
-                  label: 'text-white/80',
+                    'border-gray-300 hover:border-blue-400 focus-within:border-blue-500',
+                  input: 'text-gray-900',
+                  label: 'text-gray-700',
                 }}
                 errorMessage={fieldErrors.password}
                 isInvalid={!!fieldErrors.password}
@@ -246,109 +251,42 @@ export default function RegisterPage() {
               }
             />
 
-            <div className='space-y-2'>
-              <div className='flex items-start gap-2'>
-                <Checkbox
-                  isSelected={termsAccepted}
-                  onValueChange={setTermsAccepted}
-                  isRequired
-                  classNames={{
-                    base: 'mt-0.5',
-                    label: 'text-gray-700 text-xs',
-                  }}
-                  isInvalid={!!fieldErrors.termsAccepted}
+            {/* Consent Statement */}
+            <div className='pt-2 pb-2'>
+              <p className='text-xs text-gray-600 text-center leading-relaxed'>
+                By clicking on any of the &quot;Continue&quot; buttons below,
+                you agree to Flemoji&apos;s{' '}
+                <Link
+                  href='/terms'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-blue-600 hover:text-blue-700 hover:underline'
                 >
-                  <div
-                    className='text-xs cursor-pointer'
-                    onClick={() => setTermsAccepted(!termsAccepted)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setTermsAccepted(!termsAccepted);
-                      }
-                    }}
-                    tabIndex={0}
-                    role='button'
-                    aria-label='I agree to the Terms & Conditions'
-                  >
-                    I agree to the{' '}
-                    <Link
-                      href='/terms'
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='text-blue-600 hover:underline'
-                      onClick={e => e.stopPropagation()}
-                    >
-                      Terms & Conditions
-                    </Link>
-                  </div>
-                </Checkbox>
-              </div>
-              {fieldErrors.termsAccepted && (
-                <p className='text-xs text-red-600 ml-6'>
-                  {fieldErrors.termsAccepted}
-                </p>
-              )}
-
-              <div className='flex items-start gap-2'>
-                <Checkbox
-                  isSelected={privacyAccepted}
-                  onValueChange={setPrivacyAccepted}
-                  isRequired
-                  classNames={{
-                    base: 'mt-0.5',
-                    label: 'text-gray-700 text-xs',
-                  }}
-                  isInvalid={!!fieldErrors.privacyAccepted}
+                  Terms of Use
+                </Link>{' '}
+                and acknowledge our{' '}
+                <Link
+                  href='/privacy'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-blue-600 hover:text-blue-700 hover:underline'
                 >
-                  <div
-                    className='text-xs cursor-pointer'
-                    onClick={() => setPrivacyAccepted(!privacyAccepted)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setPrivacyAccepted(!privacyAccepted);
-                      }
-                    }}
-                    tabIndex={0}
-                    role='button'
-                    aria-label='I agree to the Privacy Policy'
-                  >
-                    I agree to the{' '}
-                    <Link
-                      href='/privacy'
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='text-blue-600 hover:underline'
-                      onClick={e => e.stopPropagation()}
-                    >
-                      Privacy Policy
-                    </Link>
-                  </div>
-                </Checkbox>
-              </div>
-              {fieldErrors.privacyAccepted && (
-                <p className='text-xs text-red-600 ml-6'>
-                  {fieldErrors.privacyAccepted}
-                </p>
-              )}
-
-              <Checkbox
-                isSelected={marketingConsent}
-                onValueChange={setMarketingConsent}
-                classNames={{
-                  label: 'text-gray-700 text-xs',
-                }}
-              >
-                I consent to receive marketing emails and updates
-              </Checkbox>
+                  Privacy Policy
+                </Link>
+                .
+              </p>
             </div>
 
             <Button
               type='submit'
               className='w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'
               isLoading={loading}
-              isDisabled={!termsAccepted || !privacyAccepted}
+              isDisabled={
+                !email ||
+                !password ||
+                !confirmPassword ||
+                password !== confirmPassword
+              }
             >
               Create Account
             </Button>

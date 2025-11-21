@@ -2,6 +2,7 @@
 
 import React, { Suspense } from 'react';
 import SignInForm from '@/components/auth/SignInForm';
+import AuthPageHeader from '@/components/auth/AuthPageHeader';
 import { useSearchParams } from 'next/navigation';
 
 function LoginFormContent() {
@@ -14,8 +15,9 @@ function LoginFormContent() {
 
   return (
     <main className='min-h-screen flex items-center justify-center relative overflow-hidden bg-white'>
-      <div className='relative z-10 w-full max-w-md mx-auto px-4 sm:px-6'>
+      <div className='relative z-10 w-full max-w-lg mx-auto px-4 sm:px-8'>
         <div className='bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8'>
+          <AuthPageHeader />
           {verified && (
             <div className='mb-4 p-3 bg-green-50 border border-green-200 rounded-xl'>
               <p className='text-green-700 text-sm text-center'>

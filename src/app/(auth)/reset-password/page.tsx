@@ -6,6 +6,7 @@ import { Input, Button, Link as HeroUILink } from '@heroui/react';
 import Link from 'next/link';
 import { resetPasswordSchema } from '@/lib/validations/auth';
 import PasswordStrength from '@/components/auth/PasswordStrength';
+import AuthPageHeader from '@/components/auth/AuthPageHeader';
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -79,6 +80,7 @@ function ResetPasswordContent() {
       <main className='min-h-screen flex items-center justify-center relative overflow-hidden bg-white'>
         <div className='relative z-10 w-full max-w-md mx-auto px-4 sm:px-6'>
           <div className='bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8'>
+            <AuthPageHeader />
             <div className='text-center'>
               <h1 className='text-2xl font-bold mb-4 text-red-600'>
                 Invalid Reset Link
@@ -102,8 +104,9 @@ function ResetPasswordContent() {
 
   return (
     <main className='min-h-screen flex items-center justify-center relative overflow-hidden bg-white'>
-      <div className='relative z-10 w-full max-w-md mx-auto px-4 sm:px-6'>
+      <div className='relative z-10 w-full max-w-lg mx-auto px-4 sm:px-8'>
         <div className='bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8'>
+          <AuthPageHeader />
           <div className='text-center mb-6'>
             <h1 className='text-3xl font-bold mb-2 text-gray-900'>
               Reset Password

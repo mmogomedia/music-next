@@ -114,13 +114,13 @@ export default function ChatNavigation({
       <>
         <aside className='w-64 flex-shrink-0 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-30 pb-20 sticky top-0'>
           {/* Logo Section */}
-          <div className='p-6 border-b border-gray-200 dark:border-slate-700 flex-shrink-0'>
+          <div className='px-6 border-b border-gray-200 dark:border-slate-700 flex items-center flex-shrink-0 h-[83px]'>
             <Link href='/' className='flex items-center'>
               <Image
                 src='/main_logo.png'
                 alt='Flemoji'
-                width={200}
-                height={48}
+                width={220}
+                height={60}
                 priority
                 className='h-12 w-auto'
               />

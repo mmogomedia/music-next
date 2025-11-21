@@ -95,14 +95,14 @@ export default function Sidebar() {
   return (
     <div className='w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 h-screen flex flex-col fixed left-0 top-0 z-30 pb-20'>
       {/* Logo Section */}
-      <div className='p-6 border-b border-gray-200 dark:border-slate-700'>
-        <div className='flex items-center justify-between'>
+      <div className='h-20 border-b border-gray-200 dark:border-slate-700 flex items-center px-6'>
+        <div className='flex items-center justify-between w-full'>
           <Link href='/' className='flex items-center gap-3'>
             <Image
               src='/main_logo.png'
               alt='Flemoji'
-              width={200}
-              height={48}
+              width={220}
+              height={60}
               priority
               className='h-12 w-auto'
             />
