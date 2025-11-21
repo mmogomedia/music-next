@@ -50,6 +50,13 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Account is inactive');
         }
 
+        // Check if email is verified
+        if (!user.emailVerified) {
+          throw new Error(
+            'Please verify your email address before signing in. Check your inbox for the verification email.'
+          );
+        }
+
         // Check if account is locked
         if (user.lockedUntil && new Date() < user.lockedUntil) {
           const minutesRemaining = Math.ceil(

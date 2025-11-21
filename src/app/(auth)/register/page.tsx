@@ -282,7 +282,8 @@ export default function RegisterPage() {
               className='w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'
               isLoading={loading}
               isDisabled={
-                !email ||
+                loading ||
+                !email?.trim() ||
                 !password ||
                 !confirmPassword ||
                 password !== confirmPassword

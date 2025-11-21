@@ -16,6 +16,8 @@ jest.mock('bcryptjs', () => ({
   compare: jest.fn(),
 }));
 
+// Mock NextAuth providers structure
+
 describe('NextAuth Credentials Provider', () => {
   beforeEach(() => {
     jest.clearAllMocks();

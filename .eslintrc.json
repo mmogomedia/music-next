@@ -88,6 +88,12 @@
       }
     },
     {
+      "files": ["scripts/**/*.{js,ts}"],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
       "files": [
         "**/*.test.{js,jsx,ts,tsx}",
         "**/__tests__/**/*.{js,jsx,ts,tsx}",

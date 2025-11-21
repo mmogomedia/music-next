@@ -7,11 +7,13 @@ global.TextDecoder = TextDecoder;
 
 // Simple Request/Response mocks for API route tests
 // These are minimal implementations that work with Next.js API routes
+/* eslint-env jest */
 if (typeof global.Request === 'undefined') {
   global.Request = class Request {
     constructor(input, init = {}) {
       this.url = typeof input === 'string' ? input : input.url;
       this.method = init.method || 'GET';
+      // eslint-disable-next-line no-undef
       this.headers = new Map();
       if (init.headers) {
         Object.entries(init.headers).forEach(([key, value]) => {
@@ -23,7 +25,9 @@ if (typeof global.Request === 'undefined') {
 
     async json() {
       if (this._body) {
-        return typeof this._body === 'string' ? JSON.parse(this._body) : this._body;
+        return typeof this._body === 'string'
+          ? JSON.parse(this._body)
+          : this._body;
       }
       return {};
     }
@@ -38,6 +42,7 @@ if (typeof global.Request === 'undefined') {
       this.body = body;
       this.status = init.status || 200;
       this.statusText = init.statusText || 'OK';
+      // eslint-disable-next-line no-undef
       this.headers = new Map();
       if (init.headers) {
         Object.entries(init.headers).forEach(([key, value]) => {
@@ -51,7 +56,9 @@ if (typeof global.Request === 'undefined') {
     }
 
     async text() {
-      return typeof this.body === 'string' ? this.body : JSON.stringify(this.body);
+      return typeof this.body === 'string'
+        ? this.body
+        : JSON.stringify(this.body);
     }
   };
 }
@@ -117,6 +124,12 @@ jest.mock('ably', () => ({
 
 // Add Promise to globals
 global.Promise = Promise;
+
+// Mock HeroUI dom-animation to avoid dynamic import issues
+jest.mock('@heroui/dom-animation', () => ({
+  __esModule: true,
+  default: () => ({}),
+}));
 
 // Mock environment variables
 process.env.NEXTAUTH_SECRET = 'test-secret';
