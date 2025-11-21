@@ -1,8 +1,7 @@
 import { POST } from '../route';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
-import { NextResponse } from 'next/server';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 // Mock NextResponse
 jest.mock('next/server', () => ({
@@ -190,7 +189,9 @@ describe('/api/auth/reset-password', () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.error).toBe('Reset token has expired. Please request a new one.');
+      expect(data.error).toBe(
+        'Reset token has expired. Please request a new one.'
+      );
     });
   });
 
@@ -266,4 +267,3 @@ describe('/api/auth/reset-password', () => {
     });
   });
 });
-

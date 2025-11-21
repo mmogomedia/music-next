@@ -1,9 +1,8 @@
 import { POST } from '../route';
 import { prisma } from '@/lib/db';
 import { sendPasswordResetEmail } from '@/lib/email-service';
-import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
+import { checkRateLimit } from '@/lib/rate-limit';
 import crypto from 'crypto';
-import { NextResponse } from 'next/server';
 
 // Mock NextResponse
 jest.mock('next/server', () => ({
@@ -183,4 +182,3 @@ describe('/api/auth/forgot-password', () => {
     });
   });
 });
-

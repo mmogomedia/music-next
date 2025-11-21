@@ -29,9 +29,7 @@ export default function TermsPage() {
           <h1 className='text-4xl font-bold mb-4 text-gray-900'>
             Terms & Conditions
           </h1>
-          <p className='text-gray-600 mb-8'>
-            Last updated: {lastUpdated}
-          </p>
+          <p className='text-gray-600 mb-8'>Last updated: {lastUpdated}</p>
 
           <nav className='mb-8 pb-8 border-b border-gray-200'>
             <h2 className='text-lg font-semibold mb-4 text-gray-900'>

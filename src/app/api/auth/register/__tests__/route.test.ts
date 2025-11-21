@@ -2,9 +2,8 @@ import { POST } from '../route';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { sendVerificationEmail } from '@/lib/email-service';
-import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
+import { checkRateLimit } from '@/lib/rate-limit';
 import crypto from 'crypto';
-import { NextResponse } from 'next/server';
 
 // Mock NextResponse
 jest.mock('next/server', () => ({
@@ -341,4 +340,3 @@ describe('/api/auth/register', () => {
     });
   });
 });
-

@@ -1,7 +1,6 @@
 import { GET } from '../route';
 import { prisma } from '@/lib/db';
 import { sendWelcomeEmail } from '@/lib/email-service';
-import { NextResponse } from 'next/server';
 
 // Mock NextResponse
 jest.mock('next/server', () => ({
@@ -211,4 +210,3 @@ describe('/api/auth/verify-email', () => {
     });
   });
 });
-
