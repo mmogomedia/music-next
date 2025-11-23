@@ -29,6 +29,8 @@ export interface SearchTracksOptions {
   limit?: number;
   offset?: number;
   orderBy?: 'recent' | 'popular' | 'alphabetical';
+  minStrength?: number;
+  excludeIds?: string[]; // Track IDs to exclude from results (for pagination)
 }
 
 /**
@@ -63,6 +65,8 @@ export class MusicService {
       limit = 20,
       offset = 0,
       orderBy = 'recent',
+      minStrength,
+      excludeIds,
     } = options;
 
     const where: any = {
@@ -168,6 +172,21 @@ export class MusicService {
       where.artistProfile = {
         location: { contains: province, mode: 'insensitive' },
       };
+    }
+
+    if (typeof minStrength === 'number') {
+      if (!where.AND) where.AND = [];
+      where.AND.push({
+        strength: { gte: minStrength },
+      });
+    }
+
+    // Exclude specific track IDs if provided (for pagination)
+    if (excludeIds && Array.isArray(excludeIds) && excludeIds.length > 0) {
+      if (!where.AND) where.AND = [];
+      where.AND.push({
+        id: { notIn: excludeIds },
+      });
     }
 
     // Define order by
@@ -289,7 +308,8 @@ export class MusicService {
    */
   static async getTracksByGenre(
     genre: string,
-    limit: number = 20
+    limit: number = 20,
+    options: { minStrength?: number } = {}
   ): Promise<TrackWithArtist[]> {
     // Normalize the genre input: lowercase, handle variations
     const normalizedGenre = genre.toLowerCase().trim();
@@ -338,6 +358,7 @@ export class MusicService {
     const where: any = {
       isPublic: true,
       OR: [],
+      AND: [],
     };
 
     if (resolved) {
@@ -387,6 +408,12 @@ export class MusicService {
       where.OR.push({ genre: { contains: genre, mode: 'insensitive' } });
     }
 
+    if (typeof options.minStrength === 'number') {
+      where.AND.push({
+        strength: { gte: options.minStrength },
+      });
+    }
+
     const tracks = await prisma.track.findMany({
       where,
       include: {
@@ -408,6 +435,12 @@ export class MusicService {
 
     return {
       ...track,
+      attributes: Array.isArray(track.attributes) ? track.attributes : [],
+      mood: Array.isArray(track.mood) ? track.mood : [],
+      strength:
+        typeof track.strength === 'number'
+          ? track.strength
+          : track.completionPercentage || 0,
       fileUrl: constructFileUrl(track.filePath),
       coverImageUrl: coverImageUrl ? constructFileUrl(coverImageUrl) : null,
     };

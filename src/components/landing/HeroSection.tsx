@@ -2,11 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { PauseIcon, HeartIcon, ShareIcon } from '@heroicons/react/24/outline';
 import { PlayIcon as PlaySolidIcon } from '@heroicons/react/24/solid';
 import { Playlist } from '@/types/playlist';
 import { Track } from '@/types/track';
 import { constructFileUrl } from '@/lib/url-utils';
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  Button,
+} from '@heroui/react';
 
 interface HeroSectionProps {
   onTrackPlay?: (_track: Track) => void;
@@ -17,11 +25,13 @@ export default function HeroSection({
   onTrackPlay,
   onPlaylistClick,
 }: HeroSectionProps) {
+  const router = useRouter();
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrackIndex] = useState(0);
+  const [isAdvertiseModalOpen, setIsAdvertiseModalOpen] = useState(false);
 
   useEffect(() => {
     fetchFeaturedPlaylist();
@@ -160,8 +170,11 @@ export default function HeroSection({
               >
                 Explore Playlist
               </button>
-              <button className='px-8 py-4 bg-gray-100 border border-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-200 transition-colors duration-200'>
-                Submit Your Music
+              <button
+                onClick={() => setIsAdvertiseModalOpen(true)}
+                className='px-8 py-4 bg-gray-100 border border-gray-200 text-gray-700 rounded-full font-semibold hover:bg-gray-200 transition-colors duration-200'
+              >
+                Advertise
               </button>
             </div>
           </div>
@@ -211,6 +224,94 @@ export default function HeroSection({
           </div>
         </div>
       </div>
+
+      {/* Advertise Modal */}
+      <Modal
+        isOpen={isAdvertiseModalOpen}
+        onClose={() => setIsAdvertiseModalOpen(false)}
+        size='2xl'
+        scrollBehavior='inside'
+        classNames={{
+          base: 'bg-white dark:bg-slate-900',
+          header: 'border-b border-gray-200 dark:border-slate-800',
+          body: 'py-6',
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className='flex flex-col gap-1'>
+            <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+              Advertise Your Music
+            </h2>
+            <p className='text-sm font-normal text-gray-600 dark:text-gray-400'>
+              Get your tracks featured in our Featured Playlist
+            </p>
+          </ModalHeader>
+          <ModalBody>
+            <div className='space-y-6'>
+              <div>
+                <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-3'>
+                  How It Works
+                </h3>
+                <p className='text-gray-700 dark:text-gray-300 leading-relaxed mb-4'>
+                  Artists can submit their tracks to the Featured Playlist for
+                  consideration. Our featured section showcases the best music
+                  from South African artists.
+                </p>
+              </div>
+
+              <div className='bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800'>
+                <h4 className='font-semibold text-blue-900 dark:text-blue-300 mb-2'>
+                  Featured Playlist Structure
+                </h4>
+                <ul className='space-y-2 text-sm text-blue-800 dark:text-blue-200'>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>4 tracks</strong> are promoted (paid placements)
+                    </span>
+                  </li>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>6 tracks</strong> are curated (editorially
+                      selected)
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className='bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white'>
+                <h4 className='font-bold text-lg mb-2'>Pricing</h4>
+                <p className='text-white/90 mb-1'>
+                  <span className='text-2xl font-bold'>R300</span> per week
+                </p>
+                <p className='text-sm text-white/80'>
+                  Your track will be featured in the promoted section for one
+                  week
+                </p>
+              </div>
+
+              <div className='flex flex-col sm:flex-row gap-3 pt-4'>
+                <Button
+                  className='bg-blue-600 text-white hover:bg-blue-700'
+                  onPress={() => {
+                    setIsAdvertiseModalOpen(false);
+                    router.push('/dashboard?tab=library');
+                  }}
+                >
+                  Submit Your Track
+                </Button>
+                <Button
+                  variant='light'
+                  onPress={() => setIsAdvertiseModalOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

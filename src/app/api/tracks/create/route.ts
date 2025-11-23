@@ -6,6 +6,20 @@ import { constructFileUrl } from '@/lib/url-utils';
 import { calculateTrackCompletion } from '@/lib/utils/track-completion';
 import type { TrackEditorValues } from '@/components/track/TrackEditor';
 
+const sanitizeStringArray = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value
+        .map(item => (typeof item === 'string' ? item.trim() : ''))
+        .filter(Boolean)
+    : [];
+
+const clampStrength = (value: unknown, fallback: number): number => {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return fallback;
+  }
+  return Math.max(0, Math.min(100, Math.round(value)));
+};
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -44,6 +58,9 @@ export async function POST(request: NextRequest) {
       bitrate,
       sampleRate,
       channels,
+      attributes = [],
+      mood = [],
+      strength,
     } = body;
 
     // Validate required fields
@@ -77,6 +94,9 @@ export async function POST(request: NextRequest) {
         );
       }
     }
+
+    const sanitizedAttributes = sanitizeStringArray(attributes);
+    const sanitizedMood = sanitizeStringArray(mood);
 
     // Get user's artist profile (for legacy support)
     const userArtistProfile = await prisma.artistProfile.findFirst({
@@ -170,8 +190,11 @@ export async function POST(request: NextRequest) {
       licenseType: licenseType?.trim() || 'All Rights Reserved',
       distributionRights: distributionRights?.trim() || undefined,
       albumArtwork: albumArtwork?.trim() || undefined,
+      attributes: sanitizedAttributes,
+      mood: sanitizedMood,
     };
     const completion = calculateTrackCompletion(trackData);
+    const derivedStrength = clampStrength(strength, completion.percentage);
 
     // Create track
     const newTrack = await prisma.track.create({
@@ -202,6 +225,9 @@ export async function POST(request: NextRequest) {
         licenseType: licenseType?.trim() || 'All Rights Reserved',
         distributionRights: distributionRights?.trim() || null,
         albumArtwork: albumArtwork?.trim() || null,
+        attributes: sanitizedAttributes,
+        mood: sanitizedMood,
+        strength: derivedStrength,
         duration: duration || null,
         fileSize: fileSize || null,
         bitrate: bitrate || null,

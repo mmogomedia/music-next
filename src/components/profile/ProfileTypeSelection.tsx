@@ -1,9 +1,15 @@
 'use client';
 
 import React from 'react';
-import { MusicalNoteIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import {
+  MusicalNoteIcon,
+  ArrowRightIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { Button } from '@heroui/react';
 
 interface ProfileType {
   id: string;
@@ -27,6 +33,13 @@ const profileTypes: ProfileType[] = [
 ];
 
 export default function ProfileTypeSelection() {
+  const router = useRouter();
+
+  const handleCancel = () => {
+    // Redirect to home page since dashboard requires a profile
+    router.push('/');
+  };
+
   return (
     <div className='min-h-screen bg-gray-50 dark:bg-slate-950'>
       {/* Header */}
@@ -59,7 +72,7 @@ export default function ProfileTypeSelection() {
         </div>
 
         {/* Profile Type Card */}
-        <div className='space-y-4'>
+        <div className='space-y-4 mb-8'>
           {profileTypes
             .filter(pt => pt.available)
             .map(profileType => (
@@ -88,6 +101,18 @@ export default function ProfileTypeSelection() {
                 </div>
               </Link>
             ))}
+        </div>
+
+        {/* Cancel Button */}
+        <div className='flex justify-center pt-6 border-t border-gray-200 dark:border-slate-800'>
+          <Button
+            variant='light'
+            onPress={handleCancel}
+            className='text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+            startContent={<XMarkIcon className='w-4 h-4' />}
+          >
+            Cancel
+          </Button>
         </div>
       </div>
     </div>

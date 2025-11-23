@@ -6,6 +6,20 @@ import { constructFileUrl } from '@/lib/url-utils';
 import { calculateTrackCompletion } from '@/lib/utils/track-completion';
 import type { TrackEditorValues } from '@/components/track/TrackEditor';
 
+const sanitizeStringArray = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value
+        .map(item => (typeof item === 'string' ? item.trim() : ''))
+        .filter(Boolean)
+    : [];
+
+const clampStrength = (value: unknown, fallback: number): number => {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return fallback;
+  }
+  return Math.max(0, Math.min(100, Math.round(value)));
+};
+
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -39,6 +53,9 @@ export async function PUT(request: NextRequest) {
       licenseType,
       distributionRights,
       albumArtwork,
+      attributes = [],
+      mood = [],
+      strength,
     } = body;
 
     // Validate required fields
@@ -72,6 +89,9 @@ export async function PUT(request: NextRequest) {
         );
       }
     }
+
+    const sanitizedAttributes = sanitizeStringArray(attributes);
+    const sanitizedMood = sanitizeStringArray(mood);
 
     // Check if track exists and belongs to user
     const existingTrack = await prisma.track.findFirst({
@@ -181,8 +201,11 @@ export async function PUT(request: NextRequest) {
       licenseType: licenseType?.trim() || undefined,
       distributionRights: distributionRights?.trim() || undefined,
       albumArtwork: albumArtwork?.trim() || undefined,
+      attributes: sanitizedAttributes,
+      mood: sanitizedMood,
     };
     const completion = calculateTrackCompletion(trackData);
+    const derivedStrength = clampStrength(strength, completion.percentage);
 
     // Build update data object - only include fields that exist in current schema
     // Note: After migration, language and completionPercentage will be available
@@ -209,6 +232,8 @@ export async function PUT(request: NextRequest) {
       licenseType: licenseType?.trim() || null,
       distributionRights: distributionRights?.trim() || null,
       albumArtwork: albumArtwork?.trim() || null,
+      attributes: sanitizedAttributes,
+      mood: sanitizedMood,
       updatedAt: new Date(),
     };
 
@@ -228,6 +253,7 @@ export async function PUT(request: NextRequest) {
     // Include new fields (available after migration)
     updateData.language = language && language !== 'auto' ? language : null;
     updateData.completionPercentage = completion.percentage;
+    updateData.strength = derivedStrength;
 
     // Update track
     const updatedTrack = await prisma.track.update({

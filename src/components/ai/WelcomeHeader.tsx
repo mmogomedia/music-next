@@ -1,13 +1,23 @@
 'use client';
 
-import React from 'react';
-import { Button } from '@heroui/react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Button,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+} from '@heroui/react';
 
 interface WelcomeHeaderProps {
   onGetStarted?: () => void;
 }
 
 export default function WelcomeHeader({ onGetStarted }: WelcomeHeaderProps) {
+  const router = useRouter();
+  const [isAdvertiseModalOpen, setIsAdvertiseModalOpen] = useState(false);
+  const [isLearnMoreModalOpen, setIsLearnMoreModalOpen] = useState(false);
   return (
     <div className='w-full bg-gradient-to-r from-blue-50/60 via-purple-50/30 to-green-50/60 dark:from-blue-950/40 dark:via-purple-950/20 dark:to-green-950/40 border-b border-gray-200/50 dark:border-slate-700/50'>
       <div className='w-full px-6 py-4 md:py-5'>
@@ -44,15 +54,16 @@ export default function WelcomeHeader({ onGetStarted }: WelcomeHeaderProps) {
                 color='primary'
                 radius='sm'
                 size='sm'
-                onPress={onGetStarted}
                 className='px-5 py-2 text-xs font-semibold bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-400'
+                onPress={() => setIsAdvertiseModalOpen(true)}
               >
-                Start Exploring
+                Advertise
               </Button>
               <Button
                 variant='bordered'
                 radius='sm'
                 size='sm'
+                onPress={() => setIsLearnMoreModalOpen(true)}
                 className='px-4 py-2 text-xs font-medium border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
               >
                 Learn More
@@ -88,6 +99,344 @@ export default function WelcomeHeader({ onGetStarted }: WelcomeHeaderProps) {
           </div>
         </div>
       </div>
+
+      {/* Advertise Modal */}
+      <Modal
+        isOpen={isAdvertiseModalOpen}
+        onClose={() => setIsAdvertiseModalOpen(false)}
+        size='2xl'
+        scrollBehavior='inside'
+        classNames={{
+          base: 'bg-white dark:bg-slate-900',
+          header: 'border-b border-gray-200 dark:border-slate-800',
+          body: 'py-6',
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className='flex flex-col gap-1'>
+            <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+              Advertise Your Music
+            </h2>
+            <p className='text-sm font-normal text-gray-600 dark:text-gray-400'>
+              Get your tracks featured in our Featured Playlist
+            </p>
+          </ModalHeader>
+          <ModalBody>
+            <div className='space-y-6'>
+              <div>
+                <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-3'>
+                  How It Works
+                </h3>
+                <p className='text-gray-700 dark:text-gray-300 leading-relaxed mb-4'>
+                  Artists can submit their tracks to the Featured Playlist for
+                  consideration. Our featured section showcases the best music
+                  from South African artists.
+                </p>
+              </div>
+
+              <div className='bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800'>
+                <h4 className='font-semibold text-blue-900 dark:text-blue-300 mb-2'>
+                  Featured Playlist Structure
+                </h4>
+                <ul className='space-y-2 text-sm text-blue-800 dark:text-blue-200'>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>4 tracks</strong> are promoted (paid placements)
+                    </span>
+                  </li>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>6 tracks</strong> are curated (editorially
+                      selected)
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className='bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white'>
+                <h4 className='font-bold text-lg mb-2'>Pricing</h4>
+                <p className='text-white/90 mb-1'>
+                  <span className='text-2xl font-bold'>R300</span> per week
+                </p>
+                <p className='text-sm text-white/80'>
+                  Your track will be featured in the promoted section for one
+                  week
+                </p>
+              </div>
+
+              <div className='flex flex-col sm:flex-row gap-3 pt-4'>
+                <Button
+                  className='bg-blue-600 text-white hover:bg-blue-700'
+                  onPress={() => {
+                    setIsAdvertiseModalOpen(false);
+                    router.push('/dashboard?tab=library');
+                  }}
+                >
+                  Submit Your Track
+                </Button>
+                <Button
+                  variant='light'
+                  onPress={() => setIsAdvertiseModalOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Learn More Modal */}
+      <Modal
+        isOpen={isLearnMoreModalOpen}
+        onClose={() => setIsLearnMoreModalOpen(false)}
+        size='2xl'
+        scrollBehavior='inside'
+        classNames={{
+          base: 'bg-white dark:bg-slate-900',
+          header: 'border-b border-gray-200 dark:border-slate-800',
+          body: 'py-6',
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className='flex flex-col gap-1'>
+            <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+              About Flemoji
+            </h2>
+            <p className='text-sm font-normal text-gray-600 dark:text-gray-400'>
+              Discover South African music through AI-powered streaming
+            </p>
+          </ModalHeader>
+          <ModalBody>
+            <div className='space-y-6'>
+              <div>
+                <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-3'>
+                  What is Flemoji?
+                </h3>
+                <p className='text-gray-700 dark:text-gray-300 leading-relaxed mb-4'>
+                  Flemoji is a cutting-edge music streaming platform designed to
+                  showcase and celebrate South African music. We combine the
+                  power of artificial intelligence with a curated music
+                  experience to help you discover amazing tracks from talented
+                  artists across South Africa.
+                </p>
+              </div>
+
+              <div className='bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800'>
+                <h4 className='font-semibold text-blue-900 dark:text-blue-300 mb-3'>
+                  Key Features
+                </h4>
+                <ul className='space-y-2 text-sm text-blue-800 dark:text-blue-200'>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>AI-Powered Chat Streaming:</strong> Discover music
+                      through natural conversation. Ask for songs by mood,
+                      genre, artist, or any description.
+                    </span>
+                  </li>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>Curated Playlists:</strong> Explore handpicked
+                      collections featuring the best South African music across
+                      genres, provinces, and themes.
+                    </span>
+                  </li>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>Artist Support:</strong> A platform built for
+                      artists to upload, manage, and promote their music while
+                      building their fanbase.
+                    </span>
+                  </li>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>Featured Playlist:</strong> Get your music
+                      featured in our prominent playlist with both curated and
+                      promotional opportunities.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className='font-semibold text-gray-900 dark:text-white mb-2'>
+                  For Music Lovers
+                </h4>
+                <p className='text-gray-700 dark:text-gray-300 leading-relaxed text-sm'>
+                  Whether you&apos;re looking for the latest Amapiano hits,
+                  classic South African jazz, or discovering new independent
+                  artists, Flemoji makes it easy to find exactly what you want
+                  to hear. Our AI chat interface understands natural language,
+                  so you can simply describe what you&apos;re in the mood for
+                  and let us curate the perfect listening experience.
+                </p>
+              </div>
+
+              <div>
+                <h4 className='font-semibold text-gray-900 dark:text-white mb-2'>
+                  For Artists
+                </h4>
+                <p className='text-gray-700 dark:text-gray-300 leading-relaxed text-sm'>
+                  Flemoji provides artists with powerful tools to manage their
+                  music library, track performance analytics, submit tracks to
+                  playlists, and grow their audience. Upload your tracks, create
+                  smart links, and connect with fans across South Africa and
+                  beyond.
+                </p>
+              </div>
+
+              <div className='flex flex-col sm:flex-row gap-3 pt-4'>
+                <Button
+                  className='bg-blue-600 text-white hover:bg-blue-700'
+                  onPress={() => {
+                    setIsLearnMoreModalOpen(false);
+                    onGetStarted?.();
+                  }}
+                >
+                  Start Exploring
+                </Button>
+                <Button
+                  variant='light'
+                  onPress={() => setIsLearnMoreModalOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Learn More Modal */}
+      <Modal
+        isOpen={isLearnMoreModalOpen}
+        onClose={() => setIsLearnMoreModalOpen(false)}
+        size='2xl'
+        scrollBehavior='inside'
+        classNames={{
+          base: 'bg-white dark:bg-slate-900',
+          header: 'border-b border-gray-200 dark:border-slate-800',
+          body: 'py-6',
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className='flex flex-col gap-1'>
+            <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
+              About Flemoji
+            </h2>
+            <p className='text-sm font-normal text-gray-600 dark:text-gray-400'>
+              Discover South African music through AI-powered streaming
+            </p>
+          </ModalHeader>
+          <ModalBody>
+            <div className='space-y-6'>
+              <div>
+                <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-3'>
+                  What is Flemoji?
+                </h3>
+                <p className='text-gray-700 dark:text-gray-300 leading-relaxed mb-4'>
+                  Flemoji is a cutting-edge music streaming platform designed to
+                  showcase and celebrate South African music. We combine the
+                  power of artificial intelligence with a curated music
+                  experience to help you discover amazing tracks from talented
+                  artists across South Africa.
+                </p>
+              </div>
+
+              <div className='bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800'>
+                <h4 className='font-semibold text-blue-900 dark:text-blue-300 mb-3'>
+                  Key Features
+                </h4>
+                <ul className='space-y-2 text-sm text-blue-800 dark:text-blue-200'>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>AI-Powered Chat Streaming:</strong> Discover music
+                      through natural conversation. Ask for songs by mood,
+                      genre, artist, or any description.
+                    </span>
+                  </li>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>Curated Playlists:</strong> Explore handpicked
+                      collections featuring the best South African music across
+                      genres, provinces, and themes.
+                    </span>
+                  </li>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>Artist Support:</strong> A platform built for
+                      artists to upload, manage, and promote their music while
+                      building their fanbase.
+                    </span>
+                  </li>
+                  <li className='flex items-start gap-2'>
+                    <span className='font-semibold'>•</span>
+                    <span>
+                      <strong>Featured Playlist:</strong> Get your music
+                      featured in our prominent playlist with both curated and
+                      promotional opportunities.
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className='font-semibold text-gray-900 dark:text-white mb-2'>
+                  For Music Lovers
+                </h4>
+                <p className='text-gray-700 dark:text-gray-300 leading-relaxed text-sm'>
+                  Whether you&apos;re looking for the latest Amapiano hits,
+                  classic South African jazz, or discovering new independent
+                  artists, Flemoji makes it easy to find exactly what you want
+                  to hear. Our AI chat interface understands natural language,
+                  so you can simply describe what you&apos;re in the mood for
+                  and let us curate the perfect listening experience.
+                </p>
+              </div>
+
+              <div>
+                <h4 className='font-semibold text-gray-900 dark:text-white mb-2'>
+                  For Artists
+                </h4>
+                <p className='text-gray-700 dark:text-gray-300 leading-relaxed text-sm'>
+                  Flemoji provides artists with powerful tools to manage their
+                  music library, track performance analytics, submit tracks to
+                  playlists, and grow their audience. Upload your tracks, create
+                  smart links, and connect with fans across South Africa and
+                  beyond.
+                </p>
+              </div>
+
+              <div className='flex flex-col sm:flex-row gap-3 pt-4'>
+                <Button
+                  className='bg-blue-600 text-white hover:bg-blue-700'
+                  onPress={() => {
+                    setIsLearnMoreModalOpen(false);
+                    onGetStarted?.();
+                  }}
+                >
+                  Start Exploring
+                </Button>
+                <Button
+                  variant='light'
+                  onPress={() => setIsLearnMoreModalOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

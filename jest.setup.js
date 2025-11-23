@@ -131,6 +131,15 @@ jest.mock('@heroui/dom-animation', () => ({
   default: () => ({}),
 }));
 
+// Polyfill ReadableStream for LangChain compatibility
+if (typeof global.ReadableStream === 'undefined') {
+  global.ReadableStream = class ReadableStream {
+    constructor() {
+      // Minimal polyfill for Jest
+    }
+  };
+}
+
 // Mock environment variables
 process.env.NEXTAUTH_SECRET = 'test-secret';
 process.env.NEXTAUTH_URL = 'http://localhost:3000';

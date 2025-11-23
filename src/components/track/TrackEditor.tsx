@@ -17,11 +17,6 @@ import {
   Tab,
   Tabs,
   Textarea,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
   Progress,
   Chip,
   Tooltip,
@@ -89,6 +84,8 @@ export interface TrackEditorValues {
   licenseType?: string;
   distributionRights?: string;
   albumArtwork?: string;
+  attributes: string[];
+  mood: string[];
 }
 
 export interface TrackEditorProps {
@@ -142,6 +139,36 @@ const DEFAULT_VALUES: TrackEditorValues = {
   licenseType: 'All Rights Reserved',
   distributionRights: '',
   albumArtwork: '',
+  attributes: [],
+  mood: [],
+};
+
+const normalizeStringArray = (
+  arr?: string[] | null,
+  { unique = true }: { unique?: boolean } = {}
+): string[] => {
+  if (!Array.isArray(arr)) {
+    return [];
+  }
+
+  const cleaned = arr
+    .map(item => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+
+  if (!unique) {
+    return cleaned;
+  }
+
+  const seen = new Set<string>();
+  const result: string[] = [];
+  cleaned.forEach(item => {
+    const key = item.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(item);
+    }
+  });
+  return result;
 };
 
 const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
@@ -168,6 +195,8 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
     const [values, setValues] = useState<TrackEditorValues>({
       ...DEFAULT_VALUES,
       ...initialValues,
+      attributes: normalizeStringArray(initialValues?.attributes ?? []),
+      mood: normalizeStringArray(initialValues?.mood ?? []),
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [genres, setGenres] = useState<GenreOption[]>([]);
@@ -176,16 +205,25 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
     const [isUploadingArtwork, setIsUploadingArtwork] = useState(false);
 
     // AI lyrics processing state
-    const [isProcessingLyrics, setIsProcessingLyrics] = useState(false);
-    const [lyricsProcessingError, setLyricsProcessingError] = useState<
-      string | null
-    >(null);
-    const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
-    const [generatedSummary, setGeneratedSummary] = useState<string>('');
-    const [rateLimitInfo, setRateLimitInfo] = useState<{
+    const [attributeInput, setAttributeInput] = useState('');
+    const [moodInput, setMoodInput] = useState('');
+    const [isGeneratingMetadata, setIsGeneratingMetadata] = useState(false);
+    const [metadataError, setMetadataError] = useState<string | null>(null);
+    const [generationNotice, setGenerationNotice] = useState<string | null>(
+      null
+    );
+    const [metadataRateLimitInfo, setMetadataRateLimitInfo] = useState<{
       remaining: number;
       resetAt: string;
     } | null>(null);
+
+    // Track recently added items for visual feedback
+    const [recentlyAddedAttribute, setRecentlyAddedAttribute] = useState<
+      string | null
+    >(null);
+    const [recentlyAddedMood, setRecentlyAddedMood] = useState<string | null>(
+      null
+    );
 
     // Completion tracking
     const [showCompletionBreakdown, setShowCompletionBreakdown] =
@@ -207,6 +245,12 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
       setValues(prev => ({
         ...prev,
         ...initialValues,
+        attributes: normalizeStringArray(
+          (initialValues?.attributes as string[] | undefined) ?? prev.attributes
+        ),
+        mood: normalizeStringArray(
+          (initialValues?.mood as string[] | undefined) ?? prev.mood
+        ),
       }));
     }, [initialValues]);
 
@@ -251,6 +295,75 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
       }
     };
 
+    const addListValue = (
+      field: 'attributes' | 'mood',
+      rawValue: string
+    ): void => {
+      const cleaned = rawValue.trim();
+      if (!cleaned) return;
+
+      const existing =
+        field === 'attributes'
+          ? normalizeStringArray(values.attributes)
+          : normalizeStringArray(values.mood);
+
+      const alreadyExists = existing.some(
+        item => item.toLowerCase() === cleaned.toLowerCase()
+      );
+      if (alreadyExists) return;
+
+      updateValue(field, [...existing, cleaned]);
+    };
+
+    const removeListValue = (field: 'attributes' | 'mood', value: string) => {
+      const existing =
+        field === 'attributes'
+          ? normalizeStringArray(values.attributes)
+          : normalizeStringArray(values.mood);
+      updateValue(
+        field,
+        existing.filter(item => item.toLowerCase() !== value.toLowerCase())
+      );
+    };
+
+    const handleAddAttribute = () => {
+      if (!attributeInput.trim()) return;
+      const value = attributeInput.trim();
+      addListValue('attributes', value);
+      setAttributeInput('');
+      // Visual feedback: highlight the newly added attribute
+      setRecentlyAddedAttribute(value);
+      setTimeout(() => setRecentlyAddedAttribute(null), 2000); // Clear after 2 seconds
+    };
+
+    const handleAddMood = () => {
+      if (!moodInput.trim()) return;
+      const value = moodInput.trim();
+      addListValue('mood', value);
+      setMoodInput('');
+      // Visual feedback: highlight the newly added mood
+      setRecentlyAddedMood(value);
+      setTimeout(() => setRecentlyAddedMood(null), 2000); // Clear after 2 seconds
+    };
+
+    const handleAttributeKeyDown = (
+      event: React.KeyboardEvent<HTMLInputElement>
+    ) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        handleAddAttribute();
+      }
+    };
+
+    const handleMoodKeyDown = (
+      event: React.KeyboardEvent<HTMLInputElement>
+    ) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        handleAddMood();
+      }
+    };
+
     const handleArtworkUpload = async (file: File | null) => {
       if (!file) {
         updateValue('albumArtwork', '');
@@ -278,22 +391,30 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
       }
     };
 
-    // Handle AI lyrics processing
-    const handleProcessLyrics = async () => {
+    // Handle AI metadata generation (description, attributes, mood)
+    const handleGenerateMetadata = async () => {
       if (!values.lyrics || values.lyrics.trim().length === 0) {
+        setMetadataError(
+          'Add lyrics on the Metadata tab to generate metadata.'
+        );
+        setSelectedTab('metadata');
         return;
       }
 
-      setIsProcessingLyrics(true);
-      setLyricsProcessingError(null);
+      setIsGeneratingMetadata(true);
+      setMetadataError(null);
+      setGenerationNotice(null);
 
       try {
-        const response = await fetch('/api/ai/process-lyrics', {
+        const response = await fetch('/api/tracks/derive-metadata', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             lyrics: values.lyrics,
             language: values.language === 'auto' ? undefined : values.language,
+            description: values.description,
+            attributes: values.attributes,
+            mood: values.mood,
           }),
         });
 
@@ -301,19 +422,21 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
 
         if (!response.ok) {
           if (response.status === 429) {
-            setLyricsProcessingError(
-              `Rate limit exceeded. ${data.message || 'Please try again later.'}`
+            setMetadataError(
+              data.message ||
+                'You have reached the metadata generation limit. Try again later.'
             );
-            setRateLimitInfo(data.rateLimit || null);
+            setMetadataRateLimitInfo(data.rateLimit || null);
           } else {
-            setLyricsProcessingError(
-              data.message || data.error || 'Failed to process lyrics'
+            setMetadataError(
+              data.message || data.error || 'Failed to generate metadata'
             );
           }
           return;
         }
 
-        // Update language if detected
+        setMetadataRateLimitInfo(data.rateLimit || null);
+
         if (
           data.detectedLanguage &&
           (!values.language || values.language === 'auto')
@@ -321,42 +444,29 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
           updateValue('language', data.detectedLanguage);
         }
 
-        // Show preview dialog
-        setGeneratedSummary(data.summary || '');
-        setRateLimitInfo(data.rateLimit || null);
-        setPreviewDialogOpen(true);
+        if (data.description) {
+          updateValue('description', data.description.trim());
+        }
+
+        if (Array.isArray(data.attributes)) {
+          updateValue('attributes', normalizeStringArray(data.attributes));
+        }
+
+        if (Array.isArray(data.mood)) {
+          updateValue('mood', normalizeStringArray(data.mood));
+        }
+
+        setGenerationNotice(
+          'Metadata generated. Feel free to refine anything.'
+        );
       } catch (error) {
-        console.error('Error processing lyrics:', error);
-        setLyricsProcessingError(
-          error instanceof Error ? error.message : 'Failed to process lyrics'
+        console.error('Error generating metadata:', error);
+        setMetadataError(
+          error instanceof Error ? error.message : 'Failed to generate metadata'
         );
       } finally {
-        setIsProcessingLyrics(false);
+        setIsGeneratingMetadata(false);
       }
-    };
-
-    // Handle preview dialog actions
-    const handleApplySummary = (action: 'replace' | 'prepend' | 'append') => {
-      if (!generatedSummary) return;
-
-      const currentDescription = values.description || '';
-      let newDescription = '';
-
-      switch (action) {
-        case 'replace':
-          newDescription = generatedSummary;
-          break;
-        case 'prepend':
-          newDescription = `${generatedSummary}\n\n${currentDescription}`;
-          break;
-        case 'append':
-          newDescription = `${currentDescription}\n\n${generatedSummary}`;
-          break;
-      }
-
-      updateValue('description', newDescription.trim());
-      setPreviewDialogOpen(false);
-      setGeneratedSummary('');
     };
 
     const handleCreateArtist = async (
@@ -744,14 +854,12 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                           content={
                             <div className='max-w-xs space-y-2 p-1'>
                               <p className='font-medium'>
-                                AI Description Generator
+                                AI Metadata Assistant
                               </p>
                               <p className='text-sm'>
-                                Our AI will automatically detect the language of
-                                your lyrics and translate them to English if
-                                needed. Then it will generate a concise,
-                                engaging summary perfect for your track
-                                description.
+                                Generates a description, key attributes, and
+                                mood tags directly from your lyrics. It will
+                                auto-detect and translate languages when needed.
                               </p>
                               <p className='text-xs opacity-90 mt-2'>
                                 Supported languages: English, Zulu, Xhosa,
@@ -777,38 +885,44 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                           variant='flat'
                           color='secondary'
                           startContent={<SparklesIcon className='w-4 h-4' />}
-                          onPress={handleProcessLyrics}
-                          isLoading={isProcessingLyrics}
+                          onPress={handleGenerateMetadata}
+                          isLoading={isGeneratingMetadata}
                           isDisabled={
                             !values.lyrics || values.lyrics.trim().length === 0
                           }
                         >
-                          {isProcessingLyrics
-                            ? 'Processing...'
-                            : 'Generate from Lyrics'}
+                          {isGeneratingMetadata
+                            ? 'Generating...'
+                            : 'Derive Metadata'}
                         </Button>
                       </>
                     )}
                   </div>
                 </div>
-                {rateLimitInfo && (
+                {metadataRateLimitInfo && (
                   <p className='text-xs text-gray-500 dark:text-gray-400'>
-                    {rateLimitInfo.remaining} AI requests remaining this hour
+                    {metadataRateLimitInfo.remaining} AI requests remaining this
+                    hour
                   </p>
                 )}
-                {lyricsProcessingError && (
+                {metadataError && (
                   <div className='flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-sm text-red-600 dark:text-red-400'>
                     <XCircleIcon className='w-4 h-4 flex-shrink-0' />
-                    <span className='flex-1'>{lyricsProcessingError}</span>
+                    <span className='flex-1'>{metadataError}</span>
                     <Button
                       size='sm'
                       variant='light'
                       color='danger'
-                      onPress={handleProcessLyrics}
-                      isDisabled={isProcessingLyrics}
+                      onPress={handleGenerateMetadata}
+                      isDisabled={isGeneratingMetadata}
                     >
                       Retry
                     </Button>
+                  </div>
+                )}
+                {generationNotice && (
+                  <div className='p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded text-xs text-green-700 dark:text-green-300'>
+                    {generationNotice}
                   </div>
                 )}
                 <Textarea
@@ -817,6 +931,117 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                   onValueChange={value => updateValue('description', value)}
                   rows={3}
                 />
+
+                <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2'>
+                  <div className='space-y-2'>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                        Attributes
+                      </span>
+                      <span className='text-xs text-gray-500 dark:text-gray-400'>
+                        Themes & topics
+                      </span>
+                    </div>
+                    <div className='flex flex-col sm:flex-row gap-2'>
+                      <Input
+                        label='Add Attribute'
+                        placeholder='e.g. women empowerment'
+                        labelPlacement='outside'
+                        value={attributeInput}
+                        onValueChange={setAttributeInput}
+                        onKeyDown={handleAttributeKeyDown}
+                        className='flex-1'
+                      />
+                      <Button
+                        variant='flat'
+                        color='primary'
+                        className='sm:w-auto'
+                        onPress={handleAddAttribute}
+                        isDisabled={!attributeInput.trim()}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    <div className='flex flex-wrap gap-2 min-h-[40px]'>
+                      {(values.attributes || []).length === 0 && (
+                        <p className='text-xs text-gray-500 dark:text-gray-400'>
+                          Add at least 3 attributes to capture the song&apos;s
+                          themes.
+                        </p>
+                      )}
+                      {(values.attributes || []).map(attribute => (
+                        <Chip
+                          key={attribute}
+                          variant='flat'
+                          color='primary'
+                          onClose={() =>
+                            removeListValue('attributes', attribute)
+                          }
+                          className={`bg-white dark:bg-slate-800 transition-all duration-300 ${
+                            recentlyAddedAttribute === attribute
+                              ? 'ring-2 ring-primary-500 ring-offset-2 scale-105 animate-pulse'
+                              : ''
+                          }`}
+                        >
+                          {attribute}
+                        </Chip>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className='space-y-2'>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                        Mood
+                      </span>
+                      <span className='text-xs text-gray-500 dark:text-gray-400'>
+                        Displayed as pills in AI
+                      </span>
+                    </div>
+                    <div className='flex flex-col sm:flex-row gap-2'>
+                      <Input
+                        label='Add Mood'
+                        placeholder='e.g. uplifting'
+                        labelPlacement='outside'
+                        value={moodInput}
+                        onValueChange={setMoodInput}
+                        onKeyDown={handleMoodKeyDown}
+                        className='flex-1'
+                      />
+                      <Button
+                        variant='flat'
+                        color='secondary'
+                        className='sm:w-auto'
+                        onPress={handleAddMood}
+                        isDisabled={!moodInput.trim()}
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    <div className='flex flex-wrap gap-2 min-h-[40px]'>
+                      {(values.mood || []).length === 0 && (
+                        <p className='text-xs text-gray-500 dark:text-gray-400'>
+                          Capture the vibe (e.g. mellow, energetic, soulful).
+                        </p>
+                      )}
+                      {(values.mood || []).map(moodValue => (
+                        <Chip
+                          key={moodValue}
+                          variant='flat'
+                          color='secondary'
+                          onClose={() => removeListValue('mood', moodValue)}
+                          className={`bg-white dark:bg-slate-800 uppercase tracking-wide text-xs font-semibold transition-all duration-300 ${
+                            recentlyAddedMood === moodValue
+                              ? 'ring-2 ring-secondary-500 ring-offset-2 scale-105 animate-pulse'
+                              : ''
+                          }`}
+                        >
+                          {moodValue}
+                        </Chip>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </Tab>
@@ -1116,91 +1341,6 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
             </Button>
           </div>
         )}
-
-        {/* Preview Dialog for AI-generated Description */}
-        <Modal
-          isOpen={previewDialogOpen}
-          onClose={() => {
-            setPreviewDialogOpen(false);
-            setGeneratedSummary('');
-          }}
-          size='2xl'
-        >
-          <ModalContent>
-            <ModalHeader>
-              <div className='flex items-center gap-2'>
-                <SparklesIcon className='w-5 h-5 text-purple-600' />
-                <span>AI-Generated Description</span>
-              </div>
-            </ModalHeader>
-            <ModalBody>
-              <div className='space-y-4'>
-                <div>
-                  <p className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
-                    Generated Summary:
-                  </p>
-                  <div className='p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg'>
-                    <p className='text-sm text-gray-900 dark:text-white whitespace-pre-wrap'>
-                      {generatedSummary}
-                    </p>
-                  </div>
-                </div>
-                {values.description && values.description.trim().length > 0 && (
-                  <div>
-                    <p className='text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
-                      Current Description:
-                    </p>
-                    <div className='p-4 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg'>
-                      <p className='text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap'>
-                        {values.description}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                <p className='text-xs text-gray-500 dark:text-gray-400'>
-                  Choose how to apply the generated description:
-                </p>
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                variant='light'
-                onPress={() => {
-                  setPreviewDialogOpen(false);
-                  setGeneratedSummary('');
-                }}
-              >
-                Cancel
-              </Button>
-              {values.description && values.description.trim().length > 0 && (
-                <>
-                  <Button
-                    variant='flat'
-                    color='primary'
-                    onPress={() => handleApplySummary('prepend')}
-                  >
-                    Prepend
-                  </Button>
-                  <Button
-                    variant='flat'
-                    color='primary'
-                    onPress={() => handleApplySummary('append')}
-                  >
-                    Append
-                  </Button>
-                </>
-              )}
-              <Button
-                color='primary'
-                onPress={() => handleApplySummary('replace')}
-              >
-                {values.description && values.description.trim().length > 0
-                  ? 'Replace'
-                  : 'Apply'}
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
       </form>
     );
 

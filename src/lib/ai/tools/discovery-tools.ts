@@ -15,6 +15,7 @@ import {
   ArtistService,
   AnalyticsService,
 } from '@/lib/services';
+import { constructFileUrl } from '@/lib/url-utils';
 
 /**
  * Search for tracks by query string
@@ -22,7 +23,7 @@ import {
 export const searchTracksTool = new DynamicStructuredTool({
   name: 'search_tracks',
   description:
-    'Search for music tracks by title, artist name, or description. Returns a list of matching tracks with metadata. IMPORTANT: When searching for tracks with multiple artists (e.g., "Caeser x MLT zA"), you should also search for each individual artist separately to find all their tracks. Split multi-artist names by "x", "&", "feat", "ft", "featuring", or commas.',
+    'Search for music tracks by title, artist name, or description. Returns a maximum of 10 tracks per call. IMPORTANT: When searching for tracks with multiple artists (e.g., "Caeser x MLT zA"), you should also search for each individual artist separately to find all their tracks. Split multi-artist names by "x", "&", "feat", "ft", "featuring", or commas. If you need more tracks, use the excludeIds parameter to exclude already-returned track IDs and call the tool again.',
   schema: z.object({
     query: z
       .string()
@@ -37,11 +38,12 @@ export const searchTracksTool = new DynamicStructuredTool({
       .string()
       .optional()
       .describe('Optional province filter (e.g., Gauteng, Western Cape)'),
-    limit: z
-      .number()
+    excludeIds: z
+      .array(z.string())
       .optional()
-      .default(20)
-      .describe('Maximum number of tracks to return (1-50)'),
+      .describe(
+        'Array of track IDs to exclude from results. Use this to get the next batch of tracks (pagination).'
+      ),
     orderBy: z
       .enum(['recent', 'popular', 'alphabetical'])
       .optional()
@@ -50,14 +52,37 @@ export const searchTracksTool = new DynamicStructuredTool({
         'Sort order: recent (newest first), popular (most plays), or alphabetical'
       ),
   }),
-  func: async ({ query, genre, province, limit = 20, orderBy = 'recent' }) => {
+  func: async ({ query, genre, province, excludeIds, orderBy = 'recent' }) => {
+    // eslint-disable-next-line no-console
+    console.log('[search_tracks Tool] ===== TOOL CALLED =====');
+    // eslint-disable-next-line no-console
+    console.log('[search_tracks Tool] Parameters:', {
+      query,
+      genre,
+      province,
+      excludeIds,
+      orderBy,
+      excludeIdsCount: excludeIds?.length || 0,
+    });
+
     try {
+      // Hard limit: Always return maximum 10 tracks
       const tracks = await MusicService.searchTracks(query, {
         genre,
         province,
-        limit: Math.min(limit, 50),
+        limit: 10, // Hard limit - never more than 10
         offset: 0,
         orderBy,
+        minStrength: 70,
+        excludeIds, // Exclude already-returned tracks for pagination
+      });
+
+      // eslint-disable-next-line no-console
+      console.log('[search_tracks Tool] Results:', {
+        tracksFound: tracks.length,
+        firstTrackTitle: tracks[0]?.title || 'N/A',
+        firstTrackGenre: tracks[0]?.genre || 'N/A',
+        firstTrackStrength: tracks[0]?.strength || 'N/A',
       });
 
       return JSON.stringify({
@@ -73,12 +98,18 @@ export const searchTracksTool = new DynamicStructuredTool({
           coverImageUrl: track.coverImageUrl,
           uniqueUrl: track.uniqueUrl,
           filePath: track.filePath,
+          fileUrl: track.fileUrl,
           artistId: track.artistProfileId,
           userId: track.userId,
           createdAt: track.createdAt,
           updatedAt: track.updatedAt,
           albumArtwork: track.albumArtwork,
           isDownloadable: track.isDownloadable,
+          description: track.description,
+          attributes: track.attributes || [],
+          mood: track.mood || [],
+          downloadCount: track.downloadCount || 0,
+          strength: track.strength || 0,
         })),
         count: tracks.length,
       });
@@ -315,10 +346,25 @@ export const getTrendingTracksTool = new DynamicStructuredTool({
       .describe('Number of tracks to return (1-50)'),
   }),
   func: async ({ limit = 20 }) => {
+    // eslint-disable-next-line no-console
+    console.log('[get_trending_tracks Tool] ===== TOOL CALLED =====');
+    // eslint-disable-next-line no-console
+    console.log('[get_trending_tracks Tool] Parameters:', {
+      limit,
+      effectiveLimit: Math.min(limit, 50),
+    });
+
     try {
       const tracks = await AnalyticsService.getTrendingTracks(
         Math.min(limit, 50)
       );
+
+      // eslint-disable-next-line no-console
+      console.log('[get_trending_tracks Tool] Results:', {
+        tracksFound: tracks.length,
+        firstTrackTitle: tracks[0]?.title || 'N/A',
+        firstTrackGenre: tracks[0]?.genre || 'N/A',
+      });
 
       return JSON.stringify({
         tracks: tracks.map(track => ({
@@ -332,12 +378,14 @@ export const getTrendingTracksTool = new DynamicStructuredTool({
           coverImageUrl: track.coverImageUrl,
           duration: track.duration,
           filePath: track.filePath,
+          fileUrl: constructFileUrl(track.filePath),
           artistId: track.artistProfileId,
           userId: track.userId,
           createdAt: track.createdAt,
           updatedAt: track.updatedAt,
           albumArtwork: track.albumArtwork,
           isDownloadable: track.isDownloadable,
+          strength: track.strength || 0,
         })),
         count: tracks.length,
       });
@@ -461,7 +509,10 @@ export const getTracksByGenreTool = new DynamicStructuredTool({
     try {
       const tracks = await MusicService.getTracksByGenre(
         genre,
-        Math.min(limit, 50)
+        Math.min(limit, 50),
+        {
+          minStrength: 70,
+        }
       );
 
       return JSON.stringify({
@@ -476,12 +527,18 @@ export const getTracksByGenreTool = new DynamicStructuredTool({
           coverImageUrl: track.coverImageUrl,
           duration: track.duration,
           filePath: track.filePath,
+          fileUrl: track.fileUrl,
           artistId: track.artistProfileId,
           userId: track.userId,
           createdAt: track.createdAt,
           updatedAt: track.updatedAt,
           albumArtwork: track.albumArtwork,
           isDownloadable: track.isDownloadable,
+          description: track.description,
+          attributes: track.attributes || [],
+          mood: track.mood || [],
+          downloadCount: track.downloadCount || 0,
+          strength: track.strength || 0,
         })),
         count: tracks.length,
       });

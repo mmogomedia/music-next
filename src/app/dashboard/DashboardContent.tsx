@@ -63,6 +63,28 @@ export default function DashboardContent() {
   const { playTrack, currentTrack, isPlaying } = useMusicPlayer();
   const [activeTab, setActiveTab] = useState('overview');
   const [timeRange, setTimeRange] = useState('7d');
+
+  // Read tab from URL query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (
+      tabParam &&
+      [
+        'overview',
+        'library',
+        'upload',
+        'submissions',
+        'quick-links',
+        'analytics',
+        'profile',
+      ].includes(tabParam)
+    ) {
+      setActiveTab(tabParam);
+      // Clean up URL by removing the query parameter
+      router.replace('/dashboard', { scroll: false });
+    }
+  }, [router]);
   const {
     stats,
     loading: statsLoading,
@@ -907,6 +929,8 @@ export default function DashboardContent() {
                   licenseType: editingTrack.licenseType,
                   distributionRights: editingTrack.distributionRights,
                   albumArtwork: editingTrack.albumArtwork,
+                  attributes: editingTrack.attributes || [],
+                  mood: editingTrack.mood || [],
                 }
               : undefined
           }

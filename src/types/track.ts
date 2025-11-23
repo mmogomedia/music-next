@@ -55,4 +55,8 @@ export interface Track {
   // Completion & Language
   completionPercentage?: number; // 0-100
   language?: string; // ISO 639-1 code
+
+  // AI Metadata
+  attributes?: string[]; // Thematic tags (e.g., "women empowerment", "self-love")
+  mood?: string[]; // Vibe tags (e.g., "uplifting", "melancholic")
 }

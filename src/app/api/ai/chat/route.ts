@@ -44,9 +44,23 @@ export async function POST(request: NextRequest) {
       context?.userId,
       conversationId
     );
+
+    // Get conversation history for context-aware routing
+    const conversationHistory = context?.userId
+      ? await conversationStore.getConversation(
+          context.userId,
+          conversationId,
+          6
+        )
+      : [];
+
     const agentContext = {
       userId: context?.userId,
       conversationId: conversationId,
+      conversationHistory: conversationHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      })),
       filters: {
         ...built.filters,
         // Add province from request context if provided
@@ -87,13 +101,41 @@ export async function POST(request: NextRequest) {
         'type' in responseData &&
         'data' in responseData;
 
+      // Ensure proper structure: if responseData is already a TrackListResponse or similar,
+      // use it as-is. Otherwise, wrap it appropriately.
+      let finalData: any;
+      if (hasStructuredType) {
+        // Already has type and data structure (TrackListResponse, PlaylistResponse, etc.)
+        finalData = responseData;
+      } else if (
+        responseData &&
+        typeof responseData === 'object' &&
+        'tracks' in responseData
+      ) {
+        // Has tracks but missing type wrapper - wrap it as TrackListResponse
+        finalData = {
+          type: 'track_list',
+          message: '',
+          timestamp: new Date(),
+          data: {
+            tracks: responseData.tracks,
+            ...(responseData.other && { other: responseData.other }),
+            metadata: {
+              ...(responseData.metadata || {}),
+              total: responseData.count || responseData.tracks?.length || 0,
+            },
+          },
+        };
+      } else {
+        // Fallback: use data as-is
+        finalData = responseData;
+      }
+
       const chatResponse: ChatResponse = {
         message: responseMessage,
         conversationId,
         timestamp: new Date(),
-        data: hasStructuredType
-          ? responseData // Already has type and data structure
-          : responseData, // Fallback to just data
+        data: finalData,
       };
 
       // Store assistant response and update preferences

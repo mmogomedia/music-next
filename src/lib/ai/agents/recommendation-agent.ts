@@ -9,9 +9,8 @@
 
 import { BaseAgent, type AgentContext, type AgentResponse } from './base-agent';
 import { analyticsTools, discoveryTools } from '@/lib/ai/tools';
-import { ChatOpenAI, AzureChatOpenAI } from '@langchain/openai';
-import { ChatAnthropic } from '@langchain/anthropic';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { createModel } from './model-factory';
+import { RECOMMENDATION_SYSTEM_PROMPT } from './agent-prompts';
 import type { AIProvider } from '@/types/ai-service';
 import type {
   TrackListResponse,
@@ -23,80 +22,24 @@ import {
   type ExecutedToolResult,
 } from '@/lib/ai/tool-executor';
 
-const RECOMMENDATION_SYSTEM_PROMPT = `You are a music recommendation assistant for Flemoji, a South African music streaming platform.
-
-Your role is to provide personalized music recommendations based on user preferences, listening history, and current trends.
-
-Available data sources:
-- TRENDING: Current trending tracks (use get_trending_tracks tool)
-- GENRE STATS: Statistics by genre (use get_genre_stats tool)
-- PROVINCE STATS: Regional music statistics (use get_province_stats tool)
-- TOP CHARTS: Popular tracks (use get_top_charts tool)
-- FEATURED PLAYLISTS: Curated playlists (use get_featured_playlists tool)
-- USER HISTORY: User's listening patterns (if available)
-
-IMPORTANT - You MUST use tools to gather data:
-1. Always call get_trending_tracks or get_top_charts to find popular music
-2. Use get_genre_stats or get_province_stats to understand what's popular in specific genres/regions
-3. Use search_tracks or get_tracks_by_genre to find specific tracks
-4. Use get_featured_playlists or get_playlists_by_genre to find playlists
-
-When responding:
-- Be enthusiastic about helping users discover new music
-- Base recommendations on REAL DATA from tools - don't make up tracks or artists
-- Explain why you're recommending specific tracks/artists (mention play counts, trending scores, genre popularity)
-- Provide context about genres and regions
-- Keep recommendations diverse and interesting
-- Use the tools available to gather real data before responding
-
-You have access to analytics and discovery tools. USE THEM to provide data-driven recommendations based on actual Flemoji data.`;
-
 export class RecommendationAgent extends BaseAgent {
   private model: any;
 
+  /**
+   * Create a new RecommendationAgent instance
+   * @param provider - AI provider to use (defaults to 'azure-openai')
+   */
   constructor(provider: AIProvider = 'azure-openai') {
     super('RecommendationAgent', RECOMMENDATION_SYSTEM_PROMPT);
-
-    // Initialize model based on provider
-    switch (provider) {
-      case 'azure-openai':
-        this.model = new AzureChatOpenAI({
-          azureOpenAIApiDeploymentName:
-            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
-          azureOpenAIApiVersion:
-            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
-          temperature: 1,
-        });
-        break;
-      case 'openai':
-        this.model = new ChatOpenAI({
-          modelName: 'gpt-4o-mini',
-          temperature: 0.7,
-        });
-        break;
-      case 'anthropic':
-        this.model = new ChatAnthropic({
-          modelName: 'claude-3-5-sonnet',
-          temperature: 0.7,
-        });
-        break;
-      case 'google':
-        this.model = new ChatGoogleGenerativeAI({
-          model: 'gemini-pro',
-          temperature: 0.7,
-        });
-        break;
-      default:
-        this.model = new AzureChatOpenAI({
-          azureOpenAIApiDeploymentName:
-            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
-          azureOpenAIApiVersion:
-            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
-          temperature: 1,
-        });
-    }
+    this.model = createModel(provider);
   }
 
+  /**
+   * Process a user message and return personalized recommendations
+   * @param message - User's recommendation request message
+   * @param context - Optional agent context (userId, filters, etc.)
+   * @returns Agent response with recommended tracks or playlists
+   */
   async process(
     message: string,
     context?: AgentContext
@@ -175,7 +118,10 @@ export class RecommendationAgent extends BaseAgent {
   }
 
   /**
-   * Extract track reasons from AI response message
+   * Extract track recommendation reasons from AI response message
+   * @param message - AI-generated response message
+   * @param tracks - Array of tracks to match reasons to
+   * @returns Map of track ID to reason string
    */
   private extractTrackReasons(
     message: string,
@@ -250,7 +196,12 @@ export class RecommendationAgent extends BaseAgent {
   }
 
   /**
-   * Convert tool results to structured AI response format
+   * Convert tool execution results to structured AI response format
+   * @param results - Tool execution results
+   * @param context - Optional agent context
+   * @param userMessage - Original user message
+   * @param aiMessage - AI-generated response message
+   * @returns Structured agent response or null
    */
   private async convertToolResultsToResponse(
     results: ExecutedToolResult[],
@@ -274,7 +225,9 @@ export class RecommendationAgent extends BaseAgent {
   }
 
   /**
-   * Extract track names/IDs from user message for filtering
+   * Extract track names/IDs from user message for filtering recommendations
+   * @param message - User message to extract from
+   * @returns Object with trackIds and trackTitles arrays
    */
   private extractTrackFromMessage(message: string): {
     trackIds: string[];
@@ -311,6 +264,10 @@ export class RecommendationAgent extends BaseAgent {
 
   /**
    * Convert raw tool data to structured AI response format
+   * @param toolData - Array of tool results with tool name and data
+   * @param userMessage - Original user message for filtering
+   * @param aiMessage - AI-generated response message for extracting reasons
+   * @returns Structured agent response or null
    */
   private async convertToolDataToResponse(
     toolData: any[],

@@ -9,80 +9,35 @@
 
 import { BaseAgent, type AgentContext, type AgentResponse } from './base-agent';
 import { playbackTools } from '@/lib/ai/tools';
-import { ChatOpenAI, AzureChatOpenAI } from '@langchain/openai';
-import { ChatAnthropic } from '@langchain/anthropic';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { createModel } from './model-factory';
+import { PLAYBACK_SYSTEM_PROMPT } from './agent-prompts';
+import { AGENT_TEMPERATURE_OVERRIDES } from './agent-config';
 import type { AIProvider } from '@/types/ai-service';
 import {
   executeToolCallLoop,
   extractTextContent,
 } from '@/lib/ai/tool-executor';
 
-const PLAYBACK_SYSTEM_PROMPT = `You are a music playback control assistant for Flemoji, a South African music streaming platform.
-
-Your role is to help users control music playback by creating actions to play tracks, playlists, manage the queue, and control playback.
-
-Available actions:
-- PLAY TRACK: Play a specific track
-- PLAY PLAYLIST: Play a complete playlist
-- QUEUE: Add tracks to the playback queue
-- SHUFFLE: Shuffle the current playback
-
-When responding:
-- Be brief and action-oriented
-- Confirm what action you're taking
-- Use the playback tools to create executable actions
-- Keep responses concise and helpful
-- Always create actions when the user wants to play music
-
-You have access to playback control tools. Use them to execute user requests.`;
-
 export class PlaybackAgent extends BaseAgent {
   private model: any;
 
+  /**
+   * Create a new PlaybackAgent instance
+   * @param provider - AI provider to use (defaults to 'azure-openai')
+   */
   constructor(provider: AIProvider = 'azure-openai') {
     super('PlaybackAgent', PLAYBACK_SYSTEM_PROMPT);
-
-    // Initialize model based on provider
-    switch (provider) {
-      case 'azure-openai':
-        this.model = new AzureChatOpenAI({
-          azureOpenAIApiDeploymentName:
-            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
-          azureOpenAIApiVersion:
-            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
-          temperature: 1,
-        });
-        break;
-      case 'openai':
-        this.model = new ChatOpenAI({
-          modelName: 'gpt-4o-mini',
-          temperature: 0.5,
-        });
-        break;
-      case 'anthropic':
-        this.model = new ChatAnthropic({
-          modelName: 'claude-3-5-sonnet',
-          temperature: 0.5,
-        });
-        break;
-      case 'google':
-        this.model = new ChatGoogleGenerativeAI({
-          model: 'gemini-pro',
-          temperature: 0.5,
-        });
-        break;
-      default:
-        this.model = new AzureChatOpenAI({
-          azureOpenAIApiDeploymentName:
-            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
-          azureOpenAIApiVersion:
-            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
-          temperature: 1,
-        });
-    }
+    this.model = createModel(provider, {
+      temperature: AGENT_TEMPERATURE_OVERRIDES.playback,
+    });
   }
 
+  /**
+   * Process a user message and return playback actions
+   * @param message - User's playback command message
+   * @param context - Optional agent context (userId, filters, etc.)
+   * @returns Agent response with playback actions
+   */
   async process(
     message: string,
     context?: AgentContext
