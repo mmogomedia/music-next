@@ -120,16 +120,6 @@ export class DiscoveryAgent extends BaseAgent {
         timestamp: new Date().toISOString(),
       });
 
-      // eslint-disable-next-line no-console
-      console.log('[DiscoveryAgent] Starting tool execution loop');
-      // eslint-disable-next-line no-console
-      console.log(
-        '[DiscoveryAgent] Available tools:',
-        discoveryTools.map(t => t.name)
-      );
-      // eslint-disable-next-line no-console
-      console.log('[DiscoveryAgent] Full message to LLM:', fullMessage);
-
       const execution = await executeToolCallLoop({
         model: this.model,
         tools: discoveryTools,
@@ -184,19 +174,6 @@ export class DiscoveryAgent extends BaseAgent {
         timestamp: new Date().toISOString(),
       });
 
-      // eslint-disable-next-line no-console
-      console.log('[DiscoveryAgent] Converting tool results to response');
-      // eslint-disable-next-line no-console
-      console.log(
-        '[DiscoveryAgent] Tool results count:',
-        execution.toolResults.length
-      );
-      // eslint-disable-next-line no-console
-      console.log('[DiscoveryAgent] Effective context:', {
-        filters: effectiveContext?.filters,
-        hasHistory: !!effectiveContext?.conversationHistory?.length,
-      });
-
       const structuredData = await this.convertToolResultsToResponse(
         execution.toolResults,
         effectiveContext, // Use effective context (with genre override if applicable)
@@ -209,16 +186,6 @@ export class DiscoveryAgent extends BaseAgent {
         message: 'Preparing your response...',
         stage: 'finalization',
         timestamp: new Date().toISOString(),
-      });
-
-      // eslint-disable-next-line no-console
-      console.log('[DiscoveryAgent] Structured data created:', {
-        type: structuredData?.type || 'null',
-        hasData: !!structuredData?.data,
-        dataKeys:
-          structuredData?.data && typeof structuredData.data === 'object'
-            ? Object.keys(structuredData.data)
-            : 'N/A',
       });
 
       return {
@@ -303,26 +270,7 @@ export class DiscoveryAgent extends BaseAgent {
     context?: AgentContext,
     userMessage?: string
   ): Promise<AIResponse | null> {
-    // eslint-disable-next-line no-console
-    console.log(
-      '[DiscoveryAgent.convertToolDataToResponse] Starting conversion'
-    );
-    // eslint-disable-next-line no-console
-    console.log(
-      '[DiscoveryAgent.convertToolDataToResponse] Tool data count:',
-      toolData.length
-    );
-    // eslint-disable-next-line no-console
-    console.log(
-      '[DiscoveryAgent.convertToolDataToResponse] Tool names:',
-      toolData.map(t => t.tool)
-    );
-
     if (toolData.length === 0) {
-      // eslint-disable-next-line no-console
-      console.log(
-        '[DiscoveryAgent.convertToolDataToResponse] No tool data, returning null'
-      );
       return null;
     }
 
@@ -337,19 +285,6 @@ export class DiscoveryAgent extends BaseAgent {
     for (const item of toolData) {
       const toolName = item.tool;
       const data = item.data || {};
-
-      // eslint-disable-next-line no-console
-      console.log(
-        '[DiscoveryAgent.convertToolDataToResponse] Processing tool:',
-        {
-          toolName,
-          dataType: typeof data,
-          dataKeys:
-            typeof data === 'object' && data !== null
-              ? Object.keys(data)
-              : 'N/A',
-        }
-      );
 
       switch (toolName) {
         case 'search_tracks':
@@ -368,43 +303,15 @@ export class DiscoveryAgent extends BaseAgent {
           // Handle different response structures
           if (Array.isArray(tracksData)) {
             aggregated.tracks.push(...tracksData);
-            // eslint-disable-next-line no-console
-            console.log(
-              '[DiscoveryAgent.convertToolDataToResponse] Added tracks from array:',
-              {
-                toolName,
-                tracksAdded: tracksData.length,
-                totalTracks: aggregated.tracks.length,
-              }
-            );
           } else if (tracksData && Array.isArray(tracksData.tracks)) {
             aggregated.tracks.push(...tracksData.tracks);
-            // eslint-disable-next-line no-console
-            console.log(
-              '[DiscoveryAgent.convertToolDataToResponse] Added tracks from tracksData.tracks:',
-              {
-                toolName,
-                tracksAdded: tracksData.tracks.length,
-                totalTracks: aggregated.tracks.length,
-              }
-            );
           }
 
           if (tracksData?.genre) {
             aggregated.meta.genre = tracksData.genre;
-            // eslint-disable-next-line no-console
-            console.log(
-              '[DiscoveryAgent.convertToolDataToResponse] Set genre:',
-              tracksData.genre
-            );
           }
           if (typeof tracksData?.count === 'number') {
             aggregated.meta.totalTracks = tracksData.count;
-            // eslint-disable-next-line no-console
-            console.log(
-              '[DiscoveryAgent.convertToolDataToResponse] Set totalTracks:',
-              tracksData.count
-            );
           }
           break;
         }
@@ -588,34 +495,13 @@ export class DiscoveryAgent extends BaseAgent {
 
     // If only tracks
     if (aggregated.tracks.length > 0) {
-      // eslint-disable-next-line no-console
-      console.log(
-        '[DiscoveryAgent.convertToolDataToResponse] Building track_list response'
-      );
-      // eslint-disable-next-line no-console
-      console.log(
-        '[DiscoveryAgent.convertToolDataToResponse] Tracks before final processing:',
-        aggregated.tracks.length
-      );
-
       const { constructFileUrl } = await import('@/lib/url-utils');
 
       // HARD LIMIT: Never exceed MAX_TRACKS_PER_RESPONSE tracks total
       // Re-apply limit here to ensure it's enforced even if tracks were added elsewhere
-      const tracksBeforeFinalLimit = aggregated.tracks.length;
       const limitedTracks = aggregated.tracks.slice(0, MAX_TRACKS_PER_RESPONSE);
-      // eslint-disable-next-line no-console
-      console.log(
-        '[DiscoveryAgent.convertToolDataToResponse] Final limit applied:',
-        {
-          before: tracksBeforeFinalLimit,
-          after: limitedTracks.length,
-          limit: MAX_TRACKS_PER_RESPONSE,
-          removed: tracksBeforeFinalLimit - limitedTracks.length,
-        }
-      );
 
-      const tracksWithSummaries = limitedTracks.map((track, index) => {
+      const tracksWithSummaries = limitedTracks.map(track => {
         const fileUrl =
           track.fileUrl ||
           (track.filePath ? constructFileUrl(track.filePath) : '');
@@ -641,41 +527,8 @@ export class DiscoveryAgent extends BaseAgent {
           isDownloadable: track.isDownloadable ?? false,
         };
 
-        // Log first few tracks for debugging
-        if (index < 3) {
-          // eslint-disable-next-line no-console
-          console.log(
-            `[DiscoveryAgent.convertToolDataToResponse] Track ${index + 1}:`,
-            {
-              id: result.id,
-              title: result.title,
-              artist: result.artist,
-              genre: result.genre,
-              hasDescription: !!result.description,
-              attributes: result.attributes,
-              mood: result.mood,
-              strength: result.strength,
-            }
-          );
-        }
-
         return result;
       });
-
-      // eslint-disable-next-line no-console
-      console.log(
-        '[DiscoveryAgent.convertToolDataToResponse] tracksWithSummaries created:',
-        {
-          count: tracksWithSummaries.length,
-          tracksWithDescription: tracksWithSummaries.filter(t => t.description)
-            .length,
-          tracksWithAttributes: tracksWithSummaries.filter(
-            t => t.attributes?.length > 0
-          ).length,
-          tracksWithMood: tracksWithSummaries.filter(t => t.mood?.length > 0)
-            .length,
-        }
-      );
 
       const genreCluster = resolvedGenreCluster;
       const mainTrackIds = new Set(
@@ -748,19 +601,6 @@ export class DiscoveryAgent extends BaseAgent {
       const totalTracks =
         tracksWithSummaries.length + (otherTracks?.length || 0);
 
-      // eslint-disable-next-line no-console
-      console.log(
-        '[DiscoveryAgent.convertToolDataToResponse] Final response summary:',
-        {
-          tracksWithSummaries: tracksWithSummaries.length,
-          otherTracks: otherTracks?.length || 0,
-          totalTracks,
-          metadataTotal: Math.min(totalTracks, MAX_TRACKS_PER_RESPONSE),
-          maxAllowed: MAX_TRACKS_PER_RESPONSE,
-          exceedsLimit: totalTracks > MAX_TRACKS_PER_RESPONSE,
-        }
-      );
-
       const finalResponse = {
         type: 'track_list',
         message: '',
@@ -774,17 +614,6 @@ export class DiscoveryAgent extends BaseAgent {
           },
         },
       } as TrackListResponse;
-
-      // eslint-disable-next-line no-console
-      console.log(
-        '[DiscoveryAgent.convertToolDataToResponse] Returning response:',
-        {
-          type: finalResponse.type,
-          tracksCount: finalResponse.data.tracks.length,
-          otherCount: finalResponse.data.other?.length || 0,
-          metadataTotal: finalResponse.data.metadata.total,
-        }
-      );
 
       return finalResponse;
     }
