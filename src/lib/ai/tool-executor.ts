@@ -13,6 +13,7 @@ import {
   type BaseMessageLike,
 } from '@langchain/core/messages';
 import type { StructuredToolInterface } from '@langchain/core/tools';
+import type { SSEEventEmitter } from '@/lib/ai/sse-event-emitter';
 
 /**
  * Minimal interface for chat models that support bindTools().
@@ -43,6 +44,7 @@ export interface ExecuteToolCallLoopOptions {
   tools: StructuredToolInterface[];
   messages: BaseMessageLike[];
   maxIterations?: number;
+  emitEvent?: SSEEventEmitter;
 }
 
 /**
@@ -118,6 +120,7 @@ export async function executeToolCallLoop({
   tools,
   messages,
   maxIterations = 6,
+  emitEvent,
 }: ExecuteToolCallLoopOptions): Promise<ExecuteToolCallLoopResult> {
   const conversation: BaseMessageLike[] = [...messages];
   const toolResults: ExecutedToolResult[] = [];
@@ -143,6 +146,13 @@ export async function executeToolCallLoop({
     }
 
     for (const toolCall of toolCalls) {
+      const { logger } = await import('@/lib/utils/logger');
+      logger.info('[ToolExecutor] Processing tool call:', {
+        toolName: toolCall.name,
+        rawArgs: toolCall.args,
+        toolCallId: toolCall.id,
+      });
+
       const matchingTool = tools.find(tool => tool.name === toolCall.name);
 
       let parsedArgs: unknown = toolCall.args;
@@ -150,7 +160,29 @@ export async function executeToolCallLoop({
         parsedArgs = tryParseJson(parsedArgs) ?? {};
       }
 
+      logger.debug('[ToolExecutor] Parsed args:', parsedArgs);
+
+      // Emit calling_tool event
+      const toolMessages: Record<string, string> = {
+        search_tracks: 'Searching tracks...',
+        get_tracks_by_genre: 'Finding tracks by genre...',
+        get_playlists_by_genre: 'Discovering playlists...',
+        get_artist: 'Looking up artist...',
+        get_trending_tracks: 'Getting trending tracks...',
+        get_genres: 'Fetching genres...',
+      };
+
+      emitEvent?.({
+        type: 'calling_tool',
+        tool: toolCall.name,
+        message: toolMessages[toolCall.name] || `Executing ${toolCall.name}...`,
+        parameters: parsedArgs as Record<string, any>,
+        stage: 'tool_execution',
+        timestamp: new Date().toISOString(),
+      });
+
       if (!matchingTool) {
+        logger.error('[ToolExecutor] Tool not found:', toolCall.name);
         const errorPayload = {
           error: `Tool "${toolCall.name}" not found`,
         };
@@ -180,14 +212,99 @@ export async function executeToolCallLoop({
       let parsedResult: unknown;
       let error: string | undefined;
 
+      const toolStartTime = Date.now();
+      // eslint-disable-next-line no-console
+      console.log('[ToolExecutor] Invoking tool:', {
+        toolName: matchingTool.name,
+        args: parsedArgs,
+      });
+
       try {
         rawResult = await (matchingTool as unknown as any).invoke(parsedArgs);
         parsedResult = tryParseJson(rawResult) ?? rawResult;
+        const toolLatency = Date.now() - toolStartTime;
+
+        // eslint-disable-next-line no-console
+        console.log('[ToolExecutor] Tool execution success:', {
+          toolName: matchingTool.name,
+          latency: toolLatency,
+          resultType: typeof rawResult,
+          resultLength:
+            typeof rawResult === 'string' ? rawResult.length : 'N/A',
+          parsedResultKeys:
+            typeof parsedResult === 'object' && parsedResult !== null
+              ? Object.keys(parsedResult)
+              : 'N/A',
+        });
+
+        // Extract result count for tool_result event
+        let resultCount: number | undefined;
+        if (typeof parsedResult === 'object' && parsedResult !== null) {
+          if ('tracks' in parsedResult && Array.isArray(parsedResult.tracks)) {
+            resultCount = parsedResult.tracks.length;
+          } else if (
+            'playlists' in parsedResult &&
+            Array.isArray(parsedResult.playlists)
+          ) {
+            resultCount = parsedResult.playlists.length;
+          } else if (
+            'artists' in parsedResult &&
+            Array.isArray(parsedResult.artists)
+          ) {
+            resultCount = parsedResult.artists.length;
+          } else if (
+            'genres' in parsedResult &&
+            Array.isArray(parsedResult.genres)
+          ) {
+            resultCount = parsedResult.genres.length;
+          } else if (
+            'count' in parsedResult &&
+            typeof parsedResult.count === 'number'
+          ) {
+            resultCount = parsedResult.count;
+          }
+        }
+
+        // Emit tool_result event (only if there are results or if it's important)
+        // Suppress zero-result messages to avoid confusion
+        if (resultCount !== undefined && resultCount > 0) {
+          // Get user-friendly tool names
+          const toolNames: Record<string, string> = {
+            search_tracks: 'tracks',
+            get_tracks_by_genre: 'tracks',
+            get_trending_tracks: 'tracks',
+            get_playlists_by_genre: 'playlists',
+            get_playlists_by_province: 'playlists',
+            get_top_charts: 'playlists',
+            get_featured_playlists: 'playlists',
+            get_artist: 'artist',
+            search_artists: 'artists',
+            get_genres: 'genres',
+          };
+
+          const toolType = toolNames[toolCall.name] || 'results';
+          emitEvent?.({
+            type: 'tool_result',
+            tool: toolCall.name,
+            resultCount,
+            message: `Found ${resultCount} ${toolType}${resultCount !== 1 ? '' : ''}`,
+            stage: 'tool_complete',
+            timestamp: new Date().toISOString(),
+          });
+        }
+        // Don't emit events for zero results - it's confusing for users
       } catch (err) {
         error =
           err instanceof Error ? err.message : 'Unknown tool execution error';
         rawResult = { error };
         parsedResult = rawResult;
+
+        // eslint-disable-next-line no-console
+        console.error('[ToolExecutor] Tool execution error:', {
+          toolName: matchingTool.name,
+          error: error,
+          args: parsedArgs,
+        });
       }
 
       const toolCallId =

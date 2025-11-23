@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from 'react';
 import { useSession } from 'next-auth/react';
-import { ChatRequest, ChatResponse, AIError, AIProvider } from '@/types/ai';
+import { ChatRequest, ChatResponse, AIProvider } from '@/types/ai';
 import type { Track } from '@/types/track';
 import ChatTopBar from './ChatTopBar';
 import WelcomeHeader from './WelcomeHeader';
@@ -69,6 +69,7 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
     const [messages, setMessages] = useState<Message[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [selectedProvider] = useState<AIProvider | 'auto'>('auto');
     const [selectedProvince, setSelectedProvince] = useState<
       string | undefined
@@ -161,6 +162,7 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
         setMessages(prev => [...prev, userMessage]);
         setLoading(true);
         setError(null);
+        setStatusMessage(null);
         isSubmittingRef.current = true;
 
         try {
@@ -177,7 +179,8 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
               selectedProvider === 'auto' ? undefined : selectedProvider,
           };
 
-          const res = await fetch('/api/ai/chat', {
+          // Use SSE stream instead of regular POST
+          const res = await fetch('/api/ai/chat/stream', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -185,14 +188,114 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
             body: JSON.stringify(requestBody),
           });
 
-          const data = await res.json();
-
           if (!res.ok) {
-            const errorData = data as AIError;
-            throw new Error(errorData.error || 'Failed to get AI response');
+            throw new Error('Failed to connect to AI service');
           }
 
-          const chatResponse = data as ChatResponse;
+          if (!res.body) {
+            throw new Error('No response body received');
+          }
+
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let chatResponse: ChatResponse | null = null;
+
+          // eslint-disable-next-line no-constant-condition
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                try {
+                  const data = JSON.parse(line.slice(6));
+
+                  // Handle different event types
+                  switch (data.type) {
+                    case 'connected':
+                      // Connection established
+                      break;
+                    case 'analyzing_intent':
+                      setStatusMessage(
+                        data.message ||
+                          "Understanding what you're looking for..."
+                      );
+                      break;
+                    case 'routing_decision':
+                      if (data.method === 'keyword') {
+                        setStatusMessage(
+                          'Found what you need! Routing instantly...'
+                        );
+                      } else {
+                        setStatusMessage(
+                          'Analyzing your request more carefully...'
+                        );
+                      }
+                      break;
+                    case 'llm_classifying':
+                      setStatusMessage(
+                        data.message || 'Understanding your request...'
+                      );
+                      break;
+                    case 'agent_processing':
+                      setStatusMessage(
+                        data.message || 'Processing your request...'
+                      );
+                      break;
+                    case 'calling_tool':
+                      setStatusMessage(
+                        data.message || `Executing ${data.tool}...`
+                      );
+                      break;
+                    case 'tool_result':
+                      // Only show tool_result messages if they have results
+                      // (zero-result messages are now suppressed in the backend)
+                      if (
+                        data.resultCount !== undefined &&
+                        data.resultCount > 0
+                      ) {
+                        setStatusMessage(
+                          data.message ||
+                            `Found ${data.resultCount} result${data.resultCount !== 1 ? 's' : ''}`
+                        );
+                      }
+                      break;
+                    case 'processing_results':
+                      setStatusMessage(data.message || 'Processing results...');
+                      break;
+                    case 'finalizing':
+                      setStatusMessage(
+                        data.message || 'Preparing your response...'
+                      );
+                      break;
+                    case 'complete':
+                      chatResponse = data.data as ChatResponse;
+                      setStatusMessage(null);
+                      break;
+                    case 'error':
+                      throw new Error(
+                        data.error?.message || 'An error occurred'
+                      );
+                    case 'heartbeat':
+                      // Ignore heartbeat events
+                      break;
+                  }
+                } catch (parseError) {
+                  // Ignore parse errors for malformed events
+                  console.warn('Failed to parse SSE event:', parseError);
+                }
+              }
+            }
+          }
+
+          if (!chatResponse) {
+            throw new Error('No response received from AI service');
+          }
 
           // Add AI response to conversation BEFORE updating conversation ID
           // This ensures messages are set before any loadConversation triggers
@@ -235,9 +338,11 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
           }
         } catch (err) {
           setError(err instanceof Error ? err.message : 'An error occurred');
+          setStatusMessage(null);
           isSubmittingRef.current = false;
         } finally {
           setLoading(false);
+          setStatusMessage(null);
         }
       },
       [
@@ -348,10 +453,20 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
           loadConversation(propConversationId);
         }
       } else if (propConversationId && !session?.user?.id) {
-        // User not authenticated - clear messages since we can't load conversation
-        setMessages([]);
-        setError(null);
-        loadedConversationIdRef.current = undefined;
+        // User not authenticated but has conversationId - don't clear messages
+        // Anonymous users can still have conversations, just can't load saved ones
+        // Only clear if conversationId changed to a different one
+        const previousConversationId = loadedConversationIdRef.current;
+        if (
+          previousConversationId &&
+          previousConversationId !== propConversationId
+        ) {
+          // Conversation ID changed - clear messages for new conversation
+          setMessages([]);
+          setError(null);
+        }
+        // Update ref to track current conversation
+        loadedConversationIdRef.current = propConversationId;
       } else if (!propConversationId) {
         // No conversation ID - reset the loaded ref
         loadedConversationIdRef.current = undefined;
@@ -620,7 +735,12 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
             })}
 
           {loading && (
-            <div className='flex items-center justify-center py-4'>
+            <div className='flex flex-col items-center justify-center py-4 gap-2'>
+              {statusMessage && (
+                <div className='text-sm text-gray-600 dark:text-gray-400 text-center px-4'>
+                  {statusMessage}
+                </div>
+              )}
               <div className='flex gap-1.5'>
                 <div className='w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce' />
                 <div

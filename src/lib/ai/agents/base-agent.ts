@@ -7,6 +7,7 @@
  */
 
 import type { AIMessage } from '@/types/ai-service';
+import type { SSEEventEmitter } from '@/lib/ai/sse-event-emitter';
 
 /**
  * Base interface for all agents
@@ -34,6 +35,8 @@ export interface AgentContext {
     genre?: string;
     province?: string;
   };
+  metadata?: Record<string, any>;
+  emitEvent?: SSEEventEmitter;
 }
 
 /**
