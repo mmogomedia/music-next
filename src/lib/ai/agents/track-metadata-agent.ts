@@ -76,7 +76,9 @@ export class TrackMetadataAgent extends BaseAgent {
         typeof response.content === 'string'
           ? response.content
           : Array.isArray(response.content)
-            ? response.content.map(part => part?.text ?? '').join('\n')
+            ? response.content
+                .map((part: { text?: string }) => part?.text ?? '')
+                .join('\n')
             : '';
 
       const parsed = this.safeParse(content);
