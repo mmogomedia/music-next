@@ -60,7 +60,16 @@ export default function ArtistNavigation({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const navItems: NavItem[] = [
+  type TabId =
+    | 'analytics'
+    | 'submissions'
+    | 'profile'
+    | 'overview'
+    | 'library'
+    | 'upload'
+    | 'quick-links';
+
+  const navItems: Array<Omit<NavItem, 'id'> & { id: TabId }> = [
     {
       id: 'overview',
       name: 'Overview',
@@ -155,16 +164,7 @@ export default function ArtistNavigation({
                   activeTab === item.id ? item.activeIcon : item.icon;
                 const isActive = activeTab === item.id;
 
-                const tabHref = getTabHref(
-                  item.id as
-                    | 'analytics'
-                    | 'submissions'
-                    | 'profile'
-                    | 'overview'
-                    | 'library'
-                    | 'upload'
-                    | 'quick-links'
-                );
+                const tabHref = getTabHref(item.id);
 
                 return (
                   <Link
