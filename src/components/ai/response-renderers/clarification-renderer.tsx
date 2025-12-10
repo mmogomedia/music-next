@@ -48,7 +48,7 @@ export function ClarificationRenderer({
           setCurrentQuestionIndex(prev => prev + 1);
         } else {
           // All questions answered, submit
-          onAnswer(newAnswers);
+          onAnswer?.(newAnswers);
         }
       } else if (currentQuestion?.questionType === 'conditional') {
         // For conditional questions, show next question based on answer
@@ -85,7 +85,7 @@ export function ClarificationRenderer({
       onSkip();
     } else {
       // Default skip behavior: submit with empty answers
-      onAnswer({});
+      onAnswer?.({});
     }
   }, [onAnswer, onSkip]);
 
