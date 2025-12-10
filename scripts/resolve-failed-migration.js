@@ -85,11 +85,10 @@ async function resolveFailedMigration() {
       );
       for (const migration of failedMigrations) {
         console.log(`  - Removing failed: ${migration.migration_name}`);
-        await prisma.$executeRaw`
-          DELETE FROM "_prisma_migrations"
-          WHERE migration_name = ${migration.migration_name}
-          AND finished_at IS NULL
-        `;
+        await prisma.$executeRawUnsafe(
+          `DELETE FROM "_prisma_migrations" WHERE migration_name = $1 AND finished_at IS NULL`,
+          migration.migration_name
+        );
       }
       console.log(
         `\n✅ Removed ${failedMigrations.length} failed migration record(s). They will be retried.\n`
