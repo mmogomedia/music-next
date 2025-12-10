@@ -27,6 +27,7 @@
     "db:seed": "dotenv -e .env.local -- prisma db seed",
     "create-admin": "dotenv -e .env.local -- node scripts/create-admin.js",
     "setup-db": "dotenv -e .env.local -- node scripts/setup-database.js",
+    "migrate:prod": "node scripts/run-production-migration-vercel.js",
     "prepare": "husky",
     "postinstall": "prisma generate"
   },
