@@ -288,7 +288,7 @@ function registerDefaultHandlers() {
       },
       metadata: {
         description: 'Clarification questions',
-        category: 'interaction',
+        category: 'info',
         priority: 15,
       },
     });
