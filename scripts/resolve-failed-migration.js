@@ -46,7 +46,8 @@ async function resolveFailedMigration() {
 
       // Copy the old migration record with the new name
       const oldRecord = oldMigration[0];
-      await prisma.$executeRaw`
+      await prisma.$executeRawUnsafe(
+        `
         INSERT INTO "_prisma_migrations" (
           id, 
           checksum, 
@@ -59,15 +60,22 @@ async function resolveFailedMigration() {
         )
         VALUES (
           gen_random_uuid(),
-          ${oldRecord.checksum || ''},
-          ${oldRecord.finished_at},
+          $1,
+          $2,
           '20230101000000_init',
-          ${oldRecord.logs || null},
-          ${oldRecord.rolled_back_at || null},
-          ${oldRecord.started_at},
-          ${oldRecord.applied_steps_count || 1}
+          $3,
+          $4,
+          $5,
+          $6
         )
-      `;
+      `,
+        oldRecord.checksum || '',
+        oldRecord.finished_at,
+        oldRecord.logs || null,
+        oldRecord.rolled_back_at || null,
+        oldRecord.started_at,
+        oldRecord.applied_steps_count || 1
+      );
 
       console.log('✅ Migration name updated in database.\n');
     } else if (hasNewMigration && !newMigrationApplied) {
