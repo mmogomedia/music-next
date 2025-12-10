@@ -566,7 +566,7 @@ export function ResponseRenderer({
         },
         metadata: {
           description: 'Clarification questions',
-          category: 'interaction',
+          category: 'info',
           priority: 15,
         },
       });
