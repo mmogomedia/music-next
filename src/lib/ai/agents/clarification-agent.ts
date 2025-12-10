@@ -69,17 +69,14 @@ export class ClarificationAgent extends BaseAgent {
       return {
         message: messageText,
         data: {
-          type: 'clarification',
-          data: {
-            questions,
-            context: {
-              detectedGenres: userGenres,
-              previousIntent: context?.metadata?.previousIntent,
-            },
-            metadata: {
-              requiresResponse: true,
-              canSkip: true, // Allow skip with smart default
-            },
+          questions,
+          context: {
+            detectedGenres: userGenres,
+            previousIntent: context?.metadata?.previousIntent,
+          },
+          metadata: {
+            requiresResponse: true,
+            canSkip: true, // Allow skip with smart default
           },
         } as ClarificationResponse['data'],
       };
@@ -89,13 +86,10 @@ export class ClarificationAgent extends BaseAgent {
       return {
         message: "I'd love to help! What would you like to do?",
         data: {
-          type: 'clarification',
-          data: {
-            questions: [this.buildBasicIntentQuestion()],
-            metadata: {
-              requiresResponse: true,
-              canSkip: true,
-            },
+          questions: [this.buildBasicIntentQuestion()],
+          metadata: {
+            requiresResponse: true,
+            canSkip: true,
           },
         } as ClarificationResponse['data'],
       };
@@ -287,7 +281,7 @@ export class ClarificationAgent extends BaseAgent {
         label: 'Browse all genres',
         value: 'browse_all',
         description: `See all ${allGenres.length} genres`,
-        metadata: {},
+        metadata: { genre: 'all' },
       });
     }
 
