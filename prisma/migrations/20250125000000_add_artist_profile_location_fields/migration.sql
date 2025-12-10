@@ -37,3 +37,15 @@ BEGIN
     END IF;
 END $$;
 
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM information_schema.columns 
+        WHERE table_name = 'artist_profiles' 
+        AND column_name = 'genreId'
+    ) THEN
+        ALTER TABLE "artist_profiles" ADD COLUMN "genreId" TEXT;
+    END IF;
+END $$;
+
