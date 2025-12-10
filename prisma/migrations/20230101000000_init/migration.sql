@@ -190,7 +190,12 @@ END $$;
 
 DO $$
 BEGIN
-    IF NOT EXISTS (
+    -- Only add foreign key if artistId column exists (old schema)
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'tracks' 
+        AND column_name = 'artistId'
+    ) AND NOT EXISTS (
         SELECT 1 FROM pg_constraint 
         WHERE conname = 'tracks_artistId_fkey'
     ) THEN
