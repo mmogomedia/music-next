@@ -281,6 +281,7 @@ export class ClarificationAgent extends BaseAgent {
         label: 'Browse all genres',
         value: 'browse_all',
         metadata: { genre: 'all' },
+        highlighted: false,
       });
     }
 
