@@ -155,7 +155,16 @@ export default function ArtistNavigation({
                   activeTab === item.id ? item.activeIcon : item.icon;
                 const isActive = activeTab === item.id;
 
-                const tabHref = getTabHref(item.id);
+                const tabHref = getTabHref(
+                  item.id as
+                    | 'analytics'
+                    | 'submissions'
+                    | 'profile'
+                    | 'overview'
+                    | 'library'
+                    | 'upload'
+                    | 'quick-links'
+                );
 
                 return (
                   <Link
@@ -268,7 +277,16 @@ export default function ArtistNavigation({
                       activeTab === item.id ? item.activeIcon : item.icon;
                     const isActive = activeTab === item.id;
 
-                    const tabHref = getTabHref(item.id);
+                    const tabHref = getTabHref(
+                      item.id as
+                        | 'analytics'
+                        | 'submissions'
+                        | 'profile'
+                        | 'overview'
+                        | 'library'
+                        | 'upload'
+                        | 'quick-links'
+                    );
 
                     return (
                       <Link
