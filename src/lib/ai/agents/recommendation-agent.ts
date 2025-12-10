@@ -61,6 +61,8 @@ export class RecommendationAgent extends BaseAgent {
           { role: 'system', content: this.systemPrompt },
           { role: 'user', content: fullMessage },
         ],
+        emitEvent: context?.emitEvent,
+        originalMessage: message, // Pass original message for debugging
       });
 
       const responseContent = extractTextContent(

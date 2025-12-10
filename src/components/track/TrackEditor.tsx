@@ -48,6 +48,10 @@ import {
   getCompletionStatus,
 } from '@/lib/utils/track-completion';
 import {
+  calculateTrackCompletionDynamic,
+  type TrackCompletionRule,
+} from '@/lib/utils/track-completion-dynamic';
+import {
   COMPLETION_CATEGORIES,
   type WeightCategory,
 } from '@/lib/config/track-completion-config';
@@ -225,13 +229,52 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
       null
     );
 
-    // Completion tracking
+    // Completion tracking - fetch rules dynamically
+    const [completionRules, setCompletionRules] = useState<
+      TrackCompletionRule[]
+    >([]);
+    const [rulesLoaded, setRulesLoaded] = useState(false);
+
+    useEffect(() => {
+      const fetchRules = async () => {
+        try {
+          const res = await fetch('/api/track-completion-rules');
+          const data = await res.json();
+          setCompletionRules(data.rules || []);
+        } catch (error) {
+          console.warn(
+            'Failed to fetch completion rules, using defaults:',
+            error
+          );
+          setCompletionRules([]);
+        } finally {
+          setRulesLoaded(true);
+        }
+      };
+      fetchRules();
+    }, []);
+
     const [showCompletionBreakdown, setShowCompletionBreakdown] =
       useState(false);
-    const completionBreakdown = useMemo(
-      () => calculateTrackCompletion(values),
-      [values]
+    const [completionBreakdown, setCompletionBreakdown] = useState(
+      calculateTrackCompletion(values)
     );
+
+    // Update completion when values or rules change
+    useEffect(() => {
+      if (!rulesLoaded) return;
+
+      const updateCompletion = async () => {
+        if (completionRules && completionRules.length > 0) {
+          const breakdown = await calculateTrackCompletionDynamic(values);
+          setCompletionBreakdown(breakdown);
+        } else {
+          // Fallback to static calculation
+          setCompletionBreakdown(calculateTrackCompletion(values));
+        }
+      };
+      updateCompletion();
+    }, [values, completionRules, rulesLoaded]);
 
     // Tab management for navigation
     const [selectedTab, setSelectedTab] = useState<string>('basic');
@@ -829,140 +872,161 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                   ))}
                 </Select>
               </div>
+            </div>
+          </Tab>
 
-              <div className='space-y-2'>
-                <div className='flex items-center justify-between'>
-                  <label
-                    htmlFor='description'
-                    className='text-sm font-medium text-gray-700 dark:text-gray-300'
-                  >
-                    Description
-                  </label>
-                  <div className='flex items-center gap-2'>
-                    {!values.lyrics || values.lyrics.trim().length === 0 ? (
+          <Tab
+            key='story'
+            title={
+              <div className='flex items-center gap-2'>
+                <SparklesIcon className='w-4 h-4' />
+                <span>Story & AI Tools</span>
+              </div>
+            }
+          >
+            <div className='space-y-6 pt-4'>
+              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                {/* Left Column: Lyrics */}
+                <div className='space-y-4'>
+                  <div className='flex items-center justify-between'>
+                    <label
+                      htmlFor='lyrics-textarea'
+                      className='text-sm font-medium text-gray-700 dark:text-gray-300'
+                    >
+                      Lyrics
+                    </label>
+                    <Tooltip
+                      content={
+                        <div className='max-w-xs space-y-2 p-1'>
+                          <p className='font-medium'>AI Metadata Assistant</p>
+                          <p className='text-sm'>
+                            Paste your lyrics here, then use the AI tools to
+                            generate description, attributes, and mood tags. The
+                            AI will auto-detect and translate languages when
+                            needed.
+                          </p>
+                          <p className='text-xs opacity-90 mt-2'>
+                            Supported languages: English, Zulu, Xhosa,
+                            Afrikaans, French, Portuguese, Shona, Ndebele, and
+                            more.
+                          </p>
+                        </div>
+                      }
+                      placement='top'
+                      showArrow
+                    >
                       <Button
+                        isIconOnly
                         size='sm'
-                        variant='flat'
-                        color='primary'
-                        onPress={() => setSelectedTab('metadata')}
+                        variant='light'
+                        className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
                       >
-                        Add Lyrics
+                        <InformationCircleIcon className='w-5 h-5' />
                       </Button>
-                    ) : (
-                      <>
-                        <Tooltip
-                          content={
-                            <div className='max-w-xs space-y-2 p-1'>
-                              <p className='font-medium'>
-                                AI Metadata Assistant
-                              </p>
-                              <p className='text-sm'>
-                                Generates a description, key attributes, and
-                                mood tags directly from your lyrics. It will
-                                auto-detect and translate languages when needed.
-                              </p>
-                              <p className='text-xs opacity-90 mt-2'>
-                                Supported languages: English, Zulu, Xhosa,
-                                Afrikaans, French, Portuguese, Shona, Ndebele,
-                                and more.
-                              </p>
-                            </div>
-                          }
-                          placement='top'
-                          showArrow
-                        >
-                          <Button
-                            isIconOnly
-                            size='sm'
-                            variant='light'
-                            className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                          >
-                            <InformationCircleIcon className='w-5 h-5' />
-                          </Button>
-                        </Tooltip>
-                        <Button
-                          size='sm'
-                          variant='flat'
-                          color='secondary'
-                          startContent={<SparklesIcon className='w-4 h-4' />}
-                          onPress={handleGenerateMetadata}
-                          isLoading={isGeneratingMetadata}
-                          isDisabled={
-                            !values.lyrics || values.lyrics.trim().length === 0
-                          }
-                        >
-                          {isGeneratingMetadata
-                            ? 'Generating...'
-                            : 'Derive Metadata'}
-                        </Button>
-                      </>
-                    )}
+                    </Tooltip>
                   </div>
-                </div>
-                {metadataRateLimitInfo && (
-                  <p className='text-xs text-gray-500 dark:text-gray-400'>
-                    {metadataRateLimitInfo.remaining} AI requests remaining this
-                    hour
-                  </p>
-                )}
-                {metadataError && (
-                  <div className='flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-sm text-red-600 dark:text-red-400'>
-                    <XCircleIcon className='w-4 h-4 flex-shrink-0' />
-                    <span className='flex-1'>{metadataError}</span>
+                  <Textarea
+                    id='lyrics-textarea'
+                    placeholder='Paste your song lyrics here...'
+                    value={values.lyrics || ''}
+                    onValueChange={value => updateValue('lyrics', value)}
+                    rows={12}
+                    className='font-mono text-sm'
+                  />
+                  <div className='flex items-center gap-2'>
                     <Button
                       size='sm'
-                      variant='light'
-                      color='danger'
+                      variant='flat'
+                      color='secondary'
+                      startContent={<SparklesIcon className='w-4 h-4' />}
                       onPress={handleGenerateMetadata}
-                      isDisabled={isGeneratingMetadata}
+                      isLoading={isGeneratingMetadata}
+                      isDisabled={
+                        !values.lyrics || values.lyrics.trim().length === 0
+                      }
+                      className='flex-1'
                     >
-                      Retry
+                      {isGeneratingMetadata
+                        ? 'Generating...'
+                        : 'Generate Description & Attributes'}
                     </Button>
                   </div>
-                )}
-                {generationNotice && (
-                  <div className='p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded text-xs text-green-700 dark:text-green-300'>
-                    {generationNotice}
-                  </div>
-                )}
-                <Textarea
-                  placeholder='Describe your track...'
-                  value={values.description || ''}
-                  onValueChange={value => updateValue('description', value)}
-                  rows={3}
-                />
-
-                <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2'>
-                  <div className='space-y-2'>
-                    <div className='flex items-center justify-between'>
-                      <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                        Attributes
-                      </span>
-                      <span className='text-xs text-gray-500 dark:text-gray-400'>
-                        Themes & topics
-                      </span>
+                  {metadataRateLimitInfo && (
+                    <p className='text-xs text-gray-500 dark:text-gray-400'>
+                      {metadataRateLimitInfo.remaining} AI requests remaining
+                      this hour
+                    </p>
+                  )}
+                  {metadataError && (
+                    <div className='flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-sm text-red-600 dark:text-red-400'>
+                      <XCircleIcon className='w-4 h-4 flex-shrink-0' />
+                      <span className='flex-1'>{metadataError}</span>
+                      <Button
+                        size='sm'
+                        variant='light'
+                        color='danger'
+                        onPress={handleGenerateMetadata}
+                        isDisabled={isGeneratingMetadata}
+                      >
+                        Retry
+                      </Button>
                     </div>
-                    <div className='flex flex-col sm:flex-row gap-2'>
-                      <Input
-                        label='Add Attribute'
-                        placeholder='e.g. women empowerment'
-                        labelPlacement='outside'
-                        value={attributeInput}
-                        onValueChange={setAttributeInput}
-                        onKeyDown={handleAttributeKeyDown}
-                        className='flex-1'
-                      />
+                  )}
+                  {generationNotice && (
+                    <div className='p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded text-xs text-green-700 dark:text-green-300'>
+                      {generationNotice}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column: Description, Attributes, Mood */}
+                <div className='space-y-4'>
+                  <div className='space-y-2'>
+                    <label
+                      htmlFor='description-textarea'
+                      className='text-sm font-medium text-gray-700 dark:text-gray-300'
+                    >
+                      Description
+                    </label>
+                    <Textarea
+                      id='description-textarea'
+                      placeholder='Track description (auto-generated from lyrics or write your own)...'
+                      value={values.description || ''}
+                      onValueChange={value => updateValue('description', value)}
+                      rows={4}
+                    />
+                  </div>
+
+                  <div className='space-y-2'>
+                    <div className='flex items-center justify-between flex-wrap gap-2'>
+                      <div>
+                        <p className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                          Attributes
+                        </p>
+                        <p className='text-xs text-gray-500 dark:text-gray-400'>
+                          Themes & topics
+                        </p>
+                      </div>
                       <Button
                         variant='flat'
                         color='primary'
                         className='sm:w-auto'
                         onPress={handleAddAttribute}
                         isDisabled={!attributeInput.trim()}
+                        size='sm'
                       >
-                        Add
+                        Add Attribute
                       </Button>
                     </div>
-                    <div className='flex flex-wrap gap-2 min-h-[40px]'>
+                    <Input
+                      placeholder='e.g. women empowerment'
+                      value={attributeInput}
+                      onValueChange={setAttributeInput}
+                      onKeyDown={handleAttributeKeyDown}
+                      className='flex-1'
+                      size='sm'
+                    />
+                    <div className='flex flex-wrap gap-2 min-h-[60px] p-3 border border-gray-200 dark:border-slate-700 rounded-lg'>
                       {(values.attributes || []).length === 0 && (
                         <p className='text-xs text-gray-500 dark:text-gray-400'>
                           Add at least 3 attributes to capture the song&apos;s
@@ -977,7 +1041,8 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                           onClose={() =>
                             removeListValue('attributes', attribute)
                           }
-                          className={`bg-white dark:bg-slate-800 transition-all duration-300 ${
+                          size='sm'
+                          className={`transition-all duration-300 ${
                             recentlyAddedAttribute === attribute
                               ? 'ring-2 ring-primary-500 ring-offset-2 scale-105 animate-pulse'
                               : ''
@@ -990,53 +1055,54 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                   </div>
 
                   <div className='space-y-2'>
-                    <div className='flex items-center justify-between'>
-                      <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                        Mood
-                      </span>
-                      <span className='text-xs text-gray-500 dark:text-gray-400'>
-                        Displayed as pills in AI
-                      </span>
-                    </div>
-                    <div className='flex flex-col sm:flex-row gap-2'>
-                      <Input
-                        label='Add Mood'
-                        placeholder='e.g. uplifting'
-                        labelPlacement='outside'
-                        value={moodInput}
-                        onValueChange={setMoodInput}
-                        onKeyDown={handleMoodKeyDown}
-                        className='flex-1'
-                      />
+                    <div className='flex items-center justify-between flex-wrap gap-2'>
+                      <div>
+                        <p className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                          Mood
+                        </p>
+                        <p className='text-xs text-gray-500 dark:text-gray-400'>
+                          Displayed as pills in AI
+                        </p>
+                      </div>
                       <Button
                         variant='flat'
-                        color='secondary'
+                        color='primary'
                         className='sm:w-auto'
                         onPress={handleAddMood}
                         isDisabled={!moodInput.trim()}
+                        size='sm'
                       >
-                        Add
+                        Add Mood
                       </Button>
                     </div>
-                    <div className='flex flex-wrap gap-2 min-h-[40px]'>
+                    <Input
+                      placeholder='e.g. uplifting'
+                      value={moodInput}
+                      onValueChange={setMoodInput}
+                      onKeyDown={handleMoodKeyDown}
+                      className='flex-1'
+                      size='sm'
+                    />
+                    <div className='flex flex-wrap gap-2 min-h-[60px] p-3 border border-gray-200 dark:border-slate-700 rounded-lg'>
                       {(values.mood || []).length === 0 && (
                         <p className='text-xs text-gray-500 dark:text-gray-400'>
-                          Capture the vibe (e.g. mellow, energetic, soulful).
+                          Add mood tags to help users discover your track.
                         </p>
                       )}
-                      {(values.mood || []).map(moodValue => (
+                      {(values.mood || []).map(mood => (
                         <Chip
-                          key={moodValue}
+                          key={mood}
                           variant='flat'
                           color='secondary'
-                          onClose={() => removeListValue('mood', moodValue)}
-                          className={`bg-white dark:bg-slate-800 uppercase tracking-wide text-xs font-semibold transition-all duration-300 ${
-                            recentlyAddedMood === moodValue
+                          onClose={() => removeListValue('mood', mood)}
+                          size='sm'
+                          className={`transition-all duration-300 ${
+                            recentlyAddedMood === mood
                               ? 'ring-2 ring-secondary-500 ring-offset-2 scale-105 animate-pulse'
                               : ''
                           }`}
                         >
-                          {moodValue}
+                          {mood}
                         </Chip>
                       ))}
                     </div>
@@ -1179,14 +1245,6 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                   ))}
                 </Select>
               </div>
-
-              <Textarea
-                label='Lyrics'
-                placeholder='Enter song lyrics...'
-                value={values.lyrics || ''}
-                onValueChange={value => updateValue('lyrics', value)}
-                rows={6}
-              />
             </div>
           </Tab>
 

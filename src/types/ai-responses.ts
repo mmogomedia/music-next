@@ -234,6 +234,101 @@ export interface ActionResponse extends BaseAIResponse {
 }
 
 /**
+ * Clarification option for user selection
+ */
+export interface ClarificationOption {
+  id: string; // Unique identifier
+  label: string; // Display text
+  value: string; // Value to send back
+  icon?: string; // Optional icon/emoji
+  description?: string; // Optional helper text
+  highlighted?: boolean; // If true, highlight (e.g., from user history)
+  metadata?: {
+    intent?: 'discovery' | 'playback' | 'recommendation';
+    genre?: string;
+    mood?: string;
+    [key: string]: any;
+  };
+}
+
+/**
+ * Base interface for clarification questions
+ */
+interface ClarificationQuestionBase {
+  id: string; // Unique question ID
+  questionType: string;
+  required: boolean;
+}
+
+/**
+ * Single select question (radio buttons)
+ */
+export interface SingleSelectQuestion extends ClarificationQuestionBase {
+  questionType: 'single_select';
+  question: string;
+  options: ClarificationOption[];
+}
+
+/**
+ * Multiple select question (checkboxes)
+ */
+export interface MultipleSelectQuestion extends ClarificationQuestionBase {
+  questionType: 'multiple_select';
+  question: string;
+  options: ClarificationOption[];
+  minSelections?: number;
+  maxSelections?: number;
+}
+
+/**
+ * Sequential questions (multiple questions, one at a time)
+ */
+export interface SequentialQuestions extends ClarificationQuestionBase {
+  questionType: 'sequential';
+  questions: SingleSelectQuestion[]; // Array of questions
+  currentIndex: number; // Which question to show (0-based)
+}
+
+/**
+ * Conditional question (show next question based on previous answer)
+ */
+export interface ConditionalQuestion extends ClarificationQuestionBase {
+  questionType: 'conditional';
+  question: SingleSelectQuestion;
+  conditions: {
+    [optionValue: string]: ClarificationQuestion; // Next question based on selection
+  };
+}
+
+/**
+ * Union type for all clarification question types
+ */
+export type ClarificationQuestion =
+  | SingleSelectQuestion
+  | MultipleSelectQuestion
+  | SequentialQuestions
+  | ConditionalQuestion;
+
+/**
+ * Response requesting clarification from user
+ */
+export interface ClarificationResponse extends BaseAIResponse {
+  type: 'clarification';
+  data: {
+    questions: ClarificationQuestion[]; // One or more questions
+    context?: {
+      detectedGenres?: string[]; // Genres from user history
+      detectedMoods?: string[]; // Moods from user history
+      previousIntent?: string; // Previous conversation intent
+    };
+    metadata?: {
+      requiresResponse: boolean; // If false, user can skip
+      canSkip?: boolean; // Allow user to proceed without answering
+    };
+  };
+}
+
+/**
  * Union type of all possible AI responses
  */
 export type AIResponse =
@@ -247,7 +342,8 @@ export type AIResponse =
   | GenreListResponse
   | QuickLinkTrackResponse
   | QuickLinkAlbumResponse
-  | QuickLinkArtistResponse;
+  | QuickLinkArtistResponse
+  | ClarificationResponse;
 
 /**
  * Registry of available response types
@@ -264,6 +360,7 @@ export const RESPONSE_TYPES = {
   quick_link_track: 'quick_link_track',
   quick_link_album: 'quick_link_album',
   quick_link_artist: 'quick_link_artist',
+  clarification: 'clarification',
 } as const;
 
 /**
@@ -349,4 +446,10 @@ export function isQuickLinkArtistResponse(
   response: AIResponse
 ): response is QuickLinkArtistResponse {
   return response.type === 'quick_link_artist';
+}
+
+export function isClarificationResponse(
+  response: AIResponse
+): response is ClarificationResponse {
+  return response.type === 'clarification';
 }

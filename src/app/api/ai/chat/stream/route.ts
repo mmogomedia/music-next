@@ -156,6 +156,14 @@ export async function POST(request: NextRequest) {
               },
             },
           };
+        } else if (
+          responseData &&
+          typeof responseData === 'object' &&
+          'type' in responseData
+        ) {
+          // Response has type field but no nested data (e.g., text responses)
+          // Use it as-is - it's already a valid AIResponse structure
+          finalData = responseData;
         } else {
           finalData = responseData;
         }

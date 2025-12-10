@@ -21,6 +21,8 @@ interface IntentClassificationResult {
   intent: AgentIntent;
   confidence: number;
   reasoning?: string;
+  needsClarification?: boolean;
+  isMetaQuestion?: boolean;
 }
 
 /**
@@ -46,12 +48,14 @@ export class IntentClassifierAgent extends BaseAgent {
    * Classify user intent from message and context
    * @param message - User message to classify
    * @param context - Optional context including conversation history
-   * @returns Routing decision with intent, confidence, and agent
+   * @returns Routing decision with intent, confidence, agent, and metadata
    */
   async classifyIntent(
     message: string,
     context?: AgentContext
-  ): Promise<RoutingDecision> {
+  ): Promise<
+    RoutingDecision & { needsClarification?: boolean; isMetaQuestion?: boolean }
+  > {
     try {
       const prompt = this.buildClassificationPrompt(message, context);
       const response = await this.model.invoke(prompt);
@@ -61,6 +65,8 @@ export class IntentClassifierAgent extends BaseAgent {
         intent: result.intent,
         confidence: result.confidence,
         agent: this.getAgentForIntent(result.intent),
+        needsClarification: result.needsClarification ?? false,
+        isMetaQuestion: result.isMetaQuestion ?? false,
       };
     } catch (error) {
       console.error('IntentClassifierAgent error:', error);
@@ -69,6 +75,8 @@ export class IntentClassifierAgent extends BaseAgent {
         intent: 'discovery',
         confidence: 0.5,
         agent: 'DiscoveryAgent',
+        needsClarification: false,
+        isMetaQuestion: false,
       };
     }
   }
@@ -128,7 +136,7 @@ export class IntentClassifierAgent extends BaseAgent {
       contextInfo += `\nPrevious intent: ${context.metadata.previousIntent}`;
     }
 
-    const prompt = `${this.systemPrompt}${contextInfo}\n\nUser message: "${message}"\n\nClassify the intent and return JSON only: { "intent": "...", "confidence": 0.0-1.0, "reasoning": "..." }`;
+    const prompt = `${this.systemPrompt}${contextInfo}\n\nUser message: "${message}"\n\nClassify the intent and return JSON only: { "intent": "...", "confidence": 0.0-1.0, "reasoning": "...", "needsClarification": boolean, "isMetaQuestion": boolean }`;
 
     return [new SystemMessage(this.systemPrompt), new HumanMessage(prompt)];
   }
@@ -146,12 +154,14 @@ export class IntentClassifierAgent extends BaseAgent {
           intent: this.normalizeIntent(parsed.intent),
           confidence: this.normalizeConfidence(parsed.confidence),
           reasoning: parsed.reasoning,
+          needsClarification: parsed.needsClarification === true,
+          isMetaQuestion: parsed.isMetaQuestion === true,
         };
       }
 
       // Fallback: try to extract intent from text
       const intentMatch = response.match(
-        /intent["\s:]+(discovery|playback|recommendation|industry|abuse)/i
+        /intent["\s:]+(discovery|recommendation|industry|abuse)/i
       );
       if (intentMatch) {
         return {
@@ -181,10 +191,10 @@ export class IntentClassifierAgent extends BaseAgent {
     const normalized = intent.toLowerCase().trim();
     const validIntents: AgentIntent[] = [
       'discovery',
-      'playback',
       'recommendation',
       'industry',
       'abuse',
+      'help',
     ];
 
     if (validIntents.includes(normalized as AgentIntent)) {
@@ -210,8 +220,6 @@ export class IntentClassifierAgent extends BaseAgent {
    */
   private getAgentForIntent(intent: AgentIntent): RoutingDecision['agent'] {
     switch (intent) {
-      case 'playback':
-        return 'PlaybackAgent';
       case 'recommendation':
         return 'RecommendationAgent';
       case 'discovery':
@@ -220,6 +228,8 @@ export class IntentClassifierAgent extends BaseAgent {
         return 'AbuseGuardAgent';
       case 'industry':
         return 'IndustryInfoAgent';
+      case 'help':
+        return 'HelpAgent';
       default:
         return 'DiscoveryAgent';
     }

@@ -128,6 +128,7 @@ export class DiscoveryAgent extends BaseAgent {
           { role: 'user', content: fullMessage },
         ],
         emitEvent: context?.emitEvent,
+        originalMessage: message, // Pass original message for debugging
       });
 
       logger.info('[DiscoveryAgent] Tool execution completed:', {

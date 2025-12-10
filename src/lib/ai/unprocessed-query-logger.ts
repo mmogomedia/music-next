@@ -4,6 +4,7 @@ export type UnprocessedReason =
   | 'malicious'
   | 'non_music'
   | 'knowledge_feature_not_ready'
+  | 'unsupported_query'
   | 'other';
 
 interface LogParams {

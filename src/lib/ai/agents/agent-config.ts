@@ -43,3 +43,10 @@ export const THEME_KEYWORD_WEIGHT = 1.5;
  * Below this threshold, LLM fallback may be used (if available)
  */
 export const MIN_KEYWORD_CONFIDENCE_THRESHOLD = 0.8;
+
+/**
+ * Maximum confidence threshold for using clarification
+ * If confidence is below this AND no helpful context exists, ask for clarification
+ * instead of defaulting to discovery
+ */
+export const MAX_CLARIFICATION_CONFIDENCE_THRESHOLD = 0.3;

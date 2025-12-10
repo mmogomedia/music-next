@@ -637,6 +637,62 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                           };
                           playTrack(normalizedTrack);
                         }}
+                        onClarificationAnswer={async answers => {
+                          // Build a message from clarification answers
+                          const answerParts: string[] = [];
+
+                          // Find the original user message that triggered clarification
+                          const userMessages = messages.filter(
+                            m => m.role === 'user'
+                          );
+                          const originalMessage =
+                            userMessages[userMessages.length - 1]?.content ||
+                            '';
+
+                          // Build enriched message from answers
+                          // Map question IDs to natural language
+                          Object.entries(answers).forEach(
+                            ([questionId, value]) => {
+                              if (Array.isArray(value)) {
+                                if (value.length > 0) {
+                                  // For genre selections, format nicely
+                                  if (questionId === 'genre') {
+                                    answerParts.push(`in ${value.join(', ')}`);
+                                  } else {
+                                    answerParts.push(value.join(', '));
+                                  }
+                                }
+                              } else if (value) {
+                                // Map intent values to natural language
+                                if (questionId === 'intent') {
+                                  if (value === 'recommendation') {
+                                    answerParts.push('I want recommendations');
+                                  } else if (value === 'discovery') {
+                                    answerParts.push('I want to find music');
+                                  }
+                                } else {
+                                  answerParts.push(value);
+                                }
+                              }
+                            }
+                          );
+
+                          // Combine original message with answers in a natural way
+                          let enrichedMessage = originalMessage;
+                          if (answerParts.length > 0) {
+                            // If original message is very short/ambiguous, replace it
+                            if (
+                              originalMessage.trim().split(/\s+/).length <= 3
+                            ) {
+                              enrichedMessage = answerParts.join(' ');
+                            } else {
+                              enrichedMessage = `${originalMessage}. ${answerParts.join(', ')}`;
+                            }
+                          }
+
+                          // Submit the enriched message
+                          await performSubmit(enrichedMessage);
+                        }}
                         onAction={(action: any) => {
                           // Handle actions from response renderers
                           switch (action.type) {

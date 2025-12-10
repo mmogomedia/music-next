@@ -32,6 +32,11 @@ export class IndustryInfoAgent extends BaseAgent {
 
     return {
       message: response,
+      data: {
+        type: 'text',
+        message: response,
+        timestamp: new Date(),
+      },
     };
   }
 }

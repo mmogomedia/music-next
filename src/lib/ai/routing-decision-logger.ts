@@ -32,7 +32,12 @@ function getPrisma() {
 /**
  * Routing method used
  */
-export type RoutingMethod = 'keyword' | 'llm' | 'hybrid';
+export type RoutingMethod =
+  | 'keyword'
+  | 'llm'
+  | 'hybrid'
+  | 'clarification'
+  | 'fallback';
 
 /**
  * Parameters for logging a routing decision
@@ -41,7 +46,7 @@ export interface RoutingLogParams {
   userId?: string;
   conversationId?: string;
   message: string;
-  keywordDecision: RoutingDecision;
+  keywordDecision?: RoutingDecision; // Optional since we use pure LLM approach
   llmDecision?: RoutingDecision;
   finalDecision: RoutingDecision;
   routingMethod: RoutingMethod;
@@ -70,7 +75,7 @@ export async function logRoutingDecision(
         agent: params.finalDecision.agent,
         routingMethod: params.routingMethod,
         confidence: params.finalDecision.confidence,
-        keywordConfidence: params.keywordDecision.confidence,
+        keywordConfidence: params.keywordDecision?.confidence ?? null,
         llmConfidence: params.llmDecision?.confidence,
         keywordLatency: params.keywordLatency
           ? Math.round(params.keywordLatency)

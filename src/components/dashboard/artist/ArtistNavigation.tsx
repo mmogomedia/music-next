@@ -24,7 +24,16 @@ import UserDetailsFooter from '@/components/layout/UserDetailsFooter';
 
 interface ArtistNavigationProps {
   activeTab: string;
-  onTabChange: (_tab: string) => void;
+  getTabHref: (
+    _tab:
+      | 'analytics'
+      | 'submissions'
+      | 'profile'
+      | 'overview'
+      | 'library'
+      | 'upload'
+      | 'quick-links'
+  ) => string;
 }
 
 interface NavItem {
@@ -36,7 +45,7 @@ interface NavItem {
 
 export default function ArtistNavigation({
   activeTab,
-  onTabChange,
+  getTabHref,
 }: ArtistNavigationProps) {
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -96,8 +105,7 @@ export default function ArtistNavigation({
     },
   ];
 
-  const handleTabClick = (tabId: string) => {
-    onTabChange(tabId);
+  const handleTabClick = () => {
     if (isMobile) {
       setIsOpen(false);
     }
@@ -147,11 +155,15 @@ export default function ArtistNavigation({
                   activeTab === item.id ? item.activeIcon : item.icon;
                 const isActive = activeTab === item.id;
 
+                const tabHref = getTabHref(item.id);
+
                 return (
-                  <button
+                  <Link
                     key={item.id}
-                    onClick={() => handleTabClick(item.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group text-left ${
+                    href={tabHref}
+                    scroll={false}
+                    onClick={handleTabClick}
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group ${
                       isActive
                         ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                         : 'hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
@@ -166,7 +178,7 @@ export default function ArtistNavigation({
                     />
                     <IconComponent className='w-5 h-5 flex-shrink-0' />
                     <span className='text-sm flex-1'>{item.name}</span>
-                  </button>
+                  </Link>
                 );
               })}
             </nav>
@@ -256,11 +268,15 @@ export default function ArtistNavigation({
                       activeTab === item.id ? item.activeIcon : item.icon;
                     const isActive = activeTab === item.id;
 
+                    const tabHref = getTabHref(item.id);
+
                     return (
-                      <button
+                      <Link
                         key={item.id}
-                        onClick={() => handleTabClick(item.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group text-left ${
+                        href={tabHref}
+                        scroll={false}
+                        onClick={handleTabClick}
+                        className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group ${
                           isActive
                             ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
                             : 'hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
@@ -275,7 +291,7 @@ export default function ArtistNavigation({
                         />
                         <IconComponent className='w-5 h-5 flex-shrink-0' />
                         <span className='text-sm flex-1'>{item.name}</span>
-                      </button>
+                      </Link>
                     );
                   })}
                 </nav>

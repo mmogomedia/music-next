@@ -191,6 +191,26 @@ model Track {
   @@map("tracks")
 }
 
+model TrackCompletionRule {
+  id          String        @id @default(cuid())
+  field       String        @unique // Field name (e.g., 'title', 'lyrics')
+  label       String        // Display name
+  category    String        // 'required' | 'high' | 'medium' | 'low'
+  weight      Int           // Percentage points (0-100)
+  description String?       // Help text
+  group       String?       // Optional grouping (e.g., 'Meta', 'Legal')
+  isRequired  Boolean       @default(false) // Whether field is required
+  isActive    Boolean       @default(true) // Whether rule is active
+  order       Int           @default(0) // Display order
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([category])
+  @@index([isActive])
+  @@index([order])
+  @@map("track_completion_rules")
+}
+
 model PlayEvent {
   id             String   @id @default(cuid())
   trackId        String

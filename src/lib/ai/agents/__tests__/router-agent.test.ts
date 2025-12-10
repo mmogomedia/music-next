@@ -9,9 +9,6 @@ const createMockResponse = (label: string) => ({
 const mockDiscoveryProcess = jest
   .fn()
   .mockResolvedValue(createMockResponse('discovery'));
-const mockPlaybackProcess = jest
-  .fn()
-  .mockResolvedValue(createMockResponse('playback'));
 const mockRecommendationProcess = jest
   .fn()
   .mockResolvedValue(createMockResponse('recommendation'));
@@ -25,12 +22,6 @@ const mockIndustryProcess = jest
 jest.mock('../discovery-agent', () => ({
   DiscoveryAgent: jest.fn().mockImplementation(() => ({
     process: mockDiscoveryProcess,
-  })),
-}));
-
-jest.mock('../playback-agent', () => ({
-  PlaybackAgent: jest.fn().mockImplementation(() => ({
-    process: mockPlaybackProcess,
   })),
 }));
 
@@ -73,12 +64,6 @@ describe('RouterAgent intent routing', () => {
   it('routes theme-based discovery queries to DiscoveryAgent', async () => {
     await agent.route('Recommend women empowerment amapiano songs');
     expect(mockDiscoveryProcess).toHaveBeenCalledTimes(1);
-    expect(mockPlaybackProcess).not.toHaveBeenCalled();
-  });
-
-  it('routes playback commands to PlaybackAgent', async () => {
-    await agent.route('Play my latest uploaded track');
-    expect(mockPlaybackProcess).toHaveBeenCalledTimes(1);
   });
 
   it('routes industry knowledge questions to IndustryInfoAgent', async () => {
@@ -115,9 +100,9 @@ describe('RouterAgent intent routing', () => {
 
   it('handles follow-up queries with previous intent', async () => {
     const context = {
-      metadata: { previousIntent: 'playback' },
+      metadata: { previousIntent: 'discovery' },
     };
-    await agent.route('play that', context);
-    expect(mockPlaybackProcess).toHaveBeenCalledTimes(1);
+    await agent.route('show me more', context);
+    expect(mockDiscoveryProcess).toHaveBeenCalledTimes(1);
   });
 });

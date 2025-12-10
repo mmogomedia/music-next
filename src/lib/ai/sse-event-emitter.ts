@@ -25,7 +25,7 @@ export interface SSEEvent {
   // Routing-specific
   intent?: string;
   confidence?: number;
-  method?: 'keyword' | 'llm' | 'hybrid';
+  method?: 'keyword' | 'llm' | 'hybrid' | 'clarification' | 'fallback';
   agent?: string;
   latency?: {
     keyword?: number;
@@ -36,6 +36,7 @@ export interface SSEEvent {
   tool?: string;
   parameters?: Record<string, any>;
   resultCount?: number;
+  originalMessage?: string; // Original user message for debugging
   // Completion
   data?: any;
   // Error

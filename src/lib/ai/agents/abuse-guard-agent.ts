@@ -40,10 +40,13 @@ export class AbuseGuardAgent extends BaseAgent {
     });
 
     return {
-      type: 'text',
       message: response,
-      timestamp: new Date(),
-    } as AgentResponse;
+      data: {
+        type: 'text',
+        message: response,
+        timestamp: new Date(),
+      },
+    };
   }
 
   /**

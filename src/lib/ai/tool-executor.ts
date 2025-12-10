@@ -45,6 +45,7 @@ export interface ExecuteToolCallLoopOptions {
   messages: BaseMessageLike[];
   maxIterations?: number;
   emitEvent?: SSEEventEmitter;
+  originalMessage?: string; // Original user message for debugging
 }
 
 /**
@@ -121,10 +122,35 @@ export async function executeToolCallLoop({
   messages,
   maxIterations = 6,
   emitEvent,
+  originalMessage,
 }: ExecuteToolCallLoopOptions): Promise<ExecuteToolCallLoopResult> {
   const conversation: BaseMessageLike[] = [...messages];
   const toolResults: ExecutedToolResult[] = [];
   const runnable = model.bindTools(tools);
+
+  // Extract original user message from messages array if not provided
+  const userMessage =
+    originalMessage ||
+    (() => {
+      const userMsg = messages.find(
+        msg =>
+          msg && typeof msg === 'object' && 'role' in msg && msg.role === 'user'
+      );
+      if (userMsg && typeof userMsg === 'object' && 'content' in userMsg) {
+        return typeof userMsg.content === 'string'
+          ? userMsg.content
+          : undefined;
+      }
+      return undefined;
+    })() ||
+    'Unknown';
+
+  const { logger } = await import('@/lib/utils/logger');
+  logger.info('[ToolExecutor] ===== TOOL EXECUTION START =====', {
+    originalMessage: userMessage,
+    toolsAvailable: tools.map(t => t.name),
+    maxIterations,
+  });
 
   let finalMessage: AIMessage | undefined;
   let truncated = false;
@@ -146,19 +172,22 @@ export async function executeToolCallLoop({
     }
 
     for (const toolCall of toolCalls) {
-      const { logger } = await import('@/lib/utils/logger');
-      logger.info('[ToolExecutor] Processing tool call:', {
-        toolName: toolCall.name,
-        rawArgs: toolCall.args,
-        toolCallId: toolCall.id,
-      });
-
       const matchingTool = tools.find(tool => tool.name === toolCall.name);
 
       let parsedArgs: unknown = toolCall.args;
       if (typeof parsedArgs === 'string') {
         parsedArgs = tryParseJson(parsedArgs) ?? {};
       }
+
+      // Enhanced logging with original message context
+      logger.info('[ToolExecutor] ===== TOOL CALL =====', {
+        originalMessage: userMessage,
+        toolName: toolCall.name,
+        toolCallId: toolCall.id,
+        iteration: iteration + 1,
+        parameters: parsedArgs,
+        rawArgs: toolCall.args,
+      });
 
       logger.debug('[ToolExecutor] Parsed args:', parsedArgs);
 
@@ -179,6 +208,8 @@ export async function executeToolCallLoop({
         parameters: parsedArgs as Record<string, any>,
         stage: 'tool_execution',
         timestamp: new Date().toISOString(),
+        // Include original message in SSE event for debugging
+        ...(originalMessage && { originalMessage }),
       });
 
       if (!matchingTool) {
@@ -213,21 +244,34 @@ export async function executeToolCallLoop({
       let error: string | undefined;
 
       const toolStartTime = Date.now();
-      // eslint-disable-next-line no-console
-      console.log('[ToolExecutor] Invoking tool:', {
+
+      // Enhanced debug logging
+      logger.info('[ToolExecutor] Invoking tool:', {
+        originalMessage: userMessage,
         toolName: matchingTool.name,
-        args: parsedArgs,
+        parameters: parsedArgs,
+        iteration: iteration + 1,
       });
+
+      logger.log('[ToolExecutor] ===== TOOL INVOCATION =====');
+      logger.log('[ToolExecutor] Original Message:', userMessage);
+      logger.log('[ToolExecutor] Tool:', matchingTool.name);
+      logger.log(
+        '[ToolExecutor] Parameters:',
+        JSON.stringify(parsedArgs, null, 2)
+      );
 
       try {
         rawResult = await (matchingTool as unknown as any).invoke(parsedArgs);
         parsedResult = tryParseJson(rawResult) ?? rawResult;
         const toolLatency = Date.now() - toolStartTime;
 
-        // eslint-disable-next-line no-console
-        console.log('[ToolExecutor] Tool execution success:', {
+        // Enhanced success logging
+        logger.info('[ToolExecutor] Tool execution success:', {
+          originalMessage: userMessage,
           toolName: matchingTool.name,
           latency: toolLatency,
+          parameters: parsedArgs,
           resultType: typeof rawResult,
           resultLength:
             typeof rawResult === 'string' ? rawResult.length : 'N/A',
@@ -236,6 +280,16 @@ export async function executeToolCallLoop({
               ? Object.keys(parsedResult)
               : 'N/A',
         });
+
+        logger.log('[ToolExecutor] ===== TOOL SUCCESS =====');
+        logger.log('[ToolExecutor] Original Message:', userMessage);
+        logger.log('[ToolExecutor] Tool:', matchingTool.name);
+        logger.log(
+          '[ToolExecutor] Parameters:',
+          JSON.stringify(parsedArgs, null, 2)
+        );
+        logger.log('[ToolExecutor] Latency:', `${toolLatency}ms`);
+        logger.log('[ToolExecutor] Result Type:', typeof rawResult);
 
         // Extract result count for tool_result event
         let resultCount: number | undefined;
@@ -299,12 +353,21 @@ export async function executeToolCallLoop({
         rawResult = { error };
         parsedResult = rawResult;
 
-        // eslint-disable-next-line no-console
-        console.error('[ToolExecutor] Tool execution error:', {
+        logger.error('[ToolExecutor] Tool execution error:', {
+          originalMessage: userMessage,
           toolName: matchingTool.name,
           error: error,
-          args: parsedArgs,
+          parameters: parsedArgs,
         });
+
+        logger.error('[ToolExecutor] ===== TOOL ERROR =====');
+        logger.error('[ToolExecutor] Original Message:', userMessage);
+        logger.error('[ToolExecutor] Tool:', matchingTool.name);
+        logger.error(
+          '[ToolExecutor] Parameters:',
+          JSON.stringify(parsedArgs, null, 2)
+        );
+        logger.error('[ToolExecutor] Error:', error);
       }
 
       const toolCallId =
@@ -334,6 +397,20 @@ export async function executeToolCallLoop({
   }
 
   truncated = true;
+
+  // Final summary log
+  logger.info('[ToolExecutor] ===== TOOL EXECUTION COMPLETE =====', {
+    originalMessage: userMessage,
+    totalIterations: maxIterations,
+    toolsCalled: toolResults.map(t => t.name),
+    totalToolCalls: toolResults.length,
+    truncated,
+    toolCallsSummary: toolResults.map(t => ({
+      name: t.name,
+      parameters: t.args,
+      hasError: !!t.error,
+    })),
+  });
 
   return {
     finalMessage:

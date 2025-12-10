@@ -4,8 +4,8 @@
 // It's extracted so we can wrap it with a server component that checks for profile
 
 import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardBody,
@@ -32,7 +32,6 @@ import {
   ChartBarIcon,
   EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline';
-import TrackEditModal from '@/components/track/TrackEditModal';
 import FileUpload from '@/components/upload/FileUpload';
 import ArtistProfileForm from '@/components/artist/ArtistProfileForm';
 import StatsGrid from '@/components/dashboard/StatsGrid';
@@ -60,31 +59,61 @@ import QuickLinksManager from '@/components/dashboard/quick-links/QuickLinksMana
 export default function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { playTrack, currentTrack, isPlaying } = useMusicPlayer();
-  const [activeTab, setActiveTab] = useState('overview');
   const [timeRange, setTimeRange] = useState('7d');
 
-  // Read tab from URL query parameter
+  const TAB_IDS = [
+    'overview',
+    'library',
+    'upload',
+    'submissions',
+    'quick-links',
+    'analytics',
+    'profile',
+  ] as const;
+
+  type TabId = (typeof TAB_IDS)[number];
+  const DEFAULT_TAB: TabId = 'overview';
+
+  const isValidTab = (tab: string | null): tab is TabId =>
+    !!tab && TAB_IDS.includes(tab as TabId);
+
+  const createHrefForTab = useCallback(
+    (tab: TabId) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (tab === DEFAULT_TAB) {
+        params.delete('tab');
+      } else {
+        params.set('tab', tab);
+      }
+      const queryString = params.toString();
+      return queryString ? `${pathname}?${queryString}` : pathname;
+    },
+    [pathname, searchParams]
+  );
+
+  const navigateToTab = useCallback(
+    (tab: TabId, options?: { replace?: boolean }) => {
+      const href = createHrefForTab(tab);
+      if (options?.replace) {
+        router.replace(href, { scroll: false });
+      } else {
+        router.push(href, { scroll: false });
+      }
+    },
+    [createHrefForTab, router]
+  );
+
+  const tabParam = searchParams.get('tab');
+  const activeTab: TabId = isValidTab(tabParam) ? tabParam : DEFAULT_TAB;
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get('tab');
-    if (
-      tabParam &&
-      [
-        'overview',
-        'library',
-        'upload',
-        'submissions',
-        'quick-links',
-        'analytics',
-        'profile',
-      ].includes(tabParam)
-    ) {
-      setActiveTab(tabParam);
-      // Clean up URL by removing the query parameter
-      router.replace('/dashboard', { scroll: false });
+    if (tabParam && !isValidTab(tabParam)) {
+      navigateToTab(DEFAULT_TAB, { replace: true });
     }
-  }, [router]);
+  }, [tabParam, navigateToTab]);
   const {
     stats,
     loading: statsLoading,
@@ -105,8 +134,6 @@ export default function DashboardContent() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(
     null
   );
-  const [editingTrack, setEditingTrack] = useState<Track | null>(null);
-  const [showTrackEdit, setShowTrackEdit] = useState(false);
   const [showQuickSubmit, setShowQuickSubmit] = useState(false);
   const [selectedTrackForSubmit, setSelectedTrackForSubmit] =
     useState<Track | null>(null);
@@ -180,50 +207,6 @@ export default function DashboardContent() {
     setShowDeleteConfirm(trackId);
   };
 
-  const handleEditTrack = (track: any) => {
-    setEditingTrack(track);
-    setShowTrackEdit(true);
-  };
-
-  const handleTrackSave = async (trackData: any): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/tracks/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          trackId: editingTrack?.id,
-          ...trackData,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Update the track in the list
-        setTracks(prev =>
-          prev.map(track =>
-            track.id === editingTrack?.id ? data.track : track
-          )
-        );
-        setShowTrackEdit(false);
-        setEditingTrack(null);
-        return true;
-      } else {
-        console.error('Failed to update track');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error updating track:', error);
-      return false;
-    }
-  };
-
-  const handleTrackEditClose = () => {
-    setShowTrackEdit(false);
-    setEditingTrack(null);
-  };
-
   // Show loading while checking authentication
   if (status === 'loading') {
     return (
@@ -263,7 +246,7 @@ export default function DashboardContent() {
 
   const recentTracks = tracks.slice(0, 5);
 
-  const tabNames: Record<string, string> = {
+  const tabNames: Record<TabId, string> = {
     overview: 'Overview',
     library: 'Library',
     upload: 'Upload',
@@ -308,7 +291,7 @@ export default function DashboardContent() {
                 color='primary'
                 className='hidden sm:flex'
                 startContent={<PlusIcon className='w-4 h-4' />}
-                onPress={() => setActiveTab('upload')}
+                onPress={() => navigateToTab('upload')}
               >
                 Upload
               </Button>
@@ -323,7 +306,10 @@ export default function DashboardContent() {
     <RoleBasedRedirect>
       <UnifiedLayout
         sidebar={
-          <ArtistNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+          <ArtistNavigation
+            activeTab={activeTab}
+            getTabHref={createHrefForTab}
+          />
         }
         contentClassName='w-full'
         header={header}
@@ -394,7 +380,7 @@ export default function DashboardContent() {
                     <div className='mt-6'>
                       <TopPerformingTracks
                         topTracks={stats.topTracks}
-                        onViewAll={() => setActiveTab('library')}
+                        onViewAll={() => navigateToTab('library')}
                       />
                     </div>
                   )}
@@ -402,7 +388,7 @@ export default function DashboardContent() {
                   <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
                     <RecentTracks
                       tracks={recentTracks}
-                      onViewAll={() => setActiveTab('library')}
+                      onViewAll={() => navigateToTab('library')}
                       onPlay={playTrack}
                     />
 
@@ -639,21 +625,9 @@ export default function DashboardContent() {
                     };
                     fetchTracks();
                   }}
-                  onViewLibrary={() => setActiveTab('library')}
+                  onViewLibrary={() => navigateToTab('library')}
                   onUploadAnother={() => {
                     // Reset upload state is handled in the component
-                  }}
-                  onTrackCreated={track => {
-                    // Add new track to the list
-                    setTracks(prev => [track, ...prev]);
-                    // Switch to library tab to show the new track
-                    setActiveTab('library');
-                  }}
-                  onTrackUpdated={track => {
-                    // Update existing track in the list
-                    setTracks(prev =>
-                      prev.map(t => (t.id === track.id ? track : t))
-                    );
                   }}
                 />
               </CardBody>
@@ -672,7 +646,7 @@ export default function DashboardContent() {
                     color='primary'
                     className='flex justify-start'
                     startContent={<PlusIcon className='w-4 h-4' />}
-                    onPress={() => setActiveTab('upload')}
+                    onPress={() => navigateToTab('upload')}
                   >
                     Upload New Track
                   </Button>
@@ -695,7 +669,7 @@ export default function DashboardContent() {
                       size='lg'
                       className='flex justify-start'
                       startContent={<PlusIcon className='w-5 h-5' />}
-                      onPress={() => setActiveTab('upload')}
+                      onPress={() => navigateToTab('upload')}
                     >
                       Upload Music
                     </Button>
@@ -799,7 +773,11 @@ export default function DashboardContent() {
                                 startContent={
                                   <PencilIcon className='w-4 h-4' />
                                 }
-                                onPress={() => handleEditTrack(track)}
+                                onPress={() =>
+                                  router.push(
+                                    `/dashboard/tracks/${track.id}/edit`
+                                  )
+                                }
                               >
                                 Edit Track
                               </DropdownItem>
@@ -897,44 +875,6 @@ export default function DashboardContent() {
             </Card>
           </div>
         )}
-
-        {/* Track Edit Modal */}
-        <TrackEditModal
-          isOpen={showTrackEdit}
-          onClose={handleTrackEditClose}
-          onSave={handleTrackSave}
-          mode={editingTrack ? 'edit' : 'create'}
-          track={
-            editingTrack
-              ? {
-                  id: editingTrack.id,
-                  title: editingTrack.title,
-                  artist: editingTrack.artist,
-                  primaryArtistIds: editingTrack.primaryArtistIds || [],
-                  featuredArtistIds: editingTrack.featuredArtistIds || [],
-                  album: editingTrack.album,
-                  genre: editingTrack.genre,
-                  genreId: editingTrack.genreId,
-                  composer: editingTrack.composer,
-                  year: editingTrack.year,
-                  releaseDate: editingTrack.releaseDate,
-                  bpm: editingTrack.bpm,
-                  isrc: editingTrack.isrc,
-                  description: editingTrack.description,
-                  lyrics: editingTrack.lyrics,
-                  isPublic: editingTrack.isPublic ?? true,
-                  isDownloadable: editingTrack.isDownloadable ?? false,
-                  isExplicit: editingTrack.isExplicit ?? false,
-                  copyrightInfo: editingTrack.copyrightInfo,
-                  licenseType: editingTrack.licenseType,
-                  distributionRights: editingTrack.distributionRights,
-                  albumArtwork: editingTrack.albumArtwork,
-                  attributes: editingTrack.attributes || [],
-                  mood: editingTrack.mood || [],
-                }
-              : undefined
-          }
-        />
 
         {/* Quick Submit Modal */}
         <QuickSubmitModal

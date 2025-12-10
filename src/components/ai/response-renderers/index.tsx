@@ -11,6 +11,7 @@ import { GenreListRenderer } from './genre-list-renderer';
 import { QuickLinkTrackRenderer } from './quick-link-track-renderer';
 import { QuickLinkAlbumRenderer } from './quick-link-album-renderer';
 import { QuickLinkArtistRenderer } from './quick-link-artist-renderer';
+import { ClarificationRenderer } from './clarification-renderer';
 import type { AIResponse } from '@/types/ai-responses';
 import { responseRegistry } from '@/lib/ai/response-registry';
 import { useEffect } from 'react';
@@ -21,6 +22,7 @@ interface ResponseRendererProps {
   onPlayPlaylist?: (_playlistId: string) => void;
   onViewArtist?: (_artistId: string) => void;
   onAction?: (_action: any) => void;
+  onClarificationAnswer?: (_answers: Record<string, string | string[]>) => void;
 }
 
 /**
@@ -264,6 +266,33 @@ function registerDefaultHandlers() {
       },
     });
   }
+
+  if (!responseRegistry.isRegistered('clarification')) {
+    responseRegistry.register('clarification', {
+      component: ClarificationRenderer,
+      promptTemplate:
+        'Use when user intent is ambiguous and clarification is needed',
+      schema: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'clarification' },
+          message: { type: 'string' },
+          data: {
+            type: 'object',
+            properties: {
+              questions: { type: 'array' },
+            },
+          },
+        },
+        required: ['type', 'message', 'data'],
+      },
+      metadata: {
+        description: 'Clarification questions',
+        category: 'interaction',
+        priority: 15,
+      },
+    });
+  }
 }
 
 // Register defaults immediately when module is loaded
@@ -275,6 +304,7 @@ export function ResponseRenderer({
   onPlayPlaylist,
   onViewArtist,
   onAction,
+  onClarificationAnswer,
 }: ResponseRendererProps) {
   // Register components on mount if not already registered
   useEffect(() => {
@@ -514,6 +544,33 @@ export function ResponseRenderer({
         },
       });
     }
+
+    if (!responseRegistry.isRegistered('clarification')) {
+      responseRegistry.register('clarification', {
+        component: ClarificationRenderer,
+        promptTemplate:
+          'Use when user intent is ambiguous and clarification is needed',
+        schema: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'clarification' },
+            message: { type: 'string' },
+            data: {
+              type: 'object',
+              properties: {
+                questions: { type: 'array' },
+              },
+            },
+          },
+          required: ['type', 'message', 'data'],
+        },
+        metadata: {
+          description: 'Clarification questions',
+          category: 'interaction',
+          priority: 15,
+        },
+      });
+    }
   }, []);
 
   // Get the registered handler for this response type
@@ -533,6 +590,12 @@ export function ResponseRenderer({
   // Render using the registered component
   const Component = handler.component;
 
+  // Pass onClarificationAnswer only if response is clarification type
+  const clarificationProps =
+    response.type === 'clarification'
+      ? { onAnswer: onClarificationAnswer }
+      : {};
+
   return (
     <Component
       response={response}
@@ -540,6 +603,7 @@ export function ResponseRenderer({
       onPlayPlaylist={onPlayPlaylist}
       onViewArtist={onViewArtist}
       onAction={onAction}
+      {...clarificationProps}
     />
   );
 }

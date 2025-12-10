@@ -93,33 +93,6 @@ export function hasNonMusicIntent(message: string): boolean {
 }
 
 /**
- * Break ties between playback and recommendation intents
- * Uses message patterns to determine the more likely intent
- */
-function breakTie(
-  playbackScore: number,
-  recommendationScore: number,
-  message: string
-): 'playback' | 'recommendation' {
-  // Check for action verbs (stronger signal for playback)
-  if (
-    /\b(play|start|begin|queue|pause|stop|resume|skip|next|previous)\b/i.test(
-      message
-    )
-  ) {
-    return 'playback';
-  }
-  // Check for question words (stronger signal for recommendation)
-  if (
-    /\b(what|should|recommend|suggest|want|need|looking for)\b/i.test(message)
-  ) {
-    return 'recommendation';
-  }
-  // Default to playback (more action-oriented)
-  return 'playback';
-}
-
-/**
  * Calculate confidence score from keyword matches
  * Single keyword = 0.8, two keywords = 0.95, three+ = 1.0
  * Also factors in score difference between intents for better confidence
@@ -198,11 +171,10 @@ function enrichMessageWithContext(
 
 /**
  * Get agent name for intent type
+ * Note: Playback queries are routed to DiscoveryAgent (no separate PlaybackAgent)
  */
 function getAgentForIntent(intent: string): RoutingDecision['agent'] {
   switch (intent) {
-    case 'playback':
-      return 'PlaybackAgent';
     case 'recommendation':
       return 'RecommendationAgent';
     case 'discovery':
@@ -211,6 +183,8 @@ function getAgentForIntent(intent: string): RoutingDecision['agent'] {
       return 'AbuseGuardAgent';
     case 'industry':
       return 'IndustryInfoAgent';
+    case 'help':
+      return 'HelpAgent';
     default:
       return 'DiscoveryAgent';
   }
@@ -243,16 +217,8 @@ export function analyzeIntent(
   // Enrich message with context for better keyword matching
   const enrichedMessage = enrichMessageWithContext(lowerMessage, context);
 
-  // Priority 1: Check for industry knowledge queries
-  if (isIndustryKnowledgeIntent(enrichedMessage)) {
-    return {
-      intent: 'industry',
-      confidence: 1,
-      agent: 'IndustryInfoAgent',
-    };
-  }
-
-  // Priority 2: Check for abuse/malicious/non-music queries
+  // Priority 1: Check for abuse/malicious/non-music queries FIRST
+  // This must be checked before anything else to protect against abuse
   if (
     hasMaliciousIntent(enrichedMessage) ||
     hasNonMusicIntent(enrichedMessage)
@@ -264,8 +230,18 @@ export function analyzeIntent(
     };
   }
 
+  // Priority 2: Check for industry knowledge queries
+  if (isIndustryKnowledgeIntent(enrichedMessage)) {
+    return {
+      intent: 'industry',
+      confidence: 1,
+      agent: 'IndustryInfoAgent',
+    };
+  }
+
   // Priority 3: Calculate keyword scores for music intents
   // Use enriched message for better context-aware matching
+  // Note: Playback keywords are treated as discovery (user wants to find/play specific content)
   const playbackScore = calculateKeywordScore(
     enrichedMessage,
     PLAYBACK_KEYWORDS
@@ -281,12 +257,12 @@ export function analyzeIntent(
   const themeScore = calculateKeywordScore(enrichedMessage, THEME_KEYWORDS);
 
   // Theme keywords boost discovery score (weighted by configurable multiplier)
+  // Playback keywords also boost discovery (user wants to play = find and play)
   const discoveryScoreWeighted =
-    discoveryScore + themeScore * THEME_KEYWORD_WEIGHT;
+    discoveryScore + themeScore * THEME_KEYWORD_WEIGHT + playbackScore;
 
   // Find the highest score and second highest for confidence calculation
   const scores = [
-    { intent: 'playback' as const, score: playbackScore },
     { intent: 'recommendation' as const, score: recommendationScore },
     { intent: 'discovery' as const, score: discoveryScoreWeighted },
   ];
@@ -303,38 +279,9 @@ export function analyzeIntent(
     };
   }
 
-  // Handle ties between playback and recommendation
-  if (
-    playbackScore === recommendationScore &&
-    playbackScore === maxScore &&
-    discoveryScoreWeighted < maxScore
-  ) {
-    const tieWinner = breakTie(
-      playbackScore,
-      recommendationScore,
-      lowerMessage
-    );
-    return {
-      intent: tieWinner,
-      confidence: calculateConfidence(
-        tieWinner === 'playback' ? playbackScore : recommendationScore,
-        maxScore,
-        secondMaxScore
-      ),
-      agent: tieWinner === 'playback' ? 'PlaybackAgent' : 'RecommendationAgent',
-    };
-  }
-
-  // Priority order: playback > recommendation > discovery
-  // Playback has highest priority because it's more action-oriented
-  if (playbackScore >= maxScore) {
-    return {
-      intent: 'playback',
-      confidence: calculateConfidence(playbackScore, maxScore, secondMaxScore),
-      agent: 'PlaybackAgent',
-    };
-  }
-
+  // Priority order: recommendation > discovery
+  // If recommendation score is highest, route to recommendation
+  // Otherwise, route to discovery (includes playback keywords)
   if (recommendationScore >= maxScore) {
     return {
       intent: 'recommendation',
@@ -347,7 +294,7 @@ export function analyzeIntent(
     };
   }
 
-  // Default to discovery
+  // Default to discovery (includes playback keywords)
   return {
     intent: 'discovery',
     confidence: calculateConfidence(

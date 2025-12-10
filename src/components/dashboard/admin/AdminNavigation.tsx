@@ -12,6 +12,7 @@ import {
   TagIcon,
   Bars3Icon,
   XMarkIcon,
+  SparklesIcon,
   MusicalNoteIcon as MusicalNoteSolidIcon,
 } from '@heroicons/react/24/outline';
 import {
@@ -171,6 +172,23 @@ export default function AdminNavigation({
               })}
             </nav>
           </div>
+
+          {/* Additional Links Section */}
+          <div className='mt-6'>
+            <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 px-3'>
+              Configuration
+            </h3>
+            <nav className='space-y-2'>
+              <Link
+                href='/admin/dashboard/track-completion'
+                className='w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+              >
+                <div className='w-2 h-2 rounded-full bg-transparent group-hover:bg-blue-600 dark:group-hover:bg-blue-400 transition-colors duration-200' />
+                <SparklesIcon className='w-5 h-5 flex-shrink-0' />
+                <span className='text-sm flex-1'>Track Completion Rules</span>
+              </Link>
+            </nav>
+          </div>
         </div>
 
         {/* System Health & Auth Footer - Absolutely positioned at bottom, above music player */}
@@ -284,6 +302,26 @@ export default function AdminNavigation({
                       </button>
                     );
                   })}
+                </nav>
+              </div>
+
+              {/* Additional Links Section */}
+              <div className='mt-6'>
+                <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 px-3'>
+                  Configuration
+                </h3>
+                <nav className='space-y-2'>
+                  <Link
+                    href='/admin/dashboard/track-completion'
+                    onClick={() => setIsOpen(false)}
+                    className='w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                  >
+                    <div className='w-2 h-2 rounded-full bg-transparent group-hover:bg-blue-600 dark:group-hover:bg-blue-400 transition-colors duration-200' />
+                    <SparklesIcon className='w-5 h-5 flex-shrink-0' />
+                    <span className='text-sm flex-1'>
+                      Track Completion Rules
+                    </span>
+                  </Link>
                 </nav>
               </div>
             </div>
