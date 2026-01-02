@@ -3,9 +3,9 @@
 import {
   FireIcon,
   MusicalNoteIcon,
-  SparklesIcon,
   GlobeAltIcon,
 } from '@heroicons/react/24/outline';
+import AIIcon from '@/components/icons/AIIcon';
 
 interface ChatQuickActionsProps {
   onAction: (_query: string) => void;
@@ -33,7 +33,7 @@ const quickActions = [
   {
     id: 'discover',
     label: 'Discover New Music',
-    icon: SparklesIcon,
+    icon: AIIcon,
     message: 'Help me discover new music based on my preferences',
   },
 ];

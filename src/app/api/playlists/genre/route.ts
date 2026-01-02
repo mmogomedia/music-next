@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
         status: PlaylistStatus.ACTIVE,
       },
       include: {
+        playlistType: true,
         _count: {
           select: {
             tracks: true,

@@ -115,7 +115,7 @@ export class DiscoveryAgent extends BaseAgent {
       context?.emitEvent?.({
         type: 'agent_processing',
         agent: 'DiscoveryAgent',
-        message: 'Determining which tools to use...',
+        message: 'Let me dig through our music collection... 🎵',
         stage: 'tool_selection',
         timestamp: new Date().toISOString(),
       });
@@ -170,7 +170,7 @@ export class DiscoveryAgent extends BaseAgent {
       // Emit processing_results event with more detail
       context?.emitEvent?.({
         type: 'processing_results',
-        message: `Processing ${execution.toolResults.length} tool result${execution.toolResults.length !== 1 ? 's' : ''}...`,
+        message: 'Almost there! Putting it all together... 🎨',
         stage: 'result_processing',
         timestamp: new Date().toISOString(),
       });

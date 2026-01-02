@@ -30,10 +30,8 @@ export async function GET() {
 
     return NextResponse.json({
       playlist: {
-        id: playlistWithTracks.id,
-        name: playlistWithTracks.name,
-        description: playlistWithTracks.description,
-        status: playlistWithTracks.status,
+        ...playlistWithTracks,
+        tracks: undefined, // Remove tracks from playlist object, they're returned separately
       },
       tracks,
     });

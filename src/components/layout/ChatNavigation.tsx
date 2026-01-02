@@ -7,7 +7,6 @@ import {
   MusicalNoteIcon,
   FireIcon,
   GlobeAltIcon,
-  SparklesIcon,
   Bars3Icon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
@@ -15,8 +14,8 @@ import {
   MusicalNoteIcon as MusicalNoteSolidIcon,
   FireIcon as FireSolidIcon,
   GlobeAltIcon as GlobeAltSolidIcon,
-  SparklesIcon as SparklesSolidIcon,
 } from '@heroicons/react/24/solid';
+import AIIcon from '@/components/icons/AIIcon';
 import Link from 'next/link';
 import ConversationList from '@/components/ai/ConversationList';
 import UserDetailsFooter from '@/components/layout/UserDetailsFooter';
@@ -93,8 +92,8 @@ export default function ChatNavigation({
     {
       id: 'discover',
       title: 'Discover New Music',
-      icon: SparklesIcon,
-      activeIcon: SparklesSolidIcon,
+      icon: AIIcon,
+      activeIcon: AIIcon,
       message: 'Help me discover new music based on my preferences',
     },
   ];

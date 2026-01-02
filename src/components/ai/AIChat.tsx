@@ -223,33 +223,31 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                     case 'analyzing_intent':
                       setStatusMessage(
                         data.message ||
-                          "Understanding what you're looking for..."
+                          "Hmm, let me figure out what you're after... 🤔"
                       );
                       break;
                     case 'routing_decision':
                       if (data.method === 'keyword') {
                         setStatusMessage(
-                          'Found what you need! Routing instantly...'
+                          'Got it! Getting things ready for you... ⚡'
                         );
                       } else {
-                        setStatusMessage(
-                          'Analyzing your request more carefully...'
-                        );
+                        setStatusMessage('Just a sec, thinking... 💭');
                       }
                       break;
                     case 'llm_classifying':
                       setStatusMessage(
-                        data.message || 'Understanding your request...'
+                        data.message || 'Just a sec, thinking... 💭'
                       );
                       break;
                     case 'agent_processing':
                       setStatusMessage(
-                        data.message || 'Processing your request...'
+                        data.message || 'Working my magic... ✨'
                       );
                       break;
                     case 'calling_tool':
                       setStatusMessage(
-                        data.message || `Executing ${data.tool}...`
+                        data.message || 'On it! Looking that up... 🔎'
                       );
                       break;
                     case 'tool_result':
@@ -261,16 +259,19 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                       ) {
                         setStatusMessage(
                           data.message ||
-                            `Found ${data.resultCount} result${data.resultCount !== 1 ? 's' : ''}`
+                            `Found ${data.resultCount} awesome result${data.resultCount !== 1 ? 's' : ''}! 🎉`
                         );
                       }
                       break;
                     case 'processing_results':
-                      setStatusMessage(data.message || 'Processing results...');
+                      setStatusMessage(
+                        data.message ||
+                          'Almost there! Putting it all together... 🎨'
+                      );
                       break;
                     case 'finalizing':
                       setStatusMessage(
-                        data.message || 'Preparing your response...'
+                        data.message || 'Almost ready... hang tight! 🎯'
                       );
                       break;
                     case 'complete':

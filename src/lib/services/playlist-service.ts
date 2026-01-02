@@ -46,6 +46,7 @@ export class PlaylistService {
     const playlist = await prisma.playlist.findUnique({
       where: { id },
       include: {
+        playlistType: true,
         tracks: {
           include: {
             track: {

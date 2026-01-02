@@ -28,9 +28,7 @@ export const MAX_TRACKS_PER_RESPONSE = 10;
  * Agent-specific temperature overrides
  * Some agents benefit from different temperature settings
  */
-export const AGENT_TEMPERATURE_OVERRIDES = {
-  playback: 0.5, // Lower temperature for more deterministic playback actions
-} as const;
+export const AGENT_TEMPERATURE_OVERRIDES = {} as const;
 
 /**
  * Theme keyword weight multiplier for discovery intent scoring

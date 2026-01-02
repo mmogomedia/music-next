@@ -61,11 +61,61 @@ export default function MusicStreaming({
   });
   const [loading, setLoading] = useState(true);
   const [activePlaylist, setActivePlaylist] = useState<Playlist | null>(null);
+  const [playlistTracks, setPlaylistTracks] = useState<
+    Array<{ track: Track; order: number }>
+  >([]);
+  const [tracksLoading, setTracksLoading] = useState(false);
   const { playTrack } = useMusicPlayer();
 
   useEffect(() => {
     fetchAllPlaylists();
   }, []);
+
+  // Fetch tracks when active playlist changes
+  useEffect(() => {
+    if (activePlaylist?.id) {
+      fetchPlaylistTracks(activePlaylist.id);
+    } else {
+      setPlaylistTracks([]);
+    }
+  }, [activePlaylist?.id]);
+
+  const fetchPlaylistTracks = async (playlistId: string) => {
+    try {
+      setTracksLoading(true);
+      const response = await fetch(`/api/playlists/${playlistId}/tracks`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error(
+          'Failed to fetch playlist tracks:',
+          response.status,
+          errorData
+        );
+        throw new Error('Failed to fetch playlist tracks');
+      }
+      const data = await response.json();
+
+      // Transform tracks to match the expected format
+      const tracks = (data.tracks || []).map((track: any, index: number) => {
+        // Ensure fileUrl is set if not already present
+        const normalized = normalizeTrack(track);
+        if (!normalized.fileUrl && track.filePath) {
+          normalized.fileUrl = constructFileUrl(track.filePath);
+        }
+        return {
+          track: normalized,
+          order: index + 1,
+          id: track.id || normalized.id, // For key prop
+        };
+      });
+      setPlaylistTracks(tracks);
+    } catch (error) {
+      console.error('Error fetching playlist tracks:', error);
+      setPlaylistTracks([]);
+    } finally {
+      setTracksLoading(false);
+    }
+  };
 
   const fetchAllPlaylists = async () => {
     try {
@@ -381,7 +431,12 @@ export default function MusicStreaming({
                 </div>
 
                 {/* Track List - Modern Spotify-style */}
-                {activePlaylist.tracks && activePlaylist.tracks.length > 0 ? (
+                {tracksLoading ? (
+                  <div className='bg-slate-800/30 backdrop-blur-sm rounded-xl p-16 text-center border border-slate-700/50'>
+                    <div className='w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4'></div>
+                    <p className='text-slate-400'>Loading tracks...</p>
+                  </div>
+                ) : playlistTracks.length > 0 ? (
                   <div className='bg-slate-800/30 backdrop-blur-sm rounded-xl border border-slate-700/50 overflow-hidden'>
                     {/* Track List Header */}
                     <div className='px-6 py-4 border-b border-slate-700/50'>
@@ -396,14 +451,14 @@ export default function MusicStreaming({
 
                     {/* Track List */}
                     <div className='divide-y divide-slate-700/30'>
-                      {activePlaylist.tracks.map((playlistTrack, index) => {
+                      {playlistTracks.map((playlistTrack, index) => {
                         const track = playlistTrack.track;
                         if (!track) return null;
-                        const normalizedTrack = normalizeTrack(track);
+                        const normalizedTrack = track;
 
                         return (
                           <div
-                            key={playlistTrack.id}
+                            key={track.id || index}
                             className='group px-6 py-3 hover:bg-slate-700/30 transition-colors duration-200 cursor-pointer'
                             onClick={() => handlePlay(normalizedTrack)}
                             role='button'

@@ -21,6 +21,7 @@ import { analyzeIntent } from './router-intent-detector';
 import { logRoutingDecision } from '../routing-decision-logger';
 import { logger } from '@/lib/utils/logger';
 import type { AIProvider } from '@/types/ai-service';
+import { AgentEventService } from '../services/agent-event-service';
 
 export type AgentIntent =
   | 'discovery'
@@ -99,21 +100,14 @@ export class RouterAgent {
     });
 
     try {
+      // Initialize event service
+      const eventService = new AgentEventService(context?.emitEvent);
+
       // Emit analyzing intent event
-      context?.emitEvent?.({
-        type: 'analyzing_intent',
-        message: "Understanding what you're looking for...",
-        stage: 'intent_analysis',
-        timestamp: new Date().toISOString(),
-      });
+      eventService.analyzingIntent();
 
       // PRIMARY: Always use LLM for intent classification
-      context?.emitEvent?.({
-        type: 'llm_classifying',
-        message: 'Analyzing your request...',
-        stage: 'llm_classification',
-        timestamp: new Date().toISOString(),
-      });
+      eventService.llmClassifying();
 
       let finalDecision: RoutingDecision | undefined;
       let routingMethod: 'llm' | 'keyword' | 'clarification' | 'fallback' =
@@ -172,8 +166,7 @@ export class RouterAgent {
             }
           );
 
-          context?.emitEvent?.({
-            type: 'routing_decision',
+          eventService.routingDecision({
             intent: 'unknown',
             confidence: llmDecision.confidence,
             method: 'clarification',
@@ -182,7 +175,6 @@ export class RouterAgent {
               llm: llmLatency,
               total: Date.now() - startTime,
             },
-            timestamp: new Date().toISOString(),
           });
 
           return await this.clarificationAgent.process(message, context);
@@ -218,8 +210,7 @@ export class RouterAgent {
             }
           );
 
-          context?.emitEvent?.({
-            type: 'routing_decision',
+          eventService.routingDecision({
             intent: 'unknown',
             confidence: llmDecision.confidence,
             method: 'clarification',
@@ -228,7 +219,6 @@ export class RouterAgent {
               llm: llmLatency,
               total: Date.now() - startTime,
             },
-            timestamp: new Date().toISOString(),
           });
 
           return await this.clarificationAgent.process(message, context);
@@ -244,8 +234,7 @@ export class RouterAgent {
         }
 
         // Emit final routing decision
-        context?.emitEvent?.({
-          type: 'routing_decision',
+        eventService.routingDecision({
           intent: finalDecision.intent,
           confidence: finalDecision.confidence,
           method: routingMethod,
@@ -254,7 +243,6 @@ export class RouterAgent {
             llm: llmLatency,
             total: Date.now() - startTime,
           },
-          timestamp: new Date().toISOString(),
         });
       } catch (llmError) {
         // FALLBACK: Use keyword detection if LLM fails
@@ -292,8 +280,7 @@ export class RouterAgent {
         routingMethod = 'keyword';
 
         // Emit routing decision (keyword fallback)
-        context?.emitEvent?.({
-          type: 'routing_decision',
+        eventService.routingDecision({
           intent: keywordDecision.intent,
           confidence: keywordDecision.confidence,
           method: 'keyword',
@@ -302,7 +289,6 @@ export class RouterAgent {
             keyword: keywordLatency,
             total: Date.now() - startTime,
           },
-          timestamp: new Date().toISOString(),
         });
       }
 
@@ -354,23 +340,8 @@ export class RouterAgent {
       };
 
       // Emit agent processing event
-      const agentMessages: Record<string, string> = {
-        DiscoveryAgent: 'Searching our music library...',
-        RecommendationAgent: 'Finding personalized recommendations...',
-        AbuseGuardAgent: 'Processing request...',
-        IndustryInfoAgent: 'Processing request...',
-        HelpAgent: 'Getting help information...',
-        FallbackAgent: 'Processing your request...',
-      };
-
-      context?.emitEvent?.({
-        type: 'agent_processing',
+      eventService.agentProcessing({
         agent: confirmedDecision.agent,
-        message:
-          agentMessages[confirmedDecision.agent] ||
-          'Processing your request...',
-        stage: 'agent_execution',
-        timestamp: new Date().toISOString(),
       });
 
       return await this.routeToAgent(
@@ -411,92 +382,6 @@ export class RouterAgent {
         // Default to FallbackAgent for truly unknown intents
         return await this.fallbackAgent.process(message, context);
     }
-  }
-
-  /**
-   * Check if we have enough context to make a routing decision
-   */
-  /**
-   * Check if we have STRONG context that should override clarification
-   * Strong context = active filters or previous intent, NOT just conversation history
-   * Conversation history alone doesn't mean the current message has enough context
-   */
-  private hasStrongContext(context?: AgentContext): boolean {
-    // Strong context means:
-    // 1. Active filters exist (genre/province filters suggest clear intent)
-    // 2. Previous intent exists AND it's recent/relevant
-    // NOTE: Conversation history alone is NOT strong context - it can cause false positives
-    return !!(
-      context?.filters?.genre ||
-      context?.filters?.province ||
-      context?.metadata?.previousIntent
-    );
-  }
-
-  /**
-   * @deprecated Use hasStrongContext() instead
-   * Kept for backward compatibility but should not be used for clarification checks
-   */
-  private hasEnoughContext(context?: AgentContext): boolean {
-    // We have enough context if:
-    // 1. Previous intent exists (user has been using the system)
-    // 2. Active filters exist (genre/province filters suggest intent)
-    // 3. Conversation history exists (can infer from context)
-    return !!(
-      context?.metadata?.previousIntent ||
-      context?.filters?.genre ||
-      context?.filters?.province ||
-      (context?.conversationHistory && context.conversationHistory.length > 0)
-    );
-  }
-
-  /**
-   * Check if query is truly ambiguous (no keywords matched)
-   */
-  private isTrulyAmbiguous(
-    message: string,
-    decision: RoutingDecision
-  ): boolean {
-    // Truly ambiguous if:
-    // 1. Confidence is very low (0.1 is the default when no keywords match)
-    // 2. Intent is discovery (default fallback) OR intent is abuse with low confidence
-    // 3. Message doesn't contain explicit music-related keywords
-    const lowerMessage = message.toLowerCase();
-    const isShort = message.trim().split(/\s+/).length < 5; // Relaxed: less than 5 words
-    const hasNoMusicKeywords =
-      !/\b(song|track|music|artist|playlist|album|genre|amapiano|afrobeat|hip hop|r&b|gospel|house)\b/i.test(
-        lowerMessage
-      );
-    const hasNoExplicitActions =
-      !/\b(find|search|show|play|recommend|suggest|get|want|need|help|listen|queue|skip|pause|stop)\b/i.test(
-        lowerMessage
-      );
-
-    // Ambiguous if:
-    // - Low confidence AND
-    // - (No music keywords OR no explicit actions) AND
-    // - (Short message OR intent is discovery/abuse)
-    return (
-      decision.confidence <= 0.2 &&
-      (hasNoMusicKeywords || hasNoExplicitActions) &&
-      (isShort ||
-        decision.intent === 'discovery' ||
-        (decision.intent === 'abuse' && decision.confidence < 0.5))
-    );
-  }
-
-  /**
-   * Check if query is an emotional query (expresses feelings/emotions)
-   */
-  private isEmotionalQuery(message: string): boolean {
-    const lowerMessage = message.toLowerCase();
-    const emotionalPatterns = [
-      /\b(feel|feeling|felt)\s+(lonely|sad|happy|excited|anxious|stressed|depressed|angry|frustrated|grateful|hopeful|worried|scared|nervous|calm|peaceful|energetic|tired|exhausted|motivated|inspired|confused|lost|overwhelmed|relieved|proud|ashamed|guilty|jealous|envious|disappointed|surprised|shocked|amazed|bored|interested|curious|excited|thrilled|ecstatic|miserable|terrible|awful|great|wonderful|fantastic|amazing|awesome)\b/,
-      /\b(i|i'm|i am|im)\s+(lonely|sad|happy|excited|anxious|stressed|depressed|angry|frustrated|grateful|hopeful|worried|scared|nervous|calm|peaceful|energetic|tired|exhausted|motivated|inspired|confused|lost|overwhelmed|relieved|proud|ashamed|guilty|jealous|envious|disappointed|surprised|shocked|amazed|bored|interested|curious|excited|thrilled|ecstatic|miserable|terrible|awful|great|wonderful|fantastic|amazing|awesome)\b/,
-      /\b(celebrating|mourning|grieving|healing|recovering|struggling|suffering|enjoying|appreciating|missing|longing|yearning|craving|desiring|wanting|needing|hoping|wishing|dreaming|praying)\b/,
-    ];
-
-    return emotionalPatterns.some(pattern => pattern.test(lowerMessage));
   }
 
   /**

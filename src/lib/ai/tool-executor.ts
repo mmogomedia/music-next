@@ -193,18 +193,18 @@ export async function executeToolCallLoop({
 
       // Emit calling_tool event
       const toolMessages: Record<string, string> = {
-        search_tracks: 'Searching tracks...',
-        get_tracks_by_genre: 'Finding tracks by genre...',
-        get_playlists_by_genre: 'Discovering playlists...',
-        get_artist: 'Looking up artist...',
-        get_trending_tracks: 'Getting trending tracks...',
-        get_genres: 'Fetching genres...',
+        search_tracks: 'Searching for those tracks... 🔍',
+        get_tracks_by_genre: 'Hunting down tracks in that genre... 🎯',
+        get_playlists_by_genre: 'Discovering some amazing playlists... 🎵',
+        get_artist: 'Looking up that artist for you... 👤',
+        get_trending_tracks: 'Grabbing the hottest tracks right now... 🔥',
+        get_genres: 'Browsing through genres... 🎼',
       };
 
       emitEvent?.({
         type: 'calling_tool',
         tool: toolCall.name,
-        message: toolMessages[toolCall.name] || `Executing ${toolCall.name}...`,
+        message: toolMessages[toolCall.name] || 'On it! Looking that up... 🔎',
         parameters: parsedArgs as Record<string, any>,
         stage: 'tool_execution',
         timestamp: new Date().toISOString(),

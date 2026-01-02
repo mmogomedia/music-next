@@ -24,10 +24,11 @@ describe('Router Intent Detector', () => {
       expect(decision.confidence).toBeGreaterThan(0.5);
     });
 
-    it('should detect playback intent for play commands', () => {
+    it('should route playback queries to discovery agent', () => {
       const decision = analyzeIntent('play this song');
-      expect(decision.intent).toBe('playback');
-      expect(decision.agent).toBe('PlaybackAgent');
+      // Playback queries are routed to DiscoveryAgent (no separate PlaybackAgent)
+      expect(decision.intent).toBe('discovery');
+      expect(decision.agent).toBe('DiscoveryAgent');
     });
 
     it('should detect recommendation intent for suggestion queries', () => {
@@ -66,17 +67,18 @@ describe('Router Intent Detector', () => {
 
     it('should correctly match standalone keywords', () => {
       const decision = analyzeIntent('play the track');
-      expect(decision.intent).toBe('playback');
+      // Playback keywords route to discovery (user wants to find and play)
+      expect(decision.intent).toBe('discovery');
     });
   });
 
   describe('Context-Aware Routing', () => {
     it('should use previous intent for follow-up queries', () => {
       const context = {
-        previousIntent: 'playback',
+        previousIntent: 'discovery',
       };
       const decision = analyzeIntent('play that', context);
-      expect(decision.intent).toBe('playback');
+      expect(decision.intent).toBe('discovery');
       expect(decision.confidence).toBe(0.9);
     });
 
@@ -148,12 +150,12 @@ describe('Router Intent Detector', () => {
   });
 
   describe('Tie-Breaking', () => {
-    it('should prefer playback for action verbs in ties', () => {
+    it('should prefer recommendation over discovery in ties', () => {
       // This test depends on keyword scores being equal
-      // In practice, tie-breaking uses message patterns
+      // In practice, tie-breaking prefers recommendation
       const decision = analyzeIntent('play recommend');
-      // Should break tie based on action verbs
-      expect(['playback', 'recommendation']).toContain(decision.intent);
+      // Should break tie based on priority order
+      expect(['discovery', 'recommendation']).toContain(decision.intent);
     });
   });
 
