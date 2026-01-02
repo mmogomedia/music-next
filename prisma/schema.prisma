@@ -389,8 +389,8 @@ model RoutingDecisionLog {
   userId            String?
   conversationId    String?
   message           String
-  intent            String // 'discovery', 'playback', 'recommendation', 'industry', 'abuse', 'unknown'
-  agent             String // 'DiscoveryAgent', 'PlaybackAgent', 'RecommendationAgent', etc.
+  intent            String // 'discovery', 'recommendation', 'industry', 'help', 'abuse', 'unknown'
+  agent             String // 'DiscoveryAgent', 'RecommendationAgent', 'AbuseGuardAgent', 'IndustryInfoAgent', 'HelpAgent', 'FallbackAgent', etc.
   routingMethod     String // 'keyword', 'llm', 'hybrid'
   confidence        Float
   keywordConfidence Float?

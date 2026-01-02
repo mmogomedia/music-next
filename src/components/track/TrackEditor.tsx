@@ -30,13 +30,13 @@ import {
   EyeSlashIcon,
   ArrowDownTrayIcon,
   ExclamationTriangleIcon,
-  SparklesIcon,
   CheckCircleIcon,
   XCircleIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   InformationCircleIcon,
 } from '@heroicons/react/24/outline';
+import AIIcon from '@/components/icons/AIIcon';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { constructFileUrl } from '@/lib/url-utils';
 import { uploadImageToR2 } from '@/lib/image-upload';
@@ -879,7 +879,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
             key='story'
             title={
               <div className='flex items-center gap-2'>
-                <SparklesIcon className='w-4 h-4' />
+                <AIIcon className='w-4 h-4' size={16} />
                 <span>Story & AI Tools</span>
               </div>
             }
@@ -938,7 +938,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                       size='sm'
                       variant='flat'
                       color='secondary'
-                      startContent={<SparklesIcon className='w-4 h-4' />}
+                      startContent={<AIIcon className='w-4 h-4' size={16} />}
                       onPress={handleGenerateMetadata}
                       isLoading={isGeneratingMetadata}
                       isDisabled={
