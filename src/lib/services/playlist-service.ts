@@ -159,19 +159,30 @@ export class PlaylistService {
     province: string,
     limit: number = 20
   ): Promise<PlaylistInfo[]> {
-    // Find playlists that have tracks from artists in the specified province
+    // Find playlists that are either:
+    // 1. Tagged with the province (province field matches)
+    // 2. Have tracks from artists in the specified province
     const playlists = await prisma.playlist.findMany({
       where: {
         status: 'ACTIVE',
-        tracks: {
-          some: {
-            track: {
-              artistProfile: {
-                location: { contains: province, mode: 'insensitive' },
+        OR: [
+          {
+            // Playlists directly tagged with the province
+            province: { contains: province, mode: 'insensitive' },
+          },
+          {
+            // Playlists with tracks from artists in that province
+            tracks: {
+              some: {
+                track: {
+                  artistProfile: {
+                    location: { contains: province, mode: 'insensitive' },
+                  },
+                },
               },
             },
           },
-        },
+        ],
       },
       include: {
         _count: {

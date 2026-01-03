@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   UserGroupIcon,
   MusicalNoteIcon,
@@ -40,12 +41,15 @@ interface NavItem {
 }
 
 export default function AdminNavigation({
-  activeTab,
-  onTabChange,
+  activeTab: _activeTab,
+  onTabChange: _onTabChange,
   systemHealth,
 }: AdminNavigationProps) {
+  const pathname = usePathname();
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const isTrackCompletionPage =
+    pathname === '/admin/dashboard/track-completion';
 
   useEffect(() => {
     const checkMobile = () => {
@@ -108,13 +112,6 @@ export default function AdminNavigation({
     },
   ];
 
-  const handleTabClick = (tabId: string) => {
-    onTabChange(tabId);
-    if (isMobile) {
-      setIsOpen(false);
-    }
-  };
-
   // Desktop Sidebar
   if (!isMobile) {
     return (
@@ -144,14 +141,22 @@ export default function AdminNavigation({
             </h3>
             <nav className='space-y-2'>
               {navItems.map(item => {
-                const IconComponent =
-                  activeTab === item.id ? item.activeIcon : item.icon;
-                const isActive = activeTab === item.id;
+                const href =
+                  item.id === 'overview'
+                    ? '/admin/dashboard/overview'
+                    : `/admin/dashboard/${item.id}`;
+                const isActive =
+                  (pathname === '/admin/dashboard' ||
+                    pathname === '/admin/dashboard/overview') &&
+                  item.id === 'overview'
+                    ? true
+                    : pathname === href;
+                const IconComponent = isActive ? item.activeIcon : item.icon;
 
                 return (
-                  <button
+                  <Link
                     key={item.id}
-                    onClick={() => handleTabClick(item.id)}
+                    href={href}
                     className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group text-left ${
                       isActive
                         ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
@@ -167,7 +172,7 @@ export default function AdminNavigation({
                     />
                     <IconComponent className='w-5 h-5 flex-shrink-0' />
                     <span className='text-sm flex-1'>{item.name}</span>
-                  </button>
+                  </Link>
                 );
               })}
             </nav>
@@ -181,9 +186,19 @@ export default function AdminNavigation({
             <nav className='space-y-2'>
               <Link
                 href='/admin/dashboard/track-completion'
-                className='w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group text-left ${
+                  isTrackCompletionPage
+                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                    : 'hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                }`}
               >
-                <div className='w-2 h-2 rounded-full bg-transparent group-hover:bg-blue-600 dark:group-hover:bg-blue-400 transition-colors duration-200' />
+                <div
+                  className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                    isTrackCompletionPage
+                      ? 'bg-blue-600 dark:bg-blue-400'
+                      : 'bg-transparent group-hover:bg-blue-600 dark:group-hover:bg-blue-400'
+                  }`}
+                />
                 <SparklesIcon className='w-5 h-5 flex-shrink-0' />
                 <span className='text-sm flex-1'>Track Completion Rules</span>
               </Link>
@@ -276,14 +291,24 @@ export default function AdminNavigation({
                 </h3>
                 <nav className='space-y-2'>
                   {navItems.map(item => {
-                    const IconComponent =
-                      activeTab === item.id ? item.activeIcon : item.icon;
-                    const isActive = activeTab === item.id;
+                    const href =
+                      item.id === 'overview'
+                        ? '/admin/dashboard/overview'
+                        : `/admin/dashboard/${item.id}`;
+                    const isActive =
+                      ((pathname === '/admin/dashboard' ||
+                        pathname === '/admin/dashboard/overview') &&
+                        item.id === 'overview') ||
+                      pathname === href;
+                    const IconComponent = isActive
+                      ? item.activeIcon
+                      : item.icon;
 
                     return (
-                      <button
+                      <Link
                         key={item.id}
-                        onClick={() => handleTabClick(item.id)}
+                        href={href}
+                        onClick={() => setIsOpen(false)}
                         className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group text-left ${
                           isActive
                             ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
@@ -299,7 +324,7 @@ export default function AdminNavigation({
                         />
                         <IconComponent className='w-5 h-5 flex-shrink-0' />
                         <span className='text-sm flex-1'>{item.name}</span>
-                      </button>
+                      </Link>
                     );
                   })}
                 </nav>
@@ -314,9 +339,19 @@ export default function AdminNavigation({
                   <Link
                     href='/admin/dashboard/track-completion'
                     onClick={() => setIsOpen(false)}
-                    className='w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl font-medium transition-all duration-200 group text-left ${
+                      isTrackCompletionPage
+                        ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                        : 'hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                    }`}
                   >
-                    <div className='w-2 h-2 rounded-full bg-transparent group-hover:bg-blue-600 dark:group-hover:bg-blue-400 transition-colors duration-200' />
+                    <div
+                      className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                        isTrackCompletionPage
+                          ? 'bg-blue-600 dark:bg-blue-400'
+                          : 'bg-transparent group-hover:bg-blue-600 dark:group-hover:bg-blue-400'
+                      }`}
+                    />
                     <SparklesIcon className='w-5 h-5 flex-shrink-0' />
                     <span className='text-sm flex-1'>
                       Track Completion Rules

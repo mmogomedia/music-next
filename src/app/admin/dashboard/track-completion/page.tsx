@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Button,
   Input,
@@ -23,6 +24,9 @@ import {
   CardBody,
 } from '@heroui/react';
 import { PlusIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
+import UnifiedLayout from '@/components/layout/UnifiedLayout';
+import AdminNavigation from '@/components/dashboard/admin/AdminNavigation';
+import { useAdminDashboardStats } from '@/hooks/useAdminDashboardStats';
 
 interface TrackCompletionRule {
   id: string;
@@ -45,6 +49,7 @@ const CATEGORY_COLORS = {
 } as const;
 
 export default function TrackCompletionPage() {
+  const router = useRouter();
   const [rules, setRules] = useState<TrackCompletionRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -59,6 +64,17 @@ export default function TrackCompletionPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [totalWeight, setTotalWeight] = useState(0);
+  const { stats } = useAdminDashboardStats();
+  const systemHealth = stats?.systemMetrics?.platformHealth || 'healthy';
+
+  const handleTabChange = (tabId: string) => {
+    // Navigate to main admin dashboard with the selected tab
+    if (tabId === 'settings') {
+      // Stay on current page if settings is clicked
+      return;
+    }
+    router.push('/admin/dashboard');
+  };
 
   const fetchRules = async () => {
     try {
@@ -180,15 +196,15 @@ export default function TrackCompletionPage() {
     return groups;
   }, [sorted]);
 
-  return (
-    <div className='min-h-screen bg-gray-50 dark:bg-slate-900'>
-      <div className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-40'>
-        <div className='max-w-7xl mx-auto px-4 py-4 flex items-center justify-between'>
+  const header = (
+    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
+      <div className='py-4 px-4 sm:px-6'>
+        <div className='flex items-center justify-between'>
           <div>
-            <h1 className='text-lg font-semibold text-gray-900 dark:text-white'>
+            <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
               Track Completion Rules
             </h1>
-            <p className='text-sm text-gray-500 dark:text-gray-400 mt-1'>
+            <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
               Manage gamification fields and weights for track completion
             </p>
           </div>
@@ -201,242 +217,295 @@ export default function TrackCompletionPage() {
           </Button>
         </div>
       </div>
+    </header>
+  );
 
-      <div className='max-w-7xl mx-auto px-4 py-6 space-y-6'>
-        {/* Total Weight Warning */}
-        <Card>
-          <CardBody>
-            <div className='flex items-center justify-between'>
-              <div>
-                <p className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                  Total Weight (Active Rules)
-                </p>
-                <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-                  Should equal 100 for proper completion calculation
-                </p>
+  return (
+    <UnifiedLayout
+      sidebar={
+        <AdminNavigation
+          activeTab='settings'
+          onTabChange={handleTabChange}
+          systemHealth={systemHealth}
+        />
+      }
+      header={header}
+    >
+      <div className='w-full py-8 px-4 sm:px-6'>
+        <div className='max-w-7xl mx-auto space-y-6'>
+          {/* Total Weight Warning */}
+          <Card>
+            <CardBody>
+              <div className='flex items-center justify-between'>
+                <div>
+                  <p className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                    Total Weight (Active Rules)
+                  </p>
+                  <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+                    Should equal 100 for proper completion calculation
+                  </p>
+                </div>
+                <Chip
+                  color={
+                    totalWeight === 100
+                      ? 'success'
+                      : totalWeight > 100
+                        ? 'warning'
+                        : 'danger'
+                  }
+                  variant='flat'
+                  size='lg'
+                >
+                  {totalWeight}%
+                </Chip>
               </div>
-              <Chip
-                color={
-                  totalWeight === 100
-                    ? 'success'
-                    : totalWeight > 100
-                      ? 'warning'
-                      : 'danger'
-                }
-                variant='flat'
-                size='lg'
-              >
-                {totalWeight}%
-              </Chip>
-            </div>
-            {totalWeight !== 100 && (
-              <p className='text-xs text-red-600 dark:text-red-400 mt-2'>
-                {totalWeight < 100
-                  ? `Missing ${100 - totalWeight}% - Add more weight to reach 100%`
-                  : `Over by ${totalWeight - 100}% - Reduce weights to reach 100%`}
-              </p>
-            )}
-          </CardBody>
-        </Card>
+              {totalWeight !== 100 && (
+                <p className='text-xs text-red-600 dark:text-red-400 mt-2'>
+                  {totalWeight < 100
+                    ? `Missing ${100 - totalWeight}% - Add more weight to reach 100%`
+                    : `Over by ${totalWeight - 100}% - Reduce weights to reach 100%`}
+                </p>
+              )}
+            </CardBody>
+          </Card>
 
-        {/* Rules Table */}
-        <div className='space-y-4'>
-          {Object.entries(groupedRules).map(([group, groupRules]) => (
-            <Card key={group}>
-              <CardBody>
-                <h2 className='text-md font-semibold text-gray-900 dark:text-white mb-4'>
-                  {group}
-                </h2>
-                <Table aria-label={`Rules for ${group}`}>
-                  <TableHeader>
-                    <TableColumn>Field</TableColumn>
-                    <TableColumn>Label</TableColumn>
-                    <TableColumn>Category</TableColumn>
-                    <TableColumn>Weight</TableColumn>
-                    <TableColumn>Required</TableColumn>
-                    <TableColumn>Active</TableColumn>
-                    <TableColumn>Order</TableColumn>
-                    <TableColumn>Actions</TableColumn>
-                  </TableHeader>
-                  <TableBody emptyContent={loading ? 'Loading…' : 'No rules'}>
-                    {groupRules.map(rule => (
-                      <TableRow key={rule.id}>
-                        <TableCell className='font-mono text-xs'>
-                          {rule.field}
-                        </TableCell>
-                        <TableCell className='font-medium'>
-                          {rule.label}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            color={CATEGORY_COLORS[rule.category]}
-                            variant='flat'
-                            size='sm'
-                          >
-                            {rule.category}
-                          </Chip>
-                        </TableCell>
-                        <TableCell>{rule.weight}%</TableCell>
-                        <TableCell>
-                          {rule.isRequired ? (
-                            <Chip color='danger' variant='flat' size='sm'>
-                              Required
+          {/* Rules Table */}
+          <div className='space-y-4'>
+            {Object.entries(groupedRules).map(([group, groupRules]) => (
+              <Card key={group}>
+                <CardBody>
+                  <h2 className='text-md font-semibold text-gray-900 dark:text-white mb-4'>
+                    {group}
+                  </h2>
+                  <Table aria-label={`Rules for ${group}`}>
+                    <TableHeader>
+                      <TableColumn>Field</TableColumn>
+                      <TableColumn>Label</TableColumn>
+                      <TableColumn>Category</TableColumn>
+                      <TableColumn>Weight</TableColumn>
+                      <TableColumn>Required</TableColumn>
+                      <TableColumn>Active</TableColumn>
+                      <TableColumn>Order</TableColumn>
+                      <TableColumn>Actions</TableColumn>
+                    </TableHeader>
+                    <TableBody emptyContent={loading ? 'Loading…' : 'No rules'}>
+                      {groupRules.map(rule => (
+                        <TableRow key={rule.id}>
+                          <TableCell className='font-mono text-xs'>
+                            {rule.field}
+                          </TableCell>
+                          <TableCell className='font-medium'>
+                            {rule.label}
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              color={CATEGORY_COLORS[rule.category]}
+                              variant='flat'
+                              size='sm'
+                            >
+                              {rule.category}
                             </Chip>
-                          ) : (
-                            <span className='text-gray-400'>Optional</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            color={rule.isActive ? 'success' : 'default'}
-                            variant='flat'
-                            size='sm'
-                          >
-                            {rule.isActive ? 'Active' : 'Inactive'}
-                          </Chip>
-                        </TableCell>
-                        <TableCell>{rule.order}</TableCell>
-                        <TableCell>
-                          <div className='flex gap-2'>
-                            <Button
+                          </TableCell>
+                          <TableCell>{rule.weight}%</TableCell>
+                          <TableCell>
+                            {rule.isRequired ? (
+                              <Chip color='danger' variant='flat' size='sm'>
+                                Required
+                              </Chip>
+                            ) : (
+                              <span className='text-gray-400'>Optional</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              color={rule.isActive ? 'success' : 'default'}
+                              variant='flat'
                               size='sm'
-                              variant='light'
-                              isIconOnly
-                              onPress={() => openEdit(rule)}
                             >
-                              <PencilIcon className='w-4 h-4' />
-                            </Button>
-                            <Button
-                              size='sm'
-                              variant='light'
-                              color='danger'
-                              isIconOnly
-                              onPress={() => deleteRule(rule.id)}
-                              isLoading={deletingId === rule.id}
-                            >
-                              <TrashIcon className='w-4 h-4' />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardBody>
-            </Card>
-          ))}
+                              {rule.isActive ? 'Active' : 'Inactive'}
+                            </Chip>
+                          </TableCell>
+                          <TableCell>{rule.order}</TableCell>
+                          <TableCell>
+                            <div className='flex gap-2'>
+                              <Button
+                                size='sm'
+                                variant='light'
+                                isIconOnly
+                                onPress={() => openEdit(rule)}
+                              >
+                                <PencilIcon className='w-4 h-4' />
+                              </Button>
+                              <Button
+                                size='sm'
+                                variant='light'
+                                color='danger'
+                                isIconOnly
+                                onPress={() => deleteRule(rule.id)}
+                                isLoading={deletingId === rule.id}
+                              >
+                                <TrashIcon className='w-4 h-4' />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardBody>
+              </Card>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Create/Edit Modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} size='2xl'>
-        <ModalContent>
-          <ModalHeader>
-            {editing ? 'Edit Completion Rule' : 'New Completion Rule'}
-          </ModalHeader>
-          <ModalBody>
-            <div className='space-y-4'>
-              <Input
-                label='Field Name'
-                placeholder='e.g. title, lyrics, description'
-                value={form.field || ''}
-                onChange={e => setForm(f => ({ ...f, field: e.target.value }))}
-                isDisabled={!!editing}
-                description='Must match the field name in TrackEditorValues'
-              />
-              <Input
-                label='Display Label'
-                placeholder='e.g. Track Title, Song Lyrics'
-                value={form.label || ''}
-                onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
-              />
-              <Select
-                label='Category'
-                selectedKeys={form.category ? [form.category] : []}
-                onSelectionChange={keys => {
-                  const category = Array.from(keys)[0] as
-                    | 'required'
-                    | 'high'
-                    | 'medium'
-                    | 'low'
-                    | undefined;
-                  setForm(f => ({ ...f, category }));
-                }}
-              >
-                <SelectItem key='required'>Required</SelectItem>
-                <SelectItem key='high'>High Priority</SelectItem>
-                <SelectItem key='medium'>Medium Priority</SelectItem>
-                <SelectItem key='low'>Low Priority</SelectItem>
-              </Select>
-              <Input
-                label='Weight (%)'
-                type='number'
-                min={0}
-                max={100}
-                value={String(form.weight ?? 0)}
-                onChange={e =>
-                  setForm(f => ({
-                    ...f,
-                    weight: parseInt(e.target.value || '0', 10),
-                  }))
-                }
-                description='Percentage points (0-100). Total should equal 100.'
-              />
-              <Input
-                label='Group (Optional)'
-                placeholder='e.g. Meta, Legal, Audio'
-                value={form.group || ''}
-                onChange={e =>
-                  setForm(f => ({ ...f, group: e.target.value || null }))
-                }
-                description='Group rules together in the UI'
-              />
-              <Input
-                label='Description (Optional)'
-                placeholder='Help text for users'
-                value={form.description || ''}
-                onChange={e =>
-                  setForm(f => ({ ...f, description: e.target.value || null }))
-                }
-              />
-              <Input
-                label='Order'
-                type='number'
-                value={String(form.order ?? 0)}
-                onChange={e =>
-                  setForm(f => ({
-                    ...f,
-                    order: parseInt(e.target.value || '0', 10),
-                  }))
-                }
-                description='Display order (lower numbers appear first)'
-              />
-              <div className='flex items-center gap-4'>
-                <Switch
-                  isSelected={!!form.isRequired}
-                  onValueChange={v => setForm(f => ({ ...f, isRequired: v }))}
+        {/* Create/Edit Modal */}
+        <Modal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          size='2xl'
+        >
+          <ModalContent>
+            <ModalHeader>
+              {editing ? 'Edit Completion Rule' : 'New Completion Rule'}
+            </ModalHeader>
+            <ModalBody>
+              <div className='space-y-4'>
+                <Select
+                  label='Field Name'
+                  placeholder='Select a field'
+                  selectedKeys={form.field ? [form.field] : []}
+                  onSelectionChange={keys => {
+                    const field = Array.from(keys)[0] as string | undefined;
+                    setForm(f => ({ ...f, field: field || '' }));
+                  }}
+                  isDisabled={!!editing}
+                  description='Must match the field name in TrackEditorValues'
                 >
-                  Required Field
-                </Switch>
-                <Switch
-                  isSelected={form.isActive !== false}
-                  onValueChange={v => setForm(f => ({ ...f, isActive: v }))}
+                  <SelectItem key='title'>title</SelectItem>
+                  <SelectItem key='primaryArtistIds'>
+                    primaryArtistIds
+                  </SelectItem>
+                  <SelectItem key='featuredArtistIds'>
+                    featuredArtistIds
+                  </SelectItem>
+                  <SelectItem key='album'>album</SelectItem>
+                  <SelectItem key='genreId'>genreId</SelectItem>
+                  <SelectItem key='composer'>composer</SelectItem>
+                  <SelectItem key='year'>year</SelectItem>
+                  <SelectItem key='releaseDate'>releaseDate</SelectItem>
+                  <SelectItem key='bpm'>bpm</SelectItem>
+                  <SelectItem key='isrc'>isrc</SelectItem>
+                  <SelectItem key='description'>description</SelectItem>
+                  <SelectItem key='lyrics'>lyrics</SelectItem>
+                  <SelectItem key='language'>language</SelectItem>
+                  <SelectItem key='albumArtwork'>albumArtwork</SelectItem>
+                  <SelectItem key='copyrightInfo'>copyrightInfo</SelectItem>
+                  <SelectItem key='licenseType'>licenseType</SelectItem>
+                  <SelectItem key='distributionRights'>
+                    distributionRights
+                  </SelectItem>
+                  <SelectItem key='attributes'>attributes</SelectItem>
+                  <SelectItem key='mood'>mood</SelectItem>
+                </Select>
+                <Input
+                  label='Display Label'
+                  placeholder='e.g. Track Title, Song Lyrics'
+                  value={form.label || ''}
+                  onChange={e =>
+                    setForm(f => ({ ...f, label: e.target.value }))
+                  }
+                />
+                <Select
+                  label='Category'
+                  selectedKeys={form.category ? [form.category] : []}
+                  onSelectionChange={keys => {
+                    const category = Array.from(keys)[0] as
+                      | 'required'
+                      | 'high'
+                      | 'medium'
+                      | 'low'
+                      | undefined;
+                    setForm(f => ({ ...f, category }));
+                  }}
                 >
-                  Active
-                </Switch>
+                  <SelectItem key='required'>Required</SelectItem>
+                  <SelectItem key='high'>High Priority</SelectItem>
+                  <SelectItem key='medium'>Medium Priority</SelectItem>
+                  <SelectItem key='low'>Low Priority</SelectItem>
+                </Select>
+                <Input
+                  label='Weight (%)'
+                  type='number'
+                  min={0}
+                  max={100}
+                  value={String(form.weight ?? 0)}
+                  onChange={e =>
+                    setForm(f => ({
+                      ...f,
+                      weight: parseInt(e.target.value || '0', 10),
+                    }))
+                  }
+                  description='Percentage points (0-100). Total should equal 100.'
+                />
+                <Input
+                  label='Group (Optional)'
+                  placeholder='e.g. Meta, Legal, Audio'
+                  value={form.group || ''}
+                  onChange={e =>
+                    setForm(f => ({ ...f, group: e.target.value || null }))
+                  }
+                  description='Group rules together in the UI'
+                />
+                <Input
+                  label='Description (Optional)'
+                  placeholder='Help text for users'
+                  value={form.description || ''}
+                  onChange={e =>
+                    setForm(f => ({
+                      ...f,
+                      description: e.target.value || null,
+                    }))
+                  }
+                />
+                <Input
+                  label='Order'
+                  type='number'
+                  value={String(form.order ?? 0)}
+                  onChange={e =>
+                    setForm(f => ({
+                      ...f,
+                      order: parseInt(e.target.value || '0', 10),
+                    }))
+                  }
+                  description='Display order (lower numbers appear first)'
+                />
+                <div className='flex items-center gap-4'>
+                  <Switch
+                    isSelected={!!form.isRequired}
+                    onValueChange={v => setForm(f => ({ ...f, isRequired: v }))}
+                  >
+                    Required Field
+                  </Switch>
+                  <Switch
+                    isSelected={form.isActive !== false}
+                    onValueChange={v => setForm(f => ({ ...f, isActive: v }))}
+                  >
+                    Active
+                  </Switch>
+                </div>
               </div>
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant='light' onPress={() => setShowModal(false)}>
-              Cancel
-            </Button>
-            <Button color='primary' onPress={saveRule} isLoading={saving}>
-              {editing ? 'Save Changes' : 'Create Rule'}
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant='light' onPress={() => setShowModal(false)}>
+                Cancel
+              </Button>
+              <Button color='primary' onPress={saveRule} isLoading={saving}>
+                {editing ? 'Save Changes' : 'Create Rule'}
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </div>
+    </UnifiedLayout>
   );
 }

@@ -174,12 +174,21 @@ export class MusicService {
       };
     }
 
-    if (typeof minStrength === 'number') {
+    if (typeof minStrength === 'number' && minStrength > 0) {
       if (!where.AND) where.AND = [];
+      // Include tracks with strength >= minStrength OR tracks with null/zero strength
+      // (null/zero strength means it hasn't been calculated yet, but track is still valid)
+      // Also check completionPercentage as fallback for strength
       where.AND.push({
-        strength: { gte: minStrength },
+        OR: [
+          { strength: { gte: minStrength } },
+          { strength: null },
+          { strength: { equals: 0 } },
+          { completionPercentage: { gte: minStrength } },
+        ],
       });
     }
+    // If minStrength is 0 or not provided, don't filter by strength
 
     // Exclude specific track IDs if provided (for pagination)
     if (excludeIds && Array.isArray(excludeIds) && excludeIds.length > 0) {
@@ -408,9 +417,19 @@ export class MusicService {
       where.OR.push({ genre: { contains: genre, mode: 'insensitive' } });
     }
 
-    if (typeof options.minStrength === 'number') {
+    // Only apply strength filter if minStrength > 0
+    // When minStrength is 0, include all tracks regardless of strength
+    if (typeof options.minStrength === 'number' && options.minStrength > 0) {
+      // Include tracks with strength >= minStrength OR tracks with null/zero strength
+      // (null/zero strength means it hasn't been calculated yet, but track is still valid)
+      // Also check completionPercentage as fallback for strength
       where.AND.push({
-        strength: { gte: options.minStrength },
+        OR: [
+          { strength: { gte: options.minStrength } },
+          { strength: null },
+          { strength: { equals: 0 } },
+          { completionPercentage: { gte: options.minStrength } },
+        ],
       });
     }
 

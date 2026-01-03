@@ -120,7 +120,7 @@ export async function executeToolCallLoop({
   model,
   tools,
   messages,
-  maxIterations = 6,
+  maxIterations = 3, // Reduced from 6 to minimize unnecessary tool calls
   emitEvent,
   originalMessage,
 }: ExecuteToolCallLoopOptions): Promise<ExecuteToolCallLoopResult> {

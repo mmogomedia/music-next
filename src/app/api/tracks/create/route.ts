@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { constructFileUrl } from '@/lib/url-utils';
-import { calculateTrackCompletion } from '@/lib/utils/track-completion';
+import { calculateTrackCompletionServer } from '@/lib/utils/track-completion-server';
 import type { TrackEditorValues } from '@/components/track/TrackEditor';
 
 const sanitizeStringArray = (value: unknown): string[] =>
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
       attributes: sanitizedAttributes,
       mood: sanitizedMood,
     };
-    const completion = calculateTrackCompletion(trackData);
+    const completion = await calculateTrackCompletionServer(trackData);
     const derivedStrength = clampStrength(strength, completion.percentage);
 
     // Create track

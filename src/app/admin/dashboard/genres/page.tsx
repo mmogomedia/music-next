@@ -1,21 +1,22 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import AdminGenresPage from '@/components/dashboard/admin/AdminGenresPage';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminDashboardPage() {
+export default async function GenresPage() {
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    redirect(`/login?callbackUrl=${encodeURIComponent('/admin/dashboard')}`);
+    redirect(
+      `/login?callbackUrl=${encodeURIComponent('/admin/dashboard/genres')}`
+    );
   }
 
-  // Check if user has admin role
   if (session.user?.role !== 'ADMIN') {
     redirect('/unauthorized');
   }
 
-  // Redirect to overview page
-  redirect('/admin/dashboard/overview');
+  return <AdminGenresPage />;
 }

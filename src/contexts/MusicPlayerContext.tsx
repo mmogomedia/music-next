@@ -28,6 +28,7 @@ interface MusicPlayerContextType {
   shuffle: boolean;
   queue: Track[];
   queueIndex: number;
+  currentPlaylistId: string | undefined;
 
   // Actions
   playTrack: (
@@ -409,7 +410,19 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
       // Don't modify the queue - preserve it
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-      audioRef.current.play();
+
+      // Play after a brief delay to ensure pause completes
+      // Use requestAnimationFrame for better timing
+      requestAnimationFrame(() => {
+        if (audioRef.current) {
+          audioRef.current.play().catch((error: Error) => {
+            // Ignore AbortError - it's expected when play is interrupted
+            if (error.name !== 'AbortError') {
+              logger.error('Error playing track:', error);
+            }
+          });
+        }
+      });
 
       // Track new play start for stats
       playStartTimeRef.current = Date.now();
@@ -452,14 +465,29 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
 
       audioRef.current.src = audioUrl;
       audioRef.current.volume = volume;
-      audioRef.current.play();
 
-      // Track new track play start
-      playStartTimeRef.current = Date.now();
-      trackPlayStart(track.id, source, playlistId);
+      // Play after a brief delay to ensure pause and src change complete
+      // Use requestAnimationFrame for better timing
+      requestAnimationFrame(() => {
+        if (audioRef.current) {
+          audioRef.current
+            .play()
+            .then(() => {
+              // Track new track play start
+              playStartTimeRef.current = Date.now();
+              trackPlayStart(track.id, source, playlistId);
 
-      // Preload next track in queue
-      preloadNextTrack();
+              // Preload next track in queue
+              preloadNextTrack();
+            })
+            .catch((error: Error) => {
+              // Ignore AbortError - it's expected when play is interrupted
+              if (error.name !== 'AbortError') {
+                logger.error('Error playing track:', error);
+              }
+            });
+        }
+      });
     }
   };
 
@@ -467,9 +495,16 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     if (!audioRef.current) return;
 
     if (isPlaying) {
+      // pause() returns void in TypeScript, but may return a Promise in some browsers
+      // Call pause() without checking the return value
       audioRef.current.pause();
     } else {
-      audioRef.current.play();
+      audioRef.current.play().catch((error: Error) => {
+        // Ignore AbortError - it's expected when play is interrupted
+        if (error.name !== 'AbortError') {
+          logger.error('Error playing audio:', error);
+        }
+      });
     }
   };
 
@@ -699,6 +734,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     shuffle,
     queue,
     queueIndex,
+    currentPlaylistId,
     playTrack,
     playPause,
     seekTo,

@@ -73,7 +73,7 @@ export default function ChatNavigation({
       title: 'Trending Now',
       icon: FireIcon,
       activeIcon: FireSolidIcon,
-      message: 'Show me the trending music right now',
+      message: 'Show me trending music right now',
     },
     {
       id: 'genres',

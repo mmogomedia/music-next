@@ -16,7 +16,7 @@ const quickActions = [
     id: 'trending',
     label: 'Trending Now',
     icon: FireIcon,
-    message: 'Show me the trending music right now',
+    message: 'Show me trending music right now',
   },
   {
     id: 'genres',

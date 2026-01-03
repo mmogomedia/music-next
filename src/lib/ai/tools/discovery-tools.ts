@@ -189,7 +189,7 @@ export const getPlaylistTool = new DynamicStructuredTool({
           name: playlist.name,
           description: playlist.description,
           trackCount: playlist.tracks.length,
-          tracks: playlist.tracks.slice(0, 10).map(pt => ({
+          tracks: playlist.tracks.map(pt => ({
             id: pt.track.id,
             title: pt.track.title,
             artist:
@@ -198,6 +198,27 @@ export const getPlaylistTool = new DynamicStructuredTool({
               'Unknown Artist',
             genre: pt.track.genre,
             coverImageUrl: pt.track.coverImageUrl,
+            albumArtwork: pt.track.albumArtwork,
+            album: pt.track.album,
+            description: pt.track.description,
+            duration: pt.track.duration,
+            playCount: pt.track.playCount || 0,
+            likeCount: pt.track.likeCount || 0,
+            filePath: pt.track.filePath,
+            fileUrl: pt.track.fileUrl,
+            artistId: pt.track.artistProfileId || undefined,
+            artistProfileId: pt.track.artistProfileId,
+            userId: pt.track.userId,
+            createdAt: pt.track.createdAt?.toISOString(),
+            updatedAt: pt.track.updatedAt?.toISOString(),
+            isDownloadable: pt.track.isDownloadable ?? false,
+            composer: pt.track.composer,
+            year: pt.track.year,
+            releaseDate: pt.track.releaseDate,
+            bpm: pt.track.bpm,
+            isrc: pt.track.isrc,
+            attributes: pt.track.attributes || [],
+            mood: pt.track.mood || [],
           })),
         },
       });
@@ -260,25 +281,43 @@ export const getArtistTool = new DynamicStructuredTool({
  */
 export const getTopChartsTool = new DynamicStructuredTool({
   name: 'get_top_charts',
-  description: 'Get the top charts/trending playlists on Flemoji.',
+  description:
+    'Get the top charts/trending playlists on Flemoji. This includes the top ten playlist. Use limit: 1 to get just the top ten playlist.',
   schema: z.object({
     limit: z
       .number()
       .optional()
       .default(10)
-      .describe('Number of playlists to return (1-20)'),
+      .describe(
+        'Number of playlists to return (1-20). Use 1 to get the top ten playlist.'
+      ),
   }),
   func: async ({ limit = 10 }) => {
     try {
       const playlists = await PlaylistService.getTopCharts(Math.min(limit, 20));
 
       return JSON.stringify({
-        playlists: playlists.map(p => ({
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          trackCount: p.trackCount,
-        })),
+        playlists: playlists.map(p => {
+          const coverImage = p.coverImage;
+          // Construct full URL if coverImage is a relative path
+          // If it's already a full URL (http/https) or external URL, use as-is
+          // Otherwise, construct the full URL using constructFileUrl
+          const coverImageUrl = coverImage
+            ? coverImage.startsWith('http://') ||
+              coverImage.startsWith('https://') ||
+              coverImage.startsWith('//')
+              ? coverImage
+              : constructFileUrl(coverImage)
+            : undefined;
+
+          return {
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            trackCount: p.trackCount,
+            coverImage: coverImageUrl,
+          };
+        }),
         count: playlists.length,
       });
     } catch (error) {
@@ -312,12 +351,27 @@ export const getFeaturedPlaylistsTool = new DynamicStructuredTool({
       );
 
       return JSON.stringify({
-        playlists: playlists.map(p => ({
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          trackCount: p.trackCount,
-        })),
+        playlists: playlists.map(p => {
+          const coverImage = p.coverImage;
+          // Construct full URL if coverImage is a relative path
+          // If it's already a full URL (http/https) or external URL, use as-is
+          // Otherwise, construct the full URL using constructFileUrl
+          const coverImageUrl = coverImage
+            ? coverImage.startsWith('http://') ||
+              coverImage.startsWith('https://') ||
+              coverImage.startsWith('//')
+              ? coverImage
+              : constructFileUrl(coverImage)
+            : undefined;
+
+          return {
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            trackCount: p.trackCount,
+            coverImage: coverImageUrl,
+          };
+        }),
         count: playlists.length,
       });
     } catch (error) {
@@ -423,12 +477,27 @@ export const getPlaylistsByGenreTool = new DynamicStructuredTool({
       );
 
       return JSON.stringify({
-        playlists: playlists.map(p => ({
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          trackCount: p.trackCount,
-        })),
+        playlists: playlists.map(p => {
+          const coverImage = p.coverImage;
+          // Construct full URL if coverImage is a relative path
+          // If it's already a full URL (http/https) or external URL, use as-is
+          // Otherwise, construct the full URL using constructFileUrl
+          const coverImageUrl = coverImage
+            ? coverImage.startsWith('http://') ||
+              coverImage.startsWith('https://') ||
+              coverImage.startsWith('//')
+              ? coverImage
+              : constructFileUrl(coverImage)
+            : undefined;
+
+          return {
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            trackCount: p.trackCount,
+            coverImage: coverImageUrl,
+          };
+        }),
         count: playlists.length,
       });
     } catch (error) {
@@ -467,12 +536,27 @@ export const getPlaylistsByProvinceTool = new DynamicStructuredTool({
       );
 
       return JSON.stringify({
-        playlists: playlists.map(p => ({
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          trackCount: p.trackCount,
-        })),
+        playlists: playlists.map(p => {
+          const coverImage = p.coverImage;
+          // Construct full URL if coverImage is a relative path
+          // If it's already a full URL (http/https) or external URL, use as-is
+          // Otherwise, construct the full URL using constructFileUrl
+          const coverImageUrl = coverImage
+            ? coverImage.startsWith('http://') ||
+              coverImage.startsWith('https://') ||
+              coverImage.startsWith('//')
+              ? coverImage
+              : constructFileUrl(coverImage)
+            : undefined;
+
+          return {
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            trackCount: p.trackCount,
+            coverImage: coverImageUrl,
+          };
+        }),
         count: playlists.length,
       });
     } catch (error) {

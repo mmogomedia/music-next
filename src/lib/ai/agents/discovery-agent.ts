@@ -320,16 +320,39 @@ export class DiscoveryAgent extends BaseAgent {
         case 'get_featured_playlists':
         case 'get_playlists_by_genre':
         case 'get_playlists_by_province': {
-          if (Array.isArray(data.playlists))
-            aggregated.playlists.push(...data.playlists);
-          if (data.genre) aggregated.meta.genre = data.genre;
-          if (data.province) aggregated.meta.province = data.province;
-          if (typeof data.count === 'number')
-            aggregated.meta.totalPlaylists = data.count;
+          // Handle both string JSON and parsed object
+          let playlistsData = data;
+          if (typeof data === 'string') {
+            try {
+              playlistsData = JSON.parse(data);
+            } catch {
+              // If parsing fails, use data as is
+            }
+          }
+
+          if (playlistsData && Array.isArray(playlistsData.playlists)) {
+            aggregated.playlists.push(...playlistsData.playlists);
+          }
+          if (playlistsData?.genre) aggregated.meta.genre = playlistsData.genre;
+          if (playlistsData?.province)
+            aggregated.meta.province = playlistsData.province;
+          if (typeof playlistsData?.count === 'number')
+            aggregated.meta.totalPlaylists = playlistsData.count;
           break;
         }
         case 'get_playlist': {
-          if (data) aggregated.playlists.push(data);
+          // Handle both string JSON and parsed object
+          let playlistData = data;
+          if (typeof data === 'string') {
+            try {
+              playlistData = JSON.parse(data);
+            } catch {
+              // If parsing fails, use data as is
+            }
+          }
+          // Extract playlist from { playlist: {...} } or use data directly
+          const playlist = playlistData?.playlist || playlistData;
+          if (playlist) aggregated.playlists.push(playlist);
           break;
         }
         case 'get_artist': {
@@ -641,8 +664,53 @@ export class DiscoveryAgent extends BaseAgent {
       } as SearchResultsResponse;
     }
 
-    // If only playlists/grid
+    // If only playlists
     if (aggregated.playlists.length > 0) {
+      // Check if we have a single playlist with tracks (from get_playlist tool)
+      const playlistWithTracks = aggregated.playlists.find(
+        (p: any) => p.tracks && Array.isArray(p.tracks) && p.tracks.length > 0
+      );
+
+      // If we have a single playlist with tracks, return it as a playlist response
+      // This handles the case where get_top_charts returns a summary and get_playlist returns the full playlist
+      if (playlistWithTracks && aggregated.playlists.length <= 2) {
+        // Remove duplicate playlists (keep the one with tracks)
+        const uniquePlaylists = aggregated.playlists.filter(
+          (p: any, index: number, self: any[]) => {
+            // If this playlist has tracks, keep it
+            if (p.tracks && Array.isArray(p.tracks) && p.tracks.length > 0) {
+              return true;
+            }
+            // Otherwise, only keep if there's no playlist with the same ID that has tracks
+            const hasPlaylistWithTracks = self.some(
+              (other: any) =>
+                other.id === p.id &&
+                other.tracks &&
+                Array.isArray(other.tracks) &&
+                other.tracks.length > 0
+            );
+            return !hasPlaylistWithTracks;
+          }
+        );
+
+        // Use the playlist with tracks
+        const finalPlaylist =
+          uniquePlaylists.find(
+            (p: any) =>
+              p.tracks && Array.isArray(p.tracks) && p.tracks.length > 0
+          ) || uniquePlaylists[0];
+
+        if (finalPlaylist) {
+          return {
+            type: 'playlist',
+            message: '',
+            timestamp: new Date(),
+            data: finalPlaylist,
+          } as any;
+        }
+      }
+
+      // Otherwise, return as playlist grid
       return {
         type: 'playlist_grid',
         message: '',

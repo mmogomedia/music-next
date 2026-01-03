@@ -1,21 +1,22 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import AdminOverviewPage from '@/components/dashboard/admin/AdminOverviewPage';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminDashboardPage() {
+export default async function OverviewPage() {
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    redirect(`/login?callbackUrl=${encodeURIComponent('/admin/dashboard')}`);
+    redirect(
+      `/login?callbackUrl=${encodeURIComponent('/admin/dashboard/overview')}`
+    );
   }
 
-  // Check if user has admin role
   if (session.user?.role !== 'ADMIN') {
     redirect('/unauthorized');
   }
 
-  // Redirect to overview page
-  redirect('/admin/dashboard/overview');
+  return <AdminOverviewPage />;
 }
