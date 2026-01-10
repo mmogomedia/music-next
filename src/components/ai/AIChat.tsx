@@ -174,6 +174,7 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
           const requestBody: ChatRequest = {
             message: msg.trim(),
             conversationId: propConversationId,
+            chatType: 'STREAMING',
             context: enhancedContext,
             provider:
               selectedProvider === 'auto' ? undefined : selectedProvider,

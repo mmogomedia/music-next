@@ -13,7 +13,9 @@ import type {
   PlaylistWithTracks,
   PlaylistInfo,
   ArtistProfileComplete,
+  TimelinePostWithAuthor,
 } from '@/lib/services';
+import type { PostType } from '@prisma/client';
 
 /**
  * Base interface for all AI responses
@@ -329,6 +331,22 @@ export interface ClarificationResponse extends BaseAIResponse {
 }
 
 /**
+ * Response containing a list of timeline posts
+ */
+export interface TimelinePostListResponse extends BaseAIResponse {
+  type: 'timeline_post_list';
+  data: {
+    posts: TimelinePostWithAuthor[];
+    metadata?: {
+      total?: number;
+      query?: string;
+      postTypes?: PostType[];
+    };
+  };
+  actions?: Action[];
+}
+
+/**
  * Union type of all possible AI responses
  */
 export type AIResponse =
@@ -343,7 +361,8 @@ export type AIResponse =
   | QuickLinkTrackResponse
   | QuickLinkAlbumResponse
   | QuickLinkArtistResponse
-  | ClarificationResponse;
+  | ClarificationResponse
+  | TimelinePostListResponse;
 
 /**
  * Registry of available response types
@@ -361,6 +380,7 @@ export const RESPONSE_TYPES = {
   quick_link_album: 'quick_link_album',
   quick_link_artist: 'quick_link_artist',
   clarification: 'clarification',
+  timeline_post_list: 'timeline_post_list',
 } as const;
 
 /**

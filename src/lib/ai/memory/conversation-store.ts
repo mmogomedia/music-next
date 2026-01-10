@@ -22,7 +22,8 @@ export class ConversationStore {
     userId: string,
     conversationId: string,
     message: StoredMessage,
-    title?: string
+    title?: string,
+    chatType?: 'STREAMING' | 'TIMELINE' | 'DASHBOARD' | 'OTHER'
   ): Promise<void> {
     if (!userId) return;
 
@@ -34,13 +35,20 @@ export class ConversationStore {
       const isFirstMessage = messageCount === 0;
 
       // Upsert conversation to ensure it exists
+      // Update chatType if provided and conversation exists, or create with chatType
       await prisma.aIConversation.upsert({
         where: { id: conversationId },
-        update: {},
+        update: chatType
+          ? {
+              // Update chatType if provided (for existing conversations)
+              chatType: chatType,
+            }
+          : {},
         create: {
           id: conversationId,
           userId,
           title: title || this.generateTitle(message.content),
+          chatType: chatType || 'OTHER',
         },
       });
 
@@ -116,11 +124,21 @@ export class ConversationStore {
   }
 
   async getUserConversations(
-    userId: string
-  ): Promise<Array<{ id: string; title: string | null; updatedAt: Date }>> {
+    userId: string,
+    chatType?: 'STREAMING' | 'TIMELINE' | 'DASHBOARD' | 'OTHER'
+  ): Promise<
+    Array<{
+      id: string;
+      title: string | null;
+      updatedAt: Date;
+      chatType: string;
+    }>
+  > {
     logger.debug(
       '[ConversationStore] getUserConversations called with userId:',
-      userId
+      userId,
+      'chatType:',
+      chatType
     );
 
     if (!userId) {
@@ -134,15 +152,40 @@ export class ConversationStore {
       logger.debug(
         '[ConversationStore] Querying database for conversations...'
       );
+      const where: any = { userId };
+      if (chatType) {
+        // For STREAMING: show STREAMING + OTHER (legacy conversations)
+        // For TIMELINE: show only TIMELINE
+        // For others: show exact match
+        if (chatType === 'STREAMING') {
+          where.chatType = {
+            in: ['STREAMING', 'OTHER'],
+          };
+        } else {
+          where.chatType = chatType;
+        }
+      }
+
       const conversations = await prisma.aIConversation.findMany({
-        where: { userId },
+        where,
         orderBy: { updatedAt: 'desc' },
         take: 20, // Last 20 conversations
         select: {
           id: true,
           title: true,
           updatedAt: true,
+          chatType: true,
         },
+      });
+
+      logger.debug('[ConversationStore] Query result:', {
+        chatType,
+        count: conversations.length,
+        conversations: conversations.map(c => ({
+          id: c.id,
+          title: c.title,
+          chatType: c.chatType,
+        })),
       });
 
       logger.info('[ConversationStore] ✅ Database query successful:', {

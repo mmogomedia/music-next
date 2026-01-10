@@ -17,7 +17,7 @@ import {
 } from '@heroicons/react/24/solid';
 import AIIcon from '@/components/icons/AIIcon';
 import Link from 'next/link';
-import ConversationList from '@/components/ai/ConversationList';
+import RecentConversations from '@/components/shared/RecentConversations';
 import UserDetailsFooter from '@/components/layout/UserDetailsFooter';
 import MiniPlayer from '@/components/music/MiniPlayer';
 import SignInModal from '@/components/auth/SignInModal';
@@ -154,15 +154,15 @@ export default function ChatNavigation({
 
             {/* Conversations Section - scrollable */}
             <div className='mt-8 pt-6 border-t border-gray-200 dark:border-slate-700 flex-1 min-h-0 flex flex-col'>
-              <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 px-3 flex-shrink-0'>
-                Recent Conversations
-              </h3>
-              <ConversationList
+              <RecentConversations
                 onConversationSelect={onConversationSelect}
                 activeConversationId={getConversationId?.()}
+                chatType='STREAMING'
                 onSignInClick={() => {}}
                 onSignInModalOpen={setIsSignInModalOpen}
                 isSignInModalOpen={isSignInModalOpen}
+                variant='default'
+                showHeading={true}
               />
             </div>
           </div>
@@ -267,19 +267,19 @@ export default function ChatNavigation({
 
               {/* Conversations Section - scrollable */}
               <div className='mt-6 pt-4 border-t border-gray-200 dark:border-slate-700 flex-1 min-h-0 flex flex-col'>
-                <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-3 flex-shrink-0'>
-                  Recent Conversations
-                </h3>
                 <div className='flex-1 min-h-0 overflow-hidden'>
-                  <ConversationList
+                  <RecentConversations
                     onConversationSelect={id => {
                       setIsOpen(false);
                       onConversationSelect?.(id);
                     }}
                     activeConversationId={getConversationId?.()}
+                    chatType='STREAMING'
                     onSignInClick={() => setIsOpen(false)}
                     onSignInModalOpen={setIsSignInModalOpen}
                     isSignInModalOpen={isSignInModalOpen}
+                    variant='default'
+                    showHeading={true}
                   />
                 </div>
               </div>

@@ -16,6 +16,7 @@ import { IndustryInfoAgent } from './industry-info-agent';
 import { IntentClassifierAgent } from './intent-classifier-agent';
 import { ClarificationAgent } from './clarification-agent';
 import { FallbackAgent } from './fallback-agent';
+import { TimelineAgent } from './timeline-agent';
 import { HelpAgent } from './help-agent';
 import { analyzeIntent } from './router-intent-detector';
 import { logRoutingDecision } from '../routing-decision-logger';
@@ -29,6 +30,7 @@ export type AgentIntent =
   | 'abuse'
   | 'industry'
   | 'help'
+  | 'timeline'
   | 'unknown';
 
 export interface RoutingDecision {
@@ -40,6 +42,7 @@ export interface RoutingDecision {
     | 'AbuseGuardAgent'
     | 'IndustryInfoAgent'
     | 'HelpAgent'
+    | 'TimelineAgent'
     | 'FallbackAgent';
 }
 
@@ -54,6 +57,7 @@ export class RouterAgent {
   private abuseGuardAgent: AbuseGuardAgent;
   private industryInfoAgent: IndustryInfoAgent;
   private helpAgent: HelpAgent;
+  private timelineAgent: TimelineAgent;
   private intentClassifierAgent: IntentClassifierAgent;
   private clarificationAgent: ClarificationAgent;
   private fallbackAgent: FallbackAgent;
@@ -68,6 +72,7 @@ export class RouterAgent {
     this.abuseGuardAgent = new AbuseGuardAgent();
     this.industryInfoAgent = new IndustryInfoAgent();
     this.helpAgent = new HelpAgent();
+    this.timelineAgent = new TimelineAgent(provider);
     this.intentClassifierAgent = new IntentClassifierAgent(provider);
     this.clarificationAgent = new ClarificationAgent();
     this.fallbackAgent = new FallbackAgent();
@@ -97,7 +102,16 @@ export class RouterAgent {
       hasHistory: !!context?.conversationHistory?.length,
       filters: context?.filters,
       previousIntent: context?.metadata?.previousIntent,
+      chatType: context?.metadata?.chatType,
     });
+
+    // PRIORITY 0: Check if this is a timeline chat - route directly to TimelineAgent
+    if (context?.metadata?.chatType === 'TIMELINE') {
+      logger.info(
+        '[RouterAgent] Timeline chat detected, routing directly to TimelineAgent'
+      );
+      return await this.timelineAgent.process(message, context);
+    }
 
     try {
       // Initialize event service
@@ -370,6 +384,8 @@ export class RouterAgent {
         return await this.industryInfoAgent.process(message, context);
       case 'help':
         return await this.helpAgent.process(message, context);
+      case 'timeline':
+        return await this.timelineAgent.process(message, context);
       case 'discovery':
         return await this.discoveryAgent.process(message, context);
       case 'recommendation':

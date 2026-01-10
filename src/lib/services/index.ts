@@ -29,3 +29,10 @@ export {
   type GenreStats,
   type ProvinceStats,
 } from './analytics-service';
+export {
+  TimelineService,
+  type TimelinePostWithAuthor,
+  type TimelineFeedOptions,
+  type TimelineFeedResponse,
+  type FeaturedContent,
+} from './timeline-service';
