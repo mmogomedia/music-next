@@ -161,7 +161,6 @@ export default function ChatNavigation({
                 onSignInClick={() => {}}
                 onSignInModalOpen={setIsSignInModalOpen}
                 isSignInModalOpen={isSignInModalOpen}
-                variant='default'
                 showHeading={true}
               />
             </div>
@@ -278,7 +277,6 @@ export default function ChatNavigation({
                     onSignInClick={() => setIsOpen(false)}
                     onSignInModalOpen={setIsSignInModalOpen}
                     isSignInModalOpen={isSignInModalOpen}
-                    variant='default'
                     showHeading={true}
                   />
                 </div>

@@ -24,7 +24,6 @@ export default function ChatSidebar({
         activeConversationId={activeConversationId}
         chatType='TIMELINE'
         onConversationsUpdate={onConversationsUpdate}
-        variant='default'
         showNewChatButton={true}
         onNewChat={handleNewChat}
         maxInitialConversations={3}
