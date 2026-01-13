@@ -8,6 +8,7 @@
  */
 
 import { prisma } from '@/lib/db';
+import { timelineEvents } from '@/lib/events/timeline-events';
 import type {
   TimelinePost,
   TimelinePostComment,
@@ -22,6 +23,7 @@ import type {
  */
 export interface TimelinePostWithAuthor extends TimelinePost {
   author: Pick<User, 'id' | 'name' | 'email' | 'image'>;
+  tags?: Array<{ tag: string }>;
   _count?: {
     likes: number;
     comments: number;
@@ -279,6 +281,11 @@ export class TimelineService {
             image: true,
           },
         },
+        tags: {
+          select: {
+            tag: true,
+          },
+        },
         _count: {
           select: {
             likes: true,
@@ -347,6 +354,11 @@ export class TimelineService {
             image: true,
           },
         },
+        tags: {
+          select: {
+            tag: true,
+          },
+        },
       },
     });
 
@@ -380,6 +392,11 @@ export class TimelineService {
             name: true,
             email: true,
             image: true,
+          },
+        },
+        tags: {
+          select: {
+            tag: true,
           },
         },
         _count: {
@@ -485,8 +502,64 @@ export class TimelineService {
       },
       include: {
         tags: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+            shares: true,
+          },
+        },
       },
     });
+
+    // Emit event if post is published
+    if (status === 'PUBLISHED') {
+      // Fetch full post with relations for event
+      const fullPost = await prisma.timelinePost.findUnique({
+        where: { id: post.id },
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            },
+          },
+          tags: {
+            select: {
+              tag: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+              shares: true,
+            },
+          },
+        },
+      });
+
+      if (fullPost) {
+        // Enrich post with user data for event
+        const enrichedPost = await this.enrichPostsWithUserData(
+          [fullPost],
+          authorId
+        );
+        if (enrichedPost[0]) {
+          timelineEvents.emitPostPublished(enrichedPost[0]);
+        }
+      }
+    }
 
     return post;
   }
@@ -537,6 +610,10 @@ export class TimelineService {
       });
     }
 
+    // Check if status is changing to PUBLISHED
+    const wasPublished = existingPost.status === 'PUBLISHED';
+    const willBePublished = data.status === 'PUBLISHED';
+
     // Update post
     const post = await prisma.timelinePost.update({
       where: { id: postId },
@@ -548,19 +625,51 @@ export class TimelineService {
         videoUrl: data.videoUrl,
         songUrl: data.songUrl,
         status: data.status,
-        publishedAt: data.publishedAt,
+        publishedAt:
+          data.publishedAt ||
+          (willBePublished && !wasPublished
+            ? new Date()
+            : existingPost.publishedAt),
         isFeatured: data.isFeatured,
         featuredUntil: data.featuredUntil,
+      },
+      include: {
+        tags: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+            shares: true,
+          },
+        },
       },
     });
 
     // Recalculate relevance score if engagement changed
-    if (data.status === 'PUBLISHED') {
+    if (willBePublished) {
       const newScore = await this.calculateRelevanceScore(post, authorId);
       await prisma.timelinePost.update({
         where: { id: postId },
         data: { relevanceScore: newScore },
       });
+    }
+
+    // Emit event if post is being published (newly published or status changed to PUBLISHED)
+    if (willBePublished && (!wasPublished || data.status === 'PUBLISHED')) {
+      // Post already has relations from the update query above
+      // Enrich post with user data for event
+      const enrichedPost = await this.enrichPostsWithUserData([post], authorId);
+      if (enrichedPost[0]) {
+        timelineEvents.emitPostPublished(enrichedPost[0]);
+      }
     }
 
     return post;
@@ -569,8 +678,12 @@ export class TimelineService {
   /**
    * Delete a timeline post
    */
-  static async deletePost(postId: string, authorId: string): Promise<boolean> {
-    // Verify ownership
+  static async deletePost(
+    postId: string,
+    userId: string,
+    isAdmin: boolean = false
+  ): Promise<boolean> {
+    // Verify ownership or admin status
     const post = await prisma.timelinePost.findUnique({
       where: { id: postId },
     });
@@ -579,7 +692,8 @@ export class TimelineService {
       throw new Error('Post not found');
     }
 
-    if (post.authorId !== authorId) {
+    // Allow deletion if user is the author OR if user is an admin
+    if (post.authorId !== userId && !isAdmin) {
       throw new Error('Unauthorized: You can only delete your own posts');
     }
 
@@ -588,6 +702,9 @@ export class TimelineService {
       where: { id: postId },
       data: { status: 'DELETED' },
     });
+
+    // Emit delete event
+    timelineEvents.emitPostDeleted(postId);
 
     return true;
   }
@@ -952,32 +1069,65 @@ export class TimelineService {
       return [];
     }
 
-    const where: any = {
-      status: 'PUBLISHED',
-      publishedAt: {
-        lte: new Date(),
-      },
-    };
-
     // Get posts published after the given post
     const sincePost = await prisma.timelinePost.findUnique({
       where: { id: sincePostId },
-      select: { publishedAt: true },
+      select: { publishedAt: true, createdAt: true, status: true },
     });
 
-    if (sincePost?.publishedAt) {
-      where.publishedAt = {
-        ...where.publishedAt,
-        gt: sincePost.publishedAt,
-      };
+    if (!sincePost) {
+      return [];
+    }
+
+    // Use publishedAt if available, otherwise fall back to createdAt
+    const baselineDate = sincePost.publishedAt || sincePost.createdAt;
+    const now = new Date();
+
+    // Build where clause: status PUBLISHED, publishedAt <= now, and newer than baseline
+    const where: any = {
+      status: 'PUBLISHED',
+      AND: [
+        {
+          OR: [
+            { publishedAt: { lte: now } },
+            // Also include posts without publishedAt but with createdAt (for backward compatibility)
+            { publishedAt: null, createdAt: { lte: now } },
+          ],
+        },
+      ],
+    };
+
+    if (baselineDate) {
+      // Get posts published after the baseline date
+      // Include posts with same publishedAt but newer ID to catch posts published at the exact same time
+      where.AND.push({
+        OR: [
+          {
+            publishedAt: {
+              gt: baselineDate,
+            },
+          },
+          {
+            // Also catch posts with same publishedAt but newer ID (lexicographically greater)
+            AND: [{ publishedAt: baselineDate }, { id: { gt: sincePostId } }],
+          },
+          // Handle posts without publishedAt - use createdAt comparison
+          {
+            AND: [{ publishedAt: null }, { createdAt: { gt: baselineDate } }],
+          },
+        ],
+      });
     } else {
-      where.id = { gt: sincePostId };
+      // Fallback: use ID comparison if no date available
+      where.AND.push({
+        id: { gt: sincePostId },
+      });
     }
 
     const posts = await prisma.timelinePost.findMany({
       where,
       take: 20,
-      orderBy: { publishedAt: 'desc' },
+      orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
       include: {
         author: {
           select: {
@@ -985,6 +1135,11 @@ export class TimelineService {
             name: true,
             email: true,
             image: true,
+          },
+        },
+        tags: {
+          select: {
+            tag: true,
           },
         },
         _count: {

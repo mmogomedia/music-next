@@ -37,8 +37,24 @@ export function useTimelineStream(options: UseTimelineStreamOptions = {}) {
   const baseReconnectDelay = 1000; // 1 second
 
   const connect = useCallback(() => {
+    logger.info('[useTimelineStream] connect() called', {
+      enabled,
+      hasSession: !!session?.user?.id,
+      userId: session?.user?.id,
+      initialPostId,
+    });
+
     // CRITICAL: Don't connect without a baseline post ID
-    if (!enabled || !session?.user?.id || !initialPostId) {
+    if (!enabled) {
+      logger.info('[useTimelineStream] Not connecting: enabled=false');
+      return;
+    }
+    if (!session?.user?.id) {
+      logger.info('[useTimelineStream] Not connecting: no user session');
+      return;
+    }
+    if (!initialPostId) {
+      logger.info('[useTimelineStream] Not connecting: no initialPostId');
       return;
     }
 
@@ -53,10 +69,14 @@ export function useTimelineStream(options: UseTimelineStreamOptions = {}) {
     try {
       // Build stream URL with required initial post ID
       const streamUrl = `/api/timeline/stream?sincePostId=${encodeURIComponent(initialPostId)}`;
+      logger.info(
+        `[useTimelineStream] Connecting to stream with baseline post ID: ${initialPostId}`
+      );
       const eventSource = new EventSource(streamUrl);
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
+        logger.info('[useTimelineStream] SSE connection opened');
         setIsConnected(true);
         reconnectAttemptsRef.current = 0; // Reset on successful connection
       };
@@ -67,22 +87,37 @@ export function useTimelineStream(options: UseTimelineStreamOptions = {}) {
 
           switch (data.type) {
             case 'connected':
+              logger.info('[useTimelineStream] Connected to stream');
               setIsConnected(true);
               break;
 
             case 'new_posts':
+              logger.info(
+                `[useTimelineStream] Received new_posts event: ${data.count} posts`
+              );
               if (data.posts && data.posts.length > 0) {
                 const posts = data.posts;
+                logger.info(
+                  `[useTimelineStream] Processing ${posts.length} new posts:`,
+                  posts.map(p => p.id)
+                );
                 // Only count unique new posts that haven't been seen before
                 setPendingPosts(prev => {
                   const existingIds = new Set(prev.map(p => p.id));
                   const uniqueNewPosts = posts.filter(
                     p => !existingIds.has(p.id)
                   );
-                  // Update count with only truly new posts
-                  setNewPostsCount(
-                    currentCount => currentCount + uniqueNewPosts.length
+                  logger.info(
+                    `[useTimelineStream] ${uniqueNewPosts.length} unique new posts (${posts.length - uniqueNewPosts.length} duplicates filtered)`
                   );
+                  // Update count with only truly new posts
+                  setNewPostsCount(currentCount => {
+                    const newCount = currentCount + uniqueNewPosts.length;
+                    logger.info(
+                      `[useTimelineStream] New posts count updated: ${currentCount} -> ${newCount}`
+                    );
+                    return newCount;
+                  });
                   return [...uniqueNewPosts, ...prev];
                 });
                 onNewPosts?.(posts);
@@ -151,16 +186,26 @@ export function useTimelineStream(options: UseTimelineStreamOptions = {}) {
   }, [clearNewPosts]);
 
   useEffect(() => {
+    logger.info('[useTimelineStream] useEffect triggered', {
+      enabled,
+      hasSession: !!session?.user?.id,
+      userId: session?.user?.id,
+      initialPostId,
+    });
+
     if (enabled && session?.user?.id) {
+      logger.info('[useTimelineStream] Calling connect()');
       connect();
     } else {
+      logger.info('[useTimelineStream] Calling disconnect()');
       disconnect();
     }
 
     return () => {
+      logger.info('[useTimelineStream] Cleanup: disconnecting');
       disconnect();
     };
-  }, [enabled, session?.user?.id, connect, disconnect]);
+  }, [enabled, session?.user?.id, initialPostId, connect, disconnect]);
 
   return {
     isConnected,

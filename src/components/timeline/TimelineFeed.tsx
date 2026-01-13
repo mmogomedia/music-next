@@ -155,12 +155,22 @@ export default function TimelineFeed({
 
   // Real-time feed updates via SSE - pass most recent post ID to avoid counting existing posts
   // Only connect when we have a stable baseline
+  const streamEnabled =
+    !loading &&
+    posts.length > 0 &&
+    !!baselinePostId &&
+    hasInitializedStream.current; // Only enable after baseline is set
+
+  logger.info('[TimelineFeed] Stream enabled check:', {
+    loading,
+    postsLength: posts.length,
+    baselinePostId,
+    hasInitializedStream: hasInitializedStream.current,
+    streamEnabled,
+  });
+
   const { newPostsCount, pendingPosts, clearNewPosts } = useTimelineStream({
-    enabled:
-      !loading &&
-      posts.length > 0 &&
-      !!baselinePostId &&
-      hasInitializedStream.current, // Only enable after baseline is set
+    enabled: streamEnabled,
     initialPostId: baselinePostId, // Pass most recent post ID so server knows what's already visible
     onNewPosts: useCallback((newPosts: TimelinePostWithAuthor[]) => {
       // New posts are tracked, but we'll prepend them on refresh

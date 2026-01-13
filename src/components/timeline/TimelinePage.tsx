@@ -1,21 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef, FormEvent, useCallback } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import {
   InformationCircleIcon,
   EllipsisHorizontalIcon,
-  UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { ChatRequest, ChatResponse } from '@/types/ai';
 import { logger } from '@/lib/utils/logger';
 import { useToast } from '@/components/ui/Toast';
 import TimelineFeed from './TimelineFeed';
 import TimelineSidebar from './TimelineSidebar';
-import ChatSidebar from './ChatSidebar';
-import MiniPlayer from '@/components/music/MiniPlayer';
 import type { AIResponse } from '@/types/ai-responses';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { SourceType } from '@/types/stats';
@@ -332,55 +327,13 @@ export default function TimelinePage() {
   }
 
   return (
-    <div className='h-screen bg-gray-50 dark:bg-slate-900 flex overflow-hidden w-full'>
-      {/* Left Section: Chat Sidebar + Timeline Feed with Header */}
+    <div className='h-full bg-gray-50 dark:bg-slate-900 flex overflow-hidden w-full'>
+      {/* Left Section: Chat Sidebar + Timeline Feed */}
       <div className='flex-1 flex flex-col overflow-hidden min-w-0'>
-        {/* Header - Spans chat sidebar + timeline feed */}
-        <header className='flex-shrink-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-slate-700 shadow-sm'>
-          <div className='w-full px-4 sm:px-6 lg:px-8'>
-            <div className='flex items-center justify-between h-16 gap-4'>
-              {/* Logo */}
-              <Link href='/' className='flex items-center group flex-shrink-0'>
-                <Image
-                  src='/main_logo.png'
-                  alt='Flemoji'
-                  width={140}
-                  height={40}
-                  priority
-                  className='h-8 w-auto'
-                />
-              </Link>
-
-              {/* Spacer */}
-              <div className='flex-1'></div>
-
-              {/* Mini Player and User Menu - Right */}
-              <div className='flex items-center gap-3 flex-shrink-0'>
-                <MiniPlayer />
-                {session?.user ? (
-                  <Link
-                    href='/dashboard'
-                    className='p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors'
-                  >
-                    <UserCircleIcon className='w-7 h-7' />
-                  </Link>
-                ) : (
-                  <Link
-                    href='/login'
-                    className='px-5 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium text-sm hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl'
-                  >
-                    Sign In
-                  </Link>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
-
         {/* Chat Area Content */}
         <div className='flex-1 flex overflow-hidden min-h-0'>
           {/* Chat Sidebar - Left (Fixed, doesn't scroll) */}
-          <div
+          {/* <div
             className={`${
               isMobile ? 'hidden' : 'w-64'
             } flex-shrink-0 h-full border-r border-gray-200/30 dark:border-slate-700/30 flex flex-col`}
@@ -404,7 +357,7 @@ export default function TimelinePage() {
                 // This callback is used by ChatSidebar to notify parent
               }}
             />
-          </div>
+          </div> */}
 
           {/* Timeline Feed - Center with Independent Scroll */}
           <div className='flex-1 flex flex-col overflow-hidden relative'>

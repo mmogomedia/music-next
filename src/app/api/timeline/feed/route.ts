@@ -12,10 +12,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Authentication is optional - allow unauthenticated users to view timeline
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
@@ -34,15 +31,18 @@ export async function GET(request: NextRequest) {
       ? (postTypesParam.split(',') as any[])
       : undefined;
 
+    // Only allow following filter for authenticated users
+    const canFollow = !!session?.user?.id && following;
+
     const feed = await TimelineService.getTimelineFeed({
-      userId: session.user.id,
+      userId: session?.user?.id, // Optional - will be undefined for unauthenticated users
       limit: Math.min(limit, 50), // Max 50 per request
       cursor,
       postTypes,
       sortBy,
       genreId,
       authorId,
-      following,
+      following: canFollow,
       searchQuery,
     });
 

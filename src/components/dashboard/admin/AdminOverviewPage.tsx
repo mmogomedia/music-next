@@ -2,14 +2,10 @@
 
 import {
   ExclamationTriangleIcon,
-  EyeIcon,
-  ShieldCheckIcon,
-  BellIcon,
   UserGroupIcon,
   MusicalNoteIcon,
-  ChartBarIcon,
-  Cog6ToothIcon,
-  ArrowDownTrayIcon,
+  PlusIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import {
   UserGroupIcon as UserGroupSolidIcon,
@@ -54,19 +50,25 @@ export default function AdminOverviewPage() {
 
   const header = (
     <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
-      <div className='py-4 px-4 sm:px-6'>
+      <div className='py-3 px-4 sm:px-6'>
         <div className='flex items-center justify-between'>
           <div>
-            <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
-              Overview
+            <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
+              Dashboard Overview
             </h1>
-            <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-              Manage your platform and monitor system health
+            <p className='mt-0.5 text-xs text-gray-500 dark:text-gray-400'>
+              Platform metrics and quick actions
             </p>
           </div>
-          <button className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2'>
-            <BellIcon className='w-4 h-4' />
-            <span className='hidden sm:inline'>Notifications</span>
+          <button
+            onClick={() =>
+              router.push('/admin/dashboard/timeline-posts/create')
+            }
+            className='flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium text-sm transition-all shadow-md hover:shadow-lg'
+          >
+            <PlusIcon className='w-4 h-4' />
+            <span className='hidden sm:inline'>New Timeline Post</span>
+            <span className='sm:hidden'>New Post</span>
           </button>
         </div>
       </div>
@@ -84,8 +86,8 @@ export default function AdminOverviewPage() {
       }
       header={header}
     >
-      <div className='w-full py-8 px-4 sm:px-6'>
-        <div className='space-y-8'>
+      <div className='w-full py-4 px-4 sm:px-6'>
+        <div className='space-y-4'>
           {/* Loading State */}
           {loading && (
             <div className='flex justify-center items-center h-32'>
@@ -95,326 +97,234 @@ export default function AdminOverviewPage() {
 
           {/* Error State */}
           {error && (
-            <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4'>
+            <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3'>
               <div className='flex items-center'>
-                <ExclamationTriangleIcon className='w-5 h-5 text-red-600 dark:text-red-400 mr-2' />
-                <p className='text-red-600 dark:text-red-400'>
+                <ExclamationTriangleIcon className='w-4 h-4 text-red-600 dark:text-red-400 mr-2' />
+                <p className='text-sm text-red-600 dark:text-red-400'>
                   Error loading dashboard data: {error}
                 </p>
               </div>
               <button
                 onClick={refetch}
-                className='mt-2 text-sm text-red-600 dark:text-red-400 hover:underline'
+                className='mt-2 text-xs text-red-600 dark:text-red-400 hover:underline'
               >
                 Try again
               </button>
             </div>
           )}
 
-          {/* System Metrics */}
+          {/* System Metrics - Compact Grid */}
           {!loading && !error && (
             <>
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center'>
-                    <div className='flex-shrink-0'>
-                      <div className='w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center'>
-                        <UserGroupSolidIcon className='w-5 h-5 text-blue-600 dark:text-blue-400' />
-                      </div>
+              <div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
+                <div className='bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-slate-700'>
+                  <div className='flex items-center gap-2.5'>
+                    <div className='w-9 h-9 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0'>
+                      <UserGroupSolidIcon className='w-5 h-5 text-blue-600 dark:text-blue-400' />
                     </div>
-                    <div className='ml-4'>
-                      <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                        Total Users
+                    <div className='min-w-0'>
+                      <p className='text-xs font-medium text-gray-500 dark:text-gray-400'>
+                        Users
                       </p>
-                      <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                      <p className='text-lg font-bold text-gray-900 dark:text-white'>
                         {systemMetrics.totalUsers.toLocaleString()}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center'>
-                    <div className='flex-shrink-0'>
-                      <div className='w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center'>
-                        <MusicalNoteSolidIcon className='w-5 h-5 text-green-600 dark:text-green-400' />
-                      </div>
+                <div className='bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-slate-700'>
+                  <div className='flex items-center gap-2.5'>
+                    <div className='w-9 h-9 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center flex-shrink-0'>
+                      <MusicalNoteSolidIcon className='w-5 h-5 text-green-600 dark:text-green-400' />
                     </div>
-                    <div className='ml-4'>
-                      <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                        Total Artists
+                    <div className='min-w-0'>
+                      <p className='text-xs font-medium text-gray-500 dark:text-gray-400'>
+                        Artists
                       </p>
-                      <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                      <p className='text-lg font-bold text-gray-900 dark:text-white'>
                         {systemMetrics.totalArtists.toLocaleString()}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center'>
-                    <div className='flex-shrink-0'>
-                      <div className='w-8 h-8 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center'>
-                        <MusicalNoteIcon className='w-5 h-5 text-purple-600 dark:text-purple-400' />
-                      </div>
+                <div className='bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-slate-700'>
+                  <div className='flex items-center gap-2.5'>
+                    <div className='w-9 h-9 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center flex-shrink-0'>
+                      <MusicalNoteIcon className='w-5 h-5 text-purple-600 dark:text-purple-400' />
                     </div>
-                    <div className='ml-4'>
-                      <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                        Total Tracks
+                    <div className='min-w-0'>
+                      <p className='text-xs font-medium text-gray-500 dark:text-gray-400'>
+                        Tracks
                       </p>
-                      <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                      <p className='text-lg font-bold text-gray-900 dark:text-white'>
                         {systemMetrics.totalTracks.toLocaleString()}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center'>
-                    <div className='flex-shrink-0'>
-                      <div className='w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center'>
-                        <ChartBarSolidIcon className='w-5 h-5 text-orange-600 dark:text-orange-400' />
-                      </div>
+                <div className='bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-slate-700'>
+                  <div className='flex items-center gap-2.5'>
+                    <div className='w-9 h-9 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center flex-shrink-0'>
+                      <ChartBarSolidIcon className='w-5 h-5 text-orange-600 dark:text-orange-400' />
                     </div>
-                    <div className='ml-4'>
-                      <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                        Total Plays
+                    <div className='min-w-0'>
+                      <p className='text-xs font-medium text-gray-500 dark:text-gray-400'>
+                        Plays
                       </p>
-                      <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                      <p className='text-lg font-bold text-gray-900 dark:text-white'>
                         {systemMetrics.totalPlays.toLocaleString()}
                       </p>
                     </div>
                   </div>
                 </div>
-
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center'>
-                    <div className='flex-shrink-0'>
-                      <div className='w-8 h-8 bg-indigo-100 dark:bg-indigo-900/20 rounded-lg flex items-center justify-center'>
-                        <ArrowDownTrayIcon className='w-5 h-5 text-indigo-600 dark:text-indigo-400' />
-                      </div>
-                    </div>
-                    <div className='ml-4'>
-                      <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                        Total Downloads
-                      </p>
-                      <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                        {(systemMetrics.totalDownloads || 0).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center'>
-                    <div className='flex-shrink-0'>
-                      <div className='w-8 h-8 bg-pink-100 dark:bg-pink-900/20 rounded-lg flex items-center justify-center'>
-                        <EyeIcon className='w-5 h-5 text-pink-600 dark:text-pink-400' />
-                      </div>
-                    </div>
-                    <div className='ml-4'>
-                      <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                        Total Page Views
-                      </p>
-                      <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                        {(systemMetrics.totalPageViews || 0).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center'>
-                    <div className='flex-shrink-0'>
-                      <div className='w-8 h-8 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center'>
-                        <span className='text-yellow-600 dark:text-yellow-400 font-bold'>
-                          $
-                        </span>
-                      </div>
-                    </div>
-                    <div className='ml-4'>
-                      <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                        Total Revenue
-                      </p>
-                      <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                        ${systemMetrics.totalRevenue.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center'>
-                    <div className='flex-shrink-0'>
-                      <div className='w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center'>
-                        <ShieldCheckIcon className='w-5 h-5 text-green-600 dark:text-green-400' />
-                      </div>
-                    </div>
-                    <div className='ml-4'>
-                      <p className='text-sm font-medium text-gray-500 dark:text-gray-400'>
-                        System Health
-                      </p>
-                      <p className='text-lg font-bold text-gray-900 dark:text-white capitalize'>
-                        {systemMetrics.platformHealth}
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-                {/* Pending Actions */}
-                <div className='bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='px-6 py-4 border-b border-gray-200 dark:border-slate-700'>
-                    <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                      Pending Actions
-                    </h3>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      Items requiring your attention
-                    </p>
-                  </div>
-                  <div className='p-6'>
-                    <div className='space-y-4'>
-                      {pendingActions.map(action => (
-                        <div
-                          key={action.id}
-                          className='flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg'
+              <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+                {/* Quick Actions */}
+                <div className='lg:col-span-2'>
+                  <div className='bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700'>
+                    <div className='px-4 py-3 border-b border-gray-200 dark:border-slate-700'>
+                      <h3 className='text-sm font-semibold text-gray-900 dark:text-white'>
+                        Quick Actions
+                      </h3>
+                    </div>
+                    <div className='p-4'>
+                      <div className='grid grid-cols-2 gap-3'>
+                        <button
+                          onClick={() =>
+                            router.push(
+                              '/admin/dashboard/timeline-posts/create'
+                            )
+                          }
+                          className='flex items-center gap-2 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-900/30 dark:hover:to-purple-900/30 rounded-lg border border-blue-200 dark:border-blue-800 transition-all group'
                         >
-                          <div className='flex-1'>
-                            <h4 className='font-medium text-gray-900 dark:text-white'>
-                              {action.title}
-                            </h4>
-                            <p className='text-sm text-gray-500 dark:text-gray-400'>
-                              {action.description}
+                          <SparklesIcon className='w-5 h-5 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform' />
+                          <div className='text-left'>
+                            <p className='text-xs font-medium text-gray-900 dark:text-white'>
+                              Timeline Post
+                            </p>
+                            <p className='text-xs text-gray-500 dark:text-gray-400'>
+                              Create new
                             </p>
                           </div>
-                          <div className='flex items-center space-x-3'>
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(action.priority)}`}
-                            >
-                              {action.priority}
-                            </span>
-                            <span className='text-sm font-medium text-gray-900 dark:text-white'>
-                              {action.count}
-                            </span>
-                            <button className='text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'>
-                              <EyeIcon className='w-4 h-4' />
-                            </button>
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            router.push('/admin/dashboard/timeline-posts')
+                          }
+                          className='flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600 transition-all group'
+                        >
+                          <SparklesIcon className='w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:scale-110 transition-transform' />
+                          <div className='text-left'>
+                            <p className='text-xs font-medium text-gray-900 dark:text-white'>
+                              Manage Posts
+                            </p>
+                            <p className='text-xs text-gray-500 dark:text-gray-400'>
+                              View all posts
+                            </p>
                           </div>
-                        </div>
-                      ))}
+                        </button>
+
+                        <button
+                          onClick={() => router.push('/admin/dashboard/users')}
+                          className='flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600 transition-all group'
+                        >
+                          <UserGroupIcon className='w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:scale-110 transition-transform' />
+                          <div className='text-left'>
+                            <p className='text-xs font-medium text-gray-900 dark:text-white'>
+                              Manage Users
+                            </p>
+                            <p className='text-xs text-gray-500 dark:text-gray-400'>
+                              View all users
+                            </p>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            router.push('/admin/dashboard/content')
+                          }
+                          className='flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600 transition-all group'
+                        >
+                          <MusicalNoteIcon className='w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:scale-110 transition-transform' />
+                          <div className='text-left'>
+                            <p className='text-xs font-medium text-gray-900 dark:text-white'>
+                              Content
+                            </p>
+                            <p className='text-xs text-gray-500 dark:text-gray-400'>
+                              Review tracks
+                            </p>
+                          </div>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Recent Activity */}
-                <div className='bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='px-6 py-4 border-b border-gray-200 dark:border-slate-700'>
-                    <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                      Recent Activity
+                {/* Pending Actions - Compact */}
+                <div className='bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700'>
+                  <div className='px-4 py-3 border-b border-gray-200 dark:border-slate-700'>
+                    <h3 className='text-sm font-semibold text-gray-900 dark:text-white'>
+                      Pending Actions
                     </h3>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      Latest platform events
-                    </p>
                   </div>
-                  <div className='p-6'>
-                    <RecentActivity
-                      activity={stats?.recentActivity}
-                      useSSE={true}
-                      scope='admin'
-                    />
+                  <div className='p-4'>
+                    <div className='space-y-2'>
+                      {pendingActions.length === 0 ? (
+                        <p className='text-xs text-gray-500 dark:text-gray-400 text-center py-4'>
+                          No pending actions
+                        </p>
+                      ) : (
+                        pendingActions.slice(0, 3).map(action => (
+                          <div
+                            key={action.id}
+                            className='flex items-center justify-between p-2.5 bg-gray-50 dark:bg-slate-700/50 rounded-lg'
+                          >
+                            <div className='flex-1 min-w-0'>
+                              <h4 className='text-xs font-medium text-gray-900 dark:text-white truncate'>
+                                {action.title}
+                              </h4>
+                              <p className='text-xs text-gray-500 dark:text-gray-400 truncate'>
+                                {action.description}
+                              </p>
+                            </div>
+                            <div className='flex items-center gap-2 ml-2'>
+                              <span
+                                className={`px-1.5 py-0.5 text-xs font-medium rounded ${getPriorityColor(action.priority)}`}
+                              >
+                                {action.priority}
+                              </span>
+                              <span className='text-xs font-semibold text-gray-900 dark:text-white'>
+                                {action.count}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center space-x-4'>
-                    <div className='w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center'>
-                      <UserGroupIcon className='w-6 h-6 text-blue-600 dark:text-blue-400' />
-                    </div>
-                    <div>
-                      <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                        Manage Users
-                      </h3>
-                      <p className='text-sm text-gray-500 dark:text-gray-400'>
-                        View and manage all users
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    className='mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'
-                    onClick={() => router.push('/admin/dashboard/users')}
-                  >
-                    Manage Users
-                  </button>
+              {/* Recent Activity - Compact */}
+              <div className='bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700'>
+                <div className='px-4 py-3 border-b border-gray-200 dark:border-slate-700'>
+                  <h3 className='text-sm font-semibold text-gray-900 dark:text-white'>
+                    Recent Activity
+                  </h3>
                 </div>
-
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center space-x-4'>
-                    <div className='w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center'>
-                      <MusicalNoteIcon className='w-6 h-6 text-green-600 dark:text-green-400' />
-                    </div>
-                    <div>
-                      <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                        Content Review
-                      </h3>
-                      <p className='text-sm text-gray-500 dark:text-gray-400'>
-                        Review and moderate content
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    className='mt-4 w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'
-                    onClick={() => router.push('/admin/dashboard/content')}
-                  >
-                    Review Content
-                  </button>
-                </div>
-
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center space-x-4'>
-                    <div className='w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center'>
-                      <ChartBarIcon className='w-6 h-6 text-purple-600 dark:text-purple-400' />
-                    </div>
-                    <div>
-                      <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                        View Analytics
-                      </h3>
-                      <p className='text-sm text-gray-500 dark:text-gray-400'>
-                        Platform performance metrics
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    className='mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'
-                    onClick={() => router.push('/admin/dashboard/analytics')}
-                  >
-                    View Analytics
-                  </button>
-                </div>
-
-                <div className='bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center space-x-4'>
-                    <div className='w-12 h-12 bg-gray-100 dark:bg-gray-900/20 rounded-lg flex items-center justify-center'>
-                      <Cog6ToothIcon className='w-6 h-6 text-gray-600 dark:text-gray-400' />
-                    </div>
-                    <div>
-                      <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-                        Platform Settings
-                      </h3>
-                      <p className='text-sm text-gray-500 dark:text-gray-400'>
-                        Configure platform settings
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    className='mt-4 w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200'
-                    onClick={() => router.push('/admin/dashboard/settings')}
-                  >
-                    Settings
-                  </button>
+                <div className='p-4'>
+                  <RecentActivity
+                    activity={stats?.recentActivity}
+                    useSSE={true}
+                    scope='admin'
+                    noCard={true}
+                    noHeader={true}
+                  />
                 </div>
               </div>
             </>

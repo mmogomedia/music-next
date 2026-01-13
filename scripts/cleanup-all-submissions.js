@@ -1,3 +1,4 @@
+/* eslint-env node */
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
@@ -5,8 +6,9 @@ const prisma = new PrismaClient();
 async function cleanupAllSubmissions() {
   try {
     console.log('🧹 Starting cleanup of all submissions...');
-    
+
     // Get counts before cleanup
+    // eslint-disable-next-line no-undef
     const [playlistSubmissionsCount, playlistTracksCount] = await Promise.all([
       prisma.playlistSubmission.count(),
       prisma.playlistTrack.count(),
@@ -21,9 +23,11 @@ async function cleanupAllSubmissions() {
       return;
     }
 
-    console.log('\n⚠️  WARNING: This will delete ALL playlist submissions and tracks!');
+    console.log(
+      '\n⚠️  WARNING: This will delete ALL playlist submissions and tracks!'
+    );
     console.log('This action cannot be undone.');
-    
+
     if (!process.argv.includes('--confirm')) {
       console.log('\n💡 To confirm and proceed, run:');
       console.log('node scripts/cleanup-all-submissions.js --confirm');
@@ -38,7 +42,7 @@ async function cleanupAllSubmissions() {
     console.log('\n🚀 Proceeding with cleanup...');
 
     // Use transaction to ensure data consistency
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async tx => {
       // Delete all playlist tracks first (due to foreign key constraints)
       console.log('🗑️  Deleting playlist tracks...');
       const deletedTracks = await tx.playlistTrack.deleteMany();
@@ -47,17 +51,22 @@ async function cleanupAllSubmissions() {
       // Delete all playlist submissions
       console.log('🗑️  Deleting playlist submissions...');
       const deletedSubmissions = await tx.playlistSubmission.deleteMany();
-      console.log(`   ✅ Deleted ${deletedSubmissions.count} playlist submissions`);
+      console.log(
+        `   ✅ Deleted ${deletedSubmissions.count} playlist submissions`
+      );
 
       // Reset playlist track counts
       console.log('🔄 Resetting playlist track counts...');
       const updatedPlaylists = await tx.playlist.updateMany({
         data: { currentTracks: 0 },
       });
-      console.log(`   ✅ Reset track counts for ${updatedPlaylists.count} playlists`);
+      console.log(
+        `   ✅ Reset track counts for ${updatedPlaylists.count} playlists`
+      );
     });
 
     // Verify cleanup
+    // eslint-disable-next-line no-undef
     const [finalSubmissionsCount, finalTracksCount] = await Promise.all([
       prisma.playlistSubmission.count(),
       prisma.playlistTrack.count(),
@@ -67,10 +76,9 @@ async function cleanupAllSubmissions() {
     console.log(`📊 Final data:`);
     console.log(`   - Playlist Submissions: ${finalSubmissionsCount}`);
     console.log(`   - Playlist Tracks: ${finalTracksCount}`);
-    
+
     console.log('\n✅ Database is now clean and ready for new submissions!');
     console.log('💡 All playlists, tracks, and users remain intact.');
-
   } catch (error) {
     console.error('❌ Error during cleanup:', error);
     console.error('Stack trace:', error.stack);

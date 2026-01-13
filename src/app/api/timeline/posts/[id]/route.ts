@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { TimelineService } from '@/lib/services';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import type { PostStatus } from '@prisma/client';
 
@@ -30,14 +31,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Authentication is optional - allow unauthenticated users to view posts
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { id } = await params;
-    const post = await TimelineService.getPostById(id, session.user.id);
+    const post = await TimelineService.getPostById(id, session?.user?.id);
 
     if (!post) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
@@ -128,8 +126,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check if user is admin
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+
+    const isAdmin = user?.role === 'ADMIN';
+
     const { id } = await params;
-    await TimelineService.deletePost(id, session.user.id);
+    await TimelineService.deletePost(id, session.user.id, isAdmin);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

@@ -5,7 +5,9 @@ This directory contains comprehensive tests for all authentication processes in 
 ## Test Files
 
 ### 1. Registration Tests (`register/__tests__/route.test.ts`)
+
 Tests for user registration API endpoint:
+
 - ✅ Successful registration with valid data
 - ✅ Optional name field handling
 - ✅ Validation errors (invalid email, weak password, mismatched passwords, terms not accepted)
@@ -16,7 +18,9 @@ Tests for user registration API endpoint:
 **Coverage:** 10 test cases
 
 ### 2. Email Verification Tests (`verify-email/__tests__/route.test.ts`)
+
 Tests for email verification endpoint:
+
 - ✅ Successful email verification
 - ✅ Already verified email handling
 - ✅ Invalid token handling
@@ -26,7 +30,9 @@ Tests for email verification endpoint:
 **Coverage:** 5 test cases
 
 ### 3. Forgot Password Tests (`forgot-password/__tests__/route.test.ts`)
+
 Tests for password reset request endpoint:
+
 - ✅ Successful password reset email sending
 - ✅ Security: returns success even for non-existent users (prevents email enumeration)
 - ✅ Validation errors (invalid email, missing email)
@@ -36,7 +42,9 @@ Tests for password reset request endpoint:
 **Coverage:** 5 test cases
 
 ### 4. Reset Password Tests (`reset-password/__tests__/route.test.ts`)
+
 Tests for password reset completion endpoint:
+
 - ✅ Successful password reset
 - ✅ Validation errors (weak password, mismatched passwords, missing token)
 - ✅ Invalid token handling
@@ -48,7 +56,9 @@ Tests for password reset completion endpoint:
 **Coverage:** 8 test cases
 
 ### 5. Authentication Logic Tests (`../../lib/__tests__/auth.test.ts`)
+
 Tests for NextAuth credentials provider logic:
+
 - ✅ Successful login with email
 - ✅ Successful login with username
 - ✅ Failed login attempts tracking
@@ -64,16 +74,19 @@ Tests for NextAuth credentials provider logic:
 ## Running Tests
 
 Run all authentication tests:
+
 ```bash
 yarn test --testPathPatterns="auth"
 ```
 
 Run specific test file:
+
 ```bash
 yarn test src/app/api/auth/register/__tests__/route.test.ts
 ```
 
 Run with coverage:
+
 ```bash
 yarn test --testPathPatterns="auth" --coverage
 ```
@@ -81,6 +94,7 @@ yarn test --testPathPatterns="auth" --coverage
 ## Test Coverage
 
 **Total: 41 test cases** covering:
+
 - User registration flow
 - Email verification flow
 - Password reset flow
@@ -112,4 +126,3 @@ yarn test --testPathPatterns="auth" --coverage
 - Tests are isolated and don't require a running database
 - Email sending failures don't fail registration (tested)
 - Rate limiting is tested to prevent abuse
-

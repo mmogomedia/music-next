@@ -13,14 +13,16 @@ async function testStatsSystem() {
   try {
     // 1. Test event collection
     console.log('1. Testing event collection...');
-    
+
     // Get the test track
     const sampleTrack = await prisma.track.findFirst({
       where: { title: 'Test Track for Stats' },
     });
-    
+
     if (!sampleTrack) {
-      console.log('❌ Test track not found. Please run setup-test-data.js first.');
+      console.log(
+        '❌ Test track not found. Please run setup-test-data.js first.'
+      );
       return;
     }
 
@@ -88,7 +90,7 @@ async function testStatsSystem() {
 
     // 2. Test track counters
     console.log('\n2. Testing track counters...');
-    
+
     const updatedTrack = await prisma.track.findUnique({
       where: { id: sampleTrack.id },
     });
@@ -102,7 +104,7 @@ async function testStatsSystem() {
 
     // 3. Test time-based queries
     console.log('\n3. Testing time-based queries...');
-    
+
     // Get events from last 24 hours
     const last24Hours = new Date();
     last24Hours.setHours(last24Hours.getHours() - 24);
@@ -120,7 +122,7 @@ async function testStatsSystem() {
 
     // 4. Test anonymous user tracking
     console.log('\n4. Testing anonymous user tracking...');
-    
+
     // Create events without userId (anonymous)
     const anonymousPlayEvent = await prisma.playEvent.create({
       data: {
@@ -140,7 +142,7 @@ async function testStatsSystem() {
 
     // 5. Test event collection API endpoint
     console.log('\n5. Testing event collection API...');
-    
+
     const eventsData = {
       events: [
         {
@@ -178,7 +180,7 @@ async function testStatsSystem() {
 
     // 6. Cleanup test data
     console.log('\n6. Cleaning up test data...');
-    
+
     await prisma.playEvent.deleteMany({
       where: {
         sessionId: {
@@ -247,7 +249,6 @@ async function testStatsSystem() {
     console.log('✅ Time-based queries working');
     console.log('✅ Track counters updated');
     console.log('✅ API endpoints accessible');
-
   } catch (error) {
     console.error('❌ Test failed:', error);
   } finally {
