@@ -86,7 +86,6 @@ async function setupTestData() {
     });
 
     return testTrack;
-
   } catch (error) {
     console.error('❌ Error setting up test data:', error);
   } finally {

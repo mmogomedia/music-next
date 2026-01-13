@@ -11,6 +11,8 @@ import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import ChatNavigation from './ChatNavigation';
 import UnifiedLayout from './UnifiedLayout';
+import ChatTopBar, { ViewType } from '@/components/ai/ChatTopBar';
+import TimelinePage from '@/components/timeline/TimelinePage';
 import AIChat, { AIChatHandle } from '@/components/ai/AIChat';
 import type { QuickLinkChatPayload } from '@/types/quick-links';
 import type { QuickLinkLandingData } from '@/lib/services/quick-link-service';
@@ -27,24 +29,12 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
   >();
   const [quickLinkData, setQuickLinkData] =
     useState<QuickLinkChatPayload | null>(null);
+  const [selectedProvince, setSelectedProvince] = useState<
+    string | undefined
+  >();
+  const [activeView, setActiveView] = useState<ViewType>('streaming');
   const searchParams = useSearchParams();
   const quickLinkSlug = searchParams.get('quickLinkSlug');
-
-  useEffect(() => {
-    return () => {
-      // Component unmounting
-    };
-  }, []);
-
-  // Track session changes
-  useEffect(() => {
-    // Session changed
-  }, [session]);
-
-  // Track conversation ID changes
-  useEffect(() => {
-    // activeConversationId changed
-  }, [activeConversationId]);
 
   useEffect(() => {
     if (!quickLinkSlug) {
@@ -127,8 +117,6 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
       } catch (error) {
         console.error(error);
         setQuickLinkData(null);
-      } finally {
-        // noop
       }
     };
 
@@ -159,6 +147,29 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
     setActiveConversationId(conversationId);
   }, []);
 
+  const renderContent = () => {
+    if (children) {
+      return children;
+    }
+
+    if (activeView === 'timeline') {
+      return <TimelinePage />;
+    }
+
+    // Streaming view - show AIChat
+    return (
+      <AIChat
+        ref={chatRef}
+        conversationId={activeConversationId}
+        onConversationIdChange={handleConversationIdChange}
+        context={aiContext}
+        initialQuickLink={quickLinkData}
+        province={selectedProvince}
+        onProvinceChange={setSelectedProvince}
+      />
+    );
+  };
+
   return (
     <UnifiedLayout
       sidebar={
@@ -168,18 +179,13 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
           getConversationId={() => activeConversationId}
         />
       }
+      header={
+        <ChatTopBar activeView={activeView} onViewChange={setActiveView} />
+      }
       contentClassName=''
       disableBottomPadding
     >
-      {children || (
-        <AIChat
-          ref={chatRef}
-          conversationId={activeConversationId}
-          onConversationIdChange={handleConversationIdChange}
-          context={aiContext}
-          initialQuickLink={quickLinkData}
-        />
-      )}
+      {renderContent()}
     </UnifiedLayout>
   );
 }

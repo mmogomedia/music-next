@@ -9,11 +9,17 @@
 
 export * from './discovery-tools';
 export * from './analytics-tools';
+export * from './timeline-tools';
 
 /**
  * All available tools for AI agents
  */
 import { discoveryTools } from './discovery-tools';
 import { analyticsTools } from './analytics-tools';
+import { timelineTools } from './timeline-tools';
 
-export const allTools = [...discoveryTools, ...analyticsTools];
+export const allTools = [
+  ...discoveryTools,
+  ...analyticsTools,
+  ...timelineTools,
+];

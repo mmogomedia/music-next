@@ -8,7 +8,8 @@ export type SourceType =
   | 'search'
   | 'direct'
   | 'share'
-  | 'player';
+  | 'player'
+  | 'timeline';
 
 export type PlatformType =
   | 'twitter'

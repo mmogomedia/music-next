@@ -7,6 +7,9 @@ export interface BuiltContext {
     province?: string;
   };
   summary?: string;
+  metadata?: {
+    previousIntent?: string;
+  };
 }
 
 export class ContextBuilder {

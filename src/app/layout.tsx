@@ -7,7 +7,6 @@ import './globals.css';
 import HeroUIProviderWrapper from '@/components/providers/HeroUIProvider';
 import SessionProvider from '@/components/providers/SessionProvider';
 import { MusicPlayerProvider } from '@/contexts/MusicPlayerContext';
-import ConditionalGlobalMusicPlayer from '@/components/music/ConditionalGlobalMusicPlayer';
 import BProgressProvider from '@/components/ui/BProgressProvider';
 import { ToastProvider } from '@/components/ui/Toast';
 
@@ -101,7 +100,6 @@ export default function RootLayout({
             <ToastProvider>
               <HeroUIProviderWrapper>
                 <main id='content'>{children}</main>
-                <ConditionalGlobalMusicPlayer />
               </HeroUIProviderWrapper>
             </ToastProvider>
           </MusicPlayerProvider>

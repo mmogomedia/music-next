@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { conversationStore } from '@/lib/ai/memory/conversation-store';
 import { logger } from '@/lib/utils/logger';
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   logger.info('[API] GET /api/ai/conversations - Request received');
 
   try {
@@ -22,12 +22,24 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get chatType from query params
+    const { searchParams } = new URL(request.url);
+    const chatType = searchParams.get('chatType') as
+      | 'STREAMING'
+      | 'TIMELINE'
+      | 'DASHBOARD'
+      | 'OTHER'
+      | null;
+
     logger.debug(
       '[API] Calling conversationStore.getUserConversations for userId:',
-      session.user.id
+      session.user.id,
+      'chatType:',
+      chatType
     );
     const conversations = await conversationStore.getUserConversations(
-      session.user.id
+      session.user.id,
+      chatType || undefined
     );
 
     logger.info('[API] ✅ Conversations fetched:', {

@@ -103,6 +103,4 @@ This folder contains the development rules and guidelines for building the Next.
 
 **Remember**: Quality over speed. Each phase should be fully functional before proceeding to the next.
 
-
 ---
-

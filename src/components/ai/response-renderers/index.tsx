@@ -12,6 +12,7 @@ import { QuickLinkTrackRenderer } from './quick-link-track-renderer';
 import { QuickLinkAlbumRenderer } from './quick-link-album-renderer';
 import { QuickLinkArtistRenderer } from './quick-link-artist-renderer';
 import { ClarificationRenderer } from './clarification-renderer';
+import { TimelinePostListRenderer } from './timeline-post-list-renderer';
 import type { AIResponse } from '@/types/ai-responses';
 import { responseRegistry } from '@/lib/ai/response-registry';
 import { useEffect } from 'react';
@@ -290,6 +291,34 @@ function registerDefaultHandlers() {
         description: 'Clarification questions',
         category: 'info',
         priority: 15,
+      },
+    });
+  }
+
+  if (!responseRegistry.isRegistered('timeline_post_list')) {
+    responseRegistry.register('timeline_post_list', {
+      component: TimelinePostListRenderer,
+      promptTemplate:
+        'Use when showing timeline posts (news articles, music posts, videos, etc.)',
+      schema: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'timeline_post_list' },
+          message: { type: 'string' },
+          data: {
+            type: 'object',
+            properties: {
+              posts: { type: 'array' },
+              metadata: { type: 'object' },
+            },
+          },
+        },
+        required: ['type', 'message', 'data'],
+      },
+      metadata: {
+        description: 'List of timeline posts',
+        category: 'discovery',
+        priority: 20,
       },
     });
   }

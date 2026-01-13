@@ -24,6 +24,7 @@ import {
   QueueListIcon as QueueListSolidIcon,
   ClockIcon as ClockSolidIcon,
   Cog6ToothIcon as Cog6ToothSolidIcon,
+  SparklesIcon as SparklesSolidIcon,
 } from '@heroicons/react/24/solid';
 import UserDetailsFooter from '@/components/layout/UserDetailsFooter';
 
@@ -72,6 +73,12 @@ export default function AdminNavigation({
       name: 'Overview',
       icon: ChartBarIcon,
       activeIcon: ChartBarSolidIcon,
+    },
+    {
+      id: 'timeline-posts',
+      name: 'Timeline Posts',
+      icon: SparklesIcon,
+      activeIcon: SparklesSolidIcon,
     },
     {
       id: 'users',
@@ -144,7 +151,9 @@ export default function AdminNavigation({
                 const href =
                   item.id === 'overview'
                     ? '/admin/dashboard/overview'
-                    : `/admin/dashboard/${item.id}`;
+                    : item.id === 'timeline-posts'
+                      ? '/admin/dashboard/timeline-posts'
+                      : `/admin/dashboard/${item.id}`;
                 const isActive =
                   (pathname === '/admin/dashboard' ||
                     pathname === '/admin/dashboard/overview') &&
@@ -294,7 +303,9 @@ export default function AdminNavigation({
                     const href =
                       item.id === 'overview'
                         ? '/admin/dashboard/overview'
-                        : `/admin/dashboard/${item.id}`;
+                        : item.id === 'timeline-posts'
+                          ? '/admin/dashboard/timeline-posts'
+                          : `/admin/dashboard/${item.id}`;
                     const isActive =
                       ((pathname === '/admin/dashboard' ||
                         pathname === '/admin/dashboard/overview') &&

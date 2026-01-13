@@ -2,7 +2,7 @@
 
 /**
  * Diagnostic script to check AI conversations in the database
- * 
+ *
  * Usage: yarn tsx scripts/check-conversations.ts [userId]
  */
 
@@ -42,13 +42,15 @@ async function checkConversations(userId?: string) {
       return;
     }
 
-    const targetUser = users.find((u) => u.id === targetUserId);
+    const targetUser = users.find(u => u.id === targetUserId);
     if (!targetUser) {
       console.log(`   ❌ User ${targetUserId} not found`);
       return;
     }
 
-    console.log(`3️⃣  Checking conversations for user: ${targetUser.email} (${targetUserId})`);
+    console.log(
+      `3️⃣  Checking conversations for user: ${targetUser.email} (${targetUserId})`
+    );
     console.log();
 
     // 4. Count conversations for user
@@ -80,7 +82,9 @@ async function checkConversations(userId?: string) {
         console.log(`     Title: ${conv.title || '(Untitled)'}`);
         console.log(`     Created: ${conv.createdAt.toISOString()}`);
         console.log(`     Updated: ${conv.updatedAt.toISOString()}`);
-        console.log(`     Messages: ${conv.messages.length} (showing first only)`);
+        console.log(
+          `     Messages: ${conv.messages.length} (showing first only)`
+        );
         if (conv.messages.length > 0) {
           const firstMsg = conv.messages[0];
           console.log(
@@ -99,7 +103,9 @@ async function checkConversations(userId?: string) {
         },
       },
     });
-    console.log(`4️⃣  Total messages across all conversations: ${messageCount}\n`);
+    console.log(
+      `4️⃣  Total messages across all conversations: ${messageCount}\n`
+    );
 
     // 7. Check database table structure
     console.log('5️⃣  Database table check:');
@@ -130,13 +136,9 @@ async function checkConversations(userId?: string) {
         updatedAt: true,
       },
     });
-    console.log(
-      `   Query returned ${apiQueryResult.length} conversations:`
-    );
+    console.log(`   Query returned ${apiQueryResult.length} conversations:`);
     apiQueryResult.forEach((conv, idx) => {
-      console.log(
-        `   ${idx + 1}. ${conv.title || '(Untitled)'} - ${conv.id}`
-      );
+      console.log(`   ${idx + 1}. ${conv.title || '(Untitled)'} - ${conv.id}`);
     });
     console.log();
 

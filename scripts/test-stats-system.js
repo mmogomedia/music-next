@@ -13,11 +13,13 @@ async function testStatsSystem() {
   try {
     // 1. Test event collection
     console.log('1. Testing event collection...');
-    
+
     // Get a sample track
     const sampleTrack = await prisma.track.findFirst();
     if (!sampleTrack) {
-      console.log('❌ No tracks found in database. Please add some tracks first.');
+      console.log(
+        '❌ No tracks found in database. Please add some tracks first.'
+      );
       return;
     }
 
@@ -85,10 +87,10 @@ async function testStatsSystem() {
 
     // 2. Test aggregation
     console.log('\n2. Testing aggregation...');
-    
+
     // Import the aggregator
     const { statsAggregator } = require('../src/lib/aggregation-jobs');
-    
+
     // Run daily aggregation for today
     await statsAggregator.aggregateDaily(now);
     console.log('✅ Daily aggregation completed');
@@ -120,20 +122,22 @@ async function testStatsSystem() {
 
     // 3. Test analytics API
     console.log('\n3. Testing analytics API...');
-    
+
     // Test the analytics endpoint
     const response = await fetch('http://localhost:3000/api/stats/analytics', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer test', // This will fail auth, but we can see the structure
+        Authorization: 'Bearer test', // This will fail auth, but we can see the structure
       },
     });
 
     console.log(`📊 Analytics API response status: ${response.status}`);
-    
+
     if (response.status === 401) {
-      console.log('✅ Analytics API is properly protected (requires admin auth)');
+      console.log(
+        '✅ Analytics API is properly protected (requires admin auth)'
+      );
     } else {
       const data = await response.json();
       console.log('📊 Analytics data:', data);
@@ -141,7 +145,7 @@ async function testStatsSystem() {
 
     // 4. Test anonymous user tracking
     console.log('\n4. Testing anonymous user tracking...');
-    
+
     // Create events without userId (anonymous)
     const anonymousPlayEvent = await prisma.playEvent.create({
       data: {
@@ -161,7 +165,7 @@ async function testStatsSystem() {
 
     // 5. Test time-based queries
     console.log('\n5. Testing time-based queries...');
-    
+
     // Get events from last 24 hours
     const last24Hours = new Date();
     last24Hours.setHours(last24Hours.getHours() - 24);
@@ -179,7 +183,7 @@ async function testStatsSystem() {
 
     // 6. Test track counters
     console.log('\n6. Testing track counters...');
-    
+
     const updatedTrack = await prisma.track.findUnique({
       where: { id: sampleTrack.id },
     });
@@ -193,7 +197,7 @@ async function testStatsSystem() {
 
     // 7. Cleanup test data
     console.log('\n7. Cleaning up test data...');
-    
+
     await prisma.playEvent.deleteMany({
       where: {
         sessionId: {
@@ -255,7 +259,6 @@ async function testStatsSystem() {
     console.log('✅ Aggregation system working');
     console.log('✅ Analytics API protected');
     console.log('✅ Track counters updated');
-
   } catch (error) {
     console.error('❌ Test failed:', error);
   } finally {

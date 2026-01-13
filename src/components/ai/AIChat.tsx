@@ -10,7 +10,6 @@ import React, {
 import { useSession } from 'next-auth/react';
 import { ChatRequest, ChatResponse, AIProvider } from '@/types/ai';
 import type { Track } from '@/types/track';
-import ChatTopBar from './ChatTopBar';
 import WelcomeHeader from './WelcomeHeader';
 import ChatWelcomePlaceholder from './ChatWelcomePlaceholder';
 import ChatInfoBanner from './ChatInfoBanner';
@@ -45,6 +44,8 @@ interface AIChatProps {
     playlistInfo?: string;
   };
   initialQuickLink?: QuickLinkChatPayload | null;
+  province?: string;
+  onProvinceChange?: (_value: string | undefined) => void;
 }
 
 export interface AIChatHandle {
@@ -61,6 +62,8 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
       conversationId: propConversationId,
       onConversationIdChange,
       initialQuickLink,
+      province: propProvince,
+      onProvinceChange: _onProvinceChange,
     },
     ref
   ) => {
@@ -71,9 +74,6 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
     const [loading, setLoading] = useState(false);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [selectedProvider] = useState<AIProvider | 'auto'>('auto');
-    const [selectedProvince, setSelectedProvince] = useState<
-      string | undefined
-    >();
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const [isInfoBannerVisible, setIsInfoBannerVisible] = useState(true); // Start minimized (visible)
     const [isInfoBannerExpanded, setIsInfoBannerExpanded] = useState(false);
@@ -168,12 +168,13 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
         try {
           const enhancedContext = {
             ...context,
-            province: selectedProvince,
+            province: propProvince,
           };
 
           const requestBody: ChatRequest = {
             message: msg.trim(),
             conversationId: propConversationId,
+            chatType: 'STREAMING',
             context: enhancedContext,
             provider:
               selectedProvider === 'auto' ? undefined : selectedProvider,
@@ -349,7 +350,7 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
       [
         context,
         propConversationId,
-        selectedProvince,
+        propProvince,
         selectedProvider,
         onConversationIdChange,
       ]
@@ -508,30 +509,22 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
       () => (
         <div className='space-y-6'>
           <WelcomeHeader onGetStarted={() => {}} />
-          <ChatWelcomePlaceholder province={selectedProvince} />
+          <ChatWelcomePlaceholder province={propProvince} />
           {quickLinkResponse && (
             <ResponseRenderer response={quickLinkResponse} />
           )}
         </div>
       ),
-      [quickLinkResponse, selectedProvince]
+      [quickLinkResponse, propProvince]
     );
 
     return (
       <div className='w-full h-full flex flex-col'>
-        {/* Fixed top bar with filters and mini player */}
-        <ChatTopBar
-          province={selectedProvince}
-          onProvinceChange={setSelectedProvince}
-        />
-
         {/* Scrollable messages area - takes remaining space */}
-        {/* Mobile: top-14 (nav header ~56px) + filter bar button row (~48px) = ~104px total */}
-        {/* Desktop: pt-24 for ChatTopBar */}
         <div
           className='flex-1 overflow-y-auto space-y-4 px-4 lg:px-6'
           style={{
-            paddingTop: isMobile ? '72px' : '0px',
+            paddingTop: '0px',
             paddingBottom: isMobile ? '120px' : '24px', // Extra padding on mobile for fixed input
           }}
         >

@@ -67,12 +67,16 @@ interface RecentActivityProps {
   };
   useSSE?: boolean; // Enable SSE for real-time updates
   scope?: 'user' | 'admin';
+  noCard?: boolean; // If true, render without Card wrapper
+  noHeader?: boolean; // If true, don't render the header
 }
 
 export default function RecentActivity({
   activity,
   useSSE = true,
   scope = 'user',
+  noCard = false,
+  noHeader = false,
 }: RecentActivityProps) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -338,70 +342,80 @@ export default function RecentActivity({
     }
   };
 
-  return (
-    <Card className='border border-gray-200 dark:border-slate-700'>
-      <CardBody className='p-6'>
+  const content = (
+    <>
+      {!noHeader && (
         <div className='flex items-center justify-between mb-4'>
           <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
             Recent Activity
           </h3>
           <ClockIcon className='w-5 h-5 text-gray-400' />
         </div>
+      )}
 
-        <div className='space-y-3'>
-          {activities.length === 0 ? (
-            <div className='text-center text-gray-500 dark:text-gray-400 py-8'>
-              No recent activity
-            </div>
-          ) : (
-            displayActivities.map(item => (
-              <div
-                key={item.id}
-                className='flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors'
-              >
-                <div className='flex-shrink-0'>
-                  {getActivityIcon(item.activityType)}
+      <div className='space-y-3'>
+        {activities.length === 0 ? (
+          <div className='text-center text-gray-500 dark:text-gray-400 py-8'>
+            No recent activity
+          </div>
+        ) : (
+          displayActivities.map(item => (
+            <div
+              key={item.id}
+              className='flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors'
+            >
+              <div className='flex-shrink-0'>
+                {getActivityIcon(item.activityType)}
+              </div>
+
+              <div className='flex-1 min-w-0'>
+                <div className='flex items-center gap-2 mb-1'>
+                  <span className='text-sm font-medium text-gray-900 dark:text-white truncate'>
+                    {item.track.title}
+                  </span>
+                  {item.activityType === 'play' && item.source && (
+                    <Chip
+                      size='sm'
+                      color={getSourceColor(item.source)}
+                      variant='flat'
+                    >
+                      {item.source}
+                    </Chip>
+                  )}
+                  {item.activityType === 'page_visit' && item.slug && (
+                    <Chip size='sm' color='secondary' variant='flat'>
+                      Quick Link
+                    </Chip>
+                  )}
                 </div>
-
-                <div className='flex-1 min-w-0'>
-                  <div className='flex items-center gap-2 mb-1'>
-                    <span className='text-sm font-medium text-gray-900 dark:text-white truncate'>
-                      {item.track.title}
-                    </span>
-                    {item.activityType === 'play' && item.source && (
-                      <Chip
-                        size='sm'
-                        color={getSourceColor(item.source)}
-                        variant='flat'
-                      >
-                        {item.source}
-                      </Chip>
-                    )}
-                    {item.activityType === 'page_visit' && item.slug && (
-                      <Chip size='sm' color='secondary' variant='flat'>
-                        Quick Link
-                      </Chip>
-                    )}
-                  </div>
-                  <div className='text-xs text-gray-500 dark:text-gray-400'>
-                    {getActivityLabel(item.activityType)} •{' '}
-                    <ArtistDisplay legacyArtist={item.track.artist} /> •{' '}
-                    {formatTimeAgo(item.timestamp)}
-                  </div>
+                <div className='text-xs text-gray-500 dark:text-gray-400'>
+                  {getActivityLabel(item.activityType)} •{' '}
+                  <ArtistDisplay legacyArtist={item.track.artist} /> •{' '}
+                  {formatTimeAgo(item.timestamp)}
                 </div>
               </div>
-            ))
-          )}
-        </div>
-
-        {activities.length > 6 && (
-          <div className='mt-4 text-center'>
-            <button className='text-sm text-blue-600 dark:text-blue-400 hover:underline'>
-              View all activity
-            </button>
-          </div>
+            </div>
+          ))
         )}
-      </CardBody>
+      </div>
+
+      {activities.length > 6 && (
+        <div className='mt-4 text-center'>
+          <button className='text-sm text-blue-600 dark:text-blue-400 hover:underline'>
+            View all activity
+          </button>
+        </div>
+      )}
+    </>
+  );
+
+  if (noCard) {
+    return <div>{content}</div>;
+  }
+
+  return (
+    <Card className='border border-gray-200 dark:border-slate-700'>
+      <CardBody className='p-6'>{content}</CardBody>
     </Card>
   );
 }

@@ -34,44 +34,53 @@ model Session {
 }
 
 model User {
-  id                  String                @id @default(cuid())
-  name                String?
-  email               String                @unique
-  emailVerified       DateTime?
-  image               String?
-  password            String?
-  role                UserRole              @default(USER)
-  isPremium           Boolean               @default(false)
-  isActive            Boolean               @default(true)
-  stripeCustomerId    String?
-  failedLoginAttempts Int                   @default(0)
-  lockedUntil         DateTime?
-  termsAcceptedAt     DateTime?
-  privacyAcceptedAt   DateTime?
-  marketingConsent    Boolean               @default(false)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  accounts            Account[]
-  sessions            Session[]
-  artistProfile       ArtistProfile?
-  playEvents          PlayEvent[]           @relation("UserPlays")
-  likeEvents          LikeEvent[]           @relation("UserLikes")
-  saveEvents          SaveEvent[]           @relation("UserSaves")
-  shareEvents         ShareEvent[]          @relation("UserShares")
-  downloadEvents      DownloadEvent[]       @relation("UserDownloads")
-  playlistSubmissions PlaylistSubmission[]  @relation("PlaylistSubmissions")
-  reviewedSubmissions PlaylistSubmission[]  @relation("PlaylistSubmissionReviewedBy")
-  addedPlaylistTracks PlaylistTrack[]       @relation("PlaylistTrackAddedBy")
-  createdPlaylists    Playlist[]            @relation("PlaylistCreatedBy")
-  smartLinks          SmartLink[]
-  quickLinks          QuickLink[]
-  tracks              Track[]
-  uploadJobs          UploadJob[]
-  aiConversations     AIConversation[]
-  aiPreferences       AIPreferences?
-  aiSearchEvents      AISearchEvent[]       @relation("AISearchEvents")
-  unprocessedQueries  UnprocessedQueryLog[]
-  routingDecisions    RoutingDecisionLog[]
+  id                   String                @id @default(cuid())
+  name                 String?
+  email                String                @unique
+  emailVerified        DateTime?
+  image                String?
+  password             String?
+  role                 UserRole              @default(USER)
+  isPremium            Boolean               @default(false)
+  isActive             Boolean               @default(true)
+  stripeCustomerId     String?
+  failedLoginAttempts  Int                   @default(0)
+  lockedUntil          DateTime?
+  termsAcceptedAt      DateTime?
+  privacyAcceptedAt    DateTime?
+  marketingConsent     Boolean               @default(false)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  accounts             Account[]
+  sessions             Session[]
+  artistProfile        ArtistProfile?
+  playEvents           PlayEvent[]           @relation("UserPlays")
+  likeEvents           LikeEvent[]           @relation("UserLikes")
+  saveEvents           SaveEvent[]           @relation("UserSaves")
+  shareEvents          ShareEvent[]          @relation("UserShares")
+  downloadEvents       DownloadEvent[]       @relation("UserDownloads")
+  playlistSubmissions  PlaylistSubmission[]  @relation("PlaylistSubmissions")
+  reviewedSubmissions  PlaylistSubmission[]  @relation("PlaylistSubmissionReviewedBy")
+  addedPlaylistTracks  PlaylistTrack[]       @relation("PlaylistTrackAddedBy")
+  createdPlaylists     Playlist[]            @relation("PlaylistCreatedBy")
+  smartLinks           SmartLink[]
+  quickLinks           QuickLink[]
+  tracks               Track[]
+  uploadJobs           UploadJob[]
+  aiConversations      AIConversation[]
+  aiPreferences        AIPreferences?
+  aiSearchEvents       AISearchEvent[]       @relation("AISearchEvents")
+  unprocessedQueries   UnprocessedQueryLog[]
+  routingDecisions     RoutingDecisionLog[]
+  timelinePosts        TimelinePost[]        @relation("TimelinePostAuthor")
+  timelinePostLikes    TimelinePostLike[]    @relation("TimelinePostLikes")
+  timelinePostComments TimelinePostComment[] @relation("TimelinePostComments")
+  timelinePostShares   TimelinePostShare[]   @relation("TimelinePostShares")
+  timelinePostViews    TimelinePostView[]    @relation("TimelinePostViews")
+  timelineFollows      TimelineFollow[]      @relation("TimelineFollows")
+  timelineFollowing    TimelineFollow[]      @relation("TimelineFollowing")
+  timelineFeedCache    TimelineFeedCache[]   @relation("TimelineFeedCache")
+  canPublishNews       Boolean               @default(false) // For publishers
 
   @@map("users")
 }
@@ -192,18 +201,18 @@ model Track {
 }
 
 model TrackCompletionRule {
-  id          String        @id @default(cuid())
-  field       String        @unique // Field name (e.g., 'title', 'lyrics')
-  label       String        // Display name
-  category    String        // 'required' | 'high' | 'medium' | 'low'
-  weight      Int           // Percentage points (0-100)
-  description String?       // Help text
-  group       String?       // Optional grouping (e.g., 'Meta', 'Legal')
-  isRequired  Boolean       @default(false) // Whether field is required
-  isActive    Boolean       @default(true) // Whether rule is active
-  order       Int           @default(0) // Display order
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id          String   @id @default(cuid())
+  field       String   @unique // Field name (e.g., 'title', 'lyrics')
+  label       String // Display name
+  category    String // 'required' | 'high' | 'medium' | 'low'
+  weight      Int // Percentage points (0-100)
+  description String? // Help text
+  group       String? // Optional grouping (e.g., 'Meta', 'Legal')
+  isRequired  Boolean  @default(false) // Whether field is required
+  isActive    Boolean  @default(true) // Whether rule is active
+  order       Int      @default(0) // Display order
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([category])
   @@index([isActive])
@@ -846,6 +855,7 @@ model AIConversation {
   id        String   @id @default(cuid())
   userId    String
   title     String? // User-friendly conversation title
+  chatType  ChatType @default(OTHER) // Type of chat based on source/section
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -855,6 +865,7 @@ model AIConversation {
   aiSearchEvents AISearchEvent[]         @relation("AISearchEvents")
 
   @@index([userId])
+  @@index([userId, chatType])
   @@index([updatedAt])
   @@map("ai_conversations")
 }
@@ -908,4 +919,246 @@ model AISearchEvent {
   @@index([userId])
   @@index([resultType])
   @@map("ai_search_events")
+}
+
+// ===== TIMELINE MODELS =====
+
+enum PostType {
+  MUSIC_POST
+  SONG
+  NEWS_ARTICLE
+  ADVERTISEMENT
+  FEATURED_CONTENT
+  RELEASE_PROMO
+  VIDEO_CONTENT
+  EVENT_ANNOUNCEMENT
+  POLL
+}
+
+enum AuthorType {
+  ARTIST
+  ADMIN
+  PUBLISHER
+}
+
+enum PostStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  ARCHIVED
+  FLAGGED
+  DELETED
+}
+
+enum ChatType {
+  STREAMING // Chat from the main streaming/landing page
+  TIMELINE // Chat from the timeline page
+  DASHBOARD // Chat from dashboard sections
+  OTHER // Other sections or default
+}
+
+model TimelinePost {
+  id         String     @id @default(cuid())
+  postType   PostType
+  authorId   String
+  authorType AuthorType @default(ARTIST)
+
+  // Polymorphic content (JSONB for flexibility)
+  content Json // Type-specific content structure
+
+  // Common fields
+  title         String?
+  description   String?
+  coverImageUrl String?
+  videoUrl      String?
+  songUrl       String? // For SONG type posts (external streaming link)
+
+  // Engagement metrics
+  likeCount    Int @default(0)
+  commentCount Int @default(0)
+  shareCount   Int @default(0)
+  viewCount    Int @default(0)
+
+  // Status & moderation
+  status        PostStatus @default(DRAFT)
+  isPinned      Boolean    @default(false)
+  isFeatured    Boolean    @default(false)
+  featuredUntil DateTime?
+
+  // Scheduling
+  publishedAt  DateTime?
+  scheduledFor DateTime?
+  expiresAt    DateTime?
+
+  // Ranking
+  relevanceScore Float @default(0.0) // Calculated score for feed ranking
+  priority       Int   @default(0) // Higher = more important
+
+  // Relations
+  author    User                  @relation("TimelinePostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  likes     TimelinePostLike[]
+  comments  TimelinePostComment[]
+  shares    TimelinePostShare[]
+  views     TimelinePostView[]
+  tags      TimelinePostTag[]
+  feedCache TimelineFeedCache[]
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  timelineAd   TimelineAd? @relation("TimelineAdPosts", fields: [timelineAdId], references: [id])
+  timelineAdId String?
+
+  @@index([postType, status, publishedAt])
+  @@index([authorId, status])
+  @@index([isFeatured, featuredUntil])
+  @@index([relevanceScore])
+  @@index([publishedAt])
+  @@map("timeline_posts")
+}
+
+model TimelinePostLike {
+  id        String       @id @default(cuid())
+  postId    String
+  userId    String
+  post      TimelinePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User         @relation("TimelinePostLikes", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+
+  @@unique([postId, userId])
+  @@index([postId])
+  @@index([userId])
+  @@map("timeline_post_likes")
+}
+
+model TimelinePostComment {
+  id        String    @id @default(cuid())
+  postId    String
+  userId    String
+  parentId  String? // For nested replies
+  content   String
+  isEdited  Boolean   @default(false)
+  editedAt  DateTime?
+  likeCount Int       @default(0)
+
+  post    TimelinePost          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User                  @relation("TimelinePostComments", fields: [userId], references: [id], onDelete: Cascade)
+  parent  TimelinePostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies TimelinePostComment[] @relation("CommentReplies")
+  likes   TimelineCommentLike[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId, createdAt])
+  @@index([parentId])
+  @@map("timeline_post_comments")
+}
+
+model TimelineCommentLike {
+  id        String              @id @default(cuid())
+  commentId String
+  userId    String
+  comment   TimelinePostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt DateTime            @default(now())
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("timeline_comment_likes")
+}
+
+model TimelinePostShare {
+  id        String       @id @default(cuid())
+  postId    String
+  userId    String
+  platform  String? // internal, twitter, facebook, etc.
+  post      TimelinePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User         @relation("TimelinePostShares", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+
+  @@index([postId])
+  @@index([userId])
+  @@map("timeline_post_shares")
+}
+
+model TimelinePostView {
+  id       String       @id @default(cuid())
+  postId   String
+  userId   String?
+  post     TimelinePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user     User?        @relation("TimelinePostViews", fields: [userId], references: [id], onDelete: SetNull)
+  viewedAt DateTime     @default(now())
+
+  @@index([postId, viewedAt])
+  @@map("timeline_post_views")
+}
+
+model TimelinePostTag {
+  id     String       @id @default(cuid())
+  postId String
+  tag    String // e.g., "amapiano", "news", "exclusive"
+  post   TimelinePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tag])
+  @@index([tag])
+  @@map("timeline_post_tags")
+}
+
+model TimelineFollow {
+  id          String   @id @default(cuid())
+  followerId  String // User following
+  followingId String // User/Artist being followed
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("TimelineFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("TimelineFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("timeline_follows")
+}
+
+model TimelineFeedCache {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  score     Float // Relevance score for this user
+  position  Int // Position in feed
+  cachedAt  DateTime @default(now())
+  expiresAt DateTime // When to refresh this entry
+
+  user User         @relation("TimelineFeedCache", fields: [userId], references: [id], onDelete: Cascade)
+  post TimelinePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId, score, cachedAt])
+  @@index([expiresAt])
+  @@map("timeline_feed_cache")
+}
+
+model TimelineAd {
+  id             String   @id @default(cuid())
+  campaignId     String
+  title          String
+  description    String?
+  imageUrl       String?
+  videoUrl       String?
+  ctaText        String
+  ctaUrl         String
+  targetAudience Json? // Targeting criteria (age, location, interests)
+  budget         Float?
+  impressions    Int      @default(0)
+  clicks         Int      @default(0)
+  startDate      DateTime
+  endDate        DateTime
+  isActive       Boolean  @default(true)
+
+  posts TimelinePost[] @relation("TimelineAdPosts") // Ads are also timeline posts
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, startDate, endDate])
+  @@map("timeline_ads")
 }

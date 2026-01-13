@@ -55,6 +55,12 @@ export default function Sidebar() {
   const menuItems = [
     { name: 'Explore', href: '/', icon: HomeIcon, activeIcon: HomeSolidIcon },
     {
+      name: 'Timeline',
+      href: '/timeline',
+      icon: ChartBarIcon,
+      activeIcon: ChartBarSolidIcon,
+    },
+    {
       name: 'Albums',
       href: '/albums',
       icon: ChartBarIcon,

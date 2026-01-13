@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     // Parse the request body
     const body: ChatRequest = await request.json();
-    const { message, context } = body;
+    const { message, context, chatType } = body;
 
     if (!message || typeof message !== 'string') {
       const error: AIError = {
@@ -66,6 +66,11 @@ export async function POST(request: NextRequest) {
         // Add province from request context if provided
         ...(context?.province && { province: context.province }),
       },
+      // Add chatType to metadata for routing
+      metadata: {
+        chatType: chatType,
+        previousIntent: built.metadata?.previousIntent,
+      },
     };
 
     // Map context to filters if needed
@@ -76,11 +81,17 @@ export async function POST(request: NextRequest) {
     try {
       // Store user message
       if (context?.userId) {
-        await conversationStore.storeMessage(context.userId, conversationId, {
-          role: 'user',
-          content: message,
-          timestamp: new Date(),
-        });
+        await conversationStore.storeMessage(
+          context.userId,
+          conversationId,
+          {
+            role: 'user',
+            content: message,
+            timestamp: new Date(),
+          },
+          undefined,
+          chatType
+        );
         await preferenceTracker.updateFromMessage(context.userId, message);
       }
 
@@ -140,12 +151,18 @@ export async function POST(request: NextRequest) {
 
       // Store assistant response and update preferences
       if (context?.userId) {
-        await conversationStore.storeMessage(context.userId, conversationId, {
-          role: 'assistant',
-          content: responseMessage,
-          timestamp: new Date(),
-          data: agentResponse.data,
-        });
+        await conversationStore.storeMessage(
+          context.userId,
+          conversationId,
+          {
+            role: 'assistant',
+            content: responseMessage,
+            timestamp: new Date(),
+            data: agentResponse.data,
+          },
+          undefined,
+          chatType
+        );
         if (agentResponse?.data) {
           await preferenceTracker.updateFromResults(
             context.userId,
