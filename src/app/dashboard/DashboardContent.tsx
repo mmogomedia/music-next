@@ -77,13 +77,14 @@ export default function DashboardContent() {
   ] as const;
 
   type TabId = (typeof TAB_IDS)[number];
+  type AllTabId = TabId | 'pulse';
   const DEFAULT_TAB: TabId = 'overview';
 
   const isValidTab = (tab: string | null): tab is TabId =>
     !!tab && TAB_IDS.includes(tab as TabId);
 
   const createHrefForTab = useCallback(
-    (tab: TabId) => {
+    (tab: AllTabId) => {
       const params = new URLSearchParams(searchParams.toString());
       if (tab === DEFAULT_TAB) {
         params.delete('tab');
