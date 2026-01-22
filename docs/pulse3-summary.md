@@ -68,7 +68,7 @@ Eligibility Score = (
    - Scheduled: `cron/recalculate-pulse-eligibility.js` (daily)
 
 2. **League Runs**:
-   - Scheduled: Vercel Cron → `POST /api/pulse/league/run` (every 10 minutes)
+   - Scheduled: Vercel Cron → `POST /api/pulse/league/run` (daily at midnight)
    - Manual: `yarn league:run`
 
 ## Running Tests

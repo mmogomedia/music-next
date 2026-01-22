@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/pulse/league/run",
-      "schedule": "*/30 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
