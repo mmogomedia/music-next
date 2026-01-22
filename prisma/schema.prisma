@@ -94,41 +94,47 @@ model VerificationToken {
 }
 
 model ArtistProfile {
-  id              String                @id @default(uuid())
-  userId          String?               @unique
-  artistName      String                @unique
-  bio             String?
-  profileImage    String?
-  coverImage      String?
-  location        String? // Legacy field - kept for backward compatibility
-  country         String?
-  province        String?
-  city            String?
-  website         String?
-  genre           String? // Legacy field - kept for backward compatibility
-  genreId         String?
-  slug            String?               @unique
-  socialLinks     Json?
-  streamingLinks  Json?
-  isPublic        Boolean               @default(true)
-  isVerified      Boolean               @default(false)
-  isActive        Boolean               @default(true)
-  isUnclaimed     Boolean               @default(false)
-  totalPlays      Int                   @default(0)
-  totalLikes      Int                   @default(0)
-  totalFollowers  Int                   @default(0)
-  profileViews    Int                   @default(0)
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-  user            User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  genreRef        Genre?                @relation(fields: [genreId], references: [id], onDelete: SetNull)
-  tracks          Track[]
-  quickLinks      QuickLink[]           @relation("ProfileQuickLinks")
-  albumQuickLinks QuickLink[]           @relation("AlbumArtistQuickLinks")
-  strengthScores  ArtistStrengthScore[] @relation("ArtistStrengthScores")
-  metrics         ArtistMetrics[]       @relation("ArtistMetrics")
-  trends          ArtistTrends[]        @relation("ArtistTrends")
-  skills          ArtistProfileSkill[]
+  id                     String                  @id @default(uuid())
+  userId                 String?                 @unique
+  artistName             String                  @unique
+  bio                    String?
+  profileImage           String?
+  coverImage             String?
+  location               String? // Legacy field - kept for backward compatibility
+  country                String?
+  province               String?
+  city                   String?
+  website                String?
+  genre                  String? // Legacy field - kept for backward compatibility
+  genreId                String?
+  slug                   String?                 @unique
+  socialLinks            Json?
+  streamingLinks         Json?
+  isPublic               Boolean                 @default(true)
+  isVerified             Boolean                 @default(false)
+  isActive               Boolean                 @default(true)
+  isUnclaimed            Boolean                 @default(false)
+  totalPlays             Int                     @default(0)
+  totalLikes             Int                     @default(0)
+  totalFollowers         Int                     @default(0)
+  profileViews           Int                     @default(0)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  user                   User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  genreRef               Genre?                  @relation(fields: [genreId], references: [id], onDelete: SetNull)
+  tracks                 Track[]
+  quickLinks             QuickLink[]             @relation("ProfileQuickLinks")
+  albumQuickLinks        QuickLink[]             @relation("AlbumArtistQuickLinks")
+  strengthScores         ArtistStrengthScore[]   @relation("ArtistStrengthScores")
+  metrics                ArtistMetrics[]         @relation("ArtistMetrics")
+  trends                 ArtistTrends[]          @relation("ArtistTrends")
+  skills                 ArtistProfileSkill[]
+  pulseEligibilityScores PulseEligibilityScore[] @relation("PulseEligibilityScores")
+  pulseMomentumScores    PulseMomentumScore[]    @relation("PulseMomentumScores")
+  pulseMonitoringStatus  PulseMonitoringStatus?  @relation("PulseMonitoringStatus")
+  pulsePlatformData      PulsePlatformData[]     @relation("PulsePlatformData")
+  leagueEntries          LeagueEntry[]           @relation("LeagueEntries")
+  pulseEligibilityRecalcArtistLogs PulseEligibilityRecalcArtistLog[] @relation("PulseEligibilityRecalcArtistLogs")
 
   @@map("artist_profiles")
 }
@@ -848,6 +854,239 @@ model ArtistTrends {
   @@index([timeRange])
   @@index([artistId])
   @@map("artist_trends")
+}
+
+// ===== PULSE³ SCORING TABLES =====
+
+model PulseEligibilityScore {
+  id                     String   @id @default(cuid())
+  artistProfileId        String
+  score                  Float // 0-100
+  followerScore          Float? // 0-100 component score
+  engagementScore        Float? // 0-100 component score
+  consistencyScore       Float? // 0-100 component score
+  platformDiversityScore Float? // 0-100 component score
+  rank                   Int? // Rank among all artists (1 = highest)
+  calculatedAt           DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  // Relations
+  artistProfile ArtistProfile @relation("PulseEligibilityScores", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([artistProfileId, calculatedAt])
+  @@index([score])
+  @@index([rank])
+  @@index([artistProfileId])
+  @@index([calculatedAt])
+  @@map("pulse_eligibility_scores")
+}
+
+model PulseMomentumScore {
+  id              String   @id @default(cuid())
+  artistProfileId String
+  score           Float // 0-100
+  position        Int? // 1-100 on Top 100 chart (1 = highest momentum)
+  calculatedAt    DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  artistProfile ArtistProfile @relation("PulseMomentumScores", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([artistProfileId, calculatedAt])
+  @@index([score])
+  @@index([position])
+  @@index([artistProfileId])
+  @@index([calculatedAt])
+  @@map("pulse_momentum_scores")
+}
+
+model PulseMonitoringStatus {
+  id                  String   @id @default(cuid())
+  artistProfileId     String   @unique
+  isActivelyMonitored Boolean  @default(false)
+  lastCalculatedAt    DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  artistProfile ArtistProfile @relation("PulseMonitoringStatus", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@index([isActivelyMonitored])
+  @@index([artistProfileId])
+  @@map("pulse_monitoring_status")
+}
+
+model PulsePlatformData {
+  id              String   @id @default(cuid())
+  artistProfileId String
+  platform        String // 'tiktok' | 'spotify' | 'youtube'
+  data            Json // Platform-specific data (follower_count, video_count, etc.)
+  fetchedAt       DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  // Relations
+  artistProfile ArtistProfile @relation("PulsePlatformData", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@index([artistProfileId])
+  @@index([platform])
+  @@index([fetchedAt])
+  @@map("pulse_platform_data")
+}
+
+// ===== PULSE³ LEAGUE TABLES =====
+
+enum LeagueRunType {
+  SCHEDULED
+  MANUAL
+}
+
+enum LeagueBandState {
+  SECURE
+  BELOW_RANGE
+  ABOVE_RANGE
+}
+
+enum LeagueStatusChange {
+  NEW
+  UP
+  DOWN
+  UNCHANGED
+  PROMOTED
+  DEMOTED
+  EXITED
+}
+
+model LeagueTier {
+  id                   String   @id @default(cuid())
+  code                 String   @unique // e.g. 'TIER1', 'TIER2'
+  name                 String // e.g. 'Top 50', 'Watchlist'
+  targetSize           Int // number of artists to show
+  minScore             Float // desired lower bound (inclusive)
+  maxScore             Float? // nullable upper bound (inclusive)
+  refreshIntervalHours Int // how often this tier refreshes
+  isActive             Boolean  @default(true)
+  sortOrder            Int // UI ordering
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  leagueRuns LeagueRun[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("league_tiers")
+}
+
+model LeagueRun {
+  id        String        @id @default(cuid())
+  tierId    String
+  runType   LeagueRunType // 'SCHEDULED' | 'MANUAL'
+  runAt     DateTime      @default(now())
+  createdAt DateTime      @default(now())
+
+  // Relations
+  tier    LeagueTier    @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  entries LeagueEntry[]
+
+  @@index([tierId])
+  @@index([runAt])
+  @@index([runType])
+  @@map("league_runs")
+}
+
+model LeagueEntry {
+  id              String             @id @default(cuid())
+  leagueRunId     String
+  artistProfileId String
+  rank            Int // 1-based rank
+  score           Float // eligibility score
+  bandState       LeagueBandState // 'SECURE' | 'BELOW_RANGE' | 'ABOVE_RANGE'
+  isAtRisk        Boolean
+  previousRank    Int? // rank from previous run
+  rankDelta       Int? // change in rank (positive = up, negative = down)
+  statusChange    LeagueStatusChange // 'NEW' | 'UP' | 'DOWN' | 'UNCHANGED' | 'PROMOTED' | 'DEMOTED' | 'EXITED'
+  highlight       Boolean            @default(false) // true if rank <= 3
+  createdAt       DateTime           @default(now())
+
+  // Relations
+  leagueRun     LeagueRun     @relation(fields: [leagueRunId], references: [id], onDelete: Cascade)
+  artistProfile ArtistProfile @relation("LeagueEntries", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@index([leagueRunId])
+  @@index([artistProfileId])
+  @@index([rank])
+  @@index([bandState])
+  @@map("league_entries")
+}
+
+// ===== PULSE³ ACTIVITY LOGGING =====
+
+model PulseEligibilityRecalcLog {
+  id                String   @id @default(cuid())
+  startedAt         DateTime @default(now())
+  completedAt       DateTime?
+  totalDurationMs   Int? // milliseconds
+  artistsProcessed  Int      @default(0)
+  successCount      Int      @default(0)
+  errorCount        Int      @default(0)
+  rateLimitCount    Int      @default(0)
+  top100Updated     Int      @default(0)
+  status            String   @default("running") // 'running' | 'completed' | 'failed'
+  errorMessage     String?
+  createdAt         DateTime @default(now())
+
+  // Relations
+  artistLogs PulseEligibilityRecalcArtistLog[]
+
+  @@index([startedAt])
+  @@index([status])
+  @@map("pulse_eligibility_recalc_logs")
+}
+
+model PulseEligibilityRecalcArtistLog {
+  id                    String   @id @default(cuid())
+  recalcLogId           String
+  artistProfileId       String
+  startedAt             DateTime @default(now())
+  completedAt           DateTime?
+  durationMs            Int? // milliseconds
+  success               Boolean  @default(false)
+  score                 Float?
+  rank                  Int?
+  rateLimited           Boolean  @default(false)
+  errorMessage          String?
+  tiktokUserInfoFetched Boolean  @default(false)
+  tiktokVideosFetched   Boolean  @default(false)
+  createdAt             DateTime @default(now())
+
+  // Relations
+  recalcLog     PulseEligibilityRecalcLog @relation(fields: [recalcLogId], references: [id], onDelete: Cascade)
+  artistProfile ArtistProfile             @relation("PulseEligibilityRecalcArtistLogs", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@index([recalcLogId])
+  @@index([artistProfileId])
+  @@index([startedAt])
+  @@index([success])
+  @@map("pulse_eligibility_recalc_artist_logs")
+}
+
+model PulseLeagueRunLog {
+  id                String   @id @default(cuid())
+  startedAt         DateTime @default(now())
+  completedAt      DateTime?
+  totalDurationMs   Int? // milliseconds
+  tiersProcessed   Int      @default(0)
+  tiersSkipped     Int      @default(0)
+  tiersErrored     Int      @default(0)
+  entriesCreated   Int      @default(0)
+  promotionsProcessed Boolean @default(false)
+  status           String   @default("running") // 'running' | 'completed' | 'failed'
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+
+  @@index([startedAt])
+  @@index([status])
+  @@map("pulse_league_run_logs")
 }
 
 // AI Memory System Models

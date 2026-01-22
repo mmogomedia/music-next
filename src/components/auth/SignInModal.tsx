@@ -2,14 +2,13 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Modal,
+import FlemojiModal, {
   ModalContent,
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Link as HeroUILink,
-} from '@heroui/react';
+} from '@/components/shared/FlemojiModal';
+import { Link as HeroUILink } from '@heroui/react';
 import SignInForm from './SignInForm';
 
 interface SignInModalProps {
@@ -37,7 +36,7 @@ export default function SignInModal({
   };
 
   return (
-    <Modal
+    <FlemojiModal
       isOpen={isOpen}
       onClose={onClose}
       placement='center'
@@ -73,6 +72,6 @@ export default function SignInModal({
           </p>
         </ModalFooter>
       </ModalContent>
-    </Modal>
+    </FlemojiModal>
   );
 }

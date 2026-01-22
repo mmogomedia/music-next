@@ -1,7 +1,7 @@
 {
   "name": "Flemoji Music Streaming Platform",
   "short_name": "Flemoji",
-  "description": "Listen, upload, and share music with Flemoji. Discover South African music through AI-powered conversation.",
+  "description": "Discover and stream South African music. Upload tracks, build your audience, and track success with Pulse³.",
   "start_url": "/",
   "scope": "/",
   "icons": [

@@ -519,10 +519,10 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
     );
 
     return (
-      <div className='w-full h-full flex flex-col'>
+      <div className='w-full h-full flex flex-col overflow-x-hidden'>
         {/* Scrollable messages area - takes remaining space */}
         <div
-          className='flex-1 overflow-y-auto space-y-4 px-4 lg:px-6'
+          className='flex-1 overflow-y-auto overflow-x-hidden space-y-4 px-4 lg:px-6'
           style={{
             paddingTop: '0px',
             paddingBottom: isMobile ? '120px' : '24px', // Extra padding on mobile for fixed input
@@ -554,7 +554,7 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                         You
                       </div>
                       <div className='relative px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-gray-900 dark:text-gray-100 border border-blue-200 dark:border-blue-800/50'>
-                        <p className='text-sm whitespace-pre-wrap leading-relaxed'>
+                        <p className='text-sm whitespace-pre-wrap break-words leading-relaxed overflow-wrap-anywhere'>
                           {userMsg.content}
                         </p>
                         {/* Copy button - visible on hover */}

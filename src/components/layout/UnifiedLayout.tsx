@@ -59,7 +59,7 @@ export default function UnifiedLayout({
 
         {/* Main Content */}
         <main
-          className={`flex-1 overflow-y-auto ${contentClassName}`}
+          className={`flex-1 overflow-y-auto overflow-x-hidden ${contentClassName}`}
           style={{
             paddingLeft: 0,
             // Adjust bottom padding when the global music player overlaps content

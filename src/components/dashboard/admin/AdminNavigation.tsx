@@ -14,6 +14,7 @@ import {
   Bars3Icon,
   XMarkIcon,
   SparklesIcon,
+  TrophyIcon,
   MusicalNoteIcon as MusicalNoteSolidIcon,
 } from '@heroicons/react/24/outline';
 import {
@@ -25,6 +26,7 @@ import {
   ClockIcon as ClockSolidIcon,
   Cog6ToothIcon as Cog6ToothSolidIcon,
   SparklesIcon as SparklesSolidIcon,
+  TrophyIcon as TrophySolidIcon,
 } from '@heroicons/react/24/solid';
 import UserDetailsFooter from '@/components/layout/UserDetailsFooter';
 
@@ -106,6 +108,12 @@ export default function AdminNavigation({
       activeIcon: ClockSolidIcon,
     },
     {
+      id: 'league',
+      name: 'League',
+      icon: TrophyIcon,
+      activeIcon: TrophySolidIcon,
+    },
+    {
       id: 'analytics',
       name: 'Analytics',
       icon: ChartBarIcon,
@@ -153,7 +161,9 @@ export default function AdminNavigation({
                     ? '/admin/dashboard/overview'
                     : item.id === 'timeline-posts'
                       ? '/admin/dashboard/timeline-posts'
-                      : `/admin/dashboard/${item.id}`;
+                      : item.id === 'league'
+                        ? '/admin/dashboard/league'
+                        : `/admin/dashboard/${item.id}`;
                 const isActive =
                   (pathname === '/admin/dashboard' ||
                     pathname === '/admin/dashboard/overview') &&

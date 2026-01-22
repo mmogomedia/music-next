@@ -41,13 +41,15 @@ const shareImage = '/social-card.png';
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: 'Flemoji Music Streaming Platform',
-  description: 'Listen, upload, and share music with Flemoji.',
+  description:
+    'Discover and stream South African music. Upload tracks, build your audience, and track success with Pulse³.',
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'Flemoji Music Streaming Platform',
-    description: 'Listen, upload, and share music with Flemoji.',
+    description:
+      'Discover and stream South African music. Upload tracks, build your audience, and track success with Pulse³.',
     url: siteUrl,
     siteName: 'Flemoji',
     images: [
@@ -64,7 +66,8 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Flemoji Music Streaming Platform',
-    description: 'Listen, upload, and share music with Flemoji.',
+    description:
+      'Discover and stream South African music. Upload tracks, build your audience, and track success with Pulse³.',
     images: [shareImage],
   },
   appleWebApp: {

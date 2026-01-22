@@ -1,18 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Modal,
+import FlemojiModal, {
   ModalContent,
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Button,
-  Card,
-  CardBody,
-  Checkbox,
-  Textarea,
-} from '@heroui/react';
+} from '@/components/shared/FlemojiModal';
+import { Button, Card, CardBody, Checkbox, Textarea } from '@heroui/react';
 import { MusicalNoteIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { Playlist } from '@/types/playlist';
 import { Track } from '@/types/track';
@@ -246,7 +241,12 @@ export default function QuickSubmitModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size='2xl' scrollBehavior='inside'>
+    <FlemojiModal
+      isOpen={isOpen}
+      onClose={onClose}
+      size='2xl'
+      scrollBehavior='inside'
+    >
       <ModalContent>
         <ModalHeader className='flex flex-col gap-1'>
           <div className='flex items-center gap-3'>
@@ -579,6 +579,6 @@ export default function QuickSubmitModal({
           </Button>
         </ModalFooter>
       </ModalContent>
-    </Modal>
+    </FlemojiModal>
   );
 }

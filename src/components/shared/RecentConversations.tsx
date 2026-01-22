@@ -13,12 +13,13 @@ import {
   PlusIcon,
 } from '@heroicons/react/24/outline';
 import SignInModal from '@/components/auth/SignInModal';
-import {
-  Modal,
+import FlemojiModal, {
   ModalContent,
   ModalHeader,
   ModalBody,
   ModalFooter,
+} from '@/components/shared/FlemojiModal';
+import {
   Button,
   Dropdown,
   DropdownTrigger,
@@ -643,7 +644,7 @@ export default function RecentConversations({
       </div>
 
       {/* Delete Confirmation Modal */}
-      <Modal
+      <FlemojiModal
         isOpen={deleteModalOpen}
         onClose={handleDeleteCancel}
         size='md'
@@ -697,7 +698,7 @@ export default function RecentConversations({
             </Button>
           </ModalFooter>
         </ModalContent>
-      </Modal>
+      </FlemojiModal>
 
       {/* Sign In Modal - Only render if state is managed internally */}
       {externalIsSignInModalOpen === undefined && (

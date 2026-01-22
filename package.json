@@ -29,6 +29,10 @@
     "setup-db": "dotenv -e .env.local -- node scripts/setup-database.js",
     "migrate:prod": "node scripts/run-production-migration-vercel.js",
     "copy-prod-to-dev": "node scripts/copy-prod-to-dev.js",
+    "pulse:recalculate-eligibility": "dotenv -e .env.local -- node cron/recalculate-pulse-eligibility.js",
+    "league:seed-demo": "dotenv -e .env.local -- node scripts/seed-league-demo.js",
+    "league:simulate": "dotenv -e .env.local -- node scripts/simulate-league-movement.js",
+    "league:run": "dotenv -e .env.local -- node scripts/run-league-now.js",
     "prepare": "husky",
     "postinstall": "prisma generate"
   },

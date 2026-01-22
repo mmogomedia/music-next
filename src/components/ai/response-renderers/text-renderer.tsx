@@ -96,7 +96,7 @@ export function TextRenderer({ response }: TextRendererProps) {
           <InformationCircleIcon className='w-5 h-5 text-gray-500 dark:text-gray-400' />
         </div>
         <div className='flex-1 min-w-0'>
-          <div className='text-gray-600 dark:text-gray-300 leading-relaxed'>
+          <div className='text-gray-600 dark:text-gray-300 leading-relaxed break-words overflow-wrap-anywhere'>
             {content}
           </div>
         </div>

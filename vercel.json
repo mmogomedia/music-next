@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/pulse/eligibility/recalculate",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/pulse/league/run",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}

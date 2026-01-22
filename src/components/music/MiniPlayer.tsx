@@ -58,7 +58,9 @@ export default function MiniPlayer() {
   }, []);
 
   return (
-    <div className={`relative ${isMobile ? 'w-full' : 'w-full max-w-md'}`}>
+    <div
+      className={`relative ${isMobile ? 'w-full max-w-full' : 'w-full max-w-md'} overflow-hidden`}
+    >
       <div
         className={`flex items-center border border-gray-200/60 dark:border-slate-700/60 rounded-lg ${
           isMobile ? 'px-2 py-1.5' : 'px-3 py-2'
