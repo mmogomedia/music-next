@@ -342,7 +342,7 @@ combined_component = Σ(platform_component × platform_weight) / Σ(platform_wei
 
 1. **Scheduled Runs** (via Vercel Cron):
    - Endpoint: `POST /api/pulse/league/run`
-   - Schedule: Daily at midnight UTC (configurable in `vercel.json`)
+   - Schedule: Daily at 1 AM UTC (runs after eligibility recalculation to use fresh scores)
    - Process:
      - Checks each tier's `refreshIntervalHours`
      - Runs tier if `hoursSinceLastRun >= refreshIntervalHours`
@@ -722,7 +722,9 @@ model LeagueEntry {
 }
 ```
 
-**Schedule**: Daily at midnight UTC (checks if tiers need refresh based on `refreshIntervalHours`)
+**Schedule**: Daily at 1 AM UTC (runs after eligibility recalculation; checks if tiers need refresh based on `refreshIntervalHours`)
+
+**Note**: The league run uses existing eligibility scores from the database. It does NOT fetch fresh data from TikTok/Spotify. Ensure eligibility recalculation runs first (scheduled at midnight UTC).
 
 ### Tier Configuration
 
