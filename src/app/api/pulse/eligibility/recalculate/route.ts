@@ -104,6 +104,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (artists.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: 'No artists with TikTok connections found in target tiers',
+        artistsProcessed: 0,
+        successCount: 0,
+        errorCount: 0,
+      });
+    }
+
     const startTime = Date.now();
 
     // Create main activity log entry
@@ -353,7 +363,8 @@ export async function POST(req: NextRequest) {
       rateLimitCount,
       top100Updated,
       totalDurationMs: totalDuration,
-      averageDurationMs: Math.round(totalDuration / artists.length),
+      averageDurationMs:
+        artists.length > 0 ? Math.round(totalDuration / artists.length) : 0,
       logId: recalcLog.id,
     };
 
