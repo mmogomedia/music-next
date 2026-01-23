@@ -21,8 +21,9 @@ export async function POST(req: NextRequest) {
     // Verify secret token
     const cronSecret = process.env.CRON_SECRET;
     if (!cronSecret) {
+      console.error('CRON_SECRET environment variable is not set');
       return NextResponse.json(
-        { error: 'Server configuration error' },
+        { error: 'Server configuration error: CRON_SECRET not configured' },
         { status: 500 }
       );
     }
@@ -39,11 +40,34 @@ export async function POST(req: NextRequest) {
     const providedSecret = bearerSecret || headerSecret || querySecret;
 
     if (providedSecret !== cronSecret) {
+      console.error('Invalid cron secret provided', {
+        hasAuthHeader: !!authHeader,
+        hasBearer: !!bearerSecret,
+        hasXHeader: !!headerSecret,
+        hasQuerySecret: !!querySecret,
+      });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get active tiers (Top 20 and Watchlist)
-    const activeTiers = await PulseLeagueService.getActiveTiers();
+    let activeTiers;
+    try {
+      activeTiers = await PulseLeagueService.getActiveTiers();
+    } catch (error: any) {
+      console.error('Error fetching active tiers:', {
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name,
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to fetch active tiers',
+          message: error?.message || String(error),
+        },
+        { status: 500 }
+      );
+    }
     const targetTiers = activeTiers.filter(
       tier => tier.code === 'TIER1' || tier.code === 'TIER2'
     );
@@ -62,9 +86,20 @@ export async function POST(req: NextRequest) {
     const artistProfileIds = new Set<string>();
 
     for (const tier of targetTiers) {
-      const entries = await PulseLeagueService.getCurrentLeagueEntries(tier.id);
-      for (const entry of entries) {
-        artistProfileIds.add(entry.artistProfileId);
+      try {
+        const entries = await PulseLeagueService.getCurrentLeagueEntries(
+          tier.id
+        );
+        for (const entry of entries) {
+          artistProfileIds.add(entry.artistProfileId);
+        }
+      } catch (error: any) {
+        console.error(`Error fetching league entries for tier ${tier.id}:`, {
+          message: error?.message,
+          tierCode: tier.code,
+          tierName: tier.name,
+        });
+        // Continue with other tiers even if one fails
       }
     }
 
