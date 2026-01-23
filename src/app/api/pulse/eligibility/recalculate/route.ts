@@ -370,6 +370,15 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(summary);
   } catch (error: any) {
+    // Log error to console for Vercel visibility
+    console.error('Error in eligibility recalculate endpoint:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+      code: error?.code,
+      cause: error?.cause,
+    });
+
     // Update log with failure if it exists
     if (recalcLogId) {
       try {
@@ -382,8 +391,11 @@ export async function POST(req: NextRequest) {
           },
         });
       } catch (logError) {
-        // Ignore log update errors
+        console.error('Failed to update recalc log:', logError);
       }
+    } else {
+      // If we don't have a log ID, the error happened very early
+      console.error('Error occurred before log creation:', error);
     }
 
     return NextResponse.json(
@@ -391,6 +403,8 @@ export async function POST(req: NextRequest) {
         success: false,
         error: 'Failed to recalculate eligibility scores',
         message: error?.message || String(error),
+        stack:
+          process.env.NODE_ENV === 'development' ? error?.stack : undefined,
       },
       { status: 500 }
     );
@@ -403,5 +417,21 @@ export async function POST(req: NextRequest) {
  * This handler calls the POST handler
  */
 export async function GET(req: NextRequest) {
-  return POST(req);
+  try {
+    return await POST(req);
+  } catch (error: any) {
+    console.error('Error in GET handler for eligibility recalculate:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+    });
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to recalculate eligibility scores',
+        message: error?.message || String(error),
+      },
+      { status: 500 }
+    );
+  }
 }
