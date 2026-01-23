@@ -28,9 +28,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Check for secret in header or query param
+    // Preferred: `Authorization: Bearer <CRON_SECRET>` (works well with Vercel Cron)
+    // Fallbacks: `x-cron-secret` header or `?secret=` query param (useful for manual testing)
+    const authHeader = req.headers.get('authorization');
+    const bearerSecret = authHeader?.startsWith('Bearer ')
+      ? authHeader.substring(7)
+      : null;
     const headerSecret = req.headers.get('x-cron-secret');
     const querySecret = req.nextUrl.searchParams.get('secret');
-    const providedSecret = headerSecret || querySecret;
+    const providedSecret = bearerSecret || headerSecret || querySecret;
 
     if (providedSecret !== cronSecret) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
