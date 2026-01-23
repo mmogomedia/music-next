@@ -396,3 +396,12 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+/**
+ * GET /api/pulse/eligibility/recalculate
+ * Vercel cron jobs send GET requests by default
+ * This handler calls the POST handler
+ */
+export async function GET(req: NextRequest) {
+  return POST(req);
+}
