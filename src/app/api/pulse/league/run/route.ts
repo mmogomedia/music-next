@@ -85,10 +85,14 @@ export async function POST(req: NextRequest) {
     let skippedCount = 0;
     let errorCount = 0;
 
+    // Check for force parameter to bypass refresh interval check
+    const forceRun = req.nextUrl.searchParams.get('force') === 'true';
+
     // Process each tier that needs refresh
     for (const tier of activeTiers) {
       const tierStartTime = Date.now();
-      const shouldRefresh = await PulseLeagueService.shouldRefreshTier(tier);
+      const shouldRefresh =
+        forceRun || (await PulseLeagueService.shouldRefreshTier(tier));
 
       if (!shouldRefresh) {
         skippedCount++;
