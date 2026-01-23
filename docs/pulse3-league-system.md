@@ -146,7 +146,8 @@ Tiers are stored in the `league_tiers` table. They can be:
 ### Step-by-Step Process
 
 1. **Get Latest Eligibility Scores**
-   - Fetches most recent score per artist from `PulseEligibilityScore`
+   - Fetches most recent score per artist from `PulseEligibilityScore` using a single optimized SQL query
+   - Uses PostgreSQL `DISTINCT ON` to eliminate N+1 query problem (1 query instead of N+1)
    - Includes all component scores (follower, engagement, consistency, platform diversity)
 
 2. **Filter & Sort Artists**
