@@ -53,6 +53,7 @@ export default function PulseConnectPage() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [tiktokConnected, setTiktokConnected] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [calculating, setCalculating] = useState(false);
   const [message, setMessage] = useState<{
     type: 'success' | 'error';
     text: string;
@@ -71,6 +72,7 @@ export default function PulseConnectPage() {
     if (success === 'true') {
       setMessage({ type: 'success', text: 'TikTok connected successfully!' });
       setTiktokConnected(true);
+      setCalculating(true);
 
       // Fetch calculation breakdown and show modal
       fetchCalculationBreakdown();
@@ -160,14 +162,41 @@ export default function PulseConnectPage() {
         const data = await response.json();
         setCalculationData(data);
         setShowCalculationModal(true);
+        // Hide loader after modal is set to show (small delay for smooth transition)
+        setTimeout(() => setCalculating(false), 100);
+      } else {
+        console.error('Failed to fetch calculation breakdown');
+        setCalculating(false);
       }
     } catch (error) {
       console.error('Error fetching calculation breakdown:', error);
+      setCalculating(false);
     }
   };
 
   return (
     <>
+      {/* Calculating Overlay */}
+      {calculating && (
+        <div className='fixed inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center'>
+          <div className='bg-white dark:bg-slate-800 rounded-lg p-8 max-w-md mx-4 shadow-xl border border-gray-200 dark:border-slate-700'>
+            <div className='flex flex-col items-center text-center'>
+              <div className='relative w-16 h-16 mb-4'>
+                <div className='absolute inset-0 border-4 border-blue-200 dark:border-blue-800 rounded-full'></div>
+                <div className='absolute inset-0 border-4 border-blue-600 border-t-transparent rounded-full animate-spin'></div>
+              </div>
+              <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-2'>
+                Calculating Your Score
+              </h3>
+              <p className='text-sm text-gray-600 dark:text-gray-400'>
+                We&apos;re processing your TikTok data and calculating your
+                PULSE³ eligibility score...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with Logo */}
       <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-10'>
         <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8'>
@@ -527,7 +556,10 @@ export default function PulseConnectPage() {
       {showCalculationModal && calculationData && (
         <ScoreCalculationModal
           isOpen={showCalculationModal}
-          onClose={() => setShowCalculationModal(false)}
+          onClose={() => {
+            setShowCalculationModal(false);
+            setCalculating(false);
+          }}
           tiktokData={calculationData.tiktokData}
           scoreBreakdown={calculationData.scoreBreakdown}
         />

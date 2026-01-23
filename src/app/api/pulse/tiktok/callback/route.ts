@@ -9,6 +9,10 @@ export const dynamic = 'force-dynamic';
  * Handles TikTok OAuth callback
  */
 export async function GET(req: NextRequest) {
+  // Use request origin instead of NEXTAUTH_URL to avoid localhost fallback
+  const { origin } = new URL(req.url);
+  const baseUrl = origin || process.env.NEXTAUTH_URL || 'https://flemoji.com';
+
   try {
     const { searchParams } = new URL(req.url);
     const code = searchParams.get('code');
@@ -30,20 +34,16 @@ export async function GET(req: NextRequest) {
       console.error('TikTok OAuth error from redirect:', error);
       const errorDescription = searchParams.get('error_description');
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pulse/connect?error=${error}&details=${encodeURIComponent(errorDescription || error)}`
+        `${baseUrl}/pulse/connect?error=${error}&details=${encodeURIComponent(errorDescription || error)}`
       );
     }
 
     if (!code) {
-      return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pulse/connect?error=no_code`
-      );
+      return NextResponse.redirect(`${baseUrl}/pulse/connect?error=no_code`);
     }
 
     if (!state) {
-      return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pulse/connect?error=no_state`
-      );
+      return NextResponse.redirect(`${baseUrl}/pulse/connect?error=no_state`);
     }
 
     // Retrieve OAuth state from database
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
     if (!stateRecord) {
       console.error('OAuth state not found or expired');
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pulse/connect?error=invalid_state`
+        `${baseUrl}/pulse/connect?error=invalid_state`
       );
     }
 
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     } catch (parseError) {
       console.error('Failed to parse OAuth state data:', parseError);
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pulse/connect?error=invalid_state`
+        `${baseUrl}/pulse/connect?error=invalid_state`
       );
     }
 
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
     if (oauthData.state !== state) {
       console.error('State mismatch');
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pulse/connect?error=invalid_state`
+        `${baseUrl}/pulse/connect?error=invalid_state`
       );
     }
 
@@ -99,7 +99,7 @@ export async function GET(req: NextRequest) {
     if (!user) {
       console.error('User not found:', userId);
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pulse/connect?error=user_not_found`
+        `${baseUrl}/pulse/connect?error=user_not_found`
       );
     }
 
@@ -108,15 +108,14 @@ export async function GET(req: NextRequest) {
 
     if (!clientKey || !clientSecret) {
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pulse/connect?error=config_error`
+        `${baseUrl}/pulse/connect?error=config_error`
       );
     }
 
-    // Use TIKTOK_REDIRECT_URI if set, otherwise fall back to NEXTAUTH_URL
+    // Use TIKTOK_REDIRECT_URI if set, otherwise use request origin
     // Must match exactly what was used in the authorization request
     const redirectUri =
-      process.env.TIKTOK_REDIRECT_URI ||
-      `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/pulse/tiktok/callback`;
+      process.env.TIKTOK_REDIRECT_URI || `${baseUrl}/api/pulse/tiktok/callback`;
 
     // Exchange code for tokens with PKCE
     let tokens;
@@ -172,9 +171,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!artistProfile) {
-      return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pulse/connect?error=no_profile`
-      );
+      return NextResponse.redirect(`${baseUrl}/pulse/connect?error=no_profile`);
     }
 
     // Save connection
@@ -274,9 +271,7 @@ export async function GET(req: NextRequest) {
         // Ignore if already deleted
       });
 
-    return NextResponse.redirect(
-      `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pulse/connect?success=true`
-    );
+    return NextResponse.redirect(`${baseUrl}/pulse/connect?success=true`);
   } catch (error: any) {
     console.error('Error handling TikTok OAuth callback:', error);
     console.error('Error details:', {
@@ -300,7 +295,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.redirect(
-      `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/pulse/connect?error=${errorCode}&details=${encodeURIComponent(errorMessage)}`
+      `${baseUrl}/pulse/connect?error=${errorCode}&details=${encodeURIComponent(errorMessage)}`
     );
   }
 }

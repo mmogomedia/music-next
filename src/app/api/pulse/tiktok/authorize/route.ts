@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  * GET /api/pulse/tiktok/authorize
  * Initiates TikTok OAuth flow with PKCE
  */
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -35,10 +35,11 @@ export async function GET(_req: NextRequest) {
     // Generate PKCE code verifier and challenge
     const { codeVerifier, codeChallenge } = TikTokService.generatePKCE();
 
-    // Use TIKTOK_REDIRECT_URI if set, otherwise fall back to NEXTAUTH_URL
+    // Use TIKTOK_REDIRECT_URI if set, otherwise use request origin
+    const { origin } = new URL(req.url);
+    const baseUrl = origin || process.env.NEXTAUTH_URL || 'https://flemoji.com';
     const redirectUri =
-      process.env.TIKTOK_REDIRECT_URI ||
-      `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/pulse/tiktok/callback`;
+      process.env.TIKTOK_REDIRECT_URI || `${baseUrl}/api/pulse/tiktok/callback`;
 
     const authUrl = TikTokService.getAuthorizationUrl(
       clientKey,
