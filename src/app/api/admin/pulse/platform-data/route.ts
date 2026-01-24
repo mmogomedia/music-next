@@ -73,7 +73,7 @@ export async function GET(_req: NextRequest) {
           platform: 'tiktok',
           followerCount: data?.followerCount ?? null,
           videoCount: data?.videoCount ?? null,
-          fetchedAt: data?.fetchedAt ?? acc.updatedAt.toISOString(),
+          fetchedAt: data?.fetchedAt ?? new Date().toISOString(),
           isConnected: !!acc.access_token,
         };
       });

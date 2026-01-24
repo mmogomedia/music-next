@@ -349,7 +349,7 @@ export default function PulseLogsAndRuns() {
           }}
         >
           <TableHeader>
-            <TableColumn className='w-8'></TableColumn>
+            <TableColumn className='w-8'> </TableColumn>
             <TableColumn className='w-40'>Started</TableColumn>
             <TableColumn className='w-20'>Status</TableColumn>
             <TableColumn className='w-16'>Tiers</TableColumn>

@@ -160,15 +160,8 @@ export default function PulseArtistManagement() {
             className='w-full sm:w-40'
             classNames={{ trigger: 'text-xs' }}
           >
-            <SelectItem key='all' value='all' textValue='All Tiers'>
-              All Tiers
-            </SelectItem>
-            {tiers.map(tier => (
-              <SelectItem
-                key={tier.code}
-                value={tier.code}
-                textValue={tier.name}
-              >
+            {[{ code: 'all', name: 'All Tiers' }, ...tiers].map(tier => (
+              <SelectItem key={tier.code} textValue={tier.name}>
                 {tier.name}
               </SelectItem>
             ))}
