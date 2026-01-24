@@ -1031,7 +1031,7 @@ model PulseEligibilityRecalcLog {
   errorCount        Int      @default(0)
   rateLimitCount    Int      @default(0)
   top100Updated     Int      @default(0)
-  status            String   @default("running") // 'running' | 'completed' | 'failed'
+  status            String   @default("running") // 'running' | 'completed' | 'failed' | 'aborted'
   errorMessage     String?
   createdAt         DateTime @default(now())
 

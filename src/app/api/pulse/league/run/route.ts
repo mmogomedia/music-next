@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { PulseLeagueService } from '@/lib/services/pulse-league-service';
 import { prisma } from '@/lib/db';
 
@@ -15,28 +17,34 @@ export async function POST(req: NextRequest) {
   let runLogId: string | null = null;
 
   try {
-    // Verify secret token
-    const cronSecret = process.env.CRON_SECRET;
-    if (!cronSecret) {
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      );
-    }
+    // Check for admin authentication first (for admin panel requests)
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.role === 'ADMIN';
 
-    // Check for secret in header or query param
-    // Preferred: `Authorization: Bearer <CRON_SECRET>` (works well with Vercel Cron)
-    // Fallbacks: `x-cron-secret` header or `?secret=` query param (useful for manual testing)
-    const authHeader = req.headers.get('authorization');
-    const bearerSecret = authHeader?.startsWith('Bearer ')
-      ? authHeader.substring(7)
-      : null;
-    const headerSecret = req.headers.get('x-cron-secret');
-    const querySecret = req.nextUrl.searchParams.get('secret');
-    const providedSecret = bearerSecret || headerSecret || querySecret;
+    // If not admin, verify secret token (for cron jobs)
+    if (!isAdmin) {
+      const cronSecret = process.env.CRON_SECRET;
+      if (!cronSecret) {
+        return NextResponse.json(
+          { error: 'Server configuration error' },
+          { status: 500 }
+        );
+      }
 
-    if (providedSecret !== cronSecret) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      // Check for secret in header or query param
+      // Preferred: `Authorization: Bearer <CRON_SECRET>` (works well with Vercel Cron)
+      // Fallbacks: `x-cron-secret` header or `?secret=` query param (useful for manual testing)
+      const authHeader = req.headers.get('authorization');
+      const bearerSecret = authHeader?.startsWith('Bearer ')
+        ? authHeader.substring(7)
+        : null;
+      const headerSecret = req.headers.get('x-cron-secret');
+      const querySecret = req.nextUrl.searchParams.get('secret');
+      const providedSecret = bearerSecret || headerSecret || querySecret;
+
+      if (providedSecret !== cronSecret) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     // Create main activity log entry

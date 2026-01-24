@@ -33,7 +33,7 @@ The PULSE³ League System organizes artists into configurable tiers based on the
 
 ### How It Works
 
-1. **Eligibility scores** are calculated independently (see `pulse3-scoring-algorithm.md`)
+1. **Eligibility scores** are calculated independently (see [`pulse3-eligibility-scoring.md`](./pulse3-eligibility-scoring.md) for eligibility scoring formulas)
 2. **League runs** create snapshots of tier rankings using the latest eligibility scores
 3. **Movement** is calculated by comparing current run to previous run
 4. **Band states** indicate if artists are within their tier's score range
@@ -805,9 +805,8 @@ Tests cover:
 
 ## Related Documentation
 
-- **Scoring Algorithm**: `docs/pulse3-scoring-algorithm.md`
-- **Complete System**: `docs/pulse3-complete-documentation.md`
-- **Testing Guide**: `docs/pulse3-testing-guide.md`
+- **Eligibility Scoring**: [`docs/pulse3-eligibility-scoring.md`](./pulse3-eligibility-scoring.md) - Eligibility score calculation formulas and mechanics
+- **Testing Guide**: [`docs/pulse3-testing-guide.md`](./pulse3-testing-guide.md) - How to run and write tests
 
 ---
 

@@ -114,6 +114,12 @@ export default function AdminNavigation({
       activeIcon: TrophySolidIcon,
     },
     {
+      id: 'pulse',
+      name: 'PULSE³',
+      icon: SparklesIcon,
+      activeIcon: SparklesSolidIcon,
+    },
+    {
       id: 'analytics',
       name: 'Analytics',
       icon: ChartBarIcon,
@@ -163,13 +169,17 @@ export default function AdminNavigation({
                       ? '/admin/dashboard/timeline-posts'
                       : item.id === 'league'
                         ? '/admin/dashboard/league'
-                        : `/admin/dashboard/${item.id}`;
+                        : item.id === 'pulse'
+                          ? '/admin/pulse'
+                          : `/admin/dashboard/${item.id}`;
                 const isActive =
                   (pathname === '/admin/dashboard' ||
                     pathname === '/admin/dashboard/overview') &&
                   item.id === 'overview'
                     ? true
-                    : pathname === href;
+                    : item.id === 'pulse'
+                      ? pathname.startsWith('/admin/pulse')
+                      : pathname === href;
                 const IconComponent = isActive ? item.activeIcon : item.icon;
 
                 return (

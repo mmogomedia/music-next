@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { PulseScoringService } from '@/lib/services/pulse-scoring-service';
 import { PulseLeagueService } from '@/lib/services/pulse-league-service';
@@ -18,35 +20,41 @@ export async function POST(req: NextRequest) {
   let recalcLogId: string | null = null;
 
   try {
-    // Verify secret token
-    const cronSecret = process.env.CRON_SECRET;
-    if (!cronSecret) {
-      console.error('CRON_SECRET environment variable is not set');
-      return NextResponse.json(
-        { error: 'Server configuration error: CRON_SECRET not configured' },
-        { status: 500 }
-      );
-    }
+    // Check for admin authentication first (for admin panel requests)
+    const session = await getServerSession(authOptions);
+    const isAdmin = session?.user?.role === 'ADMIN';
 
-    // Check for secret in header or query param
-    // Preferred: `Authorization: Bearer <CRON_SECRET>` (works well with Vercel Cron)
-    // Fallbacks: `x-cron-secret` header or `?secret=` query param (useful for manual testing)
-    const authHeader = req.headers.get('authorization');
-    const bearerSecret = authHeader?.startsWith('Bearer ')
-      ? authHeader.substring(7)
-      : null;
-    const headerSecret = req.headers.get('x-cron-secret');
-    const querySecret = req.nextUrl.searchParams.get('secret');
-    const providedSecret = bearerSecret || headerSecret || querySecret;
+    // If not admin, verify secret token (for cron jobs)
+    if (!isAdmin) {
+      const cronSecret = process.env.CRON_SECRET;
+      if (!cronSecret) {
+        console.error('CRON_SECRET environment variable is not set');
+        return NextResponse.json(
+          { error: 'Server configuration error: CRON_SECRET not configured' },
+          { status: 500 }
+        );
+      }
 
-    if (providedSecret !== cronSecret) {
-      console.error('Invalid cron secret provided', {
-        hasAuthHeader: !!authHeader,
-        hasBearer: !!bearerSecret,
-        hasXHeader: !!headerSecret,
-        hasQuerySecret: !!querySecret,
-      });
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      // Check for secret in header or query param
+      // Preferred: `Authorization: Bearer <CRON_SECRET>` (works well with Vercel Cron)
+      // Fallbacks: `x-cron-secret` header or `?secret=` query param (useful for manual testing)
+      const authHeader = req.headers.get('authorization');
+      const bearerSecret = authHeader?.startsWith('Bearer ')
+        ? authHeader.substring(7)
+        : null;
+      const headerSecret = req.headers.get('x-cron-secret');
+      const querySecret = req.nextUrl.searchParams.get('secret');
+      const providedSecret = bearerSecret || headerSecret || querySecret;
+
+      if (providedSecret !== cronSecret) {
+        console.error('Invalid cron secret provided', {
+          hasAuthHeader: !!authHeader,
+          hasBearer: !!bearerSecret,
+          hasXHeader: !!headerSecret,
+          hasQuerySecret: !!querySecret,
+        });
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
     }
 
     // Get active tiers (Top 20 and Watchlist)
@@ -73,12 +81,25 @@ export async function POST(req: NextRequest) {
     );
 
     if (targetTiers.length === 0) {
+      // Create log entry marked as aborted when no tiers found
+      const recalcLog = await prisma.pulseEligibilityRecalcLog.create({
+        data: {
+          startedAt: new Date(),
+          completedAt: new Date(),
+          artistsProcessed: 0,
+          successCount: 0,
+          errorCount: 0,
+          status: 'aborted',
+          errorMessage: 'No target tiers found (TIER1 or TIER2)',
+        },
+      });
       return NextResponse.json({
-        success: true,
+        success: false,
         message: 'No target tiers found (TIER1 or TIER2)',
         artistsProcessed: 0,
         successCount: 0,
         errorCount: 0,
+        logId: recalcLog.id,
       });
     }
 
@@ -104,12 +125,25 @@ export async function POST(req: NextRequest) {
     }
 
     if (artistProfileIds.size === 0) {
+      // Create log entry marked as aborted when no artists found
+      const recalcLog = await prisma.pulseEligibilityRecalcLog.create({
+        data: {
+          startedAt: new Date(),
+          completedAt: new Date(),
+          artistsProcessed: 0,
+          successCount: 0,
+          errorCount: 0,
+          status: 'aborted',
+          errorMessage: 'No artists found in target tiers',
+        },
+      });
       return NextResponse.json({
-        success: true,
+        success: false,
         message: 'No artists found in target tiers',
         artistsProcessed: 0,
         successCount: 0,
         errorCount: 0,
+        logId: recalcLog.id,
       });
     }
 
@@ -146,12 +180,26 @@ export async function POST(req: NextRequest) {
     }
 
     if (artists.length === 0) {
+      // Create log entry marked as aborted when no artists with TikTok connections
+      const recalcLog = await prisma.pulseEligibilityRecalcLog.create({
+        data: {
+          startedAt: new Date(),
+          completedAt: new Date(),
+          artistsProcessed: 0,
+          successCount: 0,
+          errorCount: 0,
+          status: 'aborted',
+          errorMessage:
+            'No artists with TikTok connections found in target tiers',
+        },
+      });
       return NextResponse.json({
-        success: true,
+        success: false,
         message: 'No artists with TikTok connections found in target tiers',
         artistsProcessed: 0,
         successCount: 0,
         errorCount: 0,
+        logId: recalcLog.id,
       });
     }
 

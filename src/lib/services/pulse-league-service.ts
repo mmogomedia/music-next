@@ -59,6 +59,11 @@ export class PulseLeagueService {
 
   /**
    * Check if tier needs refresh based on refreshIntervalHours and last run
+   *
+   * Note: This compares against the last SUCCESSFUL run (LeagueRun record).
+   * Skipped runs don't create LeagueRun records, so they don't affect this check.
+   * This ensures that if a run is skipped, the next run will still compare against
+   * the last successful run, not the skipped run.
    */
   static async shouldRefreshTier(tier: {
     id: string;
@@ -70,6 +75,7 @@ export class PulseLeagueService {
       return true; // No previous run, needs initial run
     }
 
+    // Compare against last successful run (skipped runs don't create LeagueRun records)
     const hoursSinceLastRun =
       (Date.now() - lastRun.runAt.getTime()) / (1000 * 60 * 60);
 

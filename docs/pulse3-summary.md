@@ -4,12 +4,11 @@
 
 ### Documentation Files
 
-1. **`docs/pulse3-complete-documentation.md`** - Comprehensive system documentation
-   - System architecture
+1. **`docs/pulse3-eligibility-scoring.md`** - Eligibility scoring system documentation
    - Eligibility score calculation formulas
-   - League system mechanics
-   - API endpoints
-   - Database schema
+   - Score calculation mechanics
+   - API endpoints for scoring
+   - Database schema for scores
    - Configuration
 
 2. **`docs/pulse3-testing-guide.md`** - Testing guide
@@ -17,8 +16,6 @@
    - Test file descriptions
    - Test data patterns
    - Manual testing procedures
-
-3. **`docs/pulse3-scoring-algorithm.md`** - Original algorithm documentation (legacy)
 
 ### Test Files
 
