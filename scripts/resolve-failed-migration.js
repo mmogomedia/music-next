@@ -73,15 +73,119 @@ async function resolveFailedMigration() {
       console.log('✅ Init migration name updated.\n');
     }
 
-    // Now handle ALL failed migrations (remove them so they can be retried)
+    // Handle specific migration that failed because tables already exist
+    const skillsMigration = await prisma.$queryRaw`
+      SELECT * FROM "_prisma_migrations"
+      WHERE migration_name = '20250126120000_add_skills_tables'
+    `;
+
+    if (skillsMigration && skillsMigration.length > 0) {
+      const migration = skillsMigration[0];
+      // If it's failed (no finished_at) or doesn't exist, mark it as applied
+      if (!migration.finished_at) {
+        console.log(
+          'Found failed skills migration. Checking if tables exist...'
+        );
+
+        // Check if tables exist
+        const skillsTableExists = await prisma.$queryRaw`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'skills'
+          )
+        `;
+
+        const artistSkillsTableExists = await prisma.$queryRaw`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'artist_profile_skills'
+          )
+        `;
+
+        if (
+          skillsTableExists[0]?.exists &&
+          artistSkillsTableExists[0]?.exists
+        ) {
+          console.log(
+            '✅ Tables already exist. Marking migration as applied...'
+          );
+
+          // Remove failed record
+          await prisma.$executeRawUnsafe(
+            `DELETE FROM "_prisma_migrations" WHERE migration_name = $1 AND finished_at IS NULL`,
+            '20250126120000_add_skills_tables'
+          );
+
+          // Mark as applied
+          const now = new Date();
+          const crypto = require('crypto');
+          const fs = require('fs');
+          const path = require('path');
+
+          const migrationPath = path.join(
+            __dirname,
+            '..',
+            'prisma',
+            'migrations',
+            '20250126120000_add_skills_tables',
+            'migration.sql'
+          );
+
+          let checksum = '';
+          if (fs.existsSync(migrationPath)) {
+            const migrationSQL = fs.readFileSync(migrationPath, 'utf-8');
+            checksum = crypto
+              .createHash('sha256')
+              .update(migrationSQL)
+              .digest('hex');
+          }
+
+          await prisma.$executeRawUnsafe(
+            `
+            INSERT INTO "_prisma_migrations" (
+              id,
+              checksum,
+              finished_at,
+              migration_name,
+              logs,
+              rolled_back_at,
+              started_at,
+              applied_steps_count
+            )
+            VALUES (
+              gen_random_uuid(),
+              $1,
+              $2,
+              '20250126120000_add_skills_tables',
+              NULL,
+              NULL,
+              $2,
+              1
+            )
+          `,
+            checksum,
+            now
+          );
+
+          console.log('✅ Skills migration marked as applied.\n');
+        } else {
+          console.log('⚠️  Tables do not exist. Migration will be retried.\n');
+        }
+      }
+    }
+
+    // Now handle ALL other failed migrations (remove them so they can be retried)
     const failedMigrations = await prisma.$queryRaw`
       SELECT migration_name FROM "_prisma_migrations"
       WHERE finished_at IS NULL
+      AND migration_name != '20250126120000_add_skills_tables'
     `;
 
     if (failedMigrations && failedMigrations.length > 0) {
       console.log(
-        `Found ${failedMigrations.length} failed migration(s). Removing...\n`
+        `Found ${failedMigrations.length} other failed migration(s). Removing...\n`
       );
       for (const migration of failedMigrations) {
         console.log(`  - Removing failed: ${migration.migration_name}`);
@@ -94,7 +198,7 @@ async function resolveFailedMigration() {
         `\n✅ Removed ${failedMigrations.length} failed migration record(s). They will be retried.\n`
       );
     } else {
-      console.log('✅ No failed migrations found.\n');
+      console.log('✅ No other failed migrations found.\n');
     }
 
     console.log('✨ Migration state resolved successfully!');

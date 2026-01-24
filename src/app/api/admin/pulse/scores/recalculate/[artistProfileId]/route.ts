@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(
   _req: NextRequest,
-  { params }: { params: { artistProfileId: string } }
+  { params }: { params: Promise<{ artistProfileId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -21,7 +21,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { artistProfileId } = params;
+    const { artistProfileId } = await params;
 
     // Calculate eligibility score
     const eligibilityResult =
