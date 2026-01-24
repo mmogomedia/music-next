@@ -28,7 +28,7 @@ export async function GET(_req: NextRequest) {
         user: {
           include: {
             artistProfile: {
-              select: { id: true, artistName: true },
+              select: { id: true, artistName: true, profileImage: true },
             },
           },
         },
