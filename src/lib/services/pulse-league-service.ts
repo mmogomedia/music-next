@@ -149,9 +149,7 @@ export class PulseLeagueService {
    *
    * Sorting: O(n log n) in-memory JavaScript sort (fast for < 100k artists)
    */
-  private static async getLatestEligibilityScores(): Promise<
-    LatestEligibilityScore[]
-  > {
+  static async getLatestEligibilityScores(): Promise<LatestEligibilityScore[]> {
     // Use PostgreSQL DISTINCT ON to get latest score per artist in a single query
     // This eliminates the N+1 query problem (was: 1 groupBy + N findFirst)
     // For 1000 artists: 1001 queries → 1 query (1000x faster!)
