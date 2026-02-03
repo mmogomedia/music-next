@@ -82,6 +82,12 @@ model User {
   timelineFeedCache    TimelineFeedCache[]   @relation("TimelineFeedCache")
   canPublishNews       Boolean               @default(false) // For publishers
 
+  // Enhanced AI memory relations
+  conversationEmbeddings ConversationEmbedding[]
+  preferences            UserPreference[]
+  conversationEntities   ConversationEntity[]
+  memoryProfile          UserMemoryProfile?
+
   @@map("users")
 }
 
@@ -1103,6 +1109,10 @@ model AIConversation {
   messages       AIConversationMessage[]
   aiSearchEvents AISearchEvent[]         @relation("AISearchEvents")
 
+  // Enhanced memory relations
+  embeddings ConversationEmbedding[]
+  entities   ConversationEntity[]
+
   @@index([userId])
   @@index([userId, chatType])
   @@index([updatedAt])
@@ -1118,7 +1128,8 @@ model AIConversationMessage {
   createdAt      DateTime @default(now())
 
   // Relations
-  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation         AIConversation           @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationEmbedding ConversationEmbedding[]
 
   @@index([conversationId])
   @@map("ai_conversation_messages")
@@ -1400,4 +1411,160 @@ model TimelineAd {
 
   @@index([isActive, startDate, endDate])
   @@map("timeline_ads")
+}
+
+// ============================================================================
+// ENHANCED AI MEMORY SYSTEM
+// ============================================================================
+
+// ---------- EPISODIC MEMORY (Conversation embeddings) ----------
+
+model ConversationEmbedding {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+  messageId      String
+
+  // Content
+  summary        String    @db.Text // Human-readable summary
+  embedding      Unsupported("vector(1536)") // OpenAI text-embedding-3-small
+
+  // Metadata
+  importance     Float     @default(0.5) // 0-1 score (calculated)
+  messageCount   Int       @default(1)
+
+  // Temporal
+  startTime      DateTime  // First message timestamp
+  endTime        DateTime  // Last message timestamp
+  createdAt      DateTime  @default(now())
+
+  // Relations
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation AIConversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message      AIConversationMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([userId])
+  @@index([importance])
+  @@index([startTime])
+  @@map("conversation_embeddings")
+}
+
+// ---------- SEMANTIC MEMORY (User preferences with decay) ----------
+
+model UserPreference {
+  id         String   @id @default(cuid())
+  userId     String
+
+  // Preference details
+  type       PreferenceType // GENRE, ARTIST, MOOD, TEMPO, ERA
+  entityId   String?  // Reference to Genre/Artist/Track if applicable
+  entityName String   // Human-readable name
+
+  // Scoring
+  explicitScore   Float @default(0.0) // User explicitly stated (weight: 1.0)
+  implicitScore   Float @default(0.0) // Inferred from behavior (weight: 0.5)
+  confidence      Float @default(0.5) // 0-1 confidence in preference
+
+  // Temporal tracking
+  firstSeenAt     DateTime @default(now())
+  lastSeenAt      DateTime @updatedAt
+  occurrenceCount Int      @default(1)
+
+  // Decay parameters
+  halfLifeDays    Int      @default(30) // How quickly preference decays
+
+  // Sentiment
+  sentiment       Float    @default(0.5) // 0=dislike, 0.5=neutral, 1=love
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, entityName])
+  @@index([userId, type])
+  @@index([userId, lastSeenAt])
+  @@map("user_preferences")
+}
+
+enum PreferenceType {
+  GENRE
+  ARTIST
+  TRACK
+  MOOD
+  TEMPO
+  ERA
+  LANGUAGE
+  INSTRUMENT
+}
+
+// ---------- ENTITY MEMORY (Entities mentioned in conversations) ----------
+
+model ConversationEntity {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+
+  // Entity details
+  entityType     EntityType
+  entityId       String?  // ID if entity exists in system
+  entityName     String
+  mentions       Int      @default(1)
+
+  // Context
+  context        String   @db.Text // Surrounding text where entity was mentioned
+  sentiment      Float    @default(0.5) // User sentiment (0=negative, 1=positive)
+
+  // Temporal
+  firstMentioned DateTime @default(now())
+  lastMentioned  DateTime @updatedAt
+
+  // Relations
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, entityType])
+  @@index([conversationId])
+  @@index([entityId])
+  @@map("conversation_entities")
+}
+
+enum EntityType {
+  ARTIST
+  TRACK
+  ALBUM
+  PLAYLIST
+  GENRE
+  MOOD
+  LOCATION
+  EVENT
+}
+
+// ---------- USER MEMORY PROFILE (Consolidated view) ----------
+
+model UserMemoryProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+
+  // Listening patterns
+  favoriteGenres        Json // { "Amapiano": 0.9, "Afro House": 0.8 }
+  favoriteArtists       Json // { "Artist Name": 0.85 }
+  favoriteMoods         Json // { "Energetic": 0.7 }
+
+  // Temporal patterns
+  listeningTimes        Json // { "morning": ["Jazz"], "evening": ["Amapiano"] }
+
+  // Behavior patterns
+  averageSessionLength  Int      @default(0) // minutes
+  preferredQueryStyle   String?  // "specific", "exploratory", "mood-based"
+
+  // Metadata
+  totalConversations    Int      @default(0)
+  totalMessages         Int      @default(0)
+  lastActive            DateTime @updatedAt
+  profileCreatedAt      DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_memory_profiles")
 }

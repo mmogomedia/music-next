@@ -5,6 +5,7 @@ import { ChatRequest, ChatResponse } from '@/types/ai';
 import { conversationStore } from '@/lib/ai/memory/conversation-store';
 import { preferenceTracker } from '@/lib/ai/memory/preference-tracker';
 import { contextBuilder } from '@/lib/ai/memory/context-builder';
+import { memoryOrchestrator } from '@/lib/ai/memory/memory-orchestrator';
 import { logger } from '@/lib/utils/logger';
 import type { SSEEvent, SSEEventEmitter } from '@/lib/ai/sse-event-emitter';
 
@@ -76,12 +77,6 @@ export async function POST(request: NextRequest) {
           body.conversationId ||
           `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Build agent context from request context + memory
-        const built = await contextBuilder.buildContext(
-          context?.userId,
-          conversationId
-        );
-
         // Get conversation history for context-aware routing
         const conversationHistory = context?.userId
           ? await conversationStore.getConversation(
@@ -90,6 +85,21 @@ export async function POST(request: NextRequest) {
               6
             )
           : [];
+
+        // Build enhanced context using Memory Orchestrator
+        const enhancedContext = await memoryOrchestrator.buildEnhancedContext({
+          userId: context?.userId,
+          conversationId: conversationId,
+          currentMessage: message,
+          recentMessages: conversationHistory,
+          maxTokens: 2000,
+        });
+
+        // Build legacy context for backward compatibility
+        const built = await contextBuilder.buildContext(
+          context?.userId,
+          conversationId
+        );
 
         const agentContext = {
           userId: context?.userId,
@@ -100,13 +110,20 @@ export async function POST(request: NextRequest) {
           })),
           filters: {
             ...built.filters,
+            // Use top genre preference from enhanced memory
+            genre:
+              enhancedContext.preferences.genres[0] || built.filters?.genre,
             // Add province from request context if provided
             ...(context?.province && { province: context.province }),
           },
-          // Add chatType to metadata for routing
+          // Add chatType and enhanced memory to metadata
           metadata: {
             chatType: chatType,
             previousIntent: built.metadata?.previousIntent,
+            // Enhanced memory data
+            preferences: enhancedContext.preferences,
+            relevantMemories: enhancedContext.relevantMemories,
+            memoryTokenCount: enhancedContext.tokenCount,
           },
           // Add SSE event emitter to context
           emitEvent: sendEvent,
@@ -206,6 +223,37 @@ export async function POST(request: NextRequest) {
               agentResponse.data
             );
           }
+
+          // Store conversation in enhanced memory system (non-blocking)
+          memoryOrchestrator
+            .storeConversation({
+              userId: context.userId,
+              conversationId,
+              messages: [
+                ...conversationHistory.map(m => ({
+                  id: m.id || 'temp',
+                  role: m.role,
+                  content: m.content,
+                  timestamp: m.timestamp || new Date(),
+                })),
+                {
+                  id: 'temp_user',
+                  role: 'user',
+                  content: message,
+                  timestamp: new Date(),
+                },
+                {
+                  id: 'temp_assistant',
+                  role: 'assistant',
+                  content: responseMessage,
+                  timestamp: new Date(),
+                },
+              ],
+              userMessage: message,
+            })
+            .catch(err =>
+              logger.error('[Memory] Failed to store conversation:', err)
+            );
         }
 
         // Send final response

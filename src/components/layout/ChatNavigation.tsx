@@ -35,12 +35,14 @@ interface ChatNavigationProps {
   onQuickLinkClick?: (_message: string) => void;
   onConversationSelect?: (_conversationId: string) => void;
   getConversationId?: () => string | undefined;
+  activeView?: 'streaming' | 'timeline' | 'league';
 }
 
 export default function ChatNavigation({
   onQuickLinkClick,
   onConversationSelect,
   getConversationId,
+  activeView = 'streaming',
 }: ChatNavigationProps) {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
@@ -158,7 +160,7 @@ export default function ChatNavigation({
               <RecentConversations
                 onConversationSelect={onConversationSelect}
                 activeConversationId={getConversationId?.()}
-                chatType='STREAMING'
+                chatType={activeView === 'timeline' ? 'TIMELINE' : 'STREAMING'}
                 onSignInClick={() => {}}
                 onSignInModalOpen={setIsSignInModalOpen}
                 isSignInModalOpen={isSignInModalOpen}
@@ -297,7 +299,13 @@ export default function ChatNavigation({
                       onConversationSelect?.(id);
                     }}
                     activeConversationId={getConversationId?.()}
-                    chatType='STREAMING'
+                    chatType={
+                      activeView === 'timeline'
+                        ? 'TIMELINE'
+                        : activeView === 'league' || activeView === 'streaming'
+                          ? 'STREAMING'
+                          : 'STREAMING'
+                    }
                     onSignInClick={() => setIsOpen(false)}
                     onSignInModalOpen={setIsSignInModalOpen}
                     isSignInModalOpen={isSignInModalOpen}

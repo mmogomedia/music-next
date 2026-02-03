@@ -62,6 +62,14 @@ interface LeagueRunLog {
   avgTimePerTier?: number | null;
   successRate?: number | null;
   tierLastRuns?: TierLastRun[];
+  platformData?: {
+    totalConnections: number;
+    artistsWithData: number;
+    totalFollowers: number;
+    totalVideos: number;
+    avgFollowers: number;
+    avgVideos: number;
+  };
 }
 
 export default function PulseLogsAndRuns() {
@@ -73,6 +81,9 @@ export default function PulseLogsAndRuns() {
   const [triggering, setTriggering] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [expandedLogs, setExpandedLogs] = useState<Set<string>>(new Set());
+  const [platformDataMap, setPlatformDataMap] = useState<
+    Map<string, LeagueRunLog['platformData']>
+  >(new Map());
 
   useEffect(() => {
     fetchLogs();
@@ -190,16 +201,64 @@ export default function PulseLogsAndRuns() {
     return date.toLocaleDateString();
   };
 
-  const toggleExpanded = (logId: string) => {
+  const toggleExpanded = async (logId: string) => {
     setExpandedLogs(prev => {
       const next = new Set(prev);
       if (next.has(logId)) {
         next.delete(logId);
       } else {
         next.add(logId);
+        // Fetch platform data when expanding
+        if (!platformDataMap.has(logId)) {
+          fetchPlatformDataForLog(logId);
+        }
       }
       return next;
     });
+  };
+
+  const fetchPlatformDataForLog = async (logId: string) => {
+    try {
+      const response = await fetch('/api/admin/pulse/platform-data');
+      if (response.ok) {
+        const data = await response.json();
+        const connections = data.connections || [];
+        const artistsWithData = connections.filter(
+          (c: any) => c.followerCount !== null || c.videoCount !== null
+        );
+        const totalFollowers = connections.reduce(
+          (sum: number, c: any) => sum + (c.followerCount || 0),
+          0
+        );
+        const totalVideos = connections.reduce(
+          (sum: number, c: any) => sum + (c.videoCount || 0),
+          0
+        );
+        const avgFollowers =
+          artistsWithData.length > 0
+            ? Math.round(totalFollowers / artistsWithData.length)
+            : 0;
+        const avgVideos =
+          artistsWithData.length > 0
+            ? Math.round(totalVideos / artistsWithData.length)
+            : 0;
+
+        setPlatformDataMap(prev => {
+          const next = new Map(prev);
+          next.set(logId, {
+            totalConnections: connections.length,
+            artistsWithData: artistsWithData.length,
+            totalFollowers,
+            totalVideos,
+            avgFollowers,
+            avgVideos,
+          });
+          return next;
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching platform data:', error);
+    }
   };
 
   if (loading) {
@@ -626,6 +685,76 @@ export default function PulseLogsAndRuns() {
                               </div>
                             )}
                           </div>
+
+                          {/* Platform Data Section */}
+                          {platformDataMap.has(log.id) && (
+                            <div>
+                              <h4 className='text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2'>
+                                <TrophyIcon className='h-4 w-4' />
+                                Platform Data
+                              </h4>
+                              <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2'>
+                                {(() => {
+                                  const platformData = platformDataMap.get(
+                                    log.id
+                                  );
+                                  if (!platformData) return null;
+                                  return (
+                                    <>
+                                      <div className='bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 p-2'>
+                                        <div className='text-[10px] text-gray-500 dark:text-gray-400 mb-1'>
+                                          Connections
+                                        </div>
+                                        <div className='text-xs font-medium text-gray-900 dark:text-white'>
+                                          {platformData.totalConnections}
+                                        </div>
+                                      </div>
+                                      <div className='bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 p-2'>
+                                        <div className='text-[10px] text-gray-500 dark:text-gray-400 mb-1'>
+                                          With Data
+                                        </div>
+                                        <div className='text-xs font-medium text-gray-900 dark:text-white'>
+                                          {platformData.artistsWithData}
+                                        </div>
+                                      </div>
+                                      <div className='bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 p-2'>
+                                        <div className='text-[10px] text-gray-500 dark:text-gray-400 mb-1'>
+                                          Total Followers
+                                        </div>
+                                        <div className='text-xs font-medium text-gray-900 dark:text-white'>
+                                          {platformData.totalFollowers.toLocaleString()}
+                                        </div>
+                                      </div>
+                                      <div className='bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 p-2'>
+                                        <div className='text-[10px] text-gray-500 dark:text-gray-400 mb-1'>
+                                          Total Videos
+                                        </div>
+                                        <div className='text-xs font-medium text-gray-900 dark:text-white'>
+                                          {platformData.totalVideos.toLocaleString()}
+                                        </div>
+                                      </div>
+                                      <div className='bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 p-2'>
+                                        <div className='text-[10px] text-gray-500 dark:text-gray-400 mb-1'>
+                                          Avg Followers
+                                        </div>
+                                        <div className='text-xs font-medium text-gray-900 dark:text-white'>
+                                          {platformData.avgFollowers.toLocaleString()}
+                                        </div>
+                                      </div>
+                                      <div className='bg-white dark:bg-slate-800 rounded border border-gray-200 dark:border-slate-700 p-2'>
+                                        <div className='text-[10px] text-gray-500 dark:text-gray-400 mb-1'>
+                                          Avg Videos
+                                        </div>
+                                        <div className='text-xs font-medium text-gray-900 dark:text-white'>
+                                          {platformData.avgVideos.toLocaleString()}
+                                        </div>
+                                      </div>
+                                    </>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Error Message */}
                           {log.errorMessage && (

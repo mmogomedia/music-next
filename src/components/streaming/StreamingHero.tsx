@@ -122,7 +122,7 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
 
   if (loading) {
     return (
-      <div className='bg-gradient-to-r from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-900 py-16'>
+      <div className='w-full bg-gradient-to-r from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-900 py-16'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           {/* Header Skeleton */}
           <div className='mb-8'>
@@ -225,7 +225,7 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
 
   if (error) {
     return (
-      <div className='bg-gradient-to-r from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-900 py-16'>
+      <div className='w-full bg-gradient-to-r from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-900 py-16'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-red-400'>
           <p>Error: {error}</p>
           <button
@@ -241,7 +241,7 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
 
   if (featuredTracks.length === 0) {
     return (
-      <div className='bg-gradient-to-r from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-900 py-16'>
+      <div className='w-full bg-gradient-to-r from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-900 py-16'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
           {/* Header */}
           <div className='mb-8'>
@@ -337,7 +337,7 @@ export default function StreamingHero({ onTrackPlay }: StreamingHeroProps) {
   }
 
   return (
-    <div className='bg-gradient-to-r from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-900 py-16'>
+    <div className='w-full bg-gradient-to-r from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-900 py-16'>
       <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
         {/* Featured Heading - Left Justified with Creative Right Side */}
         <div className='mb-8'>

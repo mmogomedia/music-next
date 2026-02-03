@@ -59,7 +59,7 @@ export default function MiniPlayer() {
 
   return (
     <div
-      className={`relative ${isMobile ? 'w-full max-w-full' : 'w-full max-w-md'} overflow-hidden`}
+      className={`relative ${isMobile ? 'w-full max-w-full' : 'w-full max-w-md'} ${isMenuOpen ? 'overflow-visible' : 'overflow-hidden'}`}
     >
       <div
         className={`flex items-center border border-gray-200/60 dark:border-slate-700/60 rounded-lg ${
@@ -264,12 +264,13 @@ export default function MiniPlayer() {
       {/* Sliding div below player */}
       {isMenuOpen && (
         <div
-          className={`absolute left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 shadow-lg transition-transform duration-300 ease-out rounded-b-lg overflow-hidden ${
+          className={`absolute left-0 right-0 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-700 shadow-lg transition-transform duration-300 ease-out rounded-b-lg overflow-hidden z-50 ${
             isMenuOpen ? 'translate-y-0' : 'translate-y-full'
           }`}
           style={{
             top: '100%',
             maxHeight: isMobile ? '60vh' : '320px',
+            marginTop: '4px',
           }}
         >
           {/* Compact Header */}

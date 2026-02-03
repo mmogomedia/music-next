@@ -199,6 +199,7 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
           onQuickLinkClick={handleQuickLinkClick}
           onConversationSelect={handleConversationSelect}
           getConversationId={() => activeConversationId}
+          activeView={activeView}
         />
       }
       header={

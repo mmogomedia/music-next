@@ -530,117 +530,123 @@ export default function RecentConversations({
           </div>
         )}
 
-        {/* Conversations list - Always fixed height to show ~3 conversations, scrollable when showAll is true */}
-        <div
-          className={`space-y-1 scrollbar-subtle flex-shrink-0 ${
-            showAll ? 'overflow-y-auto' : 'overflow-hidden'
-          }`}
-          style={{
-            height: 'calc(3 * 4rem)', // Fixed height for exactly 3 conversations
-          }}
-        >
-          <div className='space-y-1'>
-            {displayConversations.map(conversation => (
-              <div
-                key={conversation.id}
-                className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                  activeConversationId === conversation.id
-                    ? 'bg-blue-50/60 dark:bg-blue-900/15 border border-blue-200/40 dark:border-blue-800/40'
-                    : 'hover:bg-gray-50/40 dark:hover:bg-slate-800/20 border border-transparent'
-                }`}
-              >
-                {editingId === conversation.id ? (
-                  <input
-                    type='text'
-                    value={editTitle}
-                    onChange={e => setEditTitle(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        handleEditSave(conversation.id);
-                      } else if (e.key === 'Escape') {
-                        handleEditCancel();
-                      }
-                    }}
-                    onBlur={() => handleEditSave(conversation.id)}
-                    className='flex-1 text-xs bg-white dark:bg-slate-700 border border-blue-500 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500'
-                  />
-                ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        onConversationSelect?.(conversation.id);
+        {/* Conversations list container with Load More */}
+        <div className='flex-1 flex flex-col min-h-0'>
+          {/* Conversations list - Always fixed height to show ~3 conversations, scrollable when showAll is true */}
+          <div
+            className={`space-y-1 scrollbar-subtle flex-1 min-h-0 ${
+              showAll ? 'overflow-y-auto' : 'overflow-hidden'
+            }`}
+            style={{
+              height: showAll ? 'auto' : 'calc(3 * 4rem)', // Fixed height for exactly 3 conversations when not showing all
+            }}
+          >
+            <div className='space-y-1'>
+              {displayConversations.map(conversation => (
+                <div
+                  key={conversation.id}
+                  className={`group relative flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+                    activeConversationId === conversation.id
+                      ? 'bg-blue-50/60 dark:bg-blue-900/15 border border-blue-200/40 dark:border-blue-800/40'
+                      : 'hover:bg-gray-50/40 dark:hover:bg-slate-800/20 border border-transparent'
+                  }`}
+                >
+                  {editingId === conversation.id ? (
+                    <input
+                      type='text'
+                      value={editTitle}
+                      onChange={e => setEditTitle(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          handleEditSave(conversation.id);
+                        } else if (e.key === 'Escape') {
+                          handleEditCancel();
+                        }
                       }}
-                      className='flex-1 text-left min-w-0'
-                    >
-                      <div className='flex items-center gap-2'>
-                        <div className='flex-1 min-w-0'>
-                          <p className='text-sm font-medium text-gray-900 dark:text-white truncate mb-0.5'>
-                            {conversation.title || 'New Conversation'}
-                          </p>
-                          <div className='flex items-center gap-1.5'>
-                            <ClockIcon className='w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0' />
-                            <span className='text-xs text-gray-500 dark:text-gray-400'>
-                              {formatDate(conversation.updatedAt)}
-                            </span>
+                      onBlur={() => handleEditSave(conversation.id)}
+                      className='flex-1 text-xs bg-white dark:bg-slate-700 border border-blue-500 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500'
+                    />
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          onConversationSelect?.(conversation.id);
+                        }}
+                        className='flex-1 text-left min-w-0'
+                      >
+                        <div className='flex items-center gap-2'>
+                          <div className='flex-1 min-w-0'>
+                            <p className='text-sm font-medium text-gray-900 dark:text-white truncate mb-0.5'>
+                              {conversation.title || 'New Conversation'}
+                            </p>
+                            <div className='flex items-center gap-1.5'>
+                              <ClockIcon className='w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0' />
+                              <span className='text-xs text-gray-500 dark:text-gray-400'>
+                                {formatDate(conversation.updatedAt)}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                      </button>
+                      <div className='flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100'>
+                        <Dropdown placement='bottom-end'>
+                          <DropdownTrigger>
+                            <Button
+                              isIconOnly
+                              variant='light'
+                              size='sm'
+                              className='min-w-0 w-7 h-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                              aria-label='Conversation options'
+                            >
+                              <EllipsisHorizontalIcon className='w-5 h-5' />
+                            </Button>
+                          </DropdownTrigger>
+                          <DropdownMenu
+                            aria-label='Conversation actions'
+                            variant='flat'
+                          >
+                            <DropdownItem
+                              key='edit'
+                              startContent={
+                                <PencilIcon className='w-3.5 h-3.5' />
+                              }
+                              onPress={() => handleEditStart(conversation)}
+                            >
+                              Edit
+                            </DropdownItem>
+                            <DropdownItem
+                              key='delete'
+                              color='danger'
+                              startContent={
+                                <TrashIcon className='w-3.5 h-3.5' />
+                              }
+                              onPress={() => handleDeleteClick(conversation.id)}
+                            >
+                              Delete
+                            </DropdownItem>
+                          </DropdownMenu>
+                        </Dropdown>
                       </div>
-                    </button>
-                    <div className='flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100'>
-                      <Dropdown placement='bottom-end'>
-                        <DropdownTrigger>
-                          <Button
-                            isIconOnly
-                            variant='light'
-                            size='sm'
-                            className='min-w-0 w-7 h-7 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                            aria-label='Conversation options'
-                          >
-                            <EllipsisHorizontalIcon className='w-5 h-5' />
-                          </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu
-                          aria-label='Conversation actions'
-                          variant='flat'
-                        >
-                          <DropdownItem
-                            key='edit'
-                            startContent={
-                              <PencilIcon className='w-3.5 h-3.5' />
-                            }
-                            onPress={() => handleEditStart(conversation)}
-                          >
-                            Edit
-                          </DropdownItem>
-                          <DropdownItem
-                            key='delete'
-                            color='danger'
-                            startContent={<TrashIcon className='w-3.5 h-3.5' />}
-                            onPress={() => handleDeleteClick(conversation.id)}
-                          >
-                            Delete
-                          </DropdownItem>
-                        </DropdownMenu>
-                      </Dropdown>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Load More button - Fixed at bottom of container */}
-        {hasMore && !showAll && (
-          <div className='flex-shrink-0 pt-2 mt-2 border-t border-gray-200/30 dark:border-slate-700/30 px-3'>
-            <button
-              onClick={() => setShowAll(true)}
-              className='w-full px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200 text-center'
-            >
-              Load More ({conversations.length - maxInitialConversations} more)
-            </button>
-          </div>
-        )}
+          {/* Load More button - Fixed at bottom of conversations container, before Legal Links */}
+          {hasMore && !showAll && (
+            <div className='flex-shrink-0 pt-2 mt-2 border-t border-gray-200/30 dark:border-slate-700/30 px-3'>
+              <button
+                onClick={() => setShowAll(true)}
+                className='w-full px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors duration-200 text-center'
+              >
+                Load More ({conversations.length - maxInitialConversations}{' '}
+                more)
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Delete Confirmation Modal */}
