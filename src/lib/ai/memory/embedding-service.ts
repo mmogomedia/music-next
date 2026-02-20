@@ -1,23 +1,26 @@
 import { OpenAIEmbeddings } from '@langchain/openai';
 
 export class EmbeddingService {
-  private embeddings: OpenAIEmbeddings;
+  private embeddings: OpenAIEmbeddings | null = null;
 
-  constructor() {
-    // Embeddings only use OpenAI (Azure OpenAI is used for chat)
-    const openaiApiKey = process.env.OPENAI_API_KEY;
+  private getEmbeddings(): OpenAIEmbeddings {
+    if (!this.embeddings) {
+      // Embeddings only use OpenAI (Azure OpenAI is used for chat)
+      const openaiApiKey = process.env.OPENAI_API_KEY;
 
-    if (!openaiApiKey) {
-      throw new Error(
-        'Missing OPENAI_API_KEY. Embeddings require OpenAI API key to be set.'
-      );
+      if (!openaiApiKey) {
+        throw new Error(
+          'Missing OPENAI_API_KEY. Embeddings require OpenAI API key to be set.'
+        );
+      }
+
+      this.embeddings = new OpenAIEmbeddings({
+        modelName: 'text-embedding-3-small',
+        dimensions: 1536,
+        openAIApiKey: openaiApiKey,
+      });
     }
-
-    this.embeddings = new OpenAIEmbeddings({
-      modelName: 'text-embedding-3-small',
-      dimensions: 1536,
-      openAIApiKey: openaiApiKey,
-    });
+    return this.embeddings;
   }
 
   /**
@@ -25,7 +28,7 @@ export class EmbeddingService {
    */
   async embedText(text: string): Promise<number[]> {
     try {
-      const embedding = await this.embeddings.embedQuery(text);
+      const embedding = await this.getEmbeddings().embedQuery(text);
       return embedding;
     } catch (error) {
       console.error('Failed to generate embedding:', error);
@@ -38,7 +41,7 @@ export class EmbeddingService {
    */
   async embedBatch(texts: string[]): Promise<number[][]> {
     try {
-      const embeddings = await this.embeddings.embedDocuments(texts);
+      const embeddings = await this.getEmbeddings().embedDocuments(texts);
       return embeddings;
     } catch (error) {
       console.error('Failed to generate batch embeddings:', error);
