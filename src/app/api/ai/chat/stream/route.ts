@@ -230,20 +230,20 @@ export async function POST(request: NextRequest) {
               userId: context.userId,
               conversationId,
               messages: [
-                ...conversationHistory.map(m => ({
-                  id: m.id || 'temp',
+                ...conversationHistory.map((m, index) => ({
+                  id: `msg_${conversationId}_${index}_${m.timestamp.getTime()}`,
                   role: m.role,
                   content: m.content,
                   timestamp: m.timestamp || new Date(),
                 })),
                 {
-                  id: 'temp_user',
+                  id: `msg_${conversationId}_user_${Date.now()}`,
                   role: 'user',
                   content: message,
                   timestamp: new Date(),
                 },
                 {
-                  id: 'temp_assistant',
+                  id: `msg_${conversationId}_assistant_${Date.now()}`,
                   role: 'assistant',
                   content: responseMessage,
                   timestamp: new Date(),

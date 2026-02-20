@@ -31,6 +31,7 @@
     "enable-pgvector": "node scripts/enable-pgvector.js",
     "enable-pgvector:local": "dotenv -e .env.local -- node scripts/enable-pgvector.js",
     "enable-pgvector:prod": "node scripts/enable-pgvector.js",
+    "test:memory": "dotenv -e .env.local -- node scripts/test-memory-system.js",
     "copy-prod-to-dev": "node scripts/copy-prod-to-dev.js",
     "pulse:recalculate-eligibility": "dotenv -e .env.local -- node cron/recalculate-pulse-eligibility.js",
     "league:seed-demo": "dotenv -e .env.local -- node scripts/seed-league-demo.js",

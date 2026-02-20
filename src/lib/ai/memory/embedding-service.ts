@@ -4,9 +4,19 @@ export class EmbeddingService {
   private embeddings: OpenAIEmbeddings;
 
   constructor() {
+    // Embeddings only use OpenAI (Azure OpenAI is used for chat)
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+
+    if (!openaiApiKey) {
+      throw new Error(
+        'Missing OPENAI_API_KEY. Embeddings require OpenAI API key to be set.'
+      );
+    }
+
     this.embeddings = new OpenAIEmbeddings({
       modelName: 'text-embedding-3-small',
       dimensions: 1536,
+      openAIApiKey: openaiApiKey,
     });
   }
 
