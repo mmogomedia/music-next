@@ -98,8 +98,8 @@ export default function ChatTopBar({
   return (
     <div className='sticky top-0 z-30 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
       {/* ── Mobile tab bar ── */}
-      <div className='lg:hidden'>
-        <div className='flex h-14'>
+      <div className='lg:hidden pt-2'>
+        <div className='flex h-12'>
           {mobileTabs.map(tab => {
             const Icon = tab.icon;
             const isActive = 'href' in tab ? false : activeView === tab.key;
