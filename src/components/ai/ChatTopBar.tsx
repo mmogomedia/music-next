@@ -88,7 +88,7 @@ export default function ChatTopBar({
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       setMenuPos({
-        top: rect.bottom + 4,
+        top: rect.bottom,
         right: window.innerWidth - rect.right,
       });
     }
@@ -218,7 +218,7 @@ export default function ChatTopBar({
           <>
             {/* Transparent backdrop */}
             <button
-              className='fixed inset-0 z-[98] cursor-default'
+              className='fixed inset-0 z-[9998] cursor-default'
               onClick={() => setOverflowOpen(false)}
               aria-label='Close menu'
               tabIndex={-1}
@@ -227,9 +227,9 @@ export default function ChatTopBar({
             <div
               style={{
                 position: 'fixed',
-                top: menuPos.top,
+                top: menuPos.top + 8,
                 right: menuPos.right,
-                zIndex: 99,
+                zIndex: 9999,
               }}
               className='min-w-[160px] rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 shadow-xl overflow-hidden'
             >
