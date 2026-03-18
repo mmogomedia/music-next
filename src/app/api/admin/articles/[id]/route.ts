@@ -27,15 +27,17 @@ const updateSchema = z.object({
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
-    const article = await getArticleById(params.id);
+    const article = await getArticleById(id);
     return NextResponse.json({ article });
   } catch (error) {
     console.error('Error fetching article:', error);
@@ -45,12 +47,14 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const { id } = await params;
 
   try {
     const body = await request.json();
@@ -62,7 +66,7 @@ export async function PATCH(
       );
     }
 
-    const article = await updateArticle(params.id, parsed.data);
+    const article = await updateArticle(id, parsed.data);
     return NextResponse.json({ article });
   } catch (error) {
     console.error('Error updating article:', error);
@@ -75,21 +79,22 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const { id } = await params;
   const hardDelete = request.headers.get('x-hard-delete') === '1';
 
   try {
     if (hardDelete) {
-      await prisma.article.delete({ where: { id: params.id } });
+      await prisma.article.delete({ where: { id } });
     } else {
       await prisma.article.update({
-        where: { id: params.id },
+        where: { id },
         data: { status: 'ARCHIVED' },
       });
     }

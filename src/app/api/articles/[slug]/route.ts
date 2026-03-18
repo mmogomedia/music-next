@@ -6,10 +6,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
+  const { slug } = await params;
+
   try {
-    const article = await getArticleBySlug(params.slug);
+    const article = await getArticleBySlug(slug);
 
     // Only serve published articles publicly
     if (article.status !== 'PUBLISHED') {

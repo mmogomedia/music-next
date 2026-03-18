@@ -32,15 +32,17 @@ const updateSchema = z.object({
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
-    const cluster = await getClusterById(params.id);
+    const cluster = await getClusterById(id);
     return NextResponse.json({ cluster });
   } catch (error) {
     console.error('Error fetching cluster:', error);
@@ -50,12 +52,14 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const { id } = await params;
 
   try {
     const body = await request.json();
@@ -67,7 +71,7 @@ export async function PATCH(
       );
     }
 
-    const cluster = await updateCluster(params.id, parsed.data);
+    const cluster = await updateCluster(id, parsed.data);
     return NextResponse.json({ cluster });
   } catch (error) {
     console.error('Error updating cluster:', error);
@@ -80,15 +84,17 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session || session.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
-    await deleteCluster(params.id);
+    await deleteCluster(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     const err = error as Error & { statusCode?: number };

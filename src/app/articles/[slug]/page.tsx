@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 
-export default function ArticlesRedirect({
+export default async function ArticlesRedirect({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  redirect(`/learn/${params.slug}`);
+  const { slug } = await params;
+  redirect(`/learn/${slug}`);
 }
