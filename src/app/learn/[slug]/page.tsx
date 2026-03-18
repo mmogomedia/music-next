@@ -597,7 +597,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
                     alt='Flemoji'
                     width={40}
                     height={40}
-                    className='h-9 w-9 rounded-xl mb-4'
+                    className='h-9 w-9 rounded-xl mb-4 brightness-0 invert'
                   />
                   <p className='font-poppins text-xl font-extrabold leading-tight mb-2'>
                     {ctaHeadline}
