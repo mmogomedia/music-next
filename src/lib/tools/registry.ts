@@ -31,19 +31,20 @@
  * ─────────────────────────────────────────────────────────
  */
 
-import type { ComponentType } from 'react';
-import {
-  ScaleIcon,
-  BanknotesIcon,
-  ArrowUpTrayIcon,
-  MegaphoneIcon,
-} from '@heroicons/react/24/outline';
-
 export type ToolCategory =
   | 'royalties'
   | 'distribution'
   | 'promotion'
   | 'finance';
+
+/**
+ * Icon keys — resolved to actual Heroicon components inside ToolSummaryCard
+ * (a Client Component). Storing a string here keeps the registry plain-object
+ * serialisable so it can safely pass from Server → Client Components.
+ *
+ * Supported values:  scale | banknotes | arrow-up-tray | megaphone
+ */
+export type ToolIconKey = 'scale' | 'banknotes' | 'arrow-up-tray' | 'megaphone';
 
 export interface ToolDefinition {
   slug: string;
@@ -56,25 +57,23 @@ export interface ToolDefinition {
   /** Tailwind gradient classes for the card accent — e.g. 'from-purple-500 to-indigo-600' */
   gradient: string;
   /**
-   * Heroicon component rendered white inside the gradient icon box.
+   * Icon key resolved to a white Heroicon inside ToolSummaryCard.
    * See the iconography guide at the top of this file.
+   * Must be a plain string — React components cannot cross the server/client boundary.
    */
-  icon: ComponentType<{ className?: string }>;
+  iconKey: ToolIconKey;
   /** 2–3 bullet points shown on the summary card */
   features: string[];
   /** When true the /tools/[slug] page renders full-width with no container or padding */
   fullscreen?: boolean;
 }
 
-/** Default icons per category — used as fallback if a tool has no override */
-export const CATEGORY_ICONS: Record<
-  ToolCategory,
-  ComponentType<{ className?: string }>
-> = {
-  royalties: ScaleIcon,
-  finance: BanknotesIcon,
-  distribution: ArrowUpTrayIcon,
-  promotion: MegaphoneIcon,
+/** Default icon key per category — used as fallback for future tools */
+export const CATEGORY_ICON_KEYS: Record<ToolCategory, ToolIconKey> = {
+  royalties: 'scale',
+  finance: 'banknotes',
+  distribution: 'arrow-up-tray',
+  promotion: 'megaphone',
 };
 
 export const TOOLS: ToolDefinition[] = [
@@ -86,7 +85,7 @@ export const TOOLS: ToolDefinition[] = [
       'Create a professional royalty split agreement for any collaboration. Add contributors, assign percentage ownership, define roles, and export a clean text record to share with co-writers, producers, and labels.',
     category: 'royalties',
     gradient: 'from-purple-500 to-indigo-600',
-    icon: ScaleIcon, // balance scales = fair royalty splits
+    iconKey: 'scale', // balance scales = fair royalty splits
     features: [
       'Add unlimited collaborators with custom roles',
       'Live percentage validation (must total 100%)',
@@ -102,7 +101,7 @@ export const TOOLS: ToolDefinition[] = [
       'Enter your monthly stream counts across Spotify, Apple Music, YouTube Music, TIDAL, and more — and see your estimated revenue in both USD and ZAR. Understand how different platforms pay and where to focus your promotion.',
     category: 'finance',
     gradient: 'from-emerald-500 to-teal-600',
-    icon: BanknotesIcon, // banknotes = streaming earnings
+    iconKey: 'banknotes', // banknotes = streaming earnings
     features: [
       'Covers 5 major streaming platforms',
       'Real-time ZAR + USD estimates',

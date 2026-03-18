@@ -1,11 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import type { ToolDefinition } from '@/lib/tools/registry';
+import type { ToolDefinition, ToolIconKey } from '@/lib/tools/registry';
+import {
+  ScaleIcon,
+  BanknotesIcon,
+  ArrowUpTrayIcon,
+  MegaphoneIcon,
+} from '@heroicons/react/24/outline';
+import type { ComponentType } from 'react';
 
 interface ToolSummaryCardProps {
   tool: ToolDefinition;
 }
+
+/** Resolves a plain string icon key to its Heroicon component (client-side only) */
+const ICON_MAP: Record<ToolIconKey, ComponentType<{ className?: string }>> = {
+  scale: ScaleIcon,
+  banknotes: BanknotesIcon,
+  'arrow-up-tray': ArrowUpTrayIcon,
+  megaphone: MegaphoneIcon,
+};
 
 const CATEGORY_LABELS: Record<string, string> = {
   royalties: 'Royalties',
@@ -15,7 +30,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function ToolSummaryCard({ tool }: ToolSummaryCardProps) {
-  const Icon = tool.icon;
+  const Icon = ICON_MAP[tool.iconKey] ?? ScaleIcon;
 
   return (
     <Link
