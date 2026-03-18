@@ -73,7 +73,7 @@ export default function ChatTopBar({
     <div className='sticky top-0 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
       {/* ── Mobile tab bar ── */}
       <div className='lg:hidden pt-3'>
-        <div className='flex items-end'>
+        <div className='flex items-center'>
           {/* 3 visible tabs */}
           {mobileTabs.map(tab => {
             const Icon = tab.icon;
@@ -109,19 +109,18 @@ export default function ChatTopBar({
           })}
 
           {/* 3-dot overflow */}
-          <div className='flex flex-col items-center pb-2 px-3'>
+          <div className='flex items-center px-2'>
             <Dropdown placement='bottom-end'>
               <DropdownTrigger>
                 <button
-                  className={`flex flex-col items-center gap-1 text-xs font-medium transition-colors border-b-2 pb-0 ${
+                  className={`p-1 rounded-full transition-colors ${
                     activeView === 'league'
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-gray-500 dark:text-gray-400'
+                      ? 'text-primary'
+                      : 'text-gray-500 dark:text-gray-400'
                   }`}
                   aria-label='More options'
                 >
                   <EllipsisVerticalIcon className='w-5 h-5' />
-                  More
                 </button>
               </DropdownTrigger>
               <DropdownMenu aria-label='More navigation options'>
