@@ -5,7 +5,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { getArticleBySlug } from '@/lib/services/article-service';
+import { getArticleBySlug, getArticles } from '@/lib/services/article-service';
 import { constructFileUrl } from '@/lib/url-utils';
 import { format } from 'date-fns';
 import LearnHeader from '@/components/layout/LearnHeader';
@@ -13,9 +13,26 @@ import ReadingProgress from '@/components/learn/ReadingProgress';
 import ShareButton from '@/components/learn/ShareButton';
 import { getToolBySlug } from '@/lib/tools/registry';
 import { ToolSummaryCard } from '@/components/tools/ToolSummaryCard';
+import { absoluteUrl, SITE_URL } from '@/lib/utils/site-url';
 
 interface LearnPageProps {
   params: Promise<{ slug: string }>;
+}
+
+// Revalidate every hour so edits publish quickly without full SSR on every request
+export const revalidate = 3600;
+
+// Pre-build all published article pages at deploy time
+export async function generateStaticParams() {
+  try {
+    const { articles } = await getArticles({
+      status: 'PUBLISHED',
+      limit: 1000,
+    });
+    return articles.map(a => ({ slug: a.slug }));
+  } catch {
+    return [];
+  }
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -81,33 +98,36 @@ export async function generateMetadata({
       ...article.targetKeywords,
     ].join(', ');
 
+    const canonicalUrl = absoluteUrl(`/learn/${slug}`);
+    const ogImageUrl = article.coverImageUrl
+      ? constructFileUrl(article.coverImageUrl)
+      : absoluteUrl('/og-default.png');
+
     return {
       title: `${title} | Flemoji Learn`,
       description,
       keywords: keywords || undefined,
-      alternates: { canonical: `/learn/${slug}` },
+      authors: [{ name: article.author.name ?? 'Flemoji Editorial' }],
+      alternates: { canonical: canonicalUrl },
       openGraph: {
         title,
         description,
+        url: canonicalUrl,
+        siteName: 'Flemoji',
         type: 'article',
         publishedTime: article.publishedAt?.toISOString(),
-        images: article.coverImageUrl
-          ? [
-              {
-                url: constructFileUrl(article.coverImageUrl),
-                width: 1200,
-                height: 630,
-              },
-            ]
-          : [],
+        modifiedTime: article.updatedAt?.toISOString(),
+        authors: [article.author.name ?? 'Flemoji Editorial'],
+        section: article.cluster?.name ?? 'Music Industry',
+        tags: article.targetKeywords,
+        images: [{ url: ogImageUrl, width: 1200, height: 630, alt: title }],
       },
       twitter: {
         card: 'summary_large_image',
         title,
         description,
-        images: article.coverImageUrl
-          ? [constructFileUrl(article.coverImageUrl)]
-          : [],
+        site: '@flemoji',
+        images: [ogImageUrl],
       },
     };
   } catch {
@@ -145,8 +165,54 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
   const nextArticle =
     currentIdx < allSorted.length - 1 ? allSorted[currentIdx + 1] : null;
 
+  const ogImageUrl = article.coverImageUrl
+    ? constructFileUrl(article.coverImageUrl)
+    : absoluteUrl('/og-default.png');
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.title,
+    description: article.metaDescription || article.excerpt || '',
+    image: ogImageUrl,
+    datePublished: article.publishedAt?.toISOString(),
+    dateModified: article.updatedAt?.toISOString(),
+    author: {
+      '@type': 'Person',
+      name: article.author.name ?? 'Flemoji Editorial',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Flemoji',
+      logo: {
+        '@type': 'ImageObject',
+        url: absoluteUrl('/logo_symbol.png'),
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': absoluteUrl(`/learn/${article.slug}`),
+    },
+    keywords: article.targetKeywords.join(', '),
+    timeRequired: `PT${article.readTime}M`,
+    inLanguage: 'en-ZA',
+    ...(article.cluster && {
+      articleSection: article.cluster.name,
+      isPartOf: {
+        '@type': 'WebPageElement',
+        name: article.cluster.name,
+        url: `${SITE_URL}/learn?cluster=${article.cluster.id}`,
+      },
+    }),
+  };
+
   return (
     <div className='min-h-screen bg-white dark:bg-slate-900'>
+      {/* JSON-LD structured data for search engines */}
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <ReadingProgress />
       <LearnHeader />
 
