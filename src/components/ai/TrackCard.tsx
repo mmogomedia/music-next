@@ -638,8 +638,6 @@ export default function TrackCard({
 
   // Spotlight variant (large tile with overlay info)
   if (variant === 'spotlight') {
-    const durationSeconds = normalizeDuration(track.duration);
-
     const handleKeyActivate = (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -657,7 +655,7 @@ export default function TrackCard({
             tabIndex={0}
             onClick={handleClick}
             onKeyDown={handleKeyActivate}
-            className={`group flex h-full flex-col overflow-hidden rounded-[32px] border transition-all duration-500 cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-500/30 dark:focus:ring-blue-400/30 ${
+            className={`group flex h-full flex-col overflow-hidden rounded-2xl border transition-all duration-500 cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-500/30 dark:focus:ring-blue-400/30 ${
               isCurrentTrack
                 ? 'border-blue-500/70 dark:border-blue-400/70 shadow-2xl shadow-blue-500/20'
                 : 'border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/10'
@@ -734,33 +732,17 @@ export default function TrackCard({
                       />
                     )}
                   </div>
-                  <p className='text-xs text-gray-600 dark:text-gray-300 truncate uppercase tracking-wide'>
+                  <p className='text-xs text-gray-500 dark:text-gray-400 truncate'>
                     <ArtistDisplay track={track} />
                   </p>
                 </div>
-                <div className='flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 flex-wrap'>
-                  {showDuration && durationSeconds && (
-                    <span className='flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-300'>
-                      <svg
-                        className='w-3.5 h-3.5'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
-                        <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                          strokeWidth={2}
-                          d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-                        />
-                      </svg>
-                      {formatDuration(durationSeconds)}
-                    </span>
-                  )}
+
+                {/* Compact single-line meta: play count + genre badge only */}
+                <div className='flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 overflow-hidden'>
                   {typeof track.playCount === 'number' && (
-                    <span className='flex items-center gap-1'>
+                    <span className='flex items-center gap-0.5 flex-shrink-0'>
                       <svg
-                        className='w-3.5 h-3.5'
+                        className='w-3 h-3'
                         fill='currentColor'
                         viewBox='0 0 24 24'
                       >
@@ -769,35 +751,21 @@ export default function TrackCard({
                       {track.playCount.toLocaleString?.() ?? track.playCount}
                     </span>
                   )}
-                  {typeof track.downloadCount === 'number' && (
-                    <span className='flex items-center gap-1'>
-                      <ArrowDownTrayIcon className='w-3.5 h-3.5' />
-                      {track.downloadCount.toLocaleString?.() ??
-                        track.downloadCount}
-                    </span>
-                  )}
                   {track.genre && (
-                    <span className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800/60 text-gray-700 dark:text-gray-200 font-semibold uppercase tracking-wide'>
+                    <span className='px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800/60 text-gray-600 dark:text-gray-300 font-semibold uppercase text-[10px] truncate'>
                       {track.genre}
                     </span>
                   )}
-                </div>
-
-                <div className='h-4 flex items-end'>
                   {isCurrentlyPlaying && (
-                    <div className='flex gap-1 text-blue-500'>
-                      <span className='w-1 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]' />
+                    <div className='flex gap-0.5 items-end ml-auto flex-shrink-0'>
+                      <span className='w-1 h-2.5 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]' />
                       <span
-                        className='w-1 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
+                        className='w-1 h-3.5 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
                         style={{ animationDelay: '0.1s' }}
                       />
                       <span
-                        className='w-1 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
+                        className='w-1 h-2.5 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
                         style={{ animationDelay: '0.2s' }}
-                      />
-                      <span
-                        className='w-1 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
-                        style={{ animationDelay: '0.3s' }}
                       />
                     </div>
                   )}
@@ -805,7 +773,7 @@ export default function TrackCard({
               </div>
 
               {showActions && (
-                <div className='mt-2 grid grid-cols-4 gap-1'>
+                <div className='mt-2 hidden sm:grid grid-cols-4 gap-1'>
                   <ActionButton
                     icon={QueueListIcon}
                     label='Add to queue'
