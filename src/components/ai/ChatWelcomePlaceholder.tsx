@@ -137,13 +137,13 @@ export default function ChatWelcomePlaceholder({
 
           {/* Featured tracks grid - max 4 in one row */}
           {loading ? (
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+            <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
               {Array.from({ length: 4 }).map((_, i) => (
                 <PlaceholderCard key={i} isFeatured />
               ))}
             </div>
           ) : featured.length > 0 ? (
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
+            <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
               {featured.map((track, idx) => (
                 <TrackCard
                   key={track.id}

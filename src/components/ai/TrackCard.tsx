@@ -445,13 +445,13 @@ export default function TrackCard({
             )}
           </div>
 
-          {/* Action buttons - visible on hover or always if current track */}
+          {/* Action buttons — hidden on mobile (touch has no hover), visible on sm+ via hover or always if current track */}
           {showActions && (
             <div
-              className={`flex items-start gap-1.5 flex-shrink-0 transition-opacity ${
+              className={`items-start gap-1.5 flex-shrink-0 transition-opacity ${
                 isCurrentTrack
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover:opacity-100'
+                  ? 'hidden sm:flex opacity-100'
+                  : 'hidden sm:flex opacity-0 group-hover:opacity-100'
               }`}
             >
               <button
@@ -592,10 +592,10 @@ export default function TrackCard({
 
         {showActions && (
           <div
-            className={`flex items-center gap-1 flex-shrink-0 transition-opacity ${
+            className={`items-center gap-1 flex-shrink-0 transition-opacity ${
               isCurrentTrack
-                ? 'opacity-100'
-                : 'opacity-0 group-hover:opacity-100'
+                ? 'hidden sm:flex opacity-100'
+                : 'hidden sm:flex opacity-0 group-hover:opacity-100'
             }`}
           >
             <button
