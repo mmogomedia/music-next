@@ -20,24 +20,13 @@ interface ChatTopBarProps {
 }
 
 const viewButtons = [
-  {
-    key: 'timeline' as ViewType,
-    label: 'Timeline',
-    mobileLabel: 'Timeline',
-    icon: ClockIcon,
-  },
+  { key: 'timeline' as ViewType, label: 'Timeline', icon: ClockIcon },
   {
     key: 'streaming' as ViewType,
     label: 'AI Streaming',
-    mobileLabel: 'Streaming',
     icon: SparklesIcon,
   },
-  {
-    key: 'league' as ViewType,
-    label: 'League',
-    mobileLabel: 'League',
-    icon: TrophyIcon,
-  },
+  { key: 'league' as ViewType, label: 'League', icon: TrophyIcon },
 ] as const;
 
 const linkButtons = [
@@ -51,31 +40,46 @@ export default function ChatTopBar({
 }: ChatTopBarProps) {
   return (
     <div className='sticky top-0 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
-      <div className='px-3 lg:px-4 py-2 lg:py-3 flex items-center gap-3 lg:gap-4'>
-        {/* View Toggle Buttons — horizontal scroll on mobile, inline on desktop */}
-        <div className='flex-1 min-w-0 lg:flex-initial lg:flex-shrink-0 overflow-x-auto scrollbar-hide'>
-          <div className='inline-flex items-center gap-1 lg:gap-1.5 rounded-full bg-gray-100/80 dark:bg-slate-800/80 p-0.5 lg:p-1 border border-gray-200/60 dark:border-slate-700/70 shadow-sm'>
-            {viewButtons.map(({ key, label, mobileLabel, icon: Icon }) => (
+      <div className='px-3 lg:px-4 pt-3 pb-2 lg:py-3 flex items-center gap-3 lg:gap-4'>
+        {/* View Toggle Buttons — icon-only on mobile, labelled on desktop */}
+        <div className='flex items-center lg:flex-shrink-0'>
+          <div className='inline-flex items-center gap-1.5 lg:gap-1.5 rounded-full bg-gray-100/80 dark:bg-slate-800/80 p-1 border border-gray-200/60 dark:border-slate-700/70 shadow-sm'>
+            {viewButtons.map(({ key, label, icon: Icon }) => (
               <Button
                 key={key}
+                isIconOnly
                 size='sm'
                 variant={activeView === key ? 'solid' : 'light'}
                 color={activeView === key ? 'primary' : 'default'}
                 onPress={() => onViewChange(key)}
-                className={`gap-1 lg:gap-1.5 rounded-full text-[11px] lg:text-xs font-medium min-w-0 px-2.5 lg:px-3 ${
+                className={`lg:hidden rounded-full h-8 w-8 min-w-8 ${
+                  activeView === key
+                    ? 'shadow-sm'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`}
+                aria-label={label}
+              >
+                <Icon className='w-4 h-4' aria-hidden='true' />
+              </Button>
+            ))}
+
+            {viewButtons.map(({ key, label, icon: Icon }) => (
+              <Button
+                key={`${key}-desktop`}
+                size='sm'
+                variant={activeView === key ? 'solid' : 'light'}
+                color={activeView === key ? 'primary' : 'default'}
+                onPress={() => onViewChange(key)}
+                className={`hidden lg:flex gap-1.5 rounded-full text-xs font-medium px-3 ${
                   activeView === key
                     ? 'shadow-sm'
                     : 'text-gray-700 dark:text-gray-300'
                 }`}
                 startContent={
-                  <Icon
-                    className='w-3.5 h-3.5 lg:w-4 lg:h-4 flex-shrink-0'
-                    aria-hidden='true'
-                  />
+                  <Icon className='w-4 h-4 flex-shrink-0' aria-hidden='true' />
                 }
               >
-                <span className='lg:hidden'>{mobileLabel}</span>
-                <span className='hidden lg:inline'>{label}</span>
+                {label}
               </Button>
             ))}
 
@@ -85,13 +89,23 @@ export default function ChatTopBar({
             {linkButtons.map(({ href, label, icon: Icon }) => (
               <Link key={href} href={href}>
                 <Button
+                  isIconOnly
                   size='sm'
                   variant='light'
                   color='default'
-                  className='gap-1 lg:gap-1.5 rounded-full text-[11px] lg:text-xs font-medium text-gray-700 dark:text-gray-300 min-w-0 px-2.5 lg:px-3'
+                  className='lg:hidden rounded-full h-8 w-8 min-w-8 text-gray-700 dark:text-gray-300'
+                  aria-label={label}
+                >
+                  <Icon className='w-4 h-4' aria-hidden='true' />
+                </Button>
+                <Button
+                  size='sm'
+                  variant='light'
+                  color='default'
+                  className='hidden lg:flex gap-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 px-3'
                   startContent={
                     <Icon
-                      className='w-3.5 h-3.5 lg:w-4 lg:h-4 flex-shrink-0'
+                      className='w-4 h-4 flex-shrink-0'
                       aria-hidden='true'
                     />
                   }
