@@ -11,6 +11,7 @@ import {
   Cog6ToothIcon,
   BookOpenIcon,
   HomeIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
 
 const navItems = [
@@ -21,6 +22,11 @@ const navItems = [
 ];
 
 const learnItem = { label: 'Learn', href: '/learn', icon: BookOpenIcon };
+const toolsItem = {
+  label: 'Tools',
+  href: '/tools',
+  icon: WrenchScrewdriverIcon,
+};
 const settingsItem = {
   label: 'Settings',
   href: '/chat/settings',
@@ -126,6 +132,21 @@ export default function ChatSidebar() {
             Music business guides
           </Link>
         </div>
+
+        {/* Tools link */}
+        <Link
+          href={toolsItem.href}
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group ${
+            isActive(toolsItem.href)
+              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-slate-800'
+          }`}
+        >
+          <WrenchScrewdriverIcon
+            className={`w-4 h-4 flex-shrink-0 ${isActive(toolsItem.href) ? 'text-blue-600 dark:text-blue-400' : ''}`}
+          />
+          <span className='flex-1'>Tools</span>
+        </Link>
       </nav>
 
       {/* Learn CTA card */}

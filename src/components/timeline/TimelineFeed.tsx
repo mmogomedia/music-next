@@ -694,97 +694,8 @@ export default function TimelineFeed({
     );
   }
 
-  // Convert featured content to display format, with fallback placeholders
-  const displayFeatured =
-    featuredContent.length > 0
-      ? featuredContent.map(convertFeaturedToDisplay)
-      : [
-          {
-            id: 'placeholder-yt',
-            type: 'video' as const,
-            title: 'Amapiano Mix 2024 - Best of South African House Music',
-            thumbnail:
-              'https://img.youtube.com/vi/UNWbmiwIzkY/maxresdefault.jpg',
-            artist: 'DJ Mix',
-            duration: '45:30',
-            url: 'https://www.youtube.com/watch?v=UNWbmiwIzkY',
-            platform: 'YouTube',
-          },
-          {
-            id: 'placeholder-song',
-            type: 'song' as const,
-            title: 'Summer Vibes',
-            coverArt:
-              'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
-            artist: 'Local Artist',
-            duration: '03:28',
-          },
-          {
-            id: 'placeholder-article-1',
-            type: 'article' as const,
-            title: 'New Music Trends in South Africa',
-            thumbnail:
-              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=400&fit=crop',
-            author: 'Flemoji News',
-            duration: '5 min read',
-          },
-          {
-            id: 'placeholder-song-2',
-            type: 'song' as const,
-            title: 'City Lights',
-            coverArt:
-              'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop',
-            artist: 'Urban Sounds',
-            duration: '04:12',
-          },
-          {
-            id: 'placeholder-article-2',
-            type: 'article' as const,
-            title: 'How Amapiano Took Over the World',
-            thumbnail:
-              'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
-            author: 'Music Weekly',
-            duration: '8 min read',
-          },
-          {
-            id: 'placeholder-video-2',
-            type: 'video' as const,
-            title: 'Live Performance - Jazz Night',
-            thumbnail:
-              'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop',
-            artist: 'Live Sessions',
-            duration: '32:15',
-            url: 'https://www.youtube.com',
-            platform: 'YouTube',
-          },
-          {
-            id: 'placeholder-song-3',
-            type: 'song' as const,
-            title: 'Midnight Groove',
-            coverArt:
-              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=400&fit=crop',
-            artist: 'Night Beats',
-            duration: '03:55',
-          },
-          {
-            id: 'placeholder-article-3',
-            type: 'article' as const,
-            title: 'Inside the Johannesburg Live Music Scene',
-            thumbnail:
-              'https://images.unsplash.com/photo-1511192336575-5a79af67a629?w=400&h=400&fit=crop',
-            author: 'SA Music Journal',
-            duration: '7 min read',
-          },
-          {
-            id: 'placeholder-article-4',
-            type: 'article' as const,
-            title: '10 Upcoming Artists to Watch This Summer',
-            thumbnail:
-              'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&h=400&fit=crop',
-            author: 'Flemoji Editorial',
-            duration: '6 min read',
-          },
-        ];
+  // Convert featured content to display format — no placeholders
+  const displayFeatured = featuredContent.map(convertFeaturedToDisplay);
 
   return (
     <div className='w-full py-6'>
@@ -909,8 +820,8 @@ export default function TimelineFeed({
         </div>
       </div>
 
-      {/* Featured Content Section - Horizontal Scroll - Only in Timeline View */}
-      {viewMode === 'timeline' && (
+      {/* Featured Content Section - Horizontal Scroll - Only in Timeline View, only when content exists */}
+      {viewMode === 'timeline' && displayFeatured.length > 0 && (
         <div className='mb-6 w-full'>
           <div className='max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mb-3'>
             <div className='flex items-center justify-between'>
