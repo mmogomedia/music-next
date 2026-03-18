@@ -54,15 +54,24 @@ export class RecommendationAgent extends BaseAgent {
         ? `${message}${contextMessage ? `\n\nContext: ${contextMessage}` : ''}`
         : message;
 
+      // Build system prompt with long-term memory context and messages with history
+      const systemPrompt = this.buildSystemPromptWithMemory(
+        this.systemPrompt,
+        context
+      );
+      const messages = this.buildMessagesWithHistory(
+        systemPrompt,
+        fullMessage,
+        context
+      );
+
       const execution = await executeToolCallLoop({
         model: this.model,
         tools: recommendationTools,
-        messages: [
-          { role: 'system', content: this.systemPrompt },
-          { role: 'user', content: fullMessage },
-        ],
+        messages,
         emitEvent: context?.emitEvent,
-        originalMessage: message, // Pass original message for debugging
+        originalMessage: message,
+        runConfig: context?.runConfig,
       });
 
       const responseContent = extractTextContent(

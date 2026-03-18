@@ -40,6 +40,8 @@ export default function Header() {
       { name: 'Browse', href: '/browse' },
       { name: 'Artists', href: '/artists' },
       { name: 'Playlists', href: '/playlists' },
+      { name: 'Learn', href: '/learn' },
+      { name: 'Tools', href: '/tools' },
     ],
     []
   );

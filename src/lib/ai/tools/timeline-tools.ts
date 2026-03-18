@@ -12,6 +12,10 @@ import { z } from 'zod';
 import { TimelineService } from '@/lib/services';
 import { logger } from '@/lib/utils/logger';
 import type { PostType } from '@prisma/client';
+import {
+  SearchTimelinePostsOutputSchema,
+  GetTimelineFeedOutputSchema,
+} from './output-schemas';
 
 /**
  * Search timeline posts by query
@@ -72,7 +76,7 @@ export const searchTimelinePostsTool = new DynamicStructuredTool({
         query,
       });
 
-      return JSON.stringify({
+      const result = {
         posts: feed.posts.map(post => ({
           id: post.id,
           title: post.title,
@@ -95,7 +99,9 @@ export const searchTimelinePostsTool = new DynamicStructuredTool({
           viewCount: post.viewCount || 0,
         })),
         total: feed.posts.length,
-      });
+      };
+      const validated = SearchTimelinePostsOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
       logger.error('[search_timeline_posts Tool] Error:', error);
       return JSON.stringify({ posts: [], total: 0, error: 'Search failed' });
@@ -177,7 +183,7 @@ export const getTimelineFeedTool = new DynamicStructuredTool({
         hasMore: feed.hasMore,
       });
 
-      return JSON.stringify({
+      const result = {
         posts: feed.posts.map(post => ({
           id: post.id,
           title: post.title,
@@ -201,7 +207,9 @@ export const getTimelineFeedTool = new DynamicStructuredTool({
         })),
         total: feed.posts.length,
         hasMore: feed.hasMore,
-      });
+      };
+      const validated = GetTimelineFeedOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
       logger.error('[get_timeline_feed Tool] Error:', error);
       return JSON.stringify({

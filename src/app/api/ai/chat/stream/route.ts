@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { aiService } from '@/lib/ai/ai-service';
 import { routerAgent } from '@/lib/ai/agents';
 import { ChatRequest, ChatResponse } from '@/types/ai';
-import { conversationStore } from '@/lib/ai/memory/conversation-store';
-import { preferenceTracker } from '@/lib/ai/memory/preference-tracker';
-import { contextBuilder } from '@/lib/ai/memory/context-builder';
-import { memoryOrchestrator } from '@/lib/ai/memory/memory-orchestrator';
+import {
+  conversationStore,
+  semanticMemoryManager,
+  contextBuilder,
+  memoryOrchestrator,
+} from '@/lib/ai/memory/bootstrap';
 import { logger } from '@/lib/utils/logger';
 import type { SSEEvent, SSEEventEmitter } from '@/lib/ai/sse-event-emitter';
+import type { RunnableConfig } from '@langchain/core/runnables';
+import { uuid7 as uuidv7 } from 'langsmith';
+import { traceable } from 'langsmith/traceable';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,10 +38,14 @@ export async function POST(request: NextRequest) {
         }
       };
 
-      // Send initial connection confirmation
+      // Generate trace ID immediately so it's available in the first event
+      const traceId = uuidv7();
+
+      // Send initial connection confirmation (includes traceId for DevTools visibility)
       sendEvent({
         type: 'connected',
         timestamp: new Date().toISOString(),
+        traceId,
       });
 
       try {
@@ -77,6 +86,26 @@ export async function POST(request: NextRequest) {
           body.conversationId ||
           `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+        // Build a LangChain config that tags every LLM call for this message
+        // with traceId — one filter URL per message in LangSmith.
+        const runConfig: RunnableConfig = {
+          tags: [traceId, `conv:${conversationId.slice(-8)}`],
+          metadata: {
+            traceId,
+            conversationId,
+            userId: context?.userId ?? 'anonymous',
+            chatType: chatType ?? 'default',
+          },
+          runName: 'flemoji_chat',
+        };
+
+        // Log a single line to the server console that you can copy and paste
+        // into LangSmith's tag filter to see every trace for this message.
+        const project = process.env.LANGCHAIN_PROJECT ?? 'default';
+        logger.error(
+          `[LangSmith] ▶ msg="${message.slice(0, 60)}" tag=${traceId} project=${project}`
+        );
+
         // Get conversation history for context-aware routing
         const conversationHistory = context?.userId
           ? await conversationStore.getConversation(
@@ -110,9 +139,10 @@ export async function POST(request: NextRequest) {
           })),
           filters: {
             ...built.filters,
-            // Use top genre preference from enhanced memory
-            genre:
-              enhancedContext.preferences.genres[0] || built.filters?.genre,
+            // NOTE: Do NOT inject user's top genre preference here as a hard filter.
+            // Genre preferences are available in metadata.preferences and the LLM can
+            // decide when to apply them. Injecting as a filter causes genre bleeding
+            // (e.g. thematic queries like "music about love" get filtered to one genre).
             // Add province from request context if provided
             ...(context?.province && { province: context.province }),
           },
@@ -127,6 +157,8 @@ export async function POST(request: NextRequest) {
           },
           // Add SSE event emitter to context
           emitEvent: sendEvent,
+          // LangSmith trace config — tags every LLM call with traceId
+          runConfig,
         };
 
         // Store user message
@@ -142,12 +174,33 @@ export async function POST(request: NextRequest) {
             undefined,
             chatType
           );
-          await preferenceTracker.updateFromMessage(context.userId, message);
+          semanticMemoryManager
+            .extractPreferencesFromText({
+              userId: context.userId,
+              text: message,
+            })
+            .catch(() => {});
         }
 
-        // Use Router Agent to get the appropriate response
-        // RouterAgent will emit events through the context
-        const agentResponse = await routerAgent.route(message, agentContext);
+        // Wrap the entire agent pipeline in a traceable parent run so that
+        // LangSmith shows ONE root trace with all child runs (intent classifier,
+        // tool loops, model calls) nested inside it — not separate root runs.
+        const runChat = traceable(
+          async () => routerAgent.route(message, agentContext),
+          {
+            name: 'flemoji_chat',
+            run_type: 'chain',
+            tags: [traceId],
+            metadata: {
+              traceId,
+              conversationId,
+              userId: context?.userId ?? 'anonymous',
+              chatType: chatType ?? 'default',
+              message: message.slice(0, 120),
+            },
+          }
+        );
+        const agentResponse = await runChat();
 
         // Ensure we have a message (fallback if empty)
         const responseMessage =
@@ -218,10 +271,9 @@ export async function POST(request: NextRequest) {
             chatType
           );
           if (agentResponse?.data) {
-            await preferenceTracker.updateFromResults(
-              context.userId,
-              agentResponse.data
-            );
+            semanticMemoryManager
+              .updateFromResults(context.userId, agentResponse.data)
+              .catch(() => {});
           }
 
           // Store conversation in enhanced memory system (non-blocking)

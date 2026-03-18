@@ -58,7 +58,7 @@ export class IntentClassifierAgent extends BaseAgent {
   > {
     try {
       const prompt = this.buildClassificationPrompt(message, context);
-      const response = await this.model.invoke(prompt);
+      const response = await this.model.invoke(prompt, context?.runConfig);
       const result = this.parseIntentResponse(response.content as string);
 
       return {

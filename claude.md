@@ -729,12 +729,53 @@ yarn build
 
 ### Database Migrations
 
-**Development:**
+**⛔ NEVER use `prisma db push` or `yarn db:push`.**
+
+`db:push` applies schema changes without creating a migration file. This causes the
+migration history (`_prisma_migrations`) to drift out of sync with the actual database,
+which breaks `prisma migrate deploy` on future builds and production deploys.
+`yarn db:push` is intentionally blocked by a script that will error with instructions.
+
+**Always use `prisma migrate dev` to make schema changes:**
 
 ```bash
-yarn db:push          # Push schema changes without migration
-yarn prisma:migrate   # Create migration with name
-yarn db:studio        # Open Prisma Studio
+# Make a schema change → always run this immediately after
+yarn db:migrate --name describe_your_change
+
+# Examples
+yarn db:migrate --name add_user_preferences_table
+yarn db:migrate --name add_track_mood_field
+yarn db:migrate --name remove_legacy_artist_column
+```
+
+This command:
+
+1. Diffs `prisma/schema.prisma` against the current DB state
+2. Generates a SQL file in `prisma/migrations/TIMESTAMP_name/migration.sql`
+3. Applies it to your local database
+4. Records it in `_prisma_migrations` — keeps history in sync
+
+**Other DB commands:**
+
+```bash
+yarn db:studio        # Open Prisma Studio (read/write DB via UI)
+yarn prisma:generate  # Regenerate the Prisma client after schema changes
+```
+
+**Production:**
+
+```bash
+yarn build            # Runs prisma migrate deploy automatically before next build
+```
+
+**If a migration is stuck** (e.g. `finished_at IS NULL` in `_prisma_migrations`):
+
+```bash
+# Mark a migration as already applied (objects exist in DB but history is out of sync)
+npx prisma migrate resolve --applied MIGRATION_NAME
+
+# Then verify everything is clean
+npx prisma migrate status
 ```
 
 **Production:**

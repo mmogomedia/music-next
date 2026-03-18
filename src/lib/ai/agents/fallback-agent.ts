@@ -43,6 +43,23 @@ export class FallbackAgent extends BaseAgent {
         type: 'text',
         message: response,
         timestamp: new Date(),
+        actions: [
+          {
+            type: 'send_message',
+            label: 'Search for something',
+            data: { message: 'Search for music' },
+          },
+          {
+            type: 'send_message',
+            label: 'Show trending',
+            data: { message: "Show me what's trending" },
+          },
+          {
+            type: 'send_message',
+            label: 'Get help',
+            data: { message: 'What can you help me with?' },
+          },
+        ],
       },
     };
   }
@@ -65,29 +82,9 @@ export class FallbackAgent extends BaseAgent {
    */
   private buildResponse(isMetaQuestion: boolean): string {
     if (isMetaQuestion) {
-      return `You can search for music by simply asking me! Just type what you're looking for in natural language. For example:
-
-• **Search for songs**: "Play Amapiano tracks" or "Find songs by Kabza De Small"
-• **Search by mood**: "Show me upbeat music" or "Find chill songs"
-• **Search by artist**: "Play music by Major League DJz" or "Show me Uncle Waffles songs"
-• **Search by genre**: "Find Afrobeats music" or "Show me Gospel tracks"
-
-Just type your request in the chat box and I'll help you discover the music you're looking for!`;
+      return "Just ask me in natural language — I'll find the music for you.";
     }
 
-    return `I'm here to help you discover and enjoy South African music! I can help you with:
-
-• Finding songs, artists, or playlists
-• Playing music and managing your queue
-• Getting personalized recommendations
-• Learning about music genres and artists
-
-Try asking me things like:
-- "Play Amapiano tracks"
-- "Show me songs by Kabza De Small"
-- "Find upbeat music for a party"
-- "Recommend some new artists"
-
-What would you like to explore?`;
+    return "I didn't quite catch that. Try one of these instead:";
   }
 }

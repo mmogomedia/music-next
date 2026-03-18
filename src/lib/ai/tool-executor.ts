@@ -13,6 +13,7 @@ import {
   type BaseMessageLike,
 } from '@langchain/core/messages';
 import type { StructuredToolInterface } from '@langchain/core/tools';
+import type { RunnableConfig } from '@langchain/core/runnables';
 import type { SSEEventEmitter } from '@/lib/ai/sse-event-emitter';
 
 /**
@@ -20,7 +21,10 @@ import type { SSEEventEmitter } from '@/lib/ai/sse-event-emitter';
  */
 export interface BindableToolModel {
   bindTools: (_tools: StructuredToolInterface[]) => {
-    invoke: (_messages: BaseMessageLike[]) => Promise<AIMessage>;
+    invoke: (
+      _messages: BaseMessageLike[],
+      _config?: RunnableConfig
+    ) => Promise<AIMessage>;
   };
 }
 
@@ -46,6 +50,7 @@ export interface ExecuteToolCallLoopOptions {
   maxIterations?: number;
   emitEvent?: SSEEventEmitter;
   originalMessage?: string; // Original user message for debugging
+  runConfig?: RunnableConfig; // LangSmith trace grouping config
 }
 
 /**
@@ -123,6 +128,7 @@ export async function executeToolCallLoop({
   maxIterations = 3, // Reduced from 6 to minimize unnecessary tool calls
   emitEvent,
   originalMessage,
+  runConfig,
 }: ExecuteToolCallLoopOptions): Promise<ExecuteToolCallLoopResult> {
   const conversation: BaseMessageLike[] = [...messages];
   const toolResults: ExecutedToolResult[] = [];
@@ -156,7 +162,7 @@ export async function executeToolCallLoop({
   let truncated = false;
 
   for (let iteration = 0; iteration < maxIterations; iteration += 1) {
-    const aiResponse = await runnable.invoke(conversation);
+    const aiResponse = await runnable.invoke(conversation, runConfig);
     finalMessage = aiResponse;
     conversation.push(aiResponse);
 
@@ -194,6 +200,7 @@ export async function executeToolCallLoop({
       // Emit calling_tool event
       const toolMessages: Record<string, string> = {
         search_tracks: 'Searching for those tracks... 🔍',
+        search_tracks_by_theme: 'Finding music that matches that vibe... 🎭',
         get_tracks_by_genre: 'Hunting down tracks in that genre... 🎯',
         get_playlists_by_genre: 'Discovering some amazing playlists... 🎵',
         get_artist: 'Looking up that artist for you... 👤',
@@ -325,6 +332,7 @@ export async function executeToolCallLoop({
           // Get user-friendly tool names
           const toolNames: Record<string, string> = {
             search_tracks: 'tracks',
+            search_tracks_by_theme: 'tracks',
             get_tracks_by_genre: 'tracks',
             get_trending_tracks: 'tracks',
             get_playlists_by_genre: 'playlists',

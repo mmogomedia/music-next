@@ -7,7 +7,6 @@ interface UnifiedLayoutProps {
   sidebar: ReactNode;
   contentClassName?: string;
   header?: ReactNode; // Optional header component
-  disableBottomPadding?: boolean;
 }
 
 /**
@@ -18,14 +17,12 @@ interface UnifiedLayoutProps {
  * - Left: Fixed sidebar (256px on desktop, drawer on mobile)
  * - Right: Main content area (offset by sidebar width on desktop)
  * - Handles mobile/desktop responsive behavior
- * - Accounts for music player at bottom (80px padding)
  */
 export default function UnifiedLayout({
   children,
   sidebar,
   contentClassName = '',
   header,
-  disableBottomPadding = false,
 }: UnifiedLayoutProps) {
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
 
@@ -60,19 +57,6 @@ export default function UnifiedLayout({
         {/* Main Content */}
         <main
           className={`flex-1 overflow-y-auto overflow-x-hidden ${contentClassName}`}
-          style={{
-            paddingLeft: 0,
-            // Adjust bottom padding when the global music player overlaps content
-            paddingBottom: disableBottomPadding
-              ? '0px'
-              : isMobile
-                ? '0px'
-                : '80px',
-            ...(contentClassName.includes('fixed') ||
-            contentClassName.includes('h-full')
-              ? { paddingBottom: 0 }
-              : {}),
-          }}
         >
           {children}
         </main>

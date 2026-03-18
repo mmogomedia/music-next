@@ -14,11 +14,13 @@ import {
 } from '@heroicons/react/24/outline';
 import { Button } from '@heroui/react';
 import { constructFileUrl } from '@/lib/url-utils';
+import { SuggestedActions } from './suggested-actions';
 
 interface PlaylistGridRendererProps {
   response: PlaylistGridResponse;
   onSelectPlaylist?: (_playlistId: string) => void;
   onPlayTrack?: (_trackId: string, _track: Track) => void;
+  onAction?: (_action: any) => void;
 }
 
 interface PlaylistWithTracks {
@@ -39,6 +41,7 @@ export function PlaylistGridRenderer({
   response,
   onSelectPlaylist: _onSelectPlaylist,
   onPlayTrack,
+  onAction,
 }: PlaylistGridRendererProps) {
   const { playlists } = response.data;
   const { playTrack, setQueue, isPlaying, currentPlaylistId, playPause } =
@@ -393,6 +396,32 @@ export function PlaylistGridRenderer({
           </div>
         );
       })}
+
+      {/* Context-aware follow-up suggestions */}
+      {(() => {
+        const genre = response.data.metadata?.genre;
+        return (
+          <SuggestedActions
+            suggestions={[
+              genre
+                ? {
+                    label: `More ${genre} playlists`,
+                    message: `Show me more ${genre} playlists`,
+                  }
+                : {
+                    label: 'Similar playlists',
+                    message: 'Find playlists similar to these',
+                  },
+              { label: 'Browse genres', message: 'Show me all genres' },
+              {
+                label: 'Recommend music',
+                message: 'Recommend music based on my taste',
+              },
+            ]}
+            onAction={onAction}
+          />
+        );
+      })()}
     </div>
   );
 }

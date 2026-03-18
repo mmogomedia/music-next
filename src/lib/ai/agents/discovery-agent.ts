@@ -11,11 +11,7 @@ import { BaseAgent, type AgentContext, type AgentResponse } from './base-agent';
 import { discoveryTools } from '@/lib/ai/tools';
 import { createModel } from './model-factory';
 import { DISCOVERY_SYSTEM_PROMPT } from './agent-prompts';
-import {
-  MIN_TRACK_STRENGTH,
-  MAX_RELATED_TRACKS,
-  MAX_TRACKS_PER_RESPONSE,
-} from './agent-config';
+import { MAX_RELATED_TRACKS, MAX_TRACKS_PER_RESPONSE } from './agent-config';
 import { logger } from '@/lib/utils/logger';
 import type { AIProvider } from '@/types/ai-service';
 import type {
@@ -31,6 +27,10 @@ import {
   extractTextContent,
   type ExecutedToolResult,
 } from '@/lib/ai/tool-executor';
+import {
+  extractTagsFromQuery,
+  type DiscoveryMetadata,
+} from './router-intent-detector';
 
 export class DiscoveryAgent extends BaseAgent {
   private model: any;
@@ -105,6 +105,39 @@ export class DiscoveryAgent extends BaseAgent {
         };
       }
 
+      // FAST PATH: if RouterAgent already extracted subIntent + entities, skip LLM tool selection
+      const subIntent = context?.metadata?.subIntent as
+        | DiscoveryMetadata['subIntent']
+        | undefined;
+      const entities = context?.metadata?.entities as
+        | DiscoveryMetadata['entities']
+        | undefined;
+
+      if (subIntent) {
+        logger.info('[DiscoveryAgent] Fast path activated:', {
+          subIntent,
+          entities,
+        });
+        context?.emitEvent?.({
+          type: 'agent_processing',
+          agent: 'DiscoveryAgent',
+          message: 'Let me dig through our music collection... 🎵',
+          stage: 'tool_selection',
+          timestamp: new Date().toISOString(),
+        });
+        const fastResult = await this.fastPathProcess(
+          message,
+          subIntent,
+          entities ?? {},
+          effectiveContext
+        );
+        if (fastResult) return fastResult;
+        // If fast path returned null (e.g., service error or no results), fall through to LLM
+        logger.info(
+          '[DiscoveryAgent] Fast path yielded no results, falling back to LLM'
+        );
+      }
+
       // Build context message if filters are provided
       const contextMessage = this.formatContext(effectiveContext);
       const fullMessage = contextMessage
@@ -120,15 +153,24 @@ export class DiscoveryAgent extends BaseAgent {
         timestamp: new Date().toISOString(),
       });
 
+      // Build system prompt with long-term memory context and messages with history
+      const systemPrompt = this.buildSystemPromptWithMemory(
+        this.systemPrompt,
+        effectiveContext
+      );
+      const messages = this.buildMessagesWithHistory(
+        systemPrompt,
+        fullMessage,
+        effectiveContext
+      );
+
       const execution = await executeToolCallLoop({
         model: this.model,
         tools: discoveryTools,
-        messages: [
-          { role: 'system', content: this.systemPrompt },
-          { role: 'user', content: fullMessage },
-        ],
+        messages,
         emitEvent: context?.emitEvent,
-        originalMessage: message, // Pass original message for debugging
+        originalMessage: message,
+        runConfig: context?.runConfig,
       });
 
       logger.info('[DiscoveryAgent] Tool execution completed:', {
@@ -214,15 +256,289 @@ export class DiscoveryAgent extends BaseAgent {
   }
 
   /**
+   * Fast path: call service directly based on subIntent extracted by keyword router.
+   * Skips LLM tool selection — 0 extra LLM calls for common queries.
+   * Returns null if the subIntent doesn't map to a fast path or data is empty.
+   */
+  private async fastPathProcess(
+    message: string,
+    subIntent: DiscoveryMetadata['subIntent'],
+    entities: DiscoveryMetadata['entities'],
+    context?: AgentContext
+  ): Promise<AgentResponse | null> {
+    try {
+      const { MusicService, AnalyticsService, PlaylistService, ArtistService } =
+        await import('@/lib/services');
+
+      let toolData: Array<{ tool: string; data: unknown }> = [];
+      let headerMessage = '';
+
+      switch (subIntent) {
+        case 'trending': {
+          const tracks = await AnalyticsService.getTrendingTracks(10);
+          if (!tracks || tracks.length === 0) return null;
+          toolData = [
+            {
+              tool: 'get_trending_tracks',
+              data: { tracks: tracks.map(t => ({ ...t })) },
+            },
+          ];
+          headerMessage = 'Here are the trending tracks right now.';
+          break;
+        }
+
+        case 'genres_list': {
+          const { prisma } = await import('@/lib/db');
+          const dbGenres = await prisma.genre.findMany({
+            where: { isActive: true },
+            orderBy: [{ order: 'asc' }, { name: 'asc' }],
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              description: true,
+              colorHex: true,
+              icon: true,
+              _count: { select: { tracks: true } },
+            },
+          });
+          if (!dbGenres || dbGenres.length === 0) return null;
+          toolData = [
+            {
+              tool: 'get_genres',
+              data: {
+                genres: dbGenres.map(g => ({
+                  id: g.id,
+                  name: g.name,
+                  slug: g.slug,
+                  description: g.description,
+                  colorHex: g.colorHex,
+                  icon: g.icon,
+                  trackCount: g._count.tracks,
+                })),
+                count: dbGenres.length,
+              },
+            },
+          ];
+          headerMessage = `Here are ${dbGenres.length} genres available on Flemoji.`;
+          break;
+        }
+
+        case 'artist_tracks': {
+          const artist = entities.artist;
+          if (!artist) return null;
+          const tracks = await MusicService.searchTracks(artist, {
+            limit: 10,
+            orderBy: 'popular',
+          });
+          if (!tracks || tracks.length === 0) return null;
+          toolData = [
+            {
+              tool: 'search_tracks',
+              data: {
+                tracks: tracks.map(t => ({
+                  ...t,
+                  artist:
+                    t.artist || t.artistProfile?.artistName || 'Unknown Artist',
+                })),
+              },
+            },
+          ];
+          headerMessage = `Here are tracks by ${artist}.`;
+          break;
+        }
+
+        case 'artist_profile': {
+          const artist = entities.artist;
+          if (!artist) return null;
+          const profile = await ArtistService.getArtistByName(artist);
+          if (!profile) return null;
+          toolData = [
+            {
+              tool: 'get_artist',
+              data: { artist: profile },
+            },
+          ];
+          headerMessage = `Here's the profile for ${profile.artistName || artist}.`;
+          break;
+        }
+
+        case 'genre_tracks': {
+          const genre = entities.genre;
+          if (!genre) return null;
+          const tracks = await MusicService.getTracksByGenre(genre, 10);
+          if (!tracks || tracks.length === 0) return null;
+          toolData = [
+            {
+              tool: 'get_tracks_by_genre',
+              data: {
+                tracks: tracks.map(t => ({
+                  ...t,
+                  artist:
+                    t.artist || t.artistProfile?.artistName || 'Unknown Artist',
+                })),
+                genre,
+                count: tracks.length,
+              },
+            },
+          ];
+          headerMessage = `Here are ${tracks.length} ${genre} tracks for you.`;
+          break;
+        }
+
+        case 'genre_playlists': {
+          const genre = entities.genre;
+          if (!genre) return null;
+          const playlists = await PlaylistService.getPlaylistsByGenre(
+            genre,
+            10
+          );
+          if (!playlists || playlists.length === 0) return null;
+          toolData = [
+            {
+              tool: 'get_playlists_by_genre',
+              data: { playlists, genre, count: playlists.length },
+            },
+          ];
+          headerMessage = `Here are ${genre} playlists for you.`;
+          break;
+        }
+
+        case 'search': {
+          const query = entities.query;
+          if (!query) return null;
+          let tracks = await MusicService.searchTracks(query, {
+            limit: 10,
+            orderBy: 'popular',
+          });
+          // If no text-match results, try genre search — covers "show me amapiano",
+          // "play afrobeats" where the query is a genre name without an explicit suffix.
+          if (!tracks || tracks.length === 0) {
+            tracks = await MusicService.getTracksByGenre(query, 10);
+          }
+          if (!tracks || tracks.length === 0) return null;
+          toolData = [
+            {
+              tool: 'search_tracks',
+              data: {
+                tracks: tracks.map(t => ({
+                  ...t,
+                  artist:
+                    t.artist || t.artistProfile?.artistName || 'Unknown Artist',
+                })),
+              },
+            },
+          ];
+          headerMessage = `Here are results for "${query}".`;
+          break;
+        }
+
+        case 'semantic_search': {
+          const query = entities.query ?? message;
+          const genreFilter = context?.filters?.genre;
+
+          // Step 1: tag-based search — precise, uses explicit mood/attribute tags on tracks
+          const { moods: tagMoods, attributes: tagAttributes } =
+            extractTagsFromQuery(query);
+          let tracks =
+            tagMoods.length > 0 || tagAttributes.length > 0
+              ? await MusicService.searchTracksByTheme({
+                  moods: tagMoods,
+                  attributes: tagAttributes,
+                  limit: 10,
+                  genre: genreFilter,
+                })
+              : [];
+
+          // Step 2: fall back to vector similarity search with a minimum threshold
+          // (avoids returning unrelated tracks when no tagged results exist)
+          if (!tracks || tracks.length === 0) {
+            tracks = await MusicService.searchTracksBySemantic(query, {
+              limit: 10,
+              genre: genreFilter,
+              minSimilarity: 0.3,
+            });
+          }
+
+          // Step 3: nothing found — let the LLM handle it with a proper response
+          if (!tracks || tracks.length === 0) return null;
+
+          toolData = [
+            {
+              tool: 'search_tracks_by_theme',
+              data: {
+                tracks: tracks.map(t => ({
+                  ...t,
+                  artist:
+                    t.artist || t.artistProfile?.artistName || 'Unknown Artist',
+                })),
+                count: tracks.length,
+                searchedMoods: tagMoods,
+                searchedAttributes: tagAttributes,
+              },
+            },
+          ];
+          headerMessage =
+            tagMoods.length > 0 || tagAttributes.length > 0
+              ? `Here are some tracks that match your vibe.`
+              : `Here are the closest matches I could find.`;
+          break;
+        }
+
+        default:
+          return null;
+      }
+
+      if (toolData.length === 0) return null;
+
+      const structuredData = await this.convertToolDataToResponse(
+        toolData,
+        context,
+        message
+      );
+      if (!structuredData) return null;
+
+      return {
+        message: headerMessage,
+        data: structuredData,
+        metadata: {
+          agent: this.name,
+          fastPath: true,
+          subIntent,
+          entities,
+          toolCalls: toolData.map(td => ({ name: td.tool, args: entities })),
+        },
+      };
+    } catch (error) {
+      logger.error('[DiscoveryAgent] Fast path error:', error);
+      return null; // Fall through to LLM on any error
+    }
+  }
+
+  /**
    * Build a fallback message when tool results are available but no structured response
    * @param toolResults - Results from tool execution
    * @returns Fallback message string
    */
   private buildFallbackMessage(toolResults: ExecutedToolResult[]): string {
-    const toolNames = Array.from(
-      new Set(toolResults.map(result => result.name))
-    ).join(', ');
-    return `I found results using ${toolNames || 'the available tools'}! Here's what I discovered:`;
+    // Check if any tool actually returned tracks/results to avoid false-success messages
+    const hasResults = toolResults.some(result => {
+      const data = result.parsedResult ?? result.rawResult;
+      if (!data || typeof data !== 'object') return false;
+      const d = data as any;
+      return (
+        (Array.isArray(d.tracks) && d.tracks.length > 0) ||
+        (Array.isArray(d.playlists) && d.playlists.length > 0) ||
+        (Array.isArray(d.genres) && d.genres.length > 0) ||
+        d.artist != null
+      );
+    });
+
+    if (!hasResults) {
+      return "I searched but couldn't find tracks matching your request. Try a different search or browse by genre.";
+    }
+
+    return "Here's what I found for you:";
   }
 
   /**
@@ -289,6 +605,7 @@ export class DiscoveryAgent extends BaseAgent {
 
       switch (toolName) {
         case 'search_tracks':
+        case 'search_tracks_by_theme':
         case 'get_tracks_by_genre':
         case 'get_trending_tracks': {
           // Handle both parsed JSON objects and string JSON
@@ -410,8 +727,9 @@ export class DiscoveryAgent extends BaseAgent {
     aggregated.artists = dedupeById(aggregated.artists);
     aggregated.playlists = dedupeById(aggregated.playlists);
 
-    aggregated.tracks = aggregated.tracks.filter(
-      track => this.getTrackStrength(track) >= MIN_TRACK_STRENGTH
+    // Sort by strength DESC so highest-quality tracks appear first
+    aggregated.tracks = aggregated.tracks.sort(
+      (a, b) => (b.strength ?? 0) - (a.strength ?? 0)
     );
 
     // HARD LIMIT: Never process more than MAX_TRACKS_PER_RESPONSE tracks total
@@ -451,9 +769,7 @@ export class DiscoveryAgent extends BaseAgent {
           // Try to fetch tracks by genre one more time
           try {
             const { MusicService } = await import('@/lib/services');
-            const genreTracks = await MusicService.getTracksByGenre(genre, 50, {
-              minStrength: 70,
-            });
+            const genreTracks = await MusicService.getTracksByGenre(genre, 50);
             if (genreTracks && genreTracks.length > 0) {
               const mappedTracks = genreTracks
                 .slice(0, MAX_TRACKS_PER_RESPONSE) // Limit to MAX_TRACKS_PER_RESPONSE
@@ -849,7 +1165,6 @@ export class DiscoveryAgent extends BaseAgent {
             const track = pt.track;
             if (!track || !track.id || excludeIds.has(track.id)) return;
             const strength = this.getTrackStrength(track);
-            if (strength < MIN_TRACK_STRENGTH) return;
 
             // Filter by genre cluster - track must match one of the genres in cluster
             if (genreCluster.length > 0) {
@@ -893,7 +1208,6 @@ export class DiscoveryAgent extends BaseAgent {
             const track = pt.track;
             if (!track || !track.id || excludeIds.has(track.id)) return;
             const strength = this.getTrackStrength(track);
-            if (strength < MIN_TRACK_STRENGTH) return;
 
             // Filter by genre cluster - track must match one of the genres in cluster
             if (genreCluster.length > 0) {

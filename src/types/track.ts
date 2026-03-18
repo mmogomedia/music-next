@@ -59,4 +59,7 @@ export interface Track {
   // AI Metadata
   attributes?: string[]; // Thematic tags (e.g., "women empowerment", "self-love")
   mood?: string[]; // Vibe tags (e.g., "uplifting", "melancholic")
+
+  // Streaming platform links (from SmartLink → PlatformLink)
+  streamingLinks?: { platform: string; url: string }[];
 }

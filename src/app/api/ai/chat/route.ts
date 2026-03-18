@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { aiService } from '@/lib/ai/ai-service';
 import { routerAgent } from '@/lib/ai/agents';
 import { ChatRequest, ChatResponse, AIError } from '@/types/ai';
-import { conversationStore } from '@/lib/ai/memory/conversation-store';
-import { preferenceTracker } from '@/lib/ai/memory/preference-tracker';
-import { contextBuilder } from '@/lib/ai/memory/context-builder';
+import {
+  conversationStore,
+  semanticMemoryManager,
+  memoryOrchestrator,
+  contextBuilder,
+} from '@/lib/ai/memory/bootstrap';
 import { logger } from '@/lib/utils/logger';
 
 export async function POST(request: NextRequest) {
@@ -39,12 +42,6 @@ export async function POST(request: NextRequest) {
       body.conversationId ||
       `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Build agent context from request context + memory
-    const built = await contextBuilder.buildContext(
-      context?.userId,
-      conversationId
-    );
-
     // Get conversation history for context-aware routing
     const conversationHistory = context?.userId
       ? await conversationStore.getConversation(
@@ -53,6 +50,33 @@ export async function POST(request: NextRequest) {
           6
         )
       : [];
+
+    // Build enhanced context using Memory Orchestrator (Fix 2: long-term memory injection)
+    const enhancedContext = await memoryOrchestrator
+      .buildEnhancedContext({
+        userId: context?.userId,
+        conversationId: conversationId,
+        currentMessage: message,
+        recentMessages: conversationHistory,
+        maxTokens: 2000,
+      })
+      .catch(() => ({
+        recentMessages: '',
+        relevantMemories: [] as any[],
+        preferences: {
+          genres: [] as string[],
+          artists: [] as string[],
+          moods: [] as string[],
+        },
+        tokenCount: 0,
+        memoryRetrievalTime: 0,
+      }));
+
+    // Build agent context from request context + memory
+    const built = await contextBuilder.buildContext(
+      context?.userId,
+      conversationId
+    );
 
     const agentContext = {
       userId: context?.userId,
@@ -63,13 +87,18 @@ export async function POST(request: NextRequest) {
       })),
       filters: {
         ...built.filters,
+        // Use top genre preference from enhanced memory
+        genre: enhancedContext.preferences.genres[0] || built.filters?.genre,
         // Add province from request context if provided
         ...(context?.province && { province: context.province }),
       },
-      // Add chatType to metadata for routing
+      // Add chatType and enhanced memory to metadata
       metadata: {
         chatType: chatType,
         previousIntent: built.metadata?.previousIntent,
+        preferences: enhancedContext.preferences,
+        relevantMemories: enhancedContext.relevantMemories,
+        memoryTokenCount: enhancedContext.tokenCount,
       },
     };
 
@@ -92,7 +121,9 @@ export async function POST(request: NextRequest) {
           undefined,
           chatType
         );
-        await preferenceTracker.updateFromMessage(context.userId, message);
+        semanticMemoryManager
+          .extractPreferencesFromText({ userId: context.userId, text: message })
+          .catch(() => {});
       }
 
       // Use Router Agent to get the appropriate response
@@ -164,10 +195,9 @@ export async function POST(request: NextRequest) {
           chatType
         );
         if (agentResponse?.data) {
-          await preferenceTracker.updateFromResults(
-            context.userId,
-            agentResponse.data
-          );
+          semanticMemoryManager
+            .updateFromResults(context.userId, agentResponse.data)
+            .catch(() => {});
         }
       }
 

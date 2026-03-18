@@ -3,6 +3,7 @@
 import type { SearchResultsResponse } from '@/types/ai-responses';
 import { TrackListRenderer } from './track-list-renderer';
 import { ArtistRenderer } from './artist-renderer';
+import { SuggestedActions } from './suggested-actions';
 
 interface SearchResultsRendererProps {
   response: SearchResultsResponse;
@@ -74,6 +75,32 @@ export function SearchResultsRenderer({
           />
         </div>
       )}
+
+      {/* Context-aware follow-up suggestions */}
+      {(() => {
+        const query = response.data.metadata?.query;
+        return (
+          <SuggestedActions
+            suggestions={[
+              query
+                ? {
+                    label: `More "${query}"`,
+                    message: `Find more music matching "${query}"`,
+                  }
+                : {
+                    label: 'More results',
+                    message: 'Show me more results like these',
+                  },
+              {
+                label: 'Different search',
+                message: "I'm looking for something different",
+              },
+              { label: 'Browse genres', message: 'Show me all genres' },
+            ]}
+            onAction={onAction}
+          />
+        );
+      })()}
     </div>
   );
 }

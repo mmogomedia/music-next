@@ -17,6 +17,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbars while preserving scroll functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Toast Animation */
 @keyframes slideUp {
   from {

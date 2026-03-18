@@ -12,7 +12,7 @@ import type {
   ClarificationResponse,
   ClarificationQuestion,
 } from '@/types/ai-responses';
-import { preferenceTracker } from '@/lib/ai/memory/preference-tracker';
+import { semanticMemoryManager } from '@/lib/ai/memory/bootstrap';
 import { logger } from '@/lib/utils/logger';
 
 interface MissingInfo {
@@ -150,13 +150,11 @@ export class ClarificationAgent extends BaseAgent {
    */
   private async getUserGenreHistory(userId: string): Promise<string[]> {
     try {
-      const prefs = await preferenceTracker.get(userId);
-      const genres = Object.entries(prefs.genres)
-        .sort((a, b) => (b[1] as number) - (a[1] as number)) // Sort by frequency
-        .slice(0, 5) // Top 5 genres
-        .map(([genre]) => genre);
-
-      return genres;
+      return await semanticMemoryManager.getTopPreferences({
+        userId,
+        type: 'GENRE',
+        limit: 5,
+      });
     } catch (error) {
       logger.error('Failed to get user genre history:', error);
       return [];

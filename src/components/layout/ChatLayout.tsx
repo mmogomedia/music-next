@@ -206,7 +206,6 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
         <ChatTopBar activeView={activeView} onViewChange={setActiveView} />
       }
       contentClassName=''
-      disableBottomPadding
     >
       {renderContent()}
     </UnifiedLayout>

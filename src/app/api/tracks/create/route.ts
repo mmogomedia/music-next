@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import { constructFileUrl } from '@/lib/url-utils';
 import { calculateTrackCompletionServer } from '@/lib/utils/track-completion-server';
 import type { TrackEditorValues } from '@/components/track/TrackEditor';
+import { enqueueTrackEmbedding } from '@/lib/ai/track-embedding-service';
 
 const sanitizeStringArray = (value: unknown): string[] =>
   Array.isArray(value)
@@ -248,6 +249,9 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    // Fire-and-forget: generate semantic embedding for the new track
+    enqueueTrackEmbedding(newTrack);
 
     // Fetch full ArtistProfile objects for primary and featured artists
     const allArtistIds = [

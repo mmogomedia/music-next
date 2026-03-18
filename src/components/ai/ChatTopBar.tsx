@@ -8,12 +8,14 @@ import {
   DropdownMenu,
   DropdownItem,
 } from '@heroui/react';
+import Link from 'next/link';
 import MiniPlayer from '@/components/music/MiniPlayer';
 import {
   ClockIcon,
   SparklesIcon,
   TrophyIcon,
   EllipsisVerticalIcon,
+  BookOpenIcon,
 } from '@heroicons/react/24/outline';
 
 export type ViewType = 'timeline' | 'streaming' | 'league';
@@ -107,6 +109,13 @@ export default function ChatTopBar({
                 >
                   League
                 </DropdownItem>
+                <DropdownItem
+                  key='view-learn'
+                  startContent={<BookOpenIcon className='w-4 h-4' />}
+                  href='/learn'
+                >
+                  Learn
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -170,6 +179,19 @@ export default function ChatTopBar({
             >
               League
             </Button>
+            <Link href='/learn'>
+              <Button
+                size='sm'
+                variant='light'
+                color='default'
+                className='gap-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300'
+                startContent={
+                  <BookOpenIcon className='w-4 h-4' aria-hidden='true' />
+                }
+              >
+                Learn
+              </Button>
+            </Link>
           </div>
         </div>
 

@@ -358,6 +358,7 @@ export class TimelineAgent extends BaseAgent {
         ],
         emitEvent: context?.emitEvent,
         originalMessage: message,
+        runConfig: context?.runConfig,
       });
 
       const responseContent = extractTextContent(
