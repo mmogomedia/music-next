@@ -729,6 +729,8 @@ yarn build
 
 ### Database Migrations
 
+> **Golden Rule: Never touch the database directly in a way you wouldn't want everyone else to also do. If you make a change → write a migration → everyone (and every server) can replay that exact same change.**
+
 **⛔ NEVER use `prisma db push` or `yarn db:push`.**
 
 `db:push` applies schema changes without creating a migration file. This causes the
