@@ -36,8 +36,6 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 });
 
-const shareImage = `${SITE_URL}/social-card.png`;
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: 'Flemoji — AI-Powered South African Music Discovery',
@@ -52,14 +50,7 @@ export const metadata: Metadata = {
       'Discover and stream South African music with AI. Chat with Flemoji to find new tracks, explore artists, and build your perfect playlist.',
     url: SITE_URL,
     siteName: 'Flemoji',
-    images: [
-      {
-        url: shareImage,
-        width: 1200,
-        height: 630,
-        alt: 'Flemoji — AI Music Discovery',
-      },
-    ],
+    // OG image is auto-discovered from src/app/opengraph-image.tsx
     locale: 'en_ZA',
     type: 'website',
   },
@@ -69,7 +60,6 @@ export const metadata: Metadata = {
     description:
       'Discover and stream South African music with AI. Chat with Flemoji to find new tracks, explore artists, and build your perfect playlist.',
     site: '@flemoji',
-    images: [shareImage],
   },
   appleWebApp: {
     capable: true,

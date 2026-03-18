@@ -26,7 +26,6 @@ export async function generateMetadata({
   if (!tool) return {};
 
   const url = absoluteUrl(`/tools/${slug}`);
-  const ogImage = absoluteUrl('/og-tools.png');
 
   return {
     metadataBase: new URL(SITE_URL),
@@ -39,14 +38,13 @@ export async function generateMetadata({
       type: 'website',
       url,
       siteName: 'Flemoji',
-      images: [{ url: ogImage, width: 1200, height: 630, alt: tool.name }],
+      // OG image inherits from src/app/tools/opengraph-image.tsx
     },
     twitter: {
       card: 'summary_large_image',
       title: `${tool.name} | Flemoji Tools`,
       description: tool.description,
       site: '@flemoji',
-      images: [ogImage],
     },
   };
 }

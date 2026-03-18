@@ -16,14 +16,7 @@ export const metadata: Metadata = {
     url: absoluteUrl('/'),
     siteName: 'Flemoji',
     type: 'website',
-    images: [
-      {
-        url: absoluteUrl('/social-card.png'),
-        width: 1200,
-        height: 630,
-        alt: 'Flemoji — AI Music Discovery',
-      },
-    ],
+    // OG image is auto-discovered from src/app/opengraph-image.tsx
   },
   twitter: {
     card: 'summary_large_image',
@@ -31,7 +24,6 @@ export const metadata: Metadata = {
     description:
       'Discover and stream South African music with AI. Chat with Flemoji to find new tracks, explore artists, and build your perfect playlist.',
     site: '@flemoji',
-    images: [absoluteUrl('/social-card.png')],
   },
 };
 

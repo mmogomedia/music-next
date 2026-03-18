@@ -102,7 +102,7 @@ export async function generateMetadata({
     const canonicalUrl = absoluteUrl(`/learn/${slug}`);
     const ogImageUrl = article.coverImageUrl
       ? constructFileUrl(article.coverImageUrl)
-      : absoluteUrl('/og-default.png');
+      : absoluteUrl('/learn/opengraph-image');
 
     return {
       title: `${title} | Flemoji Learn`,
@@ -168,7 +168,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
 
   const ogImageUrl = article.coverImageUrl
     ? constructFileUrl(article.coverImageUrl)
-    : absoluteUrl('/og-default.png');
+    : absoluteUrl('/learn/opengraph-image');
 
   const jsonLd = {
     '@context': 'https://schema.org',
