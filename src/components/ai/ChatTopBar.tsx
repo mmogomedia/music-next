@@ -73,12 +73,13 @@ export default function ChatTopBar({
     <div className='sticky top-0 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
       {/* ── Mobile tab bar ── */}
       <div className='lg:hidden'>
-        <div className='flex'>
-          {/* 3 visible tabs */}
+        {/* h-14 gives all children a fixed height to fill; justify-center then truly centres */}
+        <div className='flex h-14'>
           {mobileTabs.map(tab => {
             const Icon = tab.icon;
             const isActive = 'href' in tab ? false : activeView === tab.key;
-            const sharedCls = `flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors border-b-2`;
+            const sharedCls =
+              'flex-1 flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors border-b-2';
 
             if ('href' in tab) {
               return (
@@ -109,8 +110,8 @@ export default function ChatTopBar({
             );
           })}
 
-          {/* 3-dot overflow — same height as tabs */}
-          <div className='flex flex-col items-center justify-center py-2.5 px-3 border-b-2 border-transparent'>
+          {/* 3-dot — fills the same h-14, icon centred inside */}
+          <div className='flex items-center justify-center px-3 border-b-2 border-transparent'>
             <Dropdown placement='bottom-end'>
               <DropdownTrigger>
                 <button
