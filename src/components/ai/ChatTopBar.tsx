@@ -72,19 +72,20 @@ export default function ChatTopBar({
   return (
     <div className='sticky top-0 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
       {/* ── Mobile tab bar ── */}
-      <div className='lg:hidden pt-3'>
-        <div className='flex items-center'>
+      <div className='lg:hidden'>
+        <div className='flex'>
           {/* 3 visible tabs */}
           {mobileTabs.map(tab => {
             const Icon = tab.icon;
             const isActive = 'href' in tab ? false : activeView === tab.key;
+            const sharedCls = `flex-1 flex flex-col items-center justify-center gap-1 py-2.5 text-xs font-medium transition-colors border-b-2`;
 
             if ('href' in tab) {
               return (
                 <Link
                   key={tab.key}
                   href={tab.href}
-                  className='flex-1 flex flex-col items-center gap-1 pb-2 text-xs font-medium text-gray-500 dark:text-gray-400 border-b-2 border-transparent transition-colors hover:text-gray-700 dark:hover:text-gray-200'
+                  className={`${sharedCls} border-transparent text-gray-500 dark:text-gray-400`}
                 >
                   <Icon className='w-5 h-5' />
                   {tab.label}
@@ -96,7 +97,7 @@ export default function ChatTopBar({
               <button
                 key={tab.key}
                 onClick={() => onViewChange(tab.key)}
-                className={`flex-1 flex flex-col items-center gap-1 pb-2 text-xs font-medium transition-colors border-b-2 ${
+                className={`${sharedCls} ${
                   isActive
                     ? 'border-primary text-primary'
                     : 'border-transparent text-gray-500 dark:text-gray-400'
@@ -108,12 +109,12 @@ export default function ChatTopBar({
             );
           })}
 
-          {/* 3-dot overflow */}
-          <div className='flex items-center px-2'>
+          {/* 3-dot overflow — same height as tabs */}
+          <div className='flex flex-col items-center justify-center py-2.5 px-3 border-b-2 border-transparent'>
             <Dropdown placement='bottom-end'>
               <DropdownTrigger>
                 <button
-                  className={`p-1 rounded-full transition-colors ${
+                  className={`transition-colors ${
                     activeView === 'league'
                       ? 'text-primary'
                       : 'text-gray-500 dark:text-gray-400'
