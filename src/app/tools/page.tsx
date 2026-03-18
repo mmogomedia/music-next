@@ -6,8 +6,6 @@ import { ToolSummaryCard } from '@/components/tools/ToolSummaryCard';
 import LearnHeader from '@/components/layout/LearnHeader';
 import { absoluteUrl, SITE_URL } from '@/lib/utils/site-url';
 
-const OG_IMAGE = absoluteUrl('/og-tools.png');
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: 'Free Music Business Tools for Independent Artists | Flemoji',
@@ -23,7 +21,7 @@ export const metadata: Metadata = {
     type: 'website',
     url: absoluteUrl('/tools'),
     siteName: 'Flemoji',
-    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: 'Flemoji Tools' }],
+    // OG image is auto-discovered from src/app/tools/opengraph-image.tsx
   },
   twitter: {
     card: 'summary_large_image',
@@ -31,7 +29,6 @@ export const metadata: Metadata = {
     description:
       'Free interactive calculators for independent artists — split sheets, revenue prediction, and more.',
     site: '@flemoji',
-    images: [OG_IMAGE],
   },
 };
 

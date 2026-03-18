@@ -25,21 +25,13 @@ export const metadata: Metadata = {
     url: absoluteUrl('/learn'),
     siteName: 'Flemoji',
     type: 'website',
-    images: [
-      {
-        url: absoluteUrl('/og-learn.png'),
-        width: 1200,
-        height: 630,
-        alt: 'Flemoji Learn — Music industry guides for South African artists',
-      },
-    ],
+    // OG image is auto-discovered from src/app/learn/opengraph-image.tsx
   },
   twitter: {
     card: 'summary_large_image',
     title: TITLE,
     description: DESCRIPTION,
     site: '@flemoji',
-    images: [absoluteUrl('/og-learn.png')],
   },
 };
 
