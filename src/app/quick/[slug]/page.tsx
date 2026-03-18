@@ -1,6 +1,7 @@
 import { headers, cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
+import { serializeJsonLd } from '@/lib/utils/seo';
 import {
   getQuickLinkLandingData,
   recordQuickLinkEvent,
@@ -282,7 +283,7 @@ export default async function QuickLinkPage({
       {jsonLd && (
         <script
           type='application/ld+json'
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
       )}
       <div className='absolute inset-0 pointer-events-none'>

@@ -8,6 +8,7 @@ import remarkGfm from 'remark-gfm';
 import { getArticleBySlug, getArticles } from '@/lib/services/article-service';
 import { constructFileUrl } from '@/lib/url-utils';
 import { format } from 'date-fns';
+import { serializeJsonLd } from '@/lib/utils/seo';
 import LearnHeader from '@/components/layout/LearnHeader';
 import ReadingProgress from '@/components/learn/ReadingProgress';
 import ShareButton from '@/components/learn/ShareButton';
@@ -211,7 +212,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
       {/* JSON-LD structured data for search engines */}
       <script
         type='application/ld+json'
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <ReadingProgress />
       <LearnHeader />

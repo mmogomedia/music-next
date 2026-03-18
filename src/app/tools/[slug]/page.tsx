@@ -8,6 +8,7 @@ import LearnHeader from '@/components/layout/LearnHeader';
 import { getLinksTo } from '@/lib/services/graph-service';
 import { prisma } from '@/lib/db';
 import { absoluteUrl, SITE_URL } from '@/lib/utils/site-url';
+import { serializeJsonLd } from '@/lib/utils/seo';
 
 interface ToolPageProps {
   params: Promise<{ slug: string }>;
@@ -117,7 +118,7 @@ export default async function ToolPage({ params }: ToolPageProps) {
       <div className='flex flex-col h-screen overflow-hidden bg-white dark:bg-slate-900'>
         <script
           type='application/ld+json'
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
         />
         <LearnHeader />
         <div className='flex-1 overflow-hidden'>
@@ -134,7 +135,7 @@ export default async function ToolPage({ params }: ToolPageProps) {
     <div className='min-h-screen bg-white dark:bg-slate-900'>
       <script
         type='application/ld+json'
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
       <LearnHeader />
 
