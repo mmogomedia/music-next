@@ -7,13 +7,6 @@ interface ToolSummaryCardProps {
   tool: ToolDefinition;
 }
 
-const CATEGORY_ICONS: Record<string, string> = {
-  royalties: '⚖️',
-  finance: '📊',
-  distribution: '🚀',
-  promotion: '📣',
-};
-
 const CATEGORY_LABELS: Record<string, string> = {
   royalties: 'Royalties',
   finance: 'Finance',
@@ -22,31 +15,31 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export function ToolSummaryCard({ tool }: ToolSummaryCardProps) {
+  const Icon = tool.icon;
+
   return (
     <Link
       href={`/tools/${tool.slug}`}
-      className='group relative flex flex-col rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 hover:border-transparent hover:shadow-lg hover:shadow-black/8 dark:hover:shadow-black/30 transition-all duration-200 cursor-pointer'
+      className='group relative flex flex-col rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-lg hover:shadow-black/8 dark:hover:shadow-black/30 transition-all duration-200 cursor-pointer'
     >
-      {/* Subtle gradient glow on hover (background layer) */}
+      {/* Subtle gradient glow on hover */}
       <div
         className={`absolute inset-0 opacity-0 group-hover:opacity-[0.03] bg-gradient-to-br ${tool.gradient} transition-opacity duration-300 pointer-events-none`}
       />
 
       {/* Top section: icon + meta + arrow */}
       <div className='relative flex items-center gap-4 px-5 pt-5 pb-4'>
-        {/* Icon */}
+        {/* Icon — white SVG on gradient background */}
         <div
           className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${tool.gradient} flex items-center justify-center flex-shrink-0 shadow-md group-hover:shadow-lg group-hover:scale-[1.04] transition-all duration-200`}
         >
-          <span className='text-[22px] leading-none select-none'>
-            {CATEGORY_ICONS[tool.category] ?? '🔧'}
-          </span>
+          <Icon className='w-6 h-6 text-white' aria-hidden='true' />
         </div>
 
         <div className='flex-1 min-w-0'>
           {/* Category label */}
           <p className='text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-0.5'>
-            {CATEGORY_LABELS[tool.category]}
+            {CATEGORY_LABELS[tool.category] ?? tool.category}
           </p>
           {/* Tool name */}
           <p className='text-sm font-bold text-gray-900 dark:text-white leading-snug truncate group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-150'>
@@ -99,7 +92,7 @@ export function ToolSummaryCard({ tool }: ToolSummaryCardProps) {
 
       {/* Gradient bottom accent line */}
       <div
-        className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${tool.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+        className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${tool.gradient} opacity-60 group-hover:opacity-100 transition-opacity duration-300`}
       />
     </Link>
   );
