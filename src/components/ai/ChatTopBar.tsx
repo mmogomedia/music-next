@@ -70,7 +70,7 @@ export default function ChatTopBar({
   const router = useRouter();
 
   return (
-    <div className='sticky top-0 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
+    <div className='sticky top-0 z-30 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
       {/* ── Mobile tab bar ── */}
       <div className='lg:hidden'>
         {/* h-14 gives all children a fixed height to fill; justify-center then truly centres */}
@@ -125,7 +125,10 @@ export default function ChatTopBar({
                   <EllipsisVerticalIcon className='w-5 h-5' />
                 </button>
               </DropdownTrigger>
-              <DropdownMenu aria-label='More navigation options'>
+              <DropdownMenu
+                aria-label='More navigation options'
+                classNames={{ base: 'z-[60]' }}
+              >
                 {overflowItems.map(item => {
                   const Icon = item.icon;
                   return (
