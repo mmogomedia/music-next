@@ -135,24 +135,30 @@ export default function ChatWelcomePlaceholder({
             </div>
           </div>
 
-          {/* Featured tracks grid - max 4 in one row */}
+          {/* Featured tracks — horizontal scroll carousel */}
           {loading ? (
-            <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
+            <div className='flex gap-3 overflow-x-auto -mx-5 px-5 md:-mx-6 md:px-6 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
               {Array.from({ length: 4 }).map((_, i) => (
-                <PlaceholderCard key={i} isFeatured />
+                <div key={i} className='flex-shrink-0 w-[190px]'>
+                  <PlaceholderCard isFeatured />
+                </div>
               ))}
             </div>
           ) : featured.length > 0 ? (
-            <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
+            <div className='flex gap-3 overflow-x-auto -mx-5 px-5 md:-mx-6 md:px-6 pb-2 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
               {featured.map((track, idx) => (
-                <TrackCard
+                <div
                   key={track.id}
-                  track={track}
-                  onPlay={handlePlay}
-                  variant='spotlight'
-                  showDuration
-                  badge={idx === 0 ? 'Hot' : undefined}
-                />
+                  className='flex-shrink-0 w-[190px] snap-start'
+                >
+                  <TrackCard
+                    track={track}
+                    onPlay={handlePlay}
+                    variant='spotlight'
+                    showDuration
+                    badge={idx === 0 ? 'Hot' : undefined}
+                  />
+                </div>
               ))}
             </div>
           ) : (

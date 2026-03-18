@@ -286,13 +286,13 @@ export default function TrackCard({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className={`h-10 w-10 flex items-center justify-center rounded-full border border-gray-200 dark:border-slate-700 transition-colors ${
+      className={`h-8 w-full flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
         disabled
           ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
           : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
       }`}
     >
-      <Icon className='w-4 h-4' />
+      <Icon className='w-3.5 h-3.5' />
     </button>
   );
 
@@ -663,7 +663,7 @@ export default function TrackCard({
                 : 'border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/10'
             }`}
           >
-            <div className='relative w-full min-h-[260px] overflow-hidden bg-gradient-to-br from-blue-300/30 via-purple-300/15 to-blue-400/25 dark:from-blue-900/30 dark:via-purple-900/25 dark:to-blue-900/35'>
+            <div className='relative w-full min-h-[180px] overflow-hidden bg-gradient-to-br from-blue-300/30 via-purple-300/15 to-blue-400/25 dark:from-blue-900/30 dark:via-purple-900/25 dark:to-blue-900/35'>
               {track.coverImageUrl || track.albumArtwork ? (
                 <TrackArtwork
                   artworkUrl={track.coverImageUrl || track.albumArtwork}
@@ -719,11 +719,11 @@ export default function TrackCard({
               </div>
             </div>
 
-            <div className='flex flex-1 flex-col justify-between bg-white dark:bg-slate-900 px-5 pb-5 pt-4'>
-              <div className='space-y-3 text-gray-900 dark:text-white'>
-                <div className='space-y-1'>
+            <div className='flex flex-1 flex-col justify-between bg-white dark:bg-slate-900 px-3.5 pb-3.5 pt-3'>
+              <div className='space-y-2 text-gray-900 dark:text-white'>
+                <div className='space-y-0.5'>
                   <div className='flex items-center gap-2'>
-                    <p className='text-lg font-semibold leading-tight flex-1'>
+                    <p className='text-sm font-semibold leading-tight flex-1 truncate'>
                       {track.title}
                     </p>
                     {track.completionPercentage !== undefined && (
@@ -805,7 +805,7 @@ export default function TrackCard({
               </div>
 
               {showActions && (
-                <div className='mt-3 grid grid-cols-4 gap-2'>
+                <div className='mt-2 grid grid-cols-4 gap-1'>
                   <ActionButton
                     icon={QueueListIcon}
                     label='Add to queue'
