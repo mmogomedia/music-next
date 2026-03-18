@@ -1,13 +1,8 @@
 'use client';
 
-import React from 'react';
-import {
-  Button,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-} from '@heroui/react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Button } from '@heroui/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import MiniPlayer from '@/components/music/MiniPlayer';
@@ -68,12 +63,42 @@ export default function ChatTopBar({
   onViewChange,
 }: ChatTopBarProps) {
   const router = useRouter();
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(
+    null
+  );
+  const triggerRef = useRef<HTMLDivElement>(null);
+
+  // Close when clicking outside
+  useEffect(() => {
+    if (!overflowOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node)
+      ) {
+        setOverflowOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [overflowOpen]);
+
+  const openMenu = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setOverflowOpen(v => !v);
+  };
 
   return (
     <div className='sticky top-0 z-30 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
       {/* ── Mobile tab bar ── */}
       <div className='lg:hidden'>
-        {/* h-14 gives all children a fixed height to fill; justify-center then truly centres */}
         <div className='flex h-14'>
           {mobileTabs.map(tab => {
             const Icon = tab.icon;
@@ -110,50 +135,23 @@ export default function ChatTopBar({
             );
           })}
 
-          {/* 3-dot — fills the same h-14, icon centred inside */}
-          <div className='flex items-center justify-center px-3 border-b-2 border-transparent'>
-            <Dropdown placement='bottom-end'>
-              <DropdownTrigger>
-                <button
-                  className={`transition-colors ${
-                    activeView === 'league'
-                      ? 'text-primary'
-                      : 'text-gray-500 dark:text-gray-400'
-                  }`}
-                  aria-label='More options'
-                >
-                  <EllipsisVerticalIcon className='w-5 h-5' />
-                </button>
-              </DropdownTrigger>
-              <DropdownMenu
-                aria-label='More navigation options'
-                classNames={{ base: 'z-[60]' }}
-              >
-                {overflowItems.map(item => {
-                  const Icon = item.icon;
-                  return (
-                    <DropdownItem
-                      key={item.key}
-                      startContent={<Icon className='w-4 h-4' />}
-                      onPress={() => {
-                        if (item.type === 'view') {
-                          onViewChange(item.key as ViewType);
-                        } else {
-                          router.push(item.href);
-                        }
-                      }}
-                      className={
-                        item.type === 'view' && activeView === item.key
-                          ? 'text-primary'
-                          : ''
-                      }
-                    >
-                      {item.label}
-                    </DropdownItem>
-                  );
-                })}
-              </DropdownMenu>
-            </Dropdown>
+          {/* 3-dot trigger — portals the menu to <body> to escape stacking context */}
+          <div
+            ref={triggerRef}
+            className='flex items-center justify-center px-3 border-b-2 border-transparent'
+          >
+            <button
+              onClick={openMenu}
+              className={`transition-colors ${
+                activeView === 'league'
+                  ? 'text-primary'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`}
+              aria-label='More options'
+              aria-expanded={overflowOpen}
+            >
+              <EllipsisVerticalIcon className='w-5 h-5' />
+            </button>
           </div>
         </div>
       </div>
@@ -211,6 +209,60 @@ export default function ChatTopBar({
           </div>
         </div>
       </div>
+
+      {/* Overflow menu — portalled to <body> so it's never clipped by the sticky bar */}
+      {overflowOpen &&
+        menuPos &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <>
+            {/* Transparent backdrop */}
+            <button
+              className='fixed inset-0 z-[98] cursor-default'
+              onClick={() => setOverflowOpen(false)}
+              aria-label='Close menu'
+              tabIndex={-1}
+            />
+            {/* Menu */}
+            <div
+              style={{
+                position: 'fixed',
+                top: menuPos.top,
+                right: menuPos.right,
+                zIndex: 99,
+              }}
+              className='min-w-[160px] rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 shadow-xl overflow-hidden'
+            >
+              {overflowItems.map(item => {
+                const Icon = item.icon;
+                const isActive =
+                  item.type === 'view' && activeView === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => {
+                      setOverflowOpen(false);
+                      if (item.type === 'view') {
+                        onViewChange(item.key as ViewType);
+                      } else {
+                        router.push(item.href);
+                      }
+                    }}
+                    className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-slate-800 ${
+                      isActive
+                        ? 'text-primary font-medium'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <Icon className='w-4 h-4 flex-shrink-0' />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </>,
+          document.body
+        )}
     </div>
   );
 }
