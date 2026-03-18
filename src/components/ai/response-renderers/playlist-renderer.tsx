@@ -33,6 +33,7 @@ import {
   TagIcon,
 } from '@heroicons/react/24/outline';
 import type { Track } from '@/types/track';
+import { SuggestedActions } from './suggested-actions';
 
 interface GenreOption {
   id: string;
@@ -136,9 +137,15 @@ export function PlaylistRenderer({
   });
 
   useEffect(() => {
-    setSelectedTracks(
-      (playlist.tracks || []).map((item: any) => normalizeTrack(item.track))
-    );
+    // Handle both formats: tracks as array of track objects, or tracks as array of {track: {...}} objects
+    const tracksArray = playlist.tracks || [];
+    const normalizedTracks = tracksArray.map((item: any) => {
+      // If item has a 'track' property, use that; otherwise use item directly
+      const trackData = item.track || item;
+      return normalizeTrack(trackData);
+    });
+
+    setSelectedTracks(normalizedTracks);
     setPlaylistName(playlist.name);
     setPlaylistDescription(playlist.description || '');
     setIsSaved(false);
@@ -510,27 +517,69 @@ export function PlaylistRenderer({
         </div>
       </div>
 
-      {/* Tracks List */}
+      {/* Tracks List - Overhauled with full TrackCard actions */}
       {selectedTracks.length > 0 ? (
-        <div className='space-y-1'>
-          {selectedTracks.map((track, index) => (
-            <TrackCard
-              key={track.id}
-              track={track}
-              variant='compact'
-              size='md'
-              showDuration
-              badge={String(index + 1)}
-              onPlay={handlePlayTrack}
-            />
-          ))}
+        <div className='space-y-2'>
+          <div className='flex items-center justify-between mb-4'>
+            <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
+              Tracks
+            </h3>
+            <span className='text-sm text-gray-500 dark:text-gray-400'>
+              {selectedTracks.length}{' '}
+              {selectedTracks.length === 1 ? 'track' : 'tracks'}
+            </span>
+          </div>
+          <div className='space-y-2'>
+            {selectedTracks.map((track, index) => (
+              <TrackCard
+                key={track.id}
+                track={track}
+                variant='compact'
+                size='md'
+                showDuration
+                showActions={true}
+                badge={String(index + 1)}
+                onPlay={handlePlayTrack}
+                onQueueAdd={handlePlayTrack}
+                onDownload={_track => {
+                  // TrackCard handles download internally, but we can add custom logic here if needed
+                }}
+                onShare={_track => {
+                  // TrackCard handles share internally, but we can add custom logic here if needed
+                }}
+                onShowStats={_track => {
+                  // TrackCard handles stats internally, but we can add custom logic here if needed
+                }}
+              />
+            ))}
+          </div>
         </div>
       ) : (
         <div className='p-4 rounded-md border border-dashed border-gray-200 dark:border-slate-700 text-sm text-gray-500 dark:text-gray-400'>
-          No tracks selected yet. Use the save modal to add tracks before
-          saving.
+          No tracks in this playlist.
         </div>
       )}
+
+      {/* Context-aware follow-up suggestions */}
+      <SuggestedActions
+        suggestions={[
+          {
+            label: 'Similar playlists',
+            message: `Find playlists similar to "${playlistName}"`,
+          },
+          selectedGenreOption
+            ? {
+                label: `More ${selectedGenreOption.name}`,
+                message: `Show me more ${selectedGenreOption.name} playlists`,
+              }
+            : { label: 'Browse genres', message: 'Show me all genres' },
+          {
+            label: 'Recommend music',
+            message: 'Recommend music based on my taste',
+          },
+        ]}
+        onAction={_onAction}
+      />
 
       {/* Save Playlist Modal */}
       <Modal

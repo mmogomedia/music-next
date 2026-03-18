@@ -27,6 +27,12 @@ export async function GET() {
             createdAt: 'desc',
           },
         },
+        skills: {
+          include: {
+            skill: true,
+          },
+        },
+        genreRef: true,
       },
     });
 
@@ -70,12 +76,17 @@ export async function POST(request: NextRequest) {
       bio,
       profileImage,
       coverImage,
-      location,
+      location, // Keep for backward compatibility
+      country,
+      province,
+      city,
       website,
-      genre,
+      genre, // Keep for backward compatibility
+      genreId,
       slug,
       socialLinks,
       streamingLinks,
+      skillIds, // Array of skill IDs
     } = body;
 
     // Check if user already has an artist profile
@@ -132,12 +143,33 @@ export async function POST(request: NextRequest) {
           bio,
           profileImage,
           coverImage,
-          location,
+          location, // Backward compatibility
+          country,
+          province,
+          city,
           website,
-          genre,
+          genre, // Backward compatibility
+          genreId,
           slug,
           socialLinks,
           streamingLinks,
+          ...(skillIds && skillIds.length > 0
+            ? {
+                skills: {
+                  create: skillIds.map((skillId: string) => ({
+                    skillId,
+                  })),
+                },
+              }
+            : {}),
+        },
+        include: {
+          skills: {
+            include: {
+              skill: true,
+            },
+          },
+          genreRef: true,
         },
       });
 
@@ -175,14 +207,19 @@ export async function PUT(request: NextRequest) {
       bio,
       profileImage,
       coverImage,
-      location,
+      location, // Keep for backward compatibility
+      country,
+      province,
+      city,
       website,
-      genre,
+      genre, // Keep for backward compatibility
+      genreId,
       slug,
       socialLinks,
       streamingLinks,
       isPublic,
       isActive,
+      skillIds, // Array of skill IDs
     } = body;
 
     // Check if artist profile exists
@@ -231,23 +268,54 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Prepare update data
+    const updateData: any = {
+      artistName,
+      bio,
+      profileImage,
+      coverImage,
+      location, // Backward compatibility
+      country,
+      province,
+      city,
+      website,
+      genre, // Backward compatibility
+      genreId,
+      slug,
+      socialLinks,
+      streamingLinks,
+      isPublic,
+      isActive,
+    };
+
+    // Handle skills update if provided
+    if (skillIds !== undefined) {
+      // First, delete existing skills
+      await prisma.artistProfileSkill.deleteMany({
+        where: { artistProfileId: existingProfile.id },
+      });
+      // Then create new ones
+      if (skillIds.length > 0) {
+        updateData.skills = {
+          create: skillIds.map((skillId: string) => ({
+            skill: { connect: { id: skillId } },
+          })),
+        };
+      }
+    }
+
     const artistProfile = await prisma.artistProfile.update({
       where: {
         userId: session.user.id,
       },
-      data: {
-        artistName,
-        bio,
-        profileImage,
-        coverImage,
-        location,
-        website,
-        genre,
-        slug,
-        socialLinks,
-        streamingLinks,
-        isPublic,
-        isActive,
+      data: updateData,
+      include: {
+        skills: {
+          include: {
+            skill: true,
+          },
+        },
+        genreRef: true,
       },
     });
 

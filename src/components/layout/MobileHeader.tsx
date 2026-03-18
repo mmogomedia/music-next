@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -19,7 +20,6 @@ import {
   DropdownItem,
 } from '@heroui/react';
 import {
-  MusicalNoteIcon,
   MagnifyingGlassIcon,
   UserIcon,
   Cog6ToothIcon,
@@ -41,6 +41,12 @@ export default function MobileHeader() {
 
   const menuItems = [
     { name: 'Explore', href: '/', icon: HomeIcon, activeIcon: HomeSolidIcon },
+    {
+      name: 'Timeline',
+      href: '/timeline',
+      icon: ChartBarIcon,
+      activeIcon: ChartBarSolidIcon,
+    },
     {
       name: 'Albums',
       href: '/albums',
@@ -89,12 +95,15 @@ export default function MobileHeader() {
         />
         <NavbarBrand>
           <Link href='/' className='flex items-center gap-2'>
-            <div className='w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm'>
-              <MusicalNoteIcon className='w-5 h-5 text-white' />
-            </div>
-            <p className='font-bold text-lg text-gray-900 dark:text-white'>
-              Flemoji
-            </p>
+            <Image
+              src='/logo_symbol.png'
+              alt='Flemoji symbol'
+              width={32}
+              height={32}
+              priority
+              className='h-8 w-8 rounded-lg'
+            />
+            <span className='sr-only'>Flemoji</span>
           </Link>
         </NavbarBrand>
       </NavbarContent>

@@ -9,9 +9,9 @@
 
 import { BaseAgent, type AgentContext, type AgentResponse } from './base-agent';
 import { discoveryTools } from '@/lib/ai/tools';
-import { ChatOpenAI, AzureChatOpenAI } from '@langchain/openai';
-import { ChatAnthropic } from '@langchain/anthropic';
-import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
+import { createModel } from './model-factory';
+import { DISCOVERY_SYSTEM_PROMPT } from './agent-prompts';
+import { MAX_RELATED_TRACKS, MAX_TRACKS_PER_RESPONSE } from './agent-config';
 import { logger } from '@/lib/utils/logger';
 import type { AIProvider } from '@/types/ai-service';
 import type {
@@ -27,96 +27,161 @@ import {
   extractTextContent,
   type ExecutedToolResult,
 } from '@/lib/ai/tool-executor';
-
-const DISCOVERY_SYSTEM_PROMPT = `You are a music discovery assistant for Flemoji, a South African music streaming platform.
-
-Your role is to help users discover new music, search for tracks and artists, browse playlists, and explore different genres and regions.
-
-Available actions:
-- SEARCH: Find tracks by title, artist, or description (use search_tracks tool)
-- BROWSE: Explore playlists by genre or province (use get_playlists_by_genre tool)
-- DISCOVER: Find trending tracks and top charts (use get_trending_tracks, get_top_charts tools)
-- ARTIST: Get information about specific artists (use get_artist, search_artists tools)
-- COMPILE PLAYLIST: When user asks to "compile", "create", "make", or "build" a playlist:
-  * You MUST use get_tracks_by_genre or search_tracks to find tracks
-  * DO NOT use get_genres or get_playlists_by_genre when compiling
-  * Search for tracks matching the genre/criteria mentioned
-  * The system will automatically compile the tracks into a playlist
-
-When responding:
-- Be enthusiastic about helping users discover South African music
-- Provide context about genres when relevant (Amapiano, Afrobeat, House, etc.)
-- Suggest similar artists or tracks when appropriate
-- Keep responses conversational and engaging
-- Use the tools available to gather real data before responding
-- IMPORTANT: When users ask to compile/create a playlist, you MUST search for tracks using get_tracks_by_genre or search_tracks - do NOT just list genres
-
-You have access to comprehensive music discovery tools. Use them to provide accurate, helpful information.`;
+import {
+  extractTagsFromQuery,
+  type DiscoveryMetadata,
+} from './router-intent-detector';
 
 export class DiscoveryAgent extends BaseAgent {
   private model: any;
 
+  /**
+   * Create a new DiscoveryAgent instance
+   * @param provider - AI provider to use (defaults to 'azure-openai')
+   */
   constructor(provider: AIProvider = 'azure-openai') {
     super('DiscoveryAgent', DISCOVERY_SYSTEM_PROMPT);
-
-    // Initialize model based on provider
-    switch (provider) {
-      case 'azure-openai':
-        this.model = new AzureChatOpenAI({
-          azureOpenAIApiDeploymentName:
-            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
-          azureOpenAIApiVersion:
-            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
-          temperature: 1,
-        });
-        break;
-      case 'openai':
-        this.model = new ChatOpenAI({
-          modelName: 'gpt-4o-mini',
-          temperature: 0.7,
-        });
-        break;
-      case 'anthropic':
-        this.model = new ChatAnthropic({
-          modelName: 'claude-3-5-sonnet',
-          temperature: 0.7,
-        });
-        break;
-      case 'google':
-        this.model = new ChatGoogleGenerativeAI({
-          model: 'gemini-pro',
-          temperature: 0.7,
-        });
-        break;
-      default:
-        this.model = new AzureChatOpenAI({
-          azureOpenAIApiDeploymentName:
-            process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
-          azureOpenAIApiVersion:
-            process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
-          temperature: 1,
-        });
-    }
+    this.model = createModel(provider);
   }
 
+  /**
+   * Process a user message and return a discovery response
+   * @param message - User's query message
+   * @param context - Optional agent context (userId, filters, etc.)
+   * @returns Agent response with discovered tracks, playlists, or artists
+   */
   async process(
     message: string,
     context?: AgentContext
   ): Promise<AgentResponse> {
+    logger.info('[DiscoveryAgent] ===== PROCESSING REQUEST =====');
+    logger.info('[DiscoveryAgent] Message:', message);
+    logger.info('[DiscoveryAgent] Context:', {
+      userId: context?.userId,
+      conversationId: context?.conversationId,
+      hasHistory: !!context?.conversationHistory?.length,
+      filters: context?.filters,
+      metadata: context?.metadata,
+    });
     try {
+      // Detect explicit genre mention in user message
+      const explicitGenre = await this.extractGenreFromMessage(message);
+
+      // Override context filter if explicit genre differs from context filter
+      // This prevents conflicts when user explicitly mentions a different genre
+      let effectiveContext = context;
+      if (explicitGenre && context?.filters?.genre) {
+        const contextGenre = context.filters.genre.toLowerCase();
+        const explicitGenreLower = explicitGenre.toLowerCase();
+
+        // Only override if genres are different (allowing for aliases/variations)
+        if (
+          contextGenre !== explicitGenreLower &&
+          !contextGenre.includes(explicitGenreLower) &&
+          !explicitGenreLower.includes(contextGenre)
+        ) {
+          logger.info('Genre conflict detected and resolved', {
+            explicitGenre,
+            contextGenre: context.filters.genre,
+            message,
+          });
+
+          effectiveContext = {
+            ...context,
+            filters: {
+              ...context.filters,
+              genre: explicitGenre, // Override with explicit genre
+            },
+          };
+        }
+      } else if (explicitGenre && !context?.filters?.genre) {
+        // Set genre filter if explicit genre found but no context filter exists
+        effectiveContext = {
+          ...context,
+          filters: {
+            ...context?.filters,
+            genre: explicitGenre,
+          },
+        };
+      }
+
+      // FAST PATH: if RouterAgent already extracted subIntent + entities, skip LLM tool selection
+      const subIntent = context?.metadata?.subIntent as
+        | DiscoveryMetadata['subIntent']
+        | undefined;
+      const entities = context?.metadata?.entities as
+        | DiscoveryMetadata['entities']
+        | undefined;
+
+      if (subIntent) {
+        logger.info('[DiscoveryAgent] Fast path activated:', {
+          subIntent,
+          entities,
+        });
+        context?.emitEvent?.({
+          type: 'agent_processing',
+          agent: 'DiscoveryAgent',
+          message: 'Let me dig through our music collection... 🎵',
+          stage: 'tool_selection',
+          timestamp: new Date().toISOString(),
+        });
+        const fastResult = await this.fastPathProcess(
+          message,
+          subIntent,
+          entities ?? {},
+          effectiveContext
+        );
+        if (fastResult) return fastResult;
+        // If fast path returned null (e.g., service error or no results), fall through to LLM
+        logger.info(
+          '[DiscoveryAgent] Fast path yielded no results, falling back to LLM'
+        );
+      }
+
       // Build context message if filters are provided
-      const contextMessage = this.formatContext(context);
+      const contextMessage = this.formatContext(effectiveContext);
       const fullMessage = contextMessage
         ? `${message}${contextMessage ? `\n\nContext: ${contextMessage}` : ''}`
         : message;
 
+      // Emit event when LLM is deciding which tools to call
+      context?.emitEvent?.({
+        type: 'agent_processing',
+        agent: 'DiscoveryAgent',
+        message: 'Let me dig through our music collection... 🎵',
+        stage: 'tool_selection',
+        timestamp: new Date().toISOString(),
+      });
+
+      // Build system prompt with long-term memory context and messages with history
+      const systemPrompt = this.buildSystemPromptWithMemory(
+        this.systemPrompt,
+        effectiveContext
+      );
+      const messages = this.buildMessagesWithHistory(
+        systemPrompt,
+        fullMessage,
+        effectiveContext
+      );
+
       const execution = await executeToolCallLoop({
         model: this.model,
         tools: discoveryTools,
-        messages: [
-          { role: 'system', content: this.systemPrompt },
-          { role: 'user', content: fullMessage },
-        ],
+        messages,
+        emitEvent: context?.emitEvent,
+        originalMessage: message,
+        runConfig: context?.runConfig,
+      });
+
+      logger.info('[DiscoveryAgent] Tool execution completed:', {
+        iterations: execution.iterations,
+        toolCallsCount: execution.toolResults.length,
+        toolCalls: execution.toolResults.map(t => ({
+          name: t.name,
+          args: t.args,
+          hasError: !!t.error,
+        })),
+        truncated: execution.toolExecutionTruncated,
       });
 
       const textContent = extractTextContent(execution.finalMessage.content);
@@ -144,11 +209,27 @@ export class DiscoveryAgent extends BaseAgent {
         };
       }
 
+      // Emit processing_results event with more detail
+      context?.emitEvent?.({
+        type: 'processing_results',
+        message: 'Almost there! Putting it all together... 🎨',
+        stage: 'result_processing',
+        timestamp: new Date().toISOString(),
+      });
+
       const structuredData = await this.convertToolResultsToResponse(
         execution.toolResults,
-        context,
+        effectiveContext, // Use effective context (with genre override if applicable)
         message // Pass original message to detect compile intent
       );
+
+      // Emit finalizing event
+      context?.emitEvent?.({
+        type: 'finalizing',
+        message: 'Preparing your response...',
+        stage: 'finalization',
+        timestamp: new Date().toISOString(),
+      });
 
       return {
         message: messageText,
@@ -174,13 +255,299 @@ export class DiscoveryAgent extends BaseAgent {
     }
   }
 
-  private buildFallbackMessage(toolResults: ExecutedToolResult[]): string {
-    const toolNames = Array.from(
-      new Set(toolResults.map(result => result.name))
-    ).join(', ');
-    return `I found results using ${toolNames || 'the available tools'}! Here's what I discovered:`;
+  /**
+   * Fast path: call service directly based on subIntent extracted by keyword router.
+   * Skips LLM tool selection — 0 extra LLM calls for common queries.
+   * Returns null if the subIntent doesn't map to a fast path or data is empty.
+   */
+  private async fastPathProcess(
+    message: string,
+    subIntent: DiscoveryMetadata['subIntent'],
+    entities: DiscoveryMetadata['entities'],
+    context?: AgentContext
+  ): Promise<AgentResponse | null> {
+    try {
+      const { MusicService, AnalyticsService, PlaylistService, ArtistService } =
+        await import('@/lib/services');
+
+      let toolData: Array<{ tool: string; data: unknown }> = [];
+      let headerMessage = '';
+
+      switch (subIntent) {
+        case 'trending': {
+          const tracks = await AnalyticsService.getTrendingTracks(10);
+          if (!tracks || tracks.length === 0) return null;
+          toolData = [
+            {
+              tool: 'get_trending_tracks',
+              data: { tracks: tracks.map(t => ({ ...t })) },
+            },
+          ];
+          headerMessage = 'Here are the trending tracks right now.';
+          break;
+        }
+
+        case 'genres_list': {
+          const { prisma } = await import('@/lib/db');
+          const dbGenres = await prisma.genre.findMany({
+            where: { isActive: true },
+            orderBy: [{ order: 'asc' }, { name: 'asc' }],
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              description: true,
+              colorHex: true,
+              icon: true,
+              _count: { select: { tracks: true } },
+            },
+          });
+          if (!dbGenres || dbGenres.length === 0) return null;
+          toolData = [
+            {
+              tool: 'get_genres',
+              data: {
+                genres: dbGenres.map(g => ({
+                  id: g.id,
+                  name: g.name,
+                  slug: g.slug,
+                  description: g.description,
+                  colorHex: g.colorHex,
+                  icon: g.icon,
+                  trackCount: g._count.tracks,
+                })),
+                count: dbGenres.length,
+              },
+            },
+          ];
+          headerMessage = `Here are ${dbGenres.length} genres available on Flemoji.`;
+          break;
+        }
+
+        case 'artist_tracks': {
+          const artist = entities.artist;
+          if (!artist) return null;
+          const tracks = await MusicService.searchTracks(artist, {
+            limit: 10,
+            orderBy: 'popular',
+          });
+          if (!tracks || tracks.length === 0) return null;
+          toolData = [
+            {
+              tool: 'search_tracks',
+              data: {
+                tracks: tracks.map(t => ({
+                  ...t,
+                  artist:
+                    t.artist || t.artistProfile?.artistName || 'Unknown Artist',
+                })),
+              },
+            },
+          ];
+          headerMessage = `Here are tracks by ${artist}.`;
+          break;
+        }
+
+        case 'artist_profile': {
+          const artist = entities.artist;
+          if (!artist) return null;
+          const profile = await ArtistService.getArtistByName(artist);
+          if (!profile) return null;
+          toolData = [
+            {
+              tool: 'get_artist',
+              data: { artist: profile },
+            },
+          ];
+          headerMessage = `Here's the profile for ${profile.artistName || artist}.`;
+          break;
+        }
+
+        case 'genre_tracks': {
+          const genre = entities.genre;
+          if (!genre) return null;
+          const tracks = await MusicService.getTracksByGenre(genre, 10);
+          if (!tracks || tracks.length === 0) return null;
+          toolData = [
+            {
+              tool: 'get_tracks_by_genre',
+              data: {
+                tracks: tracks.map(t => ({
+                  ...t,
+                  artist:
+                    t.artist || t.artistProfile?.artistName || 'Unknown Artist',
+                })),
+                genre,
+                count: tracks.length,
+              },
+            },
+          ];
+          headerMessage = `Here are ${tracks.length} ${genre} tracks for you.`;
+          break;
+        }
+
+        case 'genre_playlists': {
+          const genre = entities.genre;
+          if (!genre) return null;
+          const playlists = await PlaylistService.getPlaylistsByGenre(
+            genre,
+            10
+          );
+          if (!playlists || playlists.length === 0) return null;
+          toolData = [
+            {
+              tool: 'get_playlists_by_genre',
+              data: { playlists, genre, count: playlists.length },
+            },
+          ];
+          headerMessage = `Here are ${genre} playlists for you.`;
+          break;
+        }
+
+        case 'search': {
+          const query = entities.query;
+          if (!query) return null;
+          let tracks = await MusicService.searchTracks(query, {
+            limit: 10,
+            orderBy: 'popular',
+          });
+          // If no text-match results, try genre search — covers "show me amapiano",
+          // "play afrobeats" where the query is a genre name without an explicit suffix.
+          if (!tracks || tracks.length === 0) {
+            tracks = await MusicService.getTracksByGenre(query, 10);
+          }
+          if (!tracks || tracks.length === 0) return null;
+          toolData = [
+            {
+              tool: 'search_tracks',
+              data: {
+                tracks: tracks.map(t => ({
+                  ...t,
+                  artist:
+                    t.artist || t.artistProfile?.artistName || 'Unknown Artist',
+                })),
+              },
+            },
+          ];
+          headerMessage = `Here are results for "${query}".`;
+          break;
+        }
+
+        case 'semantic_search': {
+          const query = entities.query ?? message;
+          const genreFilter = context?.filters?.genre;
+
+          // Step 1: tag-based search — precise, uses explicit mood/attribute tags on tracks
+          const { moods: tagMoods, attributes: tagAttributes } =
+            extractTagsFromQuery(query);
+          let tracks =
+            tagMoods.length > 0 || tagAttributes.length > 0
+              ? await MusicService.searchTracksByTheme({
+                  moods: tagMoods,
+                  attributes: tagAttributes,
+                  limit: 10,
+                  genre: genreFilter,
+                })
+              : [];
+
+          // Step 2: fall back to vector similarity search with a minimum threshold
+          // (avoids returning unrelated tracks when no tagged results exist)
+          if (!tracks || tracks.length === 0) {
+            tracks = await MusicService.searchTracksBySemantic(query, {
+              limit: 10,
+              genre: genreFilter,
+              minSimilarity: 0.3,
+            });
+          }
+
+          // Step 3: nothing found — let the LLM handle it with a proper response
+          if (!tracks || tracks.length === 0) return null;
+
+          toolData = [
+            {
+              tool: 'search_tracks_by_theme',
+              data: {
+                tracks: tracks.map(t => ({
+                  ...t,
+                  artist:
+                    t.artist || t.artistProfile?.artistName || 'Unknown Artist',
+                })),
+                count: tracks.length,
+                searchedMoods: tagMoods,
+                searchedAttributes: tagAttributes,
+              },
+            },
+          ];
+          headerMessage =
+            tagMoods.length > 0 || tagAttributes.length > 0
+              ? `Here are some tracks that match your vibe.`
+              : `Here are the closest matches I could find.`;
+          break;
+        }
+
+        default:
+          return null;
+      }
+
+      if (toolData.length === 0) return null;
+
+      const structuredData = await this.convertToolDataToResponse(
+        toolData,
+        context,
+        message
+      );
+      if (!structuredData) return null;
+
+      return {
+        message: headerMessage,
+        data: structuredData,
+        metadata: {
+          agent: this.name,
+          fastPath: true,
+          subIntent,
+          entities,
+          toolCalls: toolData.map(td => ({ name: td.tool, args: entities })),
+        },
+      };
+    } catch (error) {
+      logger.error('[DiscoveryAgent] Fast path error:', error);
+      return null; // Fall through to LLM on any error
+    }
   }
 
+  /**
+   * Build a fallback message when tool results are available but no structured response
+   * @param toolResults - Results from tool execution
+   * @returns Fallback message string
+   */
+  private buildFallbackMessage(toolResults: ExecutedToolResult[]): string {
+    // Check if any tool actually returned tracks/results to avoid false-success messages
+    const hasResults = toolResults.some(result => {
+      const data = result.parsedResult ?? result.rawResult;
+      if (!data || typeof data !== 'object') return false;
+      const d = data as any;
+      return (
+        (Array.isArray(d.tracks) && d.tracks.length > 0) ||
+        (Array.isArray(d.playlists) && d.playlists.length > 0) ||
+        (Array.isArray(d.genres) && d.genres.length > 0) ||
+        d.artist != null
+      );
+    });
+
+    if (!hasResults) {
+      return "I searched but couldn't find tracks matching your request. Try a different search or browse by genre.";
+    }
+
+    return "Here's what I found for you:";
+  }
+
+  /**
+   * Convert tool execution results to structured AI response
+   * @param results - Tool execution results
+   * @param context - Optional agent context
+   * @param userMessage - Original user message (for compile intent detection)
+   * @returns Structured AI response or null
+   */
   private async convertToolResultsToResponse(
     results: ExecutedToolResult[],
     context?: AgentContext,
@@ -220,7 +587,9 @@ export class DiscoveryAgent extends BaseAgent {
     context?: AgentContext,
     userMessage?: string
   ): Promise<AIResponse | null> {
-    if (toolData.length === 0) return null;
+    if (toolData.length === 0) {
+      return null;
+    }
 
     // Aggregate across tool outputs
     const aggregated: {
@@ -236,6 +605,7 @@ export class DiscoveryAgent extends BaseAgent {
 
       switch (toolName) {
         case 'search_tracks':
+        case 'search_tracks_by_theme':
         case 'get_tracks_by_genre':
         case 'get_trending_tracks': {
           // Handle both parsed JSON objects and string JSON
@@ -255,25 +625,51 @@ export class DiscoveryAgent extends BaseAgent {
             aggregated.tracks.push(...tracksData.tracks);
           }
 
-          if (tracksData?.genre) aggregated.meta.genre = tracksData.genre;
-          if (typeof tracksData?.count === 'number')
+          if (tracksData?.genre) {
+            aggregated.meta.genre = tracksData.genre;
+          }
+          if (typeof tracksData?.count === 'number') {
             aggregated.meta.totalTracks = tracksData.count;
+          }
           break;
         }
         case 'get_top_charts':
         case 'get_featured_playlists':
         case 'get_playlists_by_genre':
         case 'get_playlists_by_province': {
-          if (Array.isArray(data.playlists))
-            aggregated.playlists.push(...data.playlists);
-          if (data.genre) aggregated.meta.genre = data.genre;
-          if (data.province) aggregated.meta.province = data.province;
-          if (typeof data.count === 'number')
-            aggregated.meta.totalPlaylists = data.count;
+          // Handle both string JSON and parsed object
+          let playlistsData = data;
+          if (typeof data === 'string') {
+            try {
+              playlistsData = JSON.parse(data);
+            } catch {
+              // If parsing fails, use data as is
+            }
+          }
+
+          if (playlistsData && Array.isArray(playlistsData.playlists)) {
+            aggregated.playlists.push(...playlistsData.playlists);
+          }
+          if (playlistsData?.genre) aggregated.meta.genre = playlistsData.genre;
+          if (playlistsData?.province)
+            aggregated.meta.province = playlistsData.province;
+          if (typeof playlistsData?.count === 'number')
+            aggregated.meta.totalPlaylists = playlistsData.count;
           break;
         }
         case 'get_playlist': {
-          if (data) aggregated.playlists.push(data);
+          // Handle both string JSON and parsed object
+          let playlistData = data;
+          if (typeof data === 'string') {
+            try {
+              playlistData = JSON.parse(data);
+            } catch {
+              // If parsing fails, use data as is
+            }
+          }
+          // Extract playlist from { playlist: {...} } or use data directly
+          const playlist = playlistData?.playlist || playlistData;
+          if (playlist) aggregated.playlists.push(playlist);
           break;
         }
         case 'get_artist': {
@@ -327,8 +723,37 @@ export class DiscoveryAgent extends BaseAgent {
     };
 
     aggregated.tracks = dedupeById(aggregated.tracks);
+
     aggregated.artists = dedupeById(aggregated.artists);
     aggregated.playlists = dedupeById(aggregated.playlists);
+
+    // Sort by strength DESC so highest-quality tracks appear first
+    aggregated.tracks = aggregated.tracks.sort(
+      (a, b) => (b.strength ?? 0) - (a.strength ?? 0)
+    );
+
+    // HARD LIMIT: Never process more than MAX_TRACKS_PER_RESPONSE tracks total
+    // Apply limit BEFORE genre filtering to ensure consistent behavior
+    aggregated.tracks = aggregated.tracks.slice(0, MAX_TRACKS_PER_RESPONSE);
+
+    const resolvedGenreCluster = await this.getGenreCluster(
+      aggregated.meta.genre,
+      aggregated.tracks
+    );
+
+    if (resolvedGenreCluster.length > 0) {
+      const normalizedGenres = new Set(
+        resolvedGenreCluster.map(genre => genre.toLowerCase())
+      );
+      aggregated.tracks = aggregated.tracks.filter(track => {
+        if (!track?.genre) {
+          return true;
+        }
+        return normalizedGenres.has(String(track.genre).toLowerCase());
+      });
+      // Re-apply limit after genre filtering to ensure we never exceed MAX_TRACKS_PER_RESPONSE
+      aggregated.tracks = aggregated.tracks.slice(0, MAX_TRACKS_PER_RESPONSE);
+    }
 
     // Check if user wants to compile a playlist
     const wantsToCompile = userMessage && this.detectCompileIntent(userMessage);
@@ -339,15 +764,16 @@ export class DiscoveryAgent extends BaseAgent {
     if (wantsToCompile) {
       // If no tracks found, try to get some tracks by genre from the user message
       if (!hasTracks && userMessage) {
-        const genre = this.extractGenreFromMessage(userMessage);
+        const genre = await this.extractGenreFromMessage(userMessage);
         if (genre) {
           // Try to fetch tracks by genre one more time
           try {
             const { MusicService } = await import('@/lib/services');
             const genreTracks = await MusicService.getTracksByGenre(genre, 50);
             if (genreTracks && genreTracks.length > 0) {
-              aggregated.tracks.push(
-                ...genreTracks.map(track => ({
+              const mappedTracks = genreTracks
+                .slice(0, MAX_TRACKS_PER_RESPONSE) // Limit to MAX_TRACKS_PER_RESPONSE
+                .map(track => ({
                   id: track.id,
                   title: track.title,
                   artist:
@@ -366,7 +792,12 @@ export class DiscoveryAgent extends BaseAgent {
                   updatedAt: track.updatedAt,
                   albumArtwork: track.albumArtwork,
                   isDownloadable: track.isDownloadable,
-                }))
+                }));
+              aggregated.tracks.push(...mappedTracks);
+              // Re-apply limit after adding tracks
+              aggregated.tracks = aggregated.tracks.slice(
+                0,
+                MAX_TRACKS_PER_RESPONSE
               );
               aggregated.meta.genre = genre;
             }
@@ -404,171 +835,62 @@ export class DiscoveryAgent extends BaseAgent {
 
     // If only tracks
     if (aggregated.tracks.length > 0) {
-      let otherTracks: any[] | undefined;
-
-      // Generate summaries for all tracks and ensure fileUrl is present
       const { constructFileUrl } = await import('@/lib/url-utils');
 
-      // Check if Azure OpenAI is properly configured before attempting summaries
-      const azureConfigured =
-        process.env.AZURE_OPENAI_API_KEY &&
-        process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME &&
-        (process.env.AZURE_OPENAI_ENDPOINT ||
-          process.env.AZURE_OPENAI_API_INSTANCE_NAME);
+      // HARD LIMIT: Never exceed MAX_TRACKS_PER_RESPONSE tracks total
+      // Re-apply limit here to ensure it's enforced even if tracks were added elsewhere
+      const limitedTracks = aggregated.tracks.slice(0, MAX_TRACKS_PER_RESPONSE);
 
-      const tracksWithSummaries = await Promise.all(
-        aggregated.tracks.map(async track => {
-          let summary: string | undefined;
+      const tracksWithSummaries = limitedTracks.map(track => {
+        const fileUrl =
+          track.fileUrl ||
+          (track.filePath ? constructFileUrl(track.filePath) : '');
+        const description =
+          typeof track.description === 'string'
+            ? track.description.trim()
+            : undefined;
 
-          // Ensure fileUrl is constructed from filePath if missing
-          const fileUrl =
-            track.fileUrl ||
-            (track.filePath ? constructFileUrl(track.filePath) : '');
+        // Summary should be the description field itself (as per requirements)
+        // Always use description as summary if it exists
+        const summary = description || undefined;
 
-          if (azureConfigured) {
-            try {
-              // Use AzureChatOpenAI directly (same as main agents) to ensure consistent config
-              const { AzureChatOpenAI } = await import('@langchain/openai');
-              const { HumanMessage } = await import('@langchain/core/messages');
+        // Build result object - summary comes from description field
+        const result: any = {
+          ...track,
+          description,
+          fileUrl,
+          summary, // Set summary directly - it's the description field itself
+          artistId: track.artistId || track.artistProfileId,
+          attributes: Array.isArray(track.attributes) ? track.attributes : [],
+          mood: Array.isArray(track.mood) ? track.mood : [],
+          strength: this.getTrackStrength(track),
+          isDownloadable: track.isDownloadable ?? false,
+        };
 
-              const trackData = {
-                title: track.title,
-                artist: track.artist || 'Unknown Artist',
-                genre: track.genre || 'Unknown Genre',
-                playCount: track.playCount || 0,
-                likeCount: track.likeCount || 0,
-                duration: track.duration,
-                album: track.album,
-              };
+        return result;
+      });
 
-              const summaryPrompt = `Create a brief, engaging summary (2-3 sentences) for this South African track on Flemoji:
-
-Title: ${trackData.title}
-Artist: ${trackData.artist}
-Genre: ${trackData.genre}
-Plays: ${trackData.playCount}
-Likes: ${trackData.likeCount}
-${trackData.album ? `Album: ${trackData.album}` : ''}
-
-Write a concise summary that:
-- Highlights the track's genre and style
-- Mentions the artist
-- Notes its popularity if significant (high play/like counts)
-- Uses an enthusiastic, music-discovery tone
-- Keeps it under 150 words
-
-Summary:`;
-
-              // Use same config pattern as main agents - LangChain reads env vars automatically
-              const summaryModel = new AzureChatOpenAI({
-                azureOpenAIApiDeploymentName:
-                  process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5-mini',
-                azureOpenAIApiVersion:
-                  process.env.AZURE_OPENAI_API_VERSION || '2024-05-01-preview',
-                temperature: 1, // Azure OpenAI gpt-5-mini only supports temperature: 1
-              });
-
-              const summaryResponse = await summaryModel.invoke([
-                new HumanMessage(summaryPrompt),
-              ]);
-
-              if (summaryResponse?.content) {
-                summary = String(summaryResponse.content).trim();
-              }
-            } catch (error) {
-              // If summary generation fails, just continue without it
-            }
-          }
-
-          return {
-            ...track,
-            fileUrl,
-            summary,
-            isDownloadable: track.isDownloadable ?? false,
-          };
-        })
+      const genreCluster = resolvedGenreCluster;
+      const mainTrackIds = new Set(
+        tracksWithSummaries.map(track => track.id).filter(Boolean)
       );
 
-      // Add featured tracks in "other" field for all track results
-      // Fetch featured tracks - try multiple playlists if needed to get enough tracks
-      try {
-        const { PlaylistService } = await import('@/lib/services');
-        const mainTrackIds = new Set(aggregated.tracks.map(t => t.id));
-        const featuredPlaylists = await PlaylistService.getFeaturedPlaylists(3);
+      // Calculate how many "other" tracks we can include (max MAX_TRACKS_PER_RESPONSE total)
+      const remainingSlots = Math.max(
+        0,
+        MAX_TRACKS_PER_RESPONSE - tracksWithSummaries.length
+      );
+      const otherTracksLimit =
+        remainingSlots > 0 ? Math.min(remainingSlots, MAX_RELATED_TRACKS) : 0;
 
-        if (featuredPlaylists && featuredPlaylists.length > 0) {
-          // Try to get tracks from multiple featured playlists if needed
-          const allFeaturedTracks: any[] = [];
-
-          for (const featuredPlaylist of featuredPlaylists) {
-            if (allFeaturedTracks.length >= 5) break;
-
-            try {
-              const playlist = await PlaylistService.getPlaylistById(
-                featuredPlaylist.id
-              );
-
-              if (!playlist) continue;
-
-              if (playlist && playlist.tracks && playlist.tracks.length > 0) {
-                // Map playlist tracks to actual track objects
-                const playlistTrackObjects = playlist.tracks
-                  .map(pt => {
-                    // Handle both { track: {...} } and direct track objects
-                    const track = pt.track || pt;
-                    return track;
-                  })
-                  .filter(t => t !== null && t !== undefined);
-
-                // Filter out tracks that are already in main results
-                const tracksNotInMain = playlistTrackObjects.filter(
-                  t => t && t.id && !mainTrackIds.has(t.id)
-                );
-
-                // Filter out duplicates within featured tracks
-                const uniqueTracks = tracksNotInMain.filter(
-                  t => !allFeaturedTracks.some(ft => ft.id === t.id)
-                );
-
-                allFeaturedTracks.push(...uniqueTracks);
-              }
-            } catch (playlistError) {
-              // Continue to next playlist if this one fails
-            }
-          }
-
-          if (allFeaturedTracks.length > 0) {
-            // Get first 5 tracks, ensuring fileUrl is constructed
-            const { constructFileUrl } = await import('@/lib/url-utils');
-            otherTracks = allFeaturedTracks.slice(0, 5).map(track => ({
-              id: track.id,
-              title: track.title,
-              artist:
-                track.artist ||
-                track.artistProfile?.artistName ||
-                'Unknown Artist',
-              genre: track.genre,
-              duration: track.duration,
-              playCount: track.playCount,
-              likeCount: track.likeCount,
-              coverImageUrl: track.coverImageUrl,
-              uniqueUrl: track.uniqueUrl,
-              filePath: track.filePath,
-              fileUrl:
-                track.fileUrl ||
-                (track.filePath ? constructFileUrl(track.filePath) : ''),
-              artistId: track.artistProfileId,
-              userId: track.userId,
-              createdAt: track.createdAt,
-              updatedAt: track.updatedAt,
-              albumArtwork: track.albumArtwork,
-              isDownloadable: track.isDownloadable ?? false,
-            }));
-          }
-        }
-      } catch (error) {
-        // If featured tracks fetch fails, just continue without them
-      }
+      const otherTracks =
+        otherTracksLimit > 0
+          ? await this.getCuratedOtherTracks({
+              genreCluster,
+              excludeIds: mainTrackIds,
+              limit: otherTracksLimit,
+            })
+          : [];
 
       // Track AI search events for tracks in "other" field
       if (otherTracks && otherTracks.length > 0) {
@@ -615,7 +937,11 @@ Summary:`;
         }
       }
 
-      return {
+      // Ensure total never exceeds MAX_TRACKS_PER_RESPONSE
+      const totalTracks =
+        tracksWithSummaries.length + (otherTracks?.length || 0);
+
+      const finalResponse = {
         type: 'track_list',
         message: '',
         timestamp: new Date(),
@@ -624,10 +950,12 @@ Summary:`;
           ...(otherTracks && otherTracks.length > 0 && { other: otherTracks }),
           metadata: {
             genre: aggregated.meta.genre,
-            total: aggregated.tracks.length,
+            total: Math.min(totalTracks, MAX_TRACKS_PER_RESPONSE), // Never exceed MAX_TRACKS_PER_RESPONSE
           },
         },
       } as TrackListResponse;
+
+      return finalResponse;
     }
 
     // If only artists
@@ -652,8 +980,53 @@ Summary:`;
       } as SearchResultsResponse;
     }
 
-    // If only playlists/grid
+    // If only playlists
     if (aggregated.playlists.length > 0) {
+      // Check if we have a single playlist with tracks (from get_playlist tool)
+      const playlistWithTracks = aggregated.playlists.find(
+        (p: any) => p.tracks && Array.isArray(p.tracks) && p.tracks.length > 0
+      );
+
+      // If we have a single playlist with tracks, return it as a playlist response
+      // This handles the case where get_top_charts returns a summary and get_playlist returns the full playlist
+      if (playlistWithTracks && aggregated.playlists.length <= 2) {
+        // Remove duplicate playlists (keep the one with tracks)
+        const uniquePlaylists = aggregated.playlists.filter(
+          (p: any, index: number, self: any[]) => {
+            // If this playlist has tracks, keep it
+            if (p.tracks && Array.isArray(p.tracks) && p.tracks.length > 0) {
+              return true;
+            }
+            // Otherwise, only keep if there's no playlist with the same ID that has tracks
+            const hasPlaylistWithTracks = self.some(
+              (other: any) =>
+                other.id === p.id &&
+                other.tracks &&
+                Array.isArray(other.tracks) &&
+                other.tracks.length > 0
+            );
+            return !hasPlaylistWithTracks;
+          }
+        );
+
+        // Use the playlist with tracks
+        const finalPlaylist =
+          uniquePlaylists.find(
+            (p: any) =>
+              p.tracks && Array.isArray(p.tracks) && p.tracks.length > 0
+          ) || uniquePlaylists[0];
+
+        if (finalPlaylist) {
+          return {
+            type: 'playlist',
+            message: '',
+            timestamp: new Date(),
+            data: finalPlaylist,
+          } as any;
+        }
+      }
+
+      // Otherwise, return as playlist grid
       return {
         type: 'playlist_grid',
         message: '',
@@ -675,7 +1048,302 @@ Summary:`;
   }
 
   /**
-   * Compile a playlist from tracks
+   * Get genre cluster (related genres) for a given base genre
+   * @param baseGenre - Base genre name or slug
+   * @param tracks - Optional tracks to extract genre from
+   * @returns Array of related genre slugs/names
+   */
+  private async getGenreCluster(
+    baseGenre?: string,
+    tracks?: any[]
+  ): Promise<string[]> {
+    const cluster = new Set<string>();
+    const fallbackGenre =
+      baseGenre ||
+      tracks?.find(track => typeof track?.genre === 'string')?.genre ||
+      '';
+
+    if (fallbackGenre) {
+      cluster.add(fallbackGenre.toLowerCase());
+    }
+
+    try {
+      if (!fallbackGenre) {
+        return Array.from(cluster);
+      }
+
+      const { prisma } = await import('@/lib/db');
+      const normalized = fallbackGenre.toLowerCase().trim();
+      const genreRecord = await prisma.genre.findFirst({
+        where: {
+          OR: [
+            { slug: { equals: normalized, mode: 'insensitive' } },
+            { name: { equals: fallbackGenre, mode: 'insensitive' } },
+          ],
+        },
+        include: {
+          parent: true,
+          subGenres: true,
+        },
+      });
+
+      if (genreRecord) {
+        cluster.add(genreRecord.slug.toLowerCase());
+        cluster.add(genreRecord.name.toLowerCase());
+        if (Array.isArray(genreRecord.aliases)) {
+          genreRecord.aliases.forEach(alias => {
+            if (typeof alias === 'string' && alias.trim().length > 0) {
+              cluster.add(alias.toLowerCase());
+            }
+          });
+        }
+        if (genreRecord.parent) {
+          if (genreRecord.parent.slug) {
+            cluster.add(genreRecord.parent.slug.toLowerCase());
+          }
+          if (genreRecord.parent.name) {
+            cluster.add(genreRecord.parent.name.toLowerCase());
+          }
+        }
+        if (Array.isArray(genreRecord.subGenres)) {
+          genreRecord.subGenres.forEach(sub => {
+            if (sub.slug) cluster.add(sub.slug.toLowerCase());
+            if (sub.name) cluster.add(sub.name.toLowerCase());
+          });
+        }
+      }
+    } catch (error) {
+      logger.warn('Failed to resolve genre cluster', error as Error);
+    }
+
+    return Array.from(cluster).filter(Boolean);
+  }
+
+  /**
+   * Get curated "other tracks" from genre-specific playlists
+   * @param genreCluster - Array of genre slugs/names to search
+   * @param excludeIds - Set of track IDs to exclude (main results)
+   * @param limit - Maximum number of tracks to return (default: MAX_RELATED_TRACKS)
+   * @returns Array of curated tracks matching the genre cluster
+   */
+  private async getCuratedOtherTracks({
+    genreCluster,
+    excludeIds,
+    limit = MAX_RELATED_TRACKS,
+  }: {
+    genreCluster: string[];
+    excludeIds: Set<string>;
+    limit?: number;
+  }): Promise<any[]> {
+    try {
+      const { PlaylistService } = await import('@/lib/services');
+      const { constructFileUrl } = await import('@/lib/url-utils');
+      const candidates: any[] = [];
+      const playlistIds = new Set<string>();
+
+      const normalizedCluster = genreCluster.map(genre =>
+        this.slugifyGenre(genre)
+      );
+
+      for (const genreSlug of normalizedCluster) {
+        if (!genreSlug) continue;
+        const playlists = await PlaylistService.getPlaylistsByGenre(
+          genreSlug,
+          2
+        );
+
+        for (const playlist of playlists) {
+          if (playlistIds.has(playlist.id)) continue;
+          playlistIds.add(playlist.id);
+
+          const playlistWithTracks = await PlaylistService.getPlaylistById(
+            playlist.id
+          );
+          if (!playlistWithTracks) continue;
+
+          playlistWithTracks.tracks.forEach(pt => {
+            const track = pt.track;
+            if (!track || !track.id || excludeIds.has(track.id)) return;
+            const strength = this.getTrackStrength(track);
+
+            // Filter by genre cluster - track must match one of the genres in cluster
+            if (genreCluster.length > 0) {
+              const trackGenre = track.genre?.toLowerCase();
+              if (!trackGenre) return; // Skip tracks without genre
+
+              const normalizedCluster = genreCluster.map(g => g.toLowerCase());
+              const matchesGenre = normalizedCluster.some(clusterGenre => {
+                // Check exact match or if track genre contains/equals cluster genre
+                return (
+                  trackGenre === clusterGenre ||
+                  trackGenre.includes(clusterGenre) ||
+                  clusterGenre.includes(trackGenre)
+                );
+              });
+
+              if (!matchesGenre) return; // Skip tracks that don't match genre cluster
+            }
+
+            candidates.push({
+              ...track,
+              strength,
+            });
+          });
+
+          if (candidates.length >= limit * 2) break;
+        }
+
+        if (candidates.length >= limit * 2) break;
+      }
+
+      if (candidates.length === 0) {
+        const featuredPlaylists = await PlaylistService.getFeaturedPlaylists(3);
+        for (const playlist of featuredPlaylists) {
+          const playlistWithTracks = await PlaylistService.getPlaylistById(
+            playlist.id
+          );
+          if (!playlistWithTracks) continue;
+
+          playlistWithTracks.tracks.forEach(pt => {
+            const track = pt.track;
+            if (!track || !track.id || excludeIds.has(track.id)) return;
+            const strength = this.getTrackStrength(track);
+
+            // Filter by genre cluster - track must match one of the genres in cluster
+            if (genreCluster.length > 0) {
+              const trackGenre = track.genre?.toLowerCase();
+              if (!trackGenre) return; // Skip tracks without genre
+
+              const normalizedCluster = genreCluster.map(g => g.toLowerCase());
+              const matchesGenre = normalizedCluster.some(clusterGenre => {
+                // Check exact match or if track genre contains/equals cluster genre
+                return (
+                  trackGenre === clusterGenre ||
+                  trackGenre.includes(clusterGenre) ||
+                  clusterGenre.includes(trackGenre)
+                );
+              });
+
+              if (!matchesGenre) return; // Skip tracks that don't match genre cluster
+            }
+
+            candidates.push({
+              ...track,
+              strength,
+            });
+          });
+
+          if (candidates.length >= limit * 2) break;
+        }
+      }
+
+      if (candidates.length === 0) {
+        return [];
+      }
+
+      const sampled = this.weightedSampleTracks(candidates, limit);
+      return sampled.map(track => {
+        const fileUrl =
+          track.fileUrl ||
+          (track.filePath ? constructFileUrl(track.filePath) : '');
+        const coverImageUrl = track.coverImageUrl
+          ? track.coverImageUrl.startsWith('http')
+            ? track.coverImageUrl
+            : constructFileUrl(track.coverImageUrl)
+          : track.albumArtwork
+            ? track.albumArtwork.startsWith('http')
+              ? track.albumArtwork
+              : constructFileUrl(track.albumArtwork)
+            : null;
+
+        return {
+          id: track.id,
+          title: track.title,
+          artist:
+            track.artist || track.artistProfile?.artistName || 'Unknown Artist',
+          genre: track.genre,
+          duration: track.duration,
+          playCount: track.playCount ?? 0,
+          likeCount: track.likeCount ?? 0,
+          coverImageUrl,
+          uniqueUrl: track.uniqueUrl,
+          filePath: track.filePath,
+          fileUrl,
+          artistId: track.artistProfileId,
+          userId: track.userId,
+          createdAt: track.createdAt,
+          updatedAt: track.updatedAt,
+          albumArtwork: track.albumArtwork,
+          isDownloadable: track.isDownloadable ?? false,
+          attributes: Array.isArray(track.attributes) ? track.attributes : [],
+          mood: Array.isArray(track.mood) ? track.mood : [],
+        };
+      });
+    } catch (error) {
+      logger.error('Failed to load curated tracks:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Weighted random sampling of tracks based on play/download counts
+   * @param tracks - Array of tracks to sample from
+   * @param count - Number of tracks to sample
+   * @returns Sampled tracks array
+   */
+  private weightedSampleTracks(tracks: any[], count: number): any[] {
+    if (tracks.length <= count) {
+      return tracks.slice(0, count);
+    }
+
+    const pool = tracks.map(track => ({
+      track,
+      weight: Math.max(
+        1,
+        (track.playCount || 0) + (track.downloadCount || 0) + 1
+      ),
+    }));
+
+    const selected: any[] = [];
+
+    while (pool.length > 0 && selected.length < count) {
+      const totalWeight = pool.reduce((sum, item) => sum + item.weight, 0);
+      let threshold = Math.random() * totalWeight;
+      let index = 0;
+
+      for (; index < pool.length; index++) {
+        threshold -= pool[index].weight;
+        if (threshold <= 0) {
+          break;
+        }
+      }
+
+      const [choice] = pool.splice(Math.min(index, pool.length - 1), 1);
+      selected.push(choice.track);
+    }
+
+    return selected;
+  }
+
+  /**
+   * Convert genre name to URL-friendly slug
+   * @param value - Genre name to slugify
+   * @returns Slugified genre string
+   */
+  private slugifyGenre(value?: string): string {
+    if (!value) return '';
+    return value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  /**
+   * Compile a virtual playlist from tracks
+   * @param tracks - Array of tracks to include in playlist
+   * @param meta - Metadata (genre, province, etc.)
+   * @param userMessage - Original user message for context
+   * @returns Playlist response with compiled tracks
    */
   private async compilePlaylistFromTracks(
     tracks: any[],
@@ -689,22 +1357,25 @@ Summary:`;
     const playlistName = genre ? `${genre} Playlist` : 'Curated Playlist';
 
     // Prepare tracks with proper structure
-    const playlistTracks = tracks.slice(0, 50).map((track, index) => {
-      const coverImageUrl =
-        track.coverImageUrl || track.albumArtwork
-          ? constructFileUrl(track.coverImageUrl || track.albumArtwork)
-          : null;
+    // Limit to MAX_TRACKS_PER_RESPONSE to ensure consistency
+    const playlistTracks = tracks
+      .slice(0, MAX_TRACKS_PER_RESPONSE)
+      .map((track, index) => {
+        const coverImageUrl =
+          track.coverImageUrl || track.albumArtwork
+            ? constructFileUrl(track.coverImageUrl || track.albumArtwork)
+            : null;
 
-      return {
-        track: {
-          ...track,
-          fileUrl: track.fileUrl || constructFileUrl(track.filePath),
-          coverImageUrl,
-          artistProfile: track.artistProfile || null,
-        },
-        order: index + 1,
-      };
-    });
+        return {
+          track: {
+            ...track,
+            fileUrl: track.fileUrl || constructFileUrl(track.filePath),
+            coverImageUrl,
+            artistProfile: track.artistProfile || null,
+          },
+          order: index + 1,
+        };
+      });
 
     // Get cover image from first track or use a default
     const coverImage =
@@ -741,31 +1412,144 @@ Summary:`;
   }
 
   /**
-   * Extract genre from user message
+   * Get track strength score (quality/completeness indicator)
+   * @param track - Track object
+   * @returns Strength score (0-100) or 0 if not available
    */
-  private extractGenreFromMessage(message: string): string | null {
-    const lowerMessage = message.toLowerCase();
-    const genres = [
-      'amapiano',
-      'afropop',
-      'afrobeat',
-      'hip hop',
-      'hiphop',
-      'trap',
-      'house',
-      '3 step',
-      '3-step',
-      'gqom',
-      'kwaito',
-      'afro house',
-    ];
+  private getTrackStrength(track: any): number {
+    if (!track) return 0;
+    if (typeof track.strength === 'number') {
+      return track.strength;
+    }
+    if (typeof track.completionPercentage === 'number') {
+      return track.completionPercentage;
+    }
+    return 0;
+  }
 
-    for (const genre of genres) {
-      if (lowerMessage.includes(genre)) {
-        // Return the genre as-is (will be matched by MusicService)
-        // MusicService handles case-insensitive matching and aliases
-        return genre;
+  /**
+   * Build narrative/summary text for a track using description, attributes, mood, and performance
+   * @param track - Track object with description, attributes, mood, playCount, downloadCount
+   * @returns Formatted narrative string or undefined
+   */
+  private buildTrackNarrative(track: any): string | undefined {
+    const description =
+      track && typeof track.description === 'string'
+        ? track.description.trim()
+        : '';
+
+    const extras: string[] = [];
+    const attributes = Array.isArray(track?.attributes)
+      ? track.attributes.filter((attr: string) => typeof attr === 'string')
+      : [];
+    if (attributes.length > 0) {
+      extras.push(`Themes: ${attributes.slice(0, 2).join(', ')}`);
+    }
+
+    const mood = Array.isArray(track?.mood)
+      ? track.mood.filter((m: string) => typeof m === 'string')
+      : [];
+    if (mood.length > 0) {
+      extras.push(`Mood: ${mood.slice(0, 2).join(', ')}`);
+    }
+
+    const performanceTotal =
+      (track?.playCount || 0) + (track?.downloadCount || 0);
+    if (performanceTotal > 0) {
+      const descriptor =
+        performanceTotal > 10000
+          ? 'Audience favourite'
+          : performanceTotal > 3000
+            ? 'Gaining traction'
+            : 'Emerging pick';
+      extras.push(
+        `${descriptor} on Flemoji (${performanceTotal.toLocaleString()} plays + downloads)`
+      );
+    }
+
+    if (!description && extras.length === 0) {
+      return undefined;
+    }
+
+    if (extras.length === 0) {
+      return description;
+    }
+
+    if (!description) {
+      return extras.join(' • ');
+    }
+
+    return `${description}\n\n${extras.join(' • ')}`;
+  }
+
+  /**
+   * Extract explicit genre from user message
+   * Uses database genres with aliases for accurate matching
+   * Returns normalized genre name if found, null otherwise
+   */
+  private async extractGenreFromMessage(
+    message: string
+  ): Promise<string | null> {
+    const lowerMessage = message.toLowerCase().trim();
+
+    try {
+      const { prisma } = await import('@/lib/db');
+      const genres = await prisma.genre.findMany({
+        where: { isActive: true },
+        select: {
+          name: true,
+          slug: true,
+          aliases: true,
+        },
+      });
+
+      // Check for exact matches (name, slug, aliases)
+      for (const genre of genres) {
+        const normalizedName = genre.name.toLowerCase();
+        const normalizedSlug = genre.slug.toLowerCase();
+
+        // Check name
+        if (lowerMessage.includes(normalizedName)) {
+          return genre.name; // Return canonical name
+        }
+
+        // Check slug
+        if (lowerMessage.includes(normalizedSlug)) {
+          return genre.name; // Return canonical name
+        }
+
+        // Check aliases
+        if (Array.isArray(genre.aliases)) {
+          for (const alias of genre.aliases) {
+            if (
+              typeof alias === 'string' &&
+              lowerMessage.includes(alias.toLowerCase())
+            ) {
+              return genre.name; // Return canonical name
+            }
+          }
+        }
       }
+
+      // Fallback: Check common variations that might not be in DB
+      const commonVariations: Record<string, string> = {
+        '3 step': '3 Step',
+        '3-step': '3 Step',
+        '3step': '3 Step',
+        'hip hop': 'Hip Hop',
+        hiphop: 'Hip Hop',
+        'afro house': 'Afro House',
+        afrobeat: 'Afrobeat',
+        'afro beat': 'Afrobeat',
+      };
+
+      for (const [variation, canonical] of Object.entries(commonVariations)) {
+        if (lowerMessage.includes(variation)) {
+          return canonical;
+        }
+      }
+    } catch (error) {
+      logger.warn('Failed to extract genre from message', error as Error);
     }
 
     return null;

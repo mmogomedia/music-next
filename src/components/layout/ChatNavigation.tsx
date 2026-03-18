@@ -2,22 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import {
   MusicalNoteIcon,
   FireIcon,
   GlobeAltIcon,
-  SparklesIcon,
   Bars3Icon,
   XMarkIcon,
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import {
   MusicalNoteIcon as MusicalNoteSolidIcon,
   FireIcon as FireSolidIcon,
   GlobeAltIcon as GlobeAltSolidIcon,
-  SparklesIcon as SparklesSolidIcon,
 } from '@heroicons/react/24/solid';
+import AIIcon from '@/components/icons/AIIcon';
 import Link from 'next/link';
-import ConversationList from '@/components/ai/ConversationList';
+import RecentConversations from '@/components/shared/RecentConversations';
 import UserDetailsFooter from '@/components/layout/UserDetailsFooter';
 import MiniPlayer from '@/components/music/MiniPlayer';
 import SignInModal from '@/components/auth/SignInModal';
@@ -34,12 +35,14 @@ interface ChatNavigationProps {
   onQuickLinkClick?: (_message: string) => void;
   onConversationSelect?: (_conversationId: string) => void;
   getConversationId?: () => string | undefined;
+  activeView?: 'streaming' | 'timeline' | 'league';
 }
 
 export default function ChatNavigation({
   onQuickLinkClick,
   onConversationSelect,
   getConversationId,
+  activeView = 'streaming',
 }: ChatNavigationProps) {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
@@ -73,7 +76,7 @@ export default function ChatNavigation({
       title: 'Trending Now',
       icon: FireIcon,
       activeIcon: FireSolidIcon,
-      message: 'Show me the trending music right now',
+      message: 'Show me trending music right now',
     },
     {
       id: 'genres',
@@ -92,8 +95,8 @@ export default function ChatNavigation({
     {
       id: 'discover',
       title: 'Discover New Music',
-      icon: SparklesIcon,
-      activeIcon: SparklesSolidIcon,
+      icon: AIIcon,
+      activeIcon: AIIcon,
       message: 'Help me discover new music based on my preferences',
     },
   ];
@@ -113,19 +116,16 @@ export default function ChatNavigation({
       <>
         <aside className='w-64 flex-shrink-0 h-screen bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col z-30 pb-20 sticky top-0'>
           {/* Logo Section */}
-          <div className='p-6 border-b border-gray-200 dark:border-slate-700 flex-shrink-0'>
-            <Link href='/' className='flex items-center gap-3 group'>
-              <div className='w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-200'>
-                <MusicalNoteIcon className='w-6 h-6 text-white' />
-              </div>
-              <div className='flex flex-col'>
-                <span className='text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent'>
-                  Flemoji
-                </span>
-                <span className='text-xs text-gray-500 dark:text-gray-400'>
-                  Music Discovery
-                </span>
-              </div>
+          <div className='px-6 border-b border-gray-200 dark:border-slate-700 flex items-center flex-shrink-0 h-[83px]'>
+            <Link href='/' className='flex items-center'>
+              <Image
+                src='/main_logo.png'
+                alt='Flemoji'
+                width={220}
+                height={60}
+                priority
+                className='h-12 w-auto'
+              />
             </Link>
           </div>
 
@@ -157,16 +157,38 @@ export default function ChatNavigation({
 
             {/* Conversations Section - scrollable */}
             <div className='mt-8 pt-6 border-t border-gray-200 dark:border-slate-700 flex-1 min-h-0 flex flex-col'>
-              <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 px-3 flex-shrink-0'>
-                Recent Conversations
-              </h3>
-              <ConversationList
+              <RecentConversations
                 onConversationSelect={onConversationSelect}
                 activeConversationId={getConversationId?.()}
+                chatType={activeView === 'timeline' ? 'TIMELINE' : 'STREAMING'}
                 onSignInClick={() => {}}
                 onSignInModalOpen={setIsSignInModalOpen}
                 isSignInModalOpen={isSignInModalOpen}
+                showHeading={true}
               />
+            </div>
+
+            {/* Legal Links - Below conversations */}
+            <div className='px-4 py-3 border-t border-gray-200/60 dark:border-slate-700/60 flex-shrink-0 bg-gray-50/50 dark:bg-slate-800/30 rounded-b-lg'>
+              <p className='text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed flex items-start gap-1.5'>
+                <InformationCircleIcon className='w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5' />
+                <span>
+                  By using Flemoji, you agree to our{' '}
+                  <Link
+                    href='/privacy'
+                    className='font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 hover:underline underline-offset-2'
+                  >
+                    Privacy Policy
+                  </Link>{' '}
+                  and{' '}
+                  <Link
+                    href='/terms'
+                    className='font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 hover:underline underline-offset-2'
+                  >
+                    Terms & Conditions
+                  </Link>
+                </span>
+              </p>
             </div>
           </div>
 
@@ -206,12 +228,15 @@ export default function ChatNavigation({
 
           {/* Logo - Center */}
           <Link href='/' className='flex items-center gap-2 flex-shrink-0'>
-            <div className='w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center shadow-lg'>
-              <MusicalNoteIcon className='w-5 h-5 text-white' />
-            </div>
-            <span className='text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent hidden sm:inline'>
-              Flemoji
-            </span>
+            <Image
+              src='/logo_symbol.png'
+              alt='Flemoji symbol'
+              width={32}
+              height={32}
+              priority
+              className='h-8 w-8 rounded-lg'
+            />
+            <span className='sr-only'>Flemoji</span>
           </Link>
 
           {/* Player - Takes remaining space */}
@@ -267,21 +292,51 @@ export default function ChatNavigation({
 
               {/* Conversations Section - scrollable */}
               <div className='mt-6 pt-4 border-t border-gray-200 dark:border-slate-700 flex-1 min-h-0 flex flex-col'>
-                <h3 className='text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-3 flex-shrink-0'>
-                  Recent Conversations
-                </h3>
                 <div className='flex-1 min-h-0 overflow-hidden'>
-                  <ConversationList
+                  <RecentConversations
                     onConversationSelect={id => {
                       setIsOpen(false);
                       onConversationSelect?.(id);
                     }}
                     activeConversationId={getConversationId?.()}
+                    chatType={
+                      activeView === 'timeline'
+                        ? 'TIMELINE'
+                        : activeView === 'league' || activeView === 'streaming'
+                          ? 'STREAMING'
+                          : 'STREAMING'
+                    }
                     onSignInClick={() => setIsOpen(false)}
                     onSignInModalOpen={setIsSignInModalOpen}
                     isSignInModalOpen={isSignInModalOpen}
+                    showHeading={true}
                   />
                 </div>
+              </div>
+
+              {/* Legal Links - Below conversations */}
+              <div className='px-4 py-3 border-t border-gray-200/60 dark:border-slate-700/60 flex-shrink-0 bg-gray-50/50 dark:bg-slate-800/30 rounded-b-lg'>
+                <p className='text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed flex items-start gap-1.5'>
+                  <InformationCircleIcon className='w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5' />
+                  <span>
+                    By using Flemoji, you agree to our{' '}
+                    <Link
+                      href='/privacy'
+                      className='font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 hover:underline underline-offset-2'
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Privacy Policy
+                    </Link>{' '}
+                    and{' '}
+                    <Link
+                      href='/terms'
+                      className='font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 hover:underline underline-offset-2'
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Terms & Conditions
+                    </Link>
+                  </span>
+                </p>
               </div>
             </div>
 

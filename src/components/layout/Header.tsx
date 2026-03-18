@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import {
   Navbar,
@@ -22,11 +23,7 @@ import {
 import { useMemo, useState } from 'react';
 import { useTheme as useNextTheme } from 'next-themes';
 import { usePathname } from 'next/navigation';
-import {
-  MusicalNoteIcon,
-  SunIcon,
-  MoonIcon,
-} from '@heroicons/react/24/outline';
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import SignInModal from '@/components/auth/SignInModal';
 
 export default function Header() {
@@ -43,6 +40,8 @@ export default function Header() {
       { name: 'Browse', href: '/browse' },
       { name: 'Artists', href: '/artists' },
       { name: 'Playlists', href: '/playlists' },
+      { name: 'Learn', href: '/learn' },
+      { name: 'Tools', href: '/tools' },
     ],
     []
   );
@@ -62,13 +61,22 @@ export default function Header() {
         />
         <NavbarBrand>
           <Link href='/' className='flex items-center gap-3 group'>
-            <div className='w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-200'>
-              <MusicalNoteIcon className='w-5 h-5 text-white' />
-            </div>
-            <div>
-              <p className='font-bold text-xl text-gray-900'>Flemoji</p>
-              <p className='text-xs text-gray-500 -mt-1'>Music</p>
-            </div>
+            <Image
+              src='/logo_symbol.png'
+              alt='Flemoji symbol'
+              width={40}
+              height={40}
+              priority
+              className='h-10 w-10 rounded-lg block lg:hidden'
+            />
+            <Image
+              src='/main_logo.png'
+              alt='Flemoji'
+              width={220}
+              height={60}
+              priority
+              className='h-12 w-auto hidden lg:block'
+            />
           </Link>
         </NavbarBrand>
       </NavbarContent>

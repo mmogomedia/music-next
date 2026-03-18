@@ -9,11 +9,23 @@
  */
 
 import type {
-  TrackWithArtist,
-  PlaylistWithTracks,
-  PlaylistInfo,
-  ArtistProfileComplete,
-} from '@/lib/services';
+  TrackItem,
+  PlaylistItem,
+  ArtistItem,
+  GenreItem,
+  TimelinePostItem,
+} from '@/lib/ai/tools/output-schemas';
+import type { PlaylistWithTracks } from '@/lib/services';
+import type { PostType } from '@prisma/client';
+
+// Re-export canonical AI layer types for convenience
+export type {
+  TrackItem,
+  PlaylistItem,
+  ArtistItem,
+  GenreItem,
+  TimelinePostItem,
+};
 
 /**
  * Base interface for all AI responses
@@ -30,6 +42,7 @@ export interface BaseAIResponse {
  */
 export interface TextResponse extends BaseAIResponse {
   type: 'text';
+  actions?: Action[];
 }
 
 /**
@@ -45,13 +58,15 @@ export interface Action {
     | 'open_playlist'
     | 'view_artist'
     | 'share_track'
-    | 'save_playlist';
+    | 'save_playlist'
+    | 'send_message';
   label: string;
   icon?: string;
   data: {
     trackId?: string;
     playlistId?: string;
     artistId?: string;
+    message?: string;
     [key: string]: any;
   };
 }
@@ -62,8 +77,8 @@ export interface Action {
 export interface TrackListResponse extends BaseAIResponse {
   type: 'track_list';
   data: {
-    tracks: TrackWithArtist[];
-    other?: TrackWithArtist[]; // Additional/featured tracks (e.g., for single track results)
+    tracks: TrackItem[];
+    other?: TrackItem[]; // Additional/featured tracks (e.g., for single track results)
     summary?: string; // AI-generated summary for single track results
     metadata?: {
       genre?: string;
@@ -90,7 +105,7 @@ export interface PlaylistResponse extends BaseAIResponse {
 export interface PlaylistGridResponse extends BaseAIResponse {
   type: 'playlist_grid';
   data: {
-    playlists: PlaylistInfo[];
+    playlists: PlaylistItem[];
     metadata?: {
       genre?: string;
       province?: string;
@@ -105,7 +120,7 @@ export interface PlaylistGridResponse extends BaseAIResponse {
  */
 export interface ArtistResponse extends BaseAIResponse {
   type: 'artist';
-  data: ArtistProfileComplete;
+  data: ArtistItem;
   actions?: Action[];
 }
 
@@ -115,8 +130,8 @@ export interface ArtistResponse extends BaseAIResponse {
 export interface SearchResultsResponse extends BaseAIResponse {
   type: 'search_results';
   data: {
-    tracks?: TrackWithArtist[];
-    artists?: ArtistProfileComplete[];
+    tracks?: TrackItem[];
+    artists?: ArtistItem[];
     metadata?: {
       query: string;
       total?: number;
@@ -126,17 +141,9 @@ export interface SearchResultsResponse extends BaseAIResponse {
 }
 
 /**
- * Genre information
+ * Genre information (alias for canonical GenreItem for backwards compatibility)
  */
-export interface GenreInfo {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  colorHex?: string;
-  icon?: string;
-  trackCount?: number;
-}
+export type GenreInfo = GenreItem;
 
 /**
  * Response containing a list of available genres
@@ -144,7 +151,7 @@ export interface GenreInfo {
 export interface GenreListResponse extends BaseAIResponse {
   type: 'genre_list';
   data: {
-    genres: GenreInfo[];
+    genres: GenreItem[];
     metadata?: {
       total?: number;
     };
@@ -234,6 +241,140 @@ export interface ActionResponse extends BaseAIResponse {
 }
 
 /**
+ * Clarification option for user selection
+ */
+export interface ClarificationOption {
+  id: string; // Unique identifier
+  label: string; // Display text
+  value: string; // Value to send back
+  icon?: string; // Optional icon/emoji
+  description?: string; // Optional helper text
+  highlighted?: boolean; // If true, highlight (e.g., from user history)
+  metadata?: {
+    intent?: 'discovery' | 'playback' | 'recommendation';
+    genre?: string;
+    mood?: string;
+    [key: string]: any;
+  };
+}
+
+/**
+ * Base interface for clarification questions
+ */
+interface ClarificationQuestionBase {
+  id: string; // Unique question ID
+  questionType: string;
+  required: boolean;
+}
+
+/**
+ * Single select question (radio buttons)
+ */
+export interface SingleSelectQuestion extends ClarificationQuestionBase {
+  questionType: 'single_select';
+  question: string;
+  options: ClarificationOption[];
+}
+
+/**
+ * Multiple select question (checkboxes)
+ */
+export interface MultipleSelectQuestion extends ClarificationQuestionBase {
+  questionType: 'multiple_select';
+  question: string;
+  options: ClarificationOption[];
+  minSelections?: number;
+  maxSelections?: number;
+}
+
+/**
+ * Sequential questions (multiple questions, one at a time)
+ */
+export interface SequentialQuestions extends ClarificationQuestionBase {
+  questionType: 'sequential';
+  questions: SingleSelectQuestion[]; // Array of questions
+  currentIndex: number; // Which question to show (0-based)
+}
+
+/**
+ * Conditional question (show next question based on previous answer)
+ */
+export interface ConditionalQuestion extends ClarificationQuestionBase {
+  questionType: 'conditional';
+  question: SingleSelectQuestion;
+  conditions: {
+    [optionValue: string]: ClarificationQuestion; // Next question based on selection
+  };
+}
+
+/**
+ * Union type for all clarification question types
+ */
+export type ClarificationQuestion =
+  | SingleSelectQuestion
+  | MultipleSelectQuestion
+  | SequentialQuestions
+  | ConditionalQuestion;
+
+/**
+ * Response requesting clarification from user
+ */
+export interface ClarificationResponse extends BaseAIResponse {
+  type: 'clarification';
+  data: {
+    questions: ClarificationQuestion[]; // One or more questions
+    context?: {
+      detectedGenres?: string[]; // Genres from user history
+      detectedMoods?: string[]; // Moods from user history
+      previousIntent?: string; // Previous conversation intent
+    };
+    metadata?: {
+      requiresResponse: boolean; // If false, user can skip
+      canSkip?: boolean; // Allow user to proceed without answering
+    };
+  };
+}
+
+/**
+ * Response containing a list of timeline posts
+ */
+export interface TimelinePostListResponse extends BaseAIResponse {
+  type: 'timeline_post_list';
+  data: {
+    posts: TimelinePostItem[];
+    metadata?: {
+      total?: number;
+      query?: string;
+      postTypes?: PostType[];
+    };
+  };
+  actions?: Action[];
+}
+
+/**
+ * A single preference item (genre, artist, or mood)
+ */
+export interface PreferenceItem {
+  name: string;
+  type: 'GENRE' | 'ARTIST' | 'MOOD';
+  score: number;
+  confidence: number;
+}
+
+/**
+ * Response showing the user's stored taste profile
+ */
+export interface UserPreferencesResponse extends BaseAIResponse {
+  type: 'user_preferences';
+  data: {
+    genres: PreferenceItem[];
+    artists: PreferenceItem[];
+    moods: PreferenceItem[];
+    hasHistory: boolean;
+  };
+}
+
+/**
  * Union type of all possible AI responses
  */
 export type AIResponse =
@@ -247,7 +388,10 @@ export type AIResponse =
   | GenreListResponse
   | QuickLinkTrackResponse
   | QuickLinkAlbumResponse
-  | QuickLinkArtistResponse;
+  | QuickLinkArtistResponse
+  | ClarificationResponse
+  | TimelinePostListResponse
+  | UserPreferencesResponse;
 
 /**
  * Registry of available response types
@@ -264,6 +408,9 @@ export const RESPONSE_TYPES = {
   quick_link_track: 'quick_link_track',
   quick_link_album: 'quick_link_album',
   quick_link_artist: 'quick_link_artist',
+  clarification: 'clarification',
+  timeline_post_list: 'timeline_post_list',
+  user_preferences: 'user_preferences',
 } as const;
 
 /**
@@ -349,4 +496,10 @@ export function isQuickLinkArtistResponse(
   response: AIResponse
 ): response is QuickLinkArtistResponse {
   return response.type === 'quick_link_artist';
+}
+
+export function isClarificationResponse(
+  response: AIResponse
+): response is ClarificationResponse {
+  return response.type === 'clarification';
 }

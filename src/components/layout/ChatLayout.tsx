@@ -8,9 +8,12 @@ import React, {
   useMemo,
 } from 'react';
 import { useSession } from 'next-auth/react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import ChatNavigation from './ChatNavigation';
 import UnifiedLayout from './UnifiedLayout';
+import ChatTopBar, { ViewType } from '@/components/ai/ChatTopBar';
+import TimelinePage from '@/components/timeline/TimelinePage';
+import LeaguePage from '@/components/pulse/LeaguePage';
 import AIChat, { AIChatHandle } from '@/components/ai/AIChat';
 import type { QuickLinkChatPayload } from '@/types/quick-links';
 import type { QuickLinkLandingData } from '@/lib/services/quick-link-service';
@@ -27,24 +30,29 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
   >();
   const [quickLinkData, setQuickLinkData] =
     useState<QuickLinkChatPayload | null>(null);
+  const [selectedProvince, setSelectedProvince] = useState<
+    string | undefined
+  >();
+  const pathname = usePathname();
+  const [activeView, setActiveView] = useState<ViewType>(() => {
+    // Initialize view based on route
+    if (pathname === '/league') return 'league';
+    if (pathname === '/timeline') return 'timeline';
+    return 'streaming';
+  });
   const searchParams = useSearchParams();
+
+  // Update view when pathname changes
+  useEffect(() => {
+    if (pathname === '/league') {
+      setActiveView('league');
+    } else if (pathname === '/timeline') {
+      setActiveView('timeline');
+    } else if (pathname === '/' || pathname.startsWith('/(chat)')) {
+      setActiveView('streaming');
+    }
+  }, [pathname]);
   const quickLinkSlug = searchParams.get('quickLinkSlug');
-
-  useEffect(() => {
-    return () => {
-      // Component unmounting
-    };
-  }, []);
-
-  // Track session changes
-  useEffect(() => {
-    // Session changed
-  }, [session]);
-
-  // Track conversation ID changes
-  useEffect(() => {
-    // activeConversationId changed
-  }, [activeConversationId]);
 
   useEffect(() => {
     if (!quickLinkSlug) {
@@ -127,8 +135,6 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
       } catch (error) {
         console.error(error);
         setQuickLinkData(null);
-      } finally {
-        // noop
       }
     };
 
@@ -159,6 +165,33 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
     setActiveConversationId(conversationId);
   }, []);
 
+  const renderContent = () => {
+    if (children) {
+      return children;
+    }
+
+    if (activeView === 'timeline') {
+      return <TimelinePage />;
+    }
+
+    if (activeView === 'league') {
+      return <LeaguePage />;
+    }
+
+    // Streaming view - show AIChat
+    return (
+      <AIChat
+        ref={chatRef}
+        conversationId={activeConversationId}
+        onConversationIdChange={handleConversationIdChange}
+        context={aiContext}
+        initialQuickLink={quickLinkData}
+        province={selectedProvince}
+        onProvinceChange={setSelectedProvince}
+      />
+    );
+  };
+
   return (
     <UnifiedLayout
       sidebar={
@@ -166,20 +199,15 @@ export default function ChatLayout({ children }: ChatLayoutProps) {
           onQuickLinkClick={handleQuickLinkClick}
           onConversationSelect={handleConversationSelect}
           getConversationId={() => activeConversationId}
+          activeView={activeView}
         />
       }
+      header={
+        <ChatTopBar activeView={activeView} onViewChange={setActiveView} />
+      }
       contentClassName=''
-      disableBottomPadding
     >
-      {children || (
-        <AIChat
-          ref={chatRef}
-          conversationId={activeConversationId}
-          onConversationIdChange={handleConversationIdChange}
-          context={aiContext}
-          initialQuickLink={quickLinkData}
-        />
-      )}
+      {renderContent()}
     </UnifiedLayout>
   );
 }

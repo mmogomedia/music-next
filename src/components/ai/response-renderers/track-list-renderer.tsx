@@ -2,19 +2,120 @@
 
 import { useState } from 'react';
 import type { TrackListResponse } from '@/types/ai-responses';
+import type { TrackItem } from '@/lib/ai/tools/output-schemas';
 import { Button } from '@heroui/react';
-import {
-  InformationCircleIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import TrackCard from '@/components/ai/TrackCard';
 import type { Track } from '@/types/track';
+import { SuggestedActions } from './suggested-actions';
+import { TrackInfoPanel, hasInfoData } from './track-info-panel';
+import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 
 interface TrackListRendererProps {
   response: TrackListResponse;
   onPlayTrack?: (_trackId: string, _track: any) => void;
   onAction?: (_action: any) => void;
+}
+
+/**
+ * Fallback suggestions shown when a search returns no results.
+ * Always gives the user somewhere useful to go.
+ */
+function buildEmptySuggestions(
+  data: TrackListResponse['data']
+): { label: string; message: string }[] {
+  const genre = data.metadata?.genre;
+  const query = data.metadata?.query;
+
+  const suggestions: { label: string; message: string }[] = [];
+
+  if (query) {
+    // Tried a text search — offer to widen it
+    suggestions.push({
+      label: `Search artists for "${query}"`,
+      message: `Show me artists related to "${query}"`,
+    });
+  }
+
+  if (genre) {
+    // Tried a specific genre — suggest alternatives by name
+    suggestions.push({
+      label: `More ${genre} playlists`,
+      message: `Show me ${genre} playlists`,
+    });
+  }
+
+  // Universal escapes — always present
+  suggestions.push({
+    label: 'Trending music',
+    message: 'Show me trending music right now',
+  });
+  suggestions.push({ label: 'Top 10', message: 'Show me the top 10 playlist' });
+  suggestions.push({
+    label: 'Browse genres',
+    message: 'What music genres are available?',
+  });
+
+  // Cap at 4 chips
+  return suggestions.slice(0, 4);
+}
+
+function buildTrackSuggestions(data: TrackListResponse['data']) {
+  const genre = data.metadata?.genre;
+  const province = data.metadata?.province;
+  // agents don't set query on track_list metadata — use first track's artist as fallback
+  const firstArtist =
+    typeof data.tracks[0]?.artist === 'string'
+      ? data.tracks[0].artist
+      : undefined;
+
+  const suggestions: { label: string; message: string }[] = [];
+
+  // Primary: most specific context wins
+  if (genre) {
+    suggestions.push({
+      label: `More ${genre}`,
+      message: `Find me more ${genre} tracks`,
+    });
+  } else if (firstArtist) {
+    suggestions.push({
+      label: `More by ${firstArtist}`,
+      message: `Show me more tracks by ${firstArtist}`,
+    });
+  } else {
+    suggestions.push({
+      label: 'More like these',
+      message: 'Find me more tracks like these',
+    });
+  }
+
+  // Secondary: next best context
+  if (province) {
+    suggestions.push({
+      label: `More from ${province}`,
+      message: `Show me more music from ${province}`,
+    });
+  } else if (genre && firstArtist) {
+    suggestions.push({
+      label: `More by ${firstArtist}`,
+      message: `Show me more tracks by ${firstArtist}`,
+    });
+  } else if (genre) {
+    suggestions.push({
+      label: `${genre} artists`,
+      message: `Show me ${genre} artists`,
+    });
+  } else {
+    suggestions.push({ label: 'Browse genres', message: 'Show me all genres' });
+  }
+
+  // Always: escape hatch
+  suggestions.push({
+    label: 'Different mood',
+    message: "I'm in a different mood, suggest something else",
+  });
+
+  return suggestions;
 }
 
 /**
@@ -26,10 +127,15 @@ export function TrackListRenderer({
   onAction,
 }: TrackListRendererProps) {
   const { tracks } = response.data;
-  const [openSummaries, setOpenSummaries] = useState<Set<string>>(new Set());
   const [openReasons, setOpenReasons] = useState<Set<string>>(new Set());
+  const [openInfoPanels, setOpenInfoPanels] = useState<Set<string>>(new Set());
+  const { currentTrack } = useMusicPlayer();
 
-  const normalizeTrack = (track: any): Track & { summary?: string } => ({
+  // TrackItem already has Zod defaults applied at the tool boundary.
+  // We only need to fill a few fields TrackCard/TrackInfoPanel expect from Track.
+  const normalizeTrack = (
+    track: TrackItem
+  ): Track & { summary?: string; reason?: string } => ({
     id: track.id,
     title: track.title ?? 'Untitled',
     filePath: track.filePath ?? '',
@@ -50,24 +156,28 @@ export function TrackListRenderer({
     userId: track.userId ?? '',
     createdAt: track.createdAt ?? new Date().toISOString(),
     updatedAt: track.updatedAt ?? new Date().toISOString(),
-    artist: track.artist ?? track.artistProfile?.artistName ?? 'Unknown Artist',
+    artist: track.artist ?? 'Unknown Artist',
     composer: track.composer ?? undefined,
     year: track.year ?? undefined,
-    releaseDate: track.releaseDate ?? undefined,
     bpm: track.bpm ?? undefined,
     isrc: track.isrc ?? undefined,
     lyrics: track.lyrics ?? undefined,
     isPublic: track.isPublic ?? true,
     isDownloadable: track.isDownloadable ?? false,
     isExplicit: track.isExplicit ?? false,
-    watermarkId: track.watermarkId ?? undefined,
     copyrightInfo: track.copyrightInfo ?? undefined,
-    licenseType: track.licenseType ?? undefined,
-    distributionRights: track.distributionRights ?? undefined,
     downloadCount: track.downloadCount ?? undefined,
     shareCount: track.shareCount ?? undefined,
-    summary: track.summary ?? undefined,
-    reason: track.reason ?? undefined, // Include reason for recommendations
+    summary: (track as any).summary ?? undefined,
+    reason: track.reason ?? undefined,
+    language: track.language ?? undefined,
+    mood: track.mood ?? undefined,
+    attributes: track.attributes ?? undefined,
+    streamingLinks:
+      track.streamingLinks && track.streamingLinks.length > 0
+        ? track.streamingLinks
+        : undefined,
+    artistProfile: track.artistProfile as any,
   });
 
   const handlePlayTrack = (track: Track) => {
@@ -76,8 +186,8 @@ export function TrackListRenderer({
     }
   };
 
-  const toggleSummary = (trackId: string) => {
-    setOpenSummaries(prev => {
+  const toggleReason = (trackId: string) => {
+    setOpenReasons(prev => {
       const next = new Set(prev);
       if (next.has(trackId)) {
         next.delete(trackId);
@@ -88,8 +198,8 @@ export function TrackListRenderer({
     });
   };
 
-  const toggleReason = (trackId: string) => {
-    setOpenReasons(prev => {
+  const toggleInfoPanel = (trackId: string) => {
+    setOpenInfoPanels(prev => {
       const next = new Set(prev);
       if (next.has(trackId)) {
         next.delete(trackId);
@@ -155,22 +265,40 @@ export function TrackListRenderer({
 
   if (tracks.length === 0) {
     return (
-      <div className='rounded-lg bg-gray-50 dark:bg-slate-800 p-4'>
-        <p className='text-gray-600 dark:text-gray-400'>No tracks found.</p>
+      <div className='space-y-3'>
+        <div className='rounded-lg bg-gray-50 dark:bg-slate-800 p-4'>
+          <p className='text-sm text-gray-600 dark:text-gray-400'>
+            {response.message || 'No tracks found.'}
+          </p>
+        </div>
+        <SuggestedActions
+          suggestions={buildEmptySuggestions(response.data)}
+          onAction={onAction}
+        />
       </div>
     );
   }
 
   return (
     <div className='space-y-3'>
-      {/* Tracks with individual summaries */}
+      {/* AI message header — shown when the agent provides context */}
+      {response.message && (
+        <p className='text-sm text-gray-500 dark:text-slate-400 leading-snug'>
+          {response.message}
+        </p>
+      )}
+
+      {/* Tracks */}
       <div className='space-y-3'>
         {tracks.map(track => {
           const trackWithSummary = normalizeTrack(track);
-          const hasSummary = !!trackWithSummary.summary;
           const hasReason = !!trackWithSummary.reason;
-          const isSummaryOpen = openSummaries.has(track.id);
           const isReasonOpen = openReasons.has(track.id);
+
+          const isCurrentlyPlaying = currentTrack?.id === track.id;
+          const showInfoIndicator =
+            isCurrentlyPlaying && hasInfoData(trackWithSummary);
+          const isInfoPanelOpen = openInfoPanels.has(track.id);
 
           return (
             <div key={track.id} className='space-y-2'>
@@ -182,8 +310,50 @@ export function TrackListRenderer({
                 variant='default'
               />
 
-              {/* Reason Drawer - Show for recommendation reasons (if no summary) */}
-              {hasReason && !hasSummary && (
+              {/* Subtle info indicator — only for the currently playing track with rich metadata */}
+              {showInfoIndicator && (
+                <div className='relative'>
+                  <button
+                    type='button'
+                    onClick={() => toggleInfoPanel(track.id)}
+                    className='w-full flex items-center gap-2 py-1 px-2 hover:bg-gray-100/60 dark:hover:bg-slate-800/40 transition-colors rounded-md'
+                    aria-label={
+                      isInfoPanelOpen ? 'Hide track info' : 'Show track info'
+                    }
+                  >
+                    <span
+                      className={`block w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                        isInfoPanelOpen
+                          ? 'bg-gray-300 dark:bg-slate-600'
+                          : 'bg-gray-300 dark:bg-slate-600 animate-pulse'
+                      }`}
+                    />
+                    <span className='flex-1 text-left text-[11px] text-gray-400 dark:text-slate-500'>
+                      track info
+                    </span>
+                    {isInfoPanelOpen ? (
+                      <ChevronUpIcon className='w-3 h-3 text-gray-300 dark:text-slate-600 flex-shrink-0' />
+                    ) : (
+                      <ChevronDownIcon className='w-3 h-3 text-gray-300 dark:text-slate-600 flex-shrink-0' />
+                    )}
+                  </button>
+
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      isInfoPanelOpen
+                        ? 'max-h-[600px] opacity-100'
+                        : 'max-h-0 opacity-0'
+                    }`}
+                  >
+                    <div className='px-2'>
+                      <TrackInfoPanel track={trackWithSummary} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Reason Drawer - Show for recommendation reasons */}
+              {hasReason && (
                 <div className='relative border-l-2 border-purple-200 dark:border-purple-800/50 ml-2'>
                   {/* Toggle Button */}
                   <button
@@ -241,52 +411,6 @@ export function TrackListRenderer({
                   </div>
                 </div>
               )}
-
-              {/* Summary Drawer - Show for each track with summary */}
-              {hasSummary && (
-                <div className='relative border-l-2 border-gray-200 dark:border-slate-700 ml-2'>
-                  {/* Toggle Button */}
-                  <button
-                    type='button'
-                    onClick={() => toggleSummary(track.id)}
-                    className='w-full flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors rounded-r-lg group'
-                    aria-label={
-                      isSummaryOpen
-                        ? 'Hide track summary'
-                        : 'Show track summary'
-                    }
-                  >
-                    <div className='flex-shrink-0 -ml-2'>
-                      <div className='rounded-full bg-gray-100 dark:bg-slate-800 p-1.5 group-hover:bg-gray-200 dark:group-hover:bg-slate-700 transition-colors'>
-                        <InformationCircleIcon className='w-5 h-5 text-gray-500 dark:text-gray-400' />
-                      </div>
-                    </div>
-                    <span className='flex-1 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
-                      Track Summary
-                    </span>
-                    {isSummaryOpen ? (
-                      <ChevronUpIcon className='w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0' />
-                    ) : (
-                      <ChevronDownIcon className='w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0' />
-                    )}
-                  </button>
-
-                  {/* Drawer Content */}
-                  <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isSummaryOpen
-                        ? 'max-h-96 opacity-100'
-                        : 'max-h-0 opacity-0'
-                    }`}
-                  >
-                    <div className='py-4 pl-6 pr-4'>
-                      <p className='text-sm text-gray-600 dark:text-gray-400 leading-relaxed italic font-light tracking-wide'>
-                        {trackWithSummary.summary}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           );
         })}
@@ -314,6 +438,12 @@ export function TrackListRenderer({
           ))}
         </div>
       )}
+
+      {/* Context-aware follow-up suggestions */}
+      <SuggestedActions
+        suggestions={buildTrackSuggestions(response.data)}
+        onAction={onAction}
+      />
     </div>
   );
 }

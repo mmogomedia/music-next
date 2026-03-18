@@ -8,20 +8,20 @@
 
 export * from './base-agent';
 export * from './discovery-agent';
-export * from './playback-agent';
 export * from './recommendation-agent';
 export * from './router-agent';
+export * from './timeline-agent';
 
 /**
  * Create and export instances of all agents
  */
 import { DiscoveryAgent } from './discovery-agent';
-import { PlaybackAgent } from './playback-agent';
 import { RecommendationAgent } from './recommendation-agent';
 import { RouterAgent } from './router-agent';
+import { TimelineAgent } from './timeline-agent';
 
 // Create default agent instances
 export const discoveryAgent = new DiscoveryAgent();
-export const playbackAgent = new PlaybackAgent();
 export const recommendationAgent = new RecommendationAgent();
+export const timelineAgent = new TimelineAgent();
 export const routerAgent = new RouterAgent();

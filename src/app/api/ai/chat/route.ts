@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { aiService } from '@/lib/ai/ai-service';
 import { routerAgent } from '@/lib/ai/agents';
 import { ChatRequest, ChatResponse, AIError } from '@/types/ai';
-import { conversationStore } from '@/lib/ai/memory/conversation-store';
-import { preferenceTracker } from '@/lib/ai/memory/preference-tracker';
-import { contextBuilder } from '@/lib/ai/memory/context-builder';
+import {
+  conversationStore,
+  semanticMemoryManager,
+  memoryOrchestrator,
+  contextBuilder,
+} from '@/lib/ai/memory/bootstrap';
 import { logger } from '@/lib/utils/logger';
 
 export async function POST(request: NextRequest) {
@@ -23,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Parse the request body
     const body: ChatRequest = await request.json();
-    const { message, context } = body;
+    const { message, context, chatType } = body;
 
     if (!message || typeof message !== 'string') {
       const error: AIError = {
@@ -39,18 +42,63 @@ export async function POST(request: NextRequest) {
       body.conversationId ||
       `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    // Get conversation history for context-aware routing
+    const conversationHistory = context?.userId
+      ? await conversationStore.getConversation(
+          context.userId,
+          conversationId,
+          6
+        )
+      : [];
+
+    // Build enhanced context using Memory Orchestrator (Fix 2: long-term memory injection)
+    const enhancedContext = await memoryOrchestrator
+      .buildEnhancedContext({
+        userId: context?.userId,
+        conversationId: conversationId,
+        currentMessage: message,
+        recentMessages: conversationHistory,
+        maxTokens: 2000,
+      })
+      .catch(() => ({
+        recentMessages: '',
+        relevantMemories: [] as any[],
+        preferences: {
+          genres: [] as string[],
+          artists: [] as string[],
+          moods: [] as string[],
+        },
+        tokenCount: 0,
+        memoryRetrievalTime: 0,
+      }));
+
     // Build agent context from request context + memory
     const built = await contextBuilder.buildContext(
       context?.userId,
       conversationId
     );
+
     const agentContext = {
       userId: context?.userId,
       conversationId: conversationId,
+      conversationHistory: conversationHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      })),
       filters: {
         ...built.filters,
+        // Use top genre preference from enhanced memory
+        genre: enhancedContext.preferences.genres[0] || built.filters?.genre,
         // Add province from request context if provided
         ...(context?.province && { province: context.province }),
+      },
+      // Add chatType and enhanced memory to metadata
+      metadata: {
+        chatType: chatType,
+        previousIntent: built.metadata?.previousIntent,
+        preferences: enhancedContext.preferences,
+        relevantMemories: enhancedContext.relevantMemories,
+        memoryTokenCount: enhancedContext.tokenCount,
       },
     };
 
@@ -62,12 +110,20 @@ export async function POST(request: NextRequest) {
     try {
       // Store user message
       if (context?.userId) {
-        await conversationStore.storeMessage(context.userId, conversationId, {
-          role: 'user',
-          content: message,
-          timestamp: new Date(),
-        });
-        await preferenceTracker.updateFromMessage(context.userId, message);
+        await conversationStore.storeMessage(
+          context.userId,
+          conversationId,
+          {
+            role: 'user',
+            content: message,
+            timestamp: new Date(),
+          },
+          undefined,
+          chatType
+        );
+        semanticMemoryManager
+          .extractPreferencesFromText({ userId: context.userId, text: message })
+          .catch(() => {});
       }
 
       // Use Router Agent to get the appropriate response
@@ -87,28 +143,61 @@ export async function POST(request: NextRequest) {
         'type' in responseData &&
         'data' in responseData;
 
+      // Ensure proper structure: if responseData is already a TrackListResponse or similar,
+      // use it as-is. Otherwise, wrap it appropriately.
+      let finalData: any;
+      if (hasStructuredType) {
+        // Already has type and data structure (TrackListResponse, PlaylistResponse, etc.)
+        finalData = responseData;
+      } else if (
+        responseData &&
+        typeof responseData === 'object' &&
+        'tracks' in responseData
+      ) {
+        // Has tracks but missing type wrapper - wrap it as TrackListResponse
+        finalData = {
+          type: 'track_list',
+          message: '',
+          timestamp: new Date(),
+          data: {
+            tracks: responseData.tracks,
+            ...(responseData.other && { other: responseData.other }),
+            metadata: {
+              ...(responseData.metadata || {}),
+              total: responseData.count || responseData.tracks?.length || 0,
+            },
+          },
+        };
+      } else {
+        // Fallback: use data as-is
+        finalData = responseData;
+      }
+
       const chatResponse: ChatResponse = {
         message: responseMessage,
         conversationId,
         timestamp: new Date(),
-        data: hasStructuredType
-          ? responseData // Already has type and data structure
-          : responseData, // Fallback to just data
+        data: finalData,
       };
 
       // Store assistant response and update preferences
       if (context?.userId) {
-        await conversationStore.storeMessage(context.userId, conversationId, {
-          role: 'assistant',
-          content: responseMessage,
-          timestamp: new Date(),
-          data: agentResponse.data,
-        });
+        await conversationStore.storeMessage(
+          context.userId,
+          conversationId,
+          {
+            role: 'assistant',
+            content: responseMessage,
+            timestamp: new Date(),
+            data: agentResponse.data,
+          },
+          undefined,
+          chatType
+        );
         if (agentResponse?.data) {
-          await preferenceTracker.updateFromResults(
-            context.userId,
-            agentResponse.data
-          );
+          semanticMemoryManager
+            .updateFromResults(context.userId, agentResponse.data)
+            .catch(() => {});
         }
       }
 

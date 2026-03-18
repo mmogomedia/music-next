@@ -1,0 +1,2 @@
+-- Migration contents included in baseline migration (00000000000000_initial).
+-- This migration is intentionally left empty to avoid duplicate schema changes.

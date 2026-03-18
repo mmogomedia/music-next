@@ -16,6 +16,8 @@ export default withAuth(
       '/genres',
       '/albums',
       '/search',
+      '/timeline', // Timeline page is public
+      '/league', // PULSE³ League page is public
 
       // Authentication pages
       '/login',
@@ -43,6 +45,12 @@ export default withAuth(
       '/api/play-events', // For tracking plays (anonymous)
       '/api/smart-links',
       '/api/public',
+      '/api/timeline/feed', // Timeline feed is public
+      '/api/timeline/featured', // Featured content is public
+      '/api/pulse/league', // PULSE³ League is public
+      '/api/pulse/debug', // PULSE³ debug endpoint (requires auth)
+      '/api/pulse/eligibility/recalculate', // Protected by CRON_SECRET (Bearer)
+      '/api/pulse/league/run', // Protected by CRON_SECRET (Bearer)
 
       // Static assets
       '/_next',
@@ -63,6 +71,11 @@ export default withAuth(
 
     // All other routes require authentication
     if (!token) {
+      // Allow GET requests to timeline posts (viewing posts is public)
+      if (path.startsWith('/api/timeline/posts/') && req.method === 'GET') {
+        return NextResponse.next();
+      }
+
       // Redirect to login for protected routes
       if (path.startsWith('/api/')) {
         return NextResponse.json(
@@ -103,6 +116,8 @@ export default withAuth(
           '/genres',
           '/albums',
           '/search',
+          '/timeline', // Timeline page is public
+          '/league', // PULSE³ League page is public
 
           // Authentication pages
           '/login',
@@ -130,6 +145,11 @@ export default withAuth(
           '/api/play-events',
           '/api/smart-links',
           '/api/public',
+          '/api/timeline/feed', // Timeline feed is public
+          '/api/timeline/featured', // Featured content is public
+          '/api/pulse/league', // PULSE³ League is public
+          '/api/pulse/eligibility/recalculate', // Protected by CRON_SECRET (Bearer)
+          '/api/pulse/league/run', // Protected by CRON_SECRET (Bearer)
 
           // Static assets
           '/_next',

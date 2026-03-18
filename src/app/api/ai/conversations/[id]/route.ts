@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { conversationStore } from '@/lib/ai/memory/conversation-store';
+import { conversationStore } from '@/lib/ai/memory/bootstrap';
 import { logger } from '@/lib/utils/logger';
 
 interface RouteParams {
@@ -18,9 +18,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
     const { id: conversationId } = await params;
 
+    // Load more messages for full conversation (default is 10, increase to 100)
     const messages = await conversationStore.getConversation(
       session.user.id,
-      conversationId
+      conversationId,
+      100
     );
 
     return NextResponse.json({ messages });

@@ -1,8 +1,8 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import { Card, CardBody } from '@heroui/react';
 import SignInForm from '@/components/auth/SignInForm';
+import AuthPageHeader from '@/components/auth/AuthPageHeader';
 import { useSearchParams } from 'next/navigation';
 
 function LoginFormContent() {
@@ -14,46 +14,41 @@ function LoginFormContent() {
   const reset = params?.get('reset');
 
   return (
-    <main className='min-h-screen flex items-center justify-center relative overflow-hidden'>
-      <div className='absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5' />
-      <div className='absolute inset-0 bg-grid opacity-20 pointer-events-none' />
-
-      <div className='relative w-full max-w-md mx-auto px-4 sm:px-6'>
-        <Card className='glass shadow-2xl border-0'>
-          <CardBody className='p-8'>
-            {verified && (
-              <div className='mb-6 p-4 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-lg'>
-                <p className='text-success-600 dark:text-success-400 text-sm text-center'>
-                  Email verified successfully! You can now sign in.
-                </p>
-              </div>
-            )}
-            {registered && (
-              <div className='mb-6 p-4 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-lg'>
-                <p className='text-success-600 dark:text-success-400 text-sm text-center'>
-                  Account created! Please check your email to verify your
-                  account.
-                </p>
-              </div>
-            )}
-            {reset && (
-              <div className='mb-6 p-4 bg-success-50 dark:bg-success-900/20 border border-success-200 dark:border-success-800 rounded-lg'>
-                <p className='text-success-600 dark:text-success-400 text-sm text-center'>
-                  Password reset successfully! You can now sign in with your new
-                  password.
-                </p>
-              </div>
-            )}
-            {authError && (
-              <div className='mb-6 p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg'>
-                <p className='text-danger-600 dark:text-danger-400 text-sm text-center'>
-                  Authentication failed
-                </p>
-              </div>
-            )}
-            <SignInForm showTitle={true} callbackUrl={callbackUrl} />
-          </CardBody>
-        </Card>
+    <main className='min-h-screen flex items-center justify-center relative overflow-hidden bg-white'>
+      <div className='relative z-10 w-full max-w-lg mx-auto px-4 sm:px-8'>
+        <div className='bg-white rounded-3xl border border-gray-200 shadow-2xl p-6 sm:p-8'>
+          <AuthPageHeader />
+          {verified && (
+            <div className='mb-4 p-3 bg-green-50 border border-green-200 rounded-xl'>
+              <p className='text-green-700 text-sm text-center'>
+                Email verified successfully! You can now sign in.
+              </p>
+            </div>
+          )}
+          {registered && (
+            <div className='mb-4 p-3 bg-green-50 border border-green-200 rounded-xl'>
+              <p className='text-green-700 text-sm text-center'>
+                Account created! Please check your email to verify your account.
+              </p>
+            </div>
+          )}
+          {reset && (
+            <div className='mb-4 p-3 bg-green-50 border border-green-200 rounded-xl'>
+              <p className='text-green-700 text-sm text-center'>
+                Password reset successfully! You can now sign in with your new
+                password.
+              </p>
+            </div>
+          )}
+          {authError && (
+            <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-xl'>
+              <p className='text-red-700 text-sm text-center'>
+                Authentication failed
+              </p>
+            </div>
+          )}
+          <SignInForm showTitle={true} callbackUrl={callbackUrl} />
+        </div>
       </div>
     </main>
   );

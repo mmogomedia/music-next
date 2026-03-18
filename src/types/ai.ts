@@ -19,6 +19,7 @@ export interface ChatRequest {
   message: string;
   conversationId?: string;
   provider?: AIProvider;
+  chatType?: 'STREAMING' | 'TIMELINE' | 'DASHBOARD' | 'OTHER';
   context?: {
     userId?: string;
     artistProfile?: string;

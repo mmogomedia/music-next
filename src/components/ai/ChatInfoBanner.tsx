@@ -5,9 +5,9 @@ import {
   InformationCircleIcon,
   XMarkIcon,
   MusicalNoteIcon,
-  SparklesIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
+import AIIcon from '@/components/icons/AIIcon';
 
 interface ChatInfoBannerProps {
   isExpanded: boolean;
@@ -58,7 +58,7 @@ export default function ChatInfoBanner({
       text: 'Get information about artists',
     },
     {
-      icon: SparklesIcon,
+      icon: AIIcon,
       text: 'Find playlists by mood or genre',
     },
   ];

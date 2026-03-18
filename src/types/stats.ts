@@ -8,7 +8,9 @@ export type SourceType =
   | 'search'
   | 'direct'
   | 'share'
-  | 'player';
+  | 'player'
+  | 'timeline'
+  | 'league';
 
 export type PlatformType =
   | 'twitter'

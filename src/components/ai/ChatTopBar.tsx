@@ -1,37 +1,35 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Select, SelectItem, Button } from '@heroui/react';
+import {
+  Button,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+} from '@heroui/react';
+import Link from 'next/link';
 import MiniPlayer from '@/components/music/MiniPlayer';
-import { FunnelIcon } from '@heroicons/react/24/outline';
+import {
+  ClockIcon,
+  SparklesIcon,
+  TrophyIcon,
+  EllipsisVerticalIcon,
+  BookOpenIcon,
+} from '@heroicons/react/24/outline';
+
+export type ViewType = 'timeline' | 'streaming' | 'league';
 
 interface ChatTopBarProps {
-  province?: string;
-  onProvinceChange?: (_value: string | undefined) => void;
+  activeView: ViewType;
+  onViewChange: (_view: ViewType) => void;
 }
 
-const provinces = [
-  'All',
-  'Eastern Cape',
-  'Free State',
-  'Gauteng',
-  'KwaZulu-Natal',
-  'Limpopo',
-  'Mpumalanga',
-  'Northern Cape',
-  'North West',
-  'Western Cape',
-];
-
 export default function ChatTopBar({
-  province,
-  onProvinceChange,
+  activeView,
+  onViewChange,
 }: ChatTopBarProps) {
-  const [selectedProvince, setSelectedProvince] = useState<string | undefined>(
-    province
-  );
   const [isMobile, setIsMobile] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -42,85 +40,159 @@ export default function ChatTopBar({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
-    setSelectedProvince(province);
-  }, [province]);
-
-  const handleProvinceChange = (value: string) => {
-    // If "All" is selected, pass undefined to clear province context
-    const provinceValue = value === 'All' ? undefined : value;
-    setSelectedProvince(provinceValue);
-    onProvinceChange?.(provinceValue);
-  };
-
-  // Mobile layout: Filters only (player is in navigation header)
+  // Mobile layout
   if (isMobile) {
     return (
-      <div className='fixed top-14 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-gray-200/80 dark:border-slate-700/80'>
-        {/* Filter toggle button */}
+      <div className='sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-gray-200/80 dark:border-slate-700/80'>
         <div className='px-3 py-2'>
-          <Button
-            size='sm'
-            variant='light'
-            className='w-full justify-start'
-            startContent={<FunnelIcon className='w-4 h-4' />}
-            onPress={() => setShowFilters(!showFilters)}
-            aria-label='Toggle filters'
-          >
-            {showFilters ? 'Hide Filters' : 'Show Filters'}
-          </Button>
-        </div>
+          <div className='flex items-center justify-between gap-2'>
+            {/* Active view pill */}
+            <div className='flex-1 min-w-0'>
+              <div className='inline-flex items-center gap-2 rounded-full bg-gray-100/80 dark:bg-slate-800/80 px-3 py-2 border border-gray-200/60 dark:border-slate-700/70 shadow-sm'>
+                {activeView === 'timeline' ? (
+                  <ClockIcon className='w-4 h-4 text-gray-700 dark:text-gray-300' />
+                ) : activeView === 'streaming' ? (
+                  <SparklesIcon className='w-4 h-4 text-gray-700 dark:text-gray-300' />
+                ) : (
+                  <TrophyIcon className='w-4 h-4 text-gray-700 dark:text-gray-300' />
+                )}
+                <span className='text-xs font-medium text-gray-800 dark:text-gray-200 truncate'>
+                  {activeView === 'timeline'
+                    ? 'Timeline'
+                    : activeView === 'streaming'
+                      ? 'Streaming'
+                      : 'League'}
+                </span>
+              </div>
+            </div>
 
-        {/* Collapsible filters section */}
-        {showFilters && (
-          <div className='px-3 pb-3 pt-2 border-t border-gray-200/50 dark:border-slate-700/50 bg-gray-50/50 dark:bg-slate-800/50'>
-            <Select
-              aria-label='Province'
-              placeholder='All Provinces'
-              selectedKeys={selectedProvince ? [selectedProvince] : ['All']}
-              onSelectionChange={keys => {
-                const val = Array.from(keys)[0] as string;
-                handleProvinceChange(val);
-              }}
-              className='w-full'
-              size='sm'
-            >
-              {provinces.map(p => (
-                <SelectItem key={p}>{p}</SelectItem>
-              ))}
-            </Select>
+            {/* 3-dot menu for view toggles */}
+            <Dropdown placement='bottom-end'>
+              <DropdownTrigger>
+                <Button
+                  isIconOnly
+                  size='sm'
+                  variant='light'
+                  radius='full'
+                  className='h-9 w-9 min-w-9 bg-gray-100/80 dark:bg-slate-800/80 border border-gray-200/60 dark:border-slate-700/70'
+                  aria-label='More'
+                >
+                  <EllipsisVerticalIcon className='w-5 h-5' />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu
+                aria-label='Header menu'
+                className='z-[80]'
+                classNames={{
+                  base: 'bg-white dark:bg-slate-900 border border-gray-200/70 dark:border-slate-700/70 shadow-xl rounded-xl overflow-hidden',
+                  list: 'p-1',
+                }}
+              >
+                <DropdownItem
+                  key='view-timeline'
+                  startContent={<ClockIcon className='w-4 h-4' />}
+                  onPress={() => onViewChange('timeline')}
+                >
+                  Timeline
+                </DropdownItem>
+                <DropdownItem
+                  key='view-streaming'
+                  startContent={<SparklesIcon className='w-4 h-4' />}
+                  onPress={() => onViewChange('streaming')}
+                >
+                  Streaming
+                </DropdownItem>
+                <DropdownItem
+                  key='view-league'
+                  startContent={<TrophyIcon className='w-4 h-4' />}
+                  onPress={() => onViewChange('league')}
+                >
+                  League
+                </DropdownItem>
+                <DropdownItem
+                  key='view-learn'
+                  startContent={<BookOpenIcon className='w-4 h-4' />}
+                  href='/learn'
+                >
+                  Learn
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
           </div>
-        )}
+        </div>
       </div>
     );
   }
 
-  // Desktop layout: heading, province filter, and mini player side by side
+  // Desktop layout: buttons and mini player side by side
   return (
     <div className='hidden lg:block sticky top-0 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
       <div className='px-4 py-3 flex items-center gap-4'>
-        {/* Heading */}
-        <h2 className='text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0'>
-          AI Chat Streaming
-        </h2>
-
-        {/* Province filter */}
-        <div className='flex items-center gap-2.5 flex-shrink-0'>
-          <Select
-            aria-label='Province'
-            placeholder='All Provinces'
-            selectedKeys={selectedProvince ? [selectedProvince] : ['All']}
-            onSelectionChange={keys => {
-              const val = Array.from(keys)[0] as string;
-              handleProvinceChange(val);
-            }}
-            className='w-40'
-            size='sm'
-          >
-            {provinces.map(p => (
-              <SelectItem key={p}>{p}</SelectItem>
-            ))}
-          </Select>
+        {/* View Toggle Buttons */}
+        <div className='flex items-center flex-shrink-0'>
+          <div className='inline-flex items-center gap-1.5 rounded-full bg-gray-100/80 dark:bg-slate-800/80 p-1 border border-gray-200/60 dark:border-slate-700/70 shadow-sm'>
+            <Button
+              size='sm'
+              variant={activeView === 'timeline' ? 'solid' : 'light'}
+              color={activeView === 'timeline' ? 'primary' : 'default'}
+              onPress={() => onViewChange('timeline')}
+              className={`gap-1.5 rounded-full text-xs font-medium ${
+                activeView === 'timeline'
+                  ? 'shadow-sm'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}
+              startContent={
+                <ClockIcon className='w-4 h-4' aria-hidden='true' />
+              }
+            >
+              AI Timeline
+            </Button>
+            <Button
+              size='sm'
+              variant={activeView === 'streaming' ? 'solid' : 'light'}
+              color={activeView === 'streaming' ? 'primary' : 'default'}
+              onPress={() => onViewChange('streaming')}
+              className={`gap-1.5 rounded-full text-xs font-medium ${
+                activeView === 'streaming'
+                  ? 'shadow-sm'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}
+              startContent={
+                <SparklesIcon className='w-4 h-4' aria-hidden='true' />
+              }
+            >
+              AI Streaming
+            </Button>
+            <Button
+              size='sm'
+              variant={activeView === 'league' ? 'solid' : 'light'}
+              color={activeView === 'league' ? 'primary' : 'default'}
+              onPress={() => onViewChange('league')}
+              className={`gap-1.5 rounded-full text-xs font-medium ${
+                activeView === 'league'
+                  ? 'shadow-sm'
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}
+              startContent={
+                <TrophyIcon className='w-4 h-4' aria-hidden='true' />
+              }
+            >
+              League
+            </Button>
+            <Link href='/learn'>
+              <Button
+                size='sm'
+                variant='light'
+                color='default'
+                className='gap-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300'
+                startContent={
+                  <BookOpenIcon className='w-4 h-4' aria-hidden='true' />
+                }
+              >
+                Learn
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div className='flex-1 flex justify-end min-w-0'>

@@ -7,7 +7,6 @@ import './globals.css';
 import HeroUIProviderWrapper from '@/components/providers/HeroUIProvider';
 import SessionProvider from '@/components/providers/SessionProvider';
 import { MusicPlayerProvider } from '@/contexts/MusicPlayerContext';
-import ConditionalGlobalMusicPlayer from '@/components/music/ConditionalGlobalMusicPlayer';
 import BProgressProvider from '@/components/ui/BProgressProvider';
 import { ToastProvider } from '@/components/ui/Toast';
 
@@ -42,13 +41,15 @@ const shareImage = '/social-card.png';
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: 'Flemoji Music Streaming Platform',
-  description: 'Listen, upload, and share music with Flemoji.',
+  description:
+    'Discover and stream South African music. Upload tracks, build your audience, and track success with Pulse³.',
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'Flemoji Music Streaming Platform',
-    description: 'Listen, upload, and share music with Flemoji.',
+    description:
+      'Discover and stream South African music. Upload tracks, build your audience, and track success with Pulse³.',
     url: siteUrl,
     siteName: 'Flemoji',
     images: [
@@ -65,8 +66,19 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Flemoji Music Streaming Platform',
-    description: 'Listen, upload, and share music with Flemoji.',
+    description:
+      'Discover and stream South African music. Upload tracks, build your audience, and track success with Pulse³.',
     images: [shareImage],
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'Flemoji',
+  },
+  other: {
+    // Resource hints for performance
+    'dns-prefetch':
+      'https://asset.flemoji.com, https://audio.flemoji.com, https://profile-images.flemoji.com',
+    'apple-mobile-web-app-title': 'Flemoji',
   },
 };
 
@@ -91,11 +103,11 @@ export default function RootLayout({
             <ToastProvider>
               <HeroUIProviderWrapper>
                 <main id='content'>{children}</main>
-                <ConditionalGlobalMusicPlayer />
               </HeroUIProviderWrapper>
             </ToastProvider>
           </MusicPlayerProvider>
         </SessionProvider>
+        {/* Analytics moved to bottom - loaded after page content with defer */}
         <SpeedInsights />
         <Analytics />
       </body>

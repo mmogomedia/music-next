@@ -111,33 +111,34 @@ export default function SignInForm({
   return (
     <div className={className}>
       {showTitle && (
-        <div className='text-center mb-8'>
-          <h1 className='text-3xl font-bold mb-2'>Welcome back</h1>
-          <p className='text-foreground/70'>
+        <div className='text-center mb-6'>
+          <h1 className='text-3xl font-bold mb-2 text-gray-900'>
+            Welcome back
+          </h1>
+          <p className='text-gray-600 text-sm'>
             Sign in to your account to continue
           </p>
         </div>
       )}
 
       {error && (
-        <div className='mb-6 p-4 bg-danger-50 dark:bg-danger-900/20 border border-danger-200 dark:border-danger-800 rounded-lg'>
-          <p className='text-danger-600 dark:text-danger-400 text-sm text-center'>
-            {error}
-          </p>
+        <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-xl'>
+          <p className='text-red-700 text-sm text-center'>{error}</p>
         </div>
       )}
 
-      <form onSubmit={onSubmit} className='space-y-6'>
+      <form onSubmit={onSubmit} className='space-y-4'>
         <Input
           label='Email or Username'
           value={identifier}
           onValueChange={setIdentifier}
           variant='bordered'
-          size='lg'
+          size='md'
           classNames={{
             inputWrapper:
-              'border-divider hover:border-primary/50 focus-within:border-primary',
-            input: 'text-foreground',
+              'border-gray-300 hover:border-blue-400 focus-within:border-blue-500',
+            input: 'text-gray-900',
+            label: 'text-gray-700',
           }}
           isRequired
           errorMessage={fieldErrors.identifier}
@@ -150,11 +151,12 @@ export default function SignInForm({
             value={password}
             onValueChange={setPassword}
             variant='bordered'
-            size='lg'
+            size='md'
             classNames={{
               inputWrapper:
-                'border-divider hover:border-primary/50 focus-within:border-primary',
-              input: 'text-foreground',
+                'border-gray-300 hover:border-blue-400 focus-within:border-blue-500',
+              input: 'text-gray-900',
+              label: 'text-gray-700',
             }}
             isRequired
             errorMessage={fieldErrors.password}
@@ -209,43 +211,49 @@ export default function SignInForm({
               onValueChange={setRememberMe}
               size='sm'
               classNames={{
-                label: 'text-sm',
+                label: 'text-gray-700 text-xs',
               }}
             >
               Remember me
             </Checkbox>
-            <HeroUILink as={Link} href='/forgot-password' className='text-sm'>
+            <HeroUILink
+              as={Link}
+              href='/forgot-password'
+              className='text-xs text-blue-600 hover:text-blue-700'
+            >
               Forgot password?
             </HeroUILink>
           </div>
         </div>
         <Button
           type='submit'
-          color='primary'
-          size='lg'
-          className='w-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'
+          className='w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105'
           isLoading={loading}
         >
           Sign In
         </Button>
       </form>
 
-      <Divider className='my-8' />
+      <Divider className='my-6 bg-gray-200' />
 
       <Button
         variant='bordered'
-        size='lg'
-        className='w-full border-2 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 hover:scale-105 font-semibold'
+        size='md'
+        className='w-full border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 hover:scale-105 font-semibold text-gray-700'
         onPress={() => signIn('google', { callbackUrl, redirect: !onSuccess })}
       >
         Continue with Google
       </Button>
 
       {showTitle && (
-        <div className='mt-6 text-center'>
-          <p className='text-sm text-foreground/70'>
+        <div className='mt-4 text-center'>
+          <p className='text-sm text-gray-600'>
             Don&apos;t have an account?{' '}
-            <HeroUILink as={Link} href='/register' className='text-sm'>
+            <HeroUILink
+              as={Link}
+              href='/register'
+              className='text-sm text-blue-600 hover:text-blue-700'
+            >
               Sign up
             </HeroUILink>
           </p>

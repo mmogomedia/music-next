@@ -8,31 +8,28 @@ import {
   CheckCircleIcon,
   MusicalNoteIcon,
   PlusIcon,
+  PencilIcon,
 } from '@heroicons/react/24/outline';
-import TrackEditModal from '@/components/track/TrackEditModal';
+import { useRouter } from 'next/navigation';
 
 interface FileUploadProps {
   onUploadComplete?: (_jobId: string) => void;
   onViewLibrary?: () => void;
   onUploadAnother?: () => void;
-  onTrackCreated?: (_track: any) => void;
-  onTrackUpdated?: (_track: any) => void;
 }
 
 export default function FileUpload({
   onUploadComplete,
   onViewLibrary,
   onUploadAnother,
-  onTrackUpdated,
 }: FileUploadProps) {
+  const router = useRouter();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string>('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>('');
-  const [showTrackEdit, setShowTrackEdit] = useState(false);
-  const [, setUploadedFilePath] = useState<string>('');
   const [uploadedTrackId, setUploadedTrackId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -130,14 +127,8 @@ export default function FileUpload({
         setUploadStatus('Upload successful!');
         setUploadSuccess(true);
         setUploadedFileName(selectedFile.name);
-        setUploadedFilePath(completeData.filePath || '');
         setUploadedTrackId(completeData.trackId || '');
         onUploadComplete?.(newJobId);
-
-        // Show track edit form after successful upload
-        setTimeout(() => {
-          setShowTrackEdit(true);
-        }, 1000);
       } else {
         throw new Error('Failed to complete upload');
       }
@@ -179,39 +170,6 @@ export default function FileUpload({
     onViewLibrary?.();
   };
 
-  const handleTrackSave = async (trackData: any): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/tracks/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          trackId: uploadedTrackId,
-          ...trackData,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Call onTrackUpdated for updates instead of onTrackCreated
-        onTrackUpdated?.(data.track);
-        setShowTrackEdit(false);
-        return true;
-      } else {
-        console.error('Failed to update track');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error updating track:', error);
-      return false;
-    }
-  };
-
-  const handleTrackEditClose = () => {
-    setShowTrackEdit(false);
-  };
-
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault();
     const file = event.dataTransfer.files[0];
@@ -245,6 +203,19 @@ export default function FileUpload({
 
             {/* Post-Upload Options */}
             <div className='flex flex-col sm:flex-row gap-3 justify-center'>
+              {uploadedTrackId && (
+                <Button
+                  variant='flat'
+                  size='lg'
+                  startContent={<PencilIcon className='w-5 h-5' />}
+                  onPress={() =>
+                    router.push(`/dashboard/tracks/${uploadedTrackId}/edit`)
+                  }
+                  className='font-semibold'
+                >
+                  Edit Track Details
+                </Button>
+              )}
               <Button
                 color='primary'
                 size='lg'
@@ -364,22 +335,6 @@ export default function FileUpload({
           </p>
         </div>
       )}
-
-      {/* Track Edit Modal */}
-      <TrackEditModal
-        isOpen={showTrackEdit}
-        onClose={handleTrackEditClose}
-        onSave={handleTrackSave}
-        mode='edit'
-        track={{
-          id: uploadedTrackId,
-          title: uploadedFileName.replace(/\.[^/.]+$/, ''), // Remove file extension
-          isPublic: true,
-          isDownloadable: false,
-          isExplicit: false,
-          licenseType: 'All Rights Reserved',
-        }}
-      />
     </div>
   );
 }

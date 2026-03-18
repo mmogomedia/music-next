@@ -13,13 +13,18 @@ import {
   type BaseMessageLike,
 } from '@langchain/core/messages';
 import type { StructuredToolInterface } from '@langchain/core/tools';
+import type { RunnableConfig } from '@langchain/core/runnables';
+import type { SSEEventEmitter } from '@/lib/ai/sse-event-emitter';
 
 /**
  * Minimal interface for chat models that support bindTools().
  */
 export interface BindableToolModel {
   bindTools: (_tools: StructuredToolInterface[]) => {
-    invoke: (_messages: BaseMessageLike[]) => Promise<AIMessage>;
+    invoke: (
+      _messages: BaseMessageLike[],
+      _config?: RunnableConfig
+    ) => Promise<AIMessage>;
   };
 }
 
@@ -43,6 +48,9 @@ export interface ExecuteToolCallLoopOptions {
   tools: StructuredToolInterface[];
   messages: BaseMessageLike[];
   maxIterations?: number;
+  emitEvent?: SSEEventEmitter;
+  originalMessage?: string; // Original user message for debugging
+  runConfig?: RunnableConfig; // LangSmith trace grouping config
 }
 
 /**
@@ -117,17 +125,44 @@ export async function executeToolCallLoop({
   model,
   tools,
   messages,
-  maxIterations = 6,
+  maxIterations = 3, // Reduced from 6 to minimize unnecessary tool calls
+  emitEvent,
+  originalMessage,
+  runConfig,
 }: ExecuteToolCallLoopOptions): Promise<ExecuteToolCallLoopResult> {
   const conversation: BaseMessageLike[] = [...messages];
   const toolResults: ExecutedToolResult[] = [];
   const runnable = model.bindTools(tools);
 
+  // Extract original user message from messages array if not provided
+  const userMessage =
+    originalMessage ||
+    (() => {
+      const userMsg = messages.find(
+        msg =>
+          msg && typeof msg === 'object' && 'role' in msg && msg.role === 'user'
+      );
+      if (userMsg && typeof userMsg === 'object' && 'content' in userMsg) {
+        return typeof userMsg.content === 'string'
+          ? userMsg.content
+          : undefined;
+      }
+      return undefined;
+    })() ||
+    'Unknown';
+
+  const { logger } = await import('@/lib/utils/logger');
+  logger.info('[ToolExecutor] ===== TOOL EXECUTION START =====', {
+    originalMessage: userMessage,
+    toolsAvailable: tools.map(t => t.name),
+    maxIterations,
+  });
+
   let finalMessage: AIMessage | undefined;
   let truncated = false;
 
   for (let iteration = 0; iteration < maxIterations; iteration += 1) {
-    const aiResponse = await runnable.invoke(conversation);
+    const aiResponse = await runnable.invoke(conversation, runConfig);
     finalMessage = aiResponse;
     conversation.push(aiResponse);
 
@@ -150,7 +185,42 @@ export async function executeToolCallLoop({
         parsedArgs = tryParseJson(parsedArgs) ?? {};
       }
 
+      // Enhanced logging with original message context
+      logger.info('[ToolExecutor] ===== TOOL CALL =====', {
+        originalMessage: userMessage,
+        toolName: toolCall.name,
+        toolCallId: toolCall.id,
+        iteration: iteration + 1,
+        parameters: parsedArgs,
+        rawArgs: toolCall.args,
+      });
+
+      logger.debug('[ToolExecutor] Parsed args:', parsedArgs);
+
+      // Emit calling_tool event
+      const toolMessages: Record<string, string> = {
+        search_tracks: 'Searching for those tracks... 🔍',
+        search_tracks_by_theme: 'Finding music that matches that vibe... 🎭',
+        get_tracks_by_genre: 'Hunting down tracks in that genre... 🎯',
+        get_playlists_by_genre: 'Discovering some amazing playlists... 🎵',
+        get_artist: 'Looking up that artist for you... 👤',
+        get_trending_tracks: 'Grabbing the hottest tracks right now... 🔥',
+        get_genres: 'Browsing through genres... 🎼',
+      };
+
+      emitEvent?.({
+        type: 'calling_tool',
+        tool: toolCall.name,
+        message: toolMessages[toolCall.name] || 'On it! Looking that up... 🔎',
+        parameters: parsedArgs as Record<string, any>,
+        stage: 'tool_execution',
+        timestamp: new Date().toISOString(),
+        // Include original message in SSE event for debugging
+        ...(originalMessage && { originalMessage }),
+      });
+
       if (!matchingTool) {
+        logger.error('[ToolExecutor] Tool not found:', toolCall.name);
         const errorPayload = {
           error: `Tool "${toolCall.name}" not found`,
         };
@@ -180,14 +250,132 @@ export async function executeToolCallLoop({
       let parsedResult: unknown;
       let error: string | undefined;
 
+      const toolStartTime = Date.now();
+
+      // Enhanced debug logging
+      logger.info('[ToolExecutor] Invoking tool:', {
+        originalMessage: userMessage,
+        toolName: matchingTool.name,
+        parameters: parsedArgs,
+        iteration: iteration + 1,
+      });
+
+      logger.log('[ToolExecutor] ===== TOOL INVOCATION =====');
+      logger.log('[ToolExecutor] Original Message:', userMessage);
+      logger.log('[ToolExecutor] Tool:', matchingTool.name);
+      logger.log(
+        '[ToolExecutor] Parameters:',
+        JSON.stringify(parsedArgs, null, 2)
+      );
+
       try {
         rawResult = await (matchingTool as unknown as any).invoke(parsedArgs);
         parsedResult = tryParseJson(rawResult) ?? rawResult;
+        const toolLatency = Date.now() - toolStartTime;
+
+        // Enhanced success logging
+        logger.info('[ToolExecutor] Tool execution success:', {
+          originalMessage: userMessage,
+          toolName: matchingTool.name,
+          latency: toolLatency,
+          parameters: parsedArgs,
+          resultType: typeof rawResult,
+          resultLength:
+            typeof rawResult === 'string' ? rawResult.length : 'N/A',
+          parsedResultKeys:
+            typeof parsedResult === 'object' && parsedResult !== null
+              ? Object.keys(parsedResult)
+              : 'N/A',
+        });
+
+        logger.log('[ToolExecutor] ===== TOOL SUCCESS =====');
+        logger.log('[ToolExecutor] Original Message:', userMessage);
+        logger.log('[ToolExecutor] Tool:', matchingTool.name);
+        logger.log(
+          '[ToolExecutor] Parameters:',
+          JSON.stringify(parsedArgs, null, 2)
+        );
+        logger.log('[ToolExecutor] Latency:', `${toolLatency}ms`);
+        logger.log('[ToolExecutor] Result Type:', typeof rawResult);
+
+        // Extract result count for tool_result event
+        let resultCount: number | undefined;
+        if (typeof parsedResult === 'object' && parsedResult !== null) {
+          if ('tracks' in parsedResult && Array.isArray(parsedResult.tracks)) {
+            resultCount = parsedResult.tracks.length;
+          } else if (
+            'playlists' in parsedResult &&
+            Array.isArray(parsedResult.playlists)
+          ) {
+            resultCount = parsedResult.playlists.length;
+          } else if (
+            'artists' in parsedResult &&
+            Array.isArray(parsedResult.artists)
+          ) {
+            resultCount = parsedResult.artists.length;
+          } else if (
+            'genres' in parsedResult &&
+            Array.isArray(parsedResult.genres)
+          ) {
+            resultCount = parsedResult.genres.length;
+          } else if (
+            'count' in parsedResult &&
+            typeof parsedResult.count === 'number'
+          ) {
+            resultCount = parsedResult.count;
+          }
+        }
+
+        // Emit tool_result event (only if there are results or if it's important)
+        // Suppress zero-result messages to avoid confusion
+        if (resultCount !== undefined && resultCount > 0) {
+          // Get user-friendly tool names
+          const toolNames: Record<string, string> = {
+            search_tracks: 'tracks',
+            search_tracks_by_theme: 'tracks',
+            get_tracks_by_genre: 'tracks',
+            get_trending_tracks: 'tracks',
+            get_playlists_by_genre: 'playlists',
+            get_playlists_by_province: 'playlists',
+            get_top_charts: 'playlists',
+            get_featured_playlists: 'playlists',
+            get_artist: 'artist',
+            search_artists: 'artists',
+            get_genres: 'genres',
+          };
+
+          const toolType = toolNames[toolCall.name] || 'results';
+          emitEvent?.({
+            type: 'tool_result',
+            tool: toolCall.name,
+            resultCount,
+            message: `Found ${resultCount} ${toolType}${resultCount !== 1 ? '' : ''}`,
+            stage: 'tool_complete',
+            timestamp: new Date().toISOString(),
+          });
+        }
+        // Don't emit events for zero results - it's confusing for users
       } catch (err) {
         error =
           err instanceof Error ? err.message : 'Unknown tool execution error';
         rawResult = { error };
         parsedResult = rawResult;
+
+        logger.error('[ToolExecutor] Tool execution error:', {
+          originalMessage: userMessage,
+          toolName: matchingTool.name,
+          error: error,
+          parameters: parsedArgs,
+        });
+
+        logger.error('[ToolExecutor] ===== TOOL ERROR =====');
+        logger.error('[ToolExecutor] Original Message:', userMessage);
+        logger.error('[ToolExecutor] Tool:', matchingTool.name);
+        logger.error(
+          '[ToolExecutor] Parameters:',
+          JSON.stringify(parsedArgs, null, 2)
+        );
+        logger.error('[ToolExecutor] Error:', error);
       }
 
       const toolCallId =
@@ -217,6 +405,20 @@ export async function executeToolCallLoop({
   }
 
   truncated = true;
+
+  // Final summary log
+  logger.info('[ToolExecutor] ===== TOOL EXECUTION COMPLETE =====', {
+    originalMessage: userMessage,
+    totalIterations: maxIterations,
+    toolsCalled: toolResults.map(t => t.name),
+    totalToolCalls: toolResults.length,
+    truncated,
+    toolCallsSummary: toolResults.map(t => ({
+      name: t.name,
+      parameters: t.args,
+      hasError: !!t.error,
+    })),
+  });
 
   return {
     finalMessage:

@@ -62,7 +62,6 @@ async function addTestTrack() {
       title: testTrack.title,
       artist: testTrack.artist,
     });
-
   } catch (error) {
     console.error('❌ Error creating test track:', error);
   } finally {
