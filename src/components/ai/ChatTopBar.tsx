@@ -16,6 +16,7 @@ import {
   TrophyIcon,
   EllipsisVerticalIcon,
   BookOpenIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
 
 export type ViewType = 'timeline' | 'streaming' | 'league';
@@ -116,6 +117,13 @@ export default function ChatTopBar({
                 >
                   Learn
                 </DropdownItem>
+                <DropdownItem
+                  key='view-tools'
+                  startContent={<WrenchScrewdriverIcon className='w-4 h-4' />}
+                  href='/tools'
+                >
+                  Tools
+                </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
@@ -190,6 +198,22 @@ export default function ChatTopBar({
                 }
               >
                 Learn
+              </Button>
+            </Link>
+            <Link href='/tools'>
+              <Button
+                size='sm'
+                variant='light'
+                color='default'
+                className='gap-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300'
+                startContent={
+                  <WrenchScrewdriverIcon
+                    className='w-4 h-4'
+                    aria-hidden='true'
+                  />
+                }
+              >
+                Tools
               </Button>
             </Link>
           </div>
