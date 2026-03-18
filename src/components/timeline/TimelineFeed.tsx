@@ -917,12 +917,109 @@ export default function TimelineFeed({
               <h2 className='text-lg font-bold text-gray-900 dark:text-white'>
                 Featured
               </h2>
-              <span className='text-xs text-gray-500 dark:text-gray-400'>
+              <span className='hidden sm:inline text-xs text-gray-500 dark:text-gray-400'>
                 Swipe to explore
               </span>
             </div>
           </div>
-          <div className='featured-scroll'>
+          {/* Mobile: grid (no horizontal scrolling) */}
+          <div className='sm:hidden max-w-3xl mx-auto px-4 sm:px-6 lg:px-8'>
+            <div className='grid grid-cols-2 gap-3'>
+              {displayFeatured.map(item => {
+                const Icon = getContentIcon(item.type);
+                return (
+                  <a
+                    key={item.id}
+                    href={item.url || '#'}
+                    target={item.url ? '_blank' : undefined}
+                    rel={item.url ? 'noopener noreferrer' : undefined}
+                    className='relative group bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden hover:border-blue-400 dark:hover:border-blue-600 transition-all duration-300 shadow-sm'
+                  >
+                    {/* Featured Badge */}
+                    <div className='absolute top-2 left-2 z-0'>
+                      <span className='px-2 py-0.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-[10px] font-bold rounded-full shadow-lg backdrop-blur-sm'>
+                        Featured
+                      </span>
+                    </div>
+
+                    {/* Platform Badge */}
+                    {item.platform && (
+                      <div className='absolute top-2 right-2 z-0'>
+                        <span className='px-1.5 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium rounded'>
+                          {item.platform}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className='flex flex-col'>
+                      {/* Cover Art / Thumbnail */}
+                      <div className='relative w-full aspect-video flex-shrink-0 overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30'>
+                        {item.coverArt || item.thumbnail ? (
+                          <Image
+                            src={item.coverArt || item.thumbnail || ''}
+                            alt={item.title}
+                            fill
+                            className='object-cover group-hover:scale-110 transition-transform duration-500'
+                            sizes='(max-width: 640px) 50vw, 224px'
+                          />
+                        ) : (
+                          <div className='w-full h-full flex items-center justify-center'>
+                            <Icon className='w-10 h-10 text-blue-600 dark:text-blue-400' />
+                          </div>
+                        )}
+                        {/* Gradient Overlay */}
+                        <div className='absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0' />
+                        {item.type === 'video' && (
+                          <div className='absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors'>
+                            <div className='w-10 h-10 bg-white/95 dark:bg-white/90 rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-300'>
+                              <PlayIcon className='w-5 h-5 text-blue-600 ml-0.5' />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Content Info */}
+                      <div className='p-2.5 flex-1 bg-white dark:bg-slate-800'>
+                        <div className='flex items-start justify-between gap-1 mb-1'>
+                          <h3 className='font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'>
+                            {item.title}
+                          </h3>
+                          <span
+                            className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap ${
+                              typeStyles[item.type]?.className ??
+                              'bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-300 border border-gray-200 dark:border-slate-700'
+                            }`}
+                          >
+                            {typeStyles[item.type]?.label ?? 'Content'}
+                          </span>
+                        </div>
+                        {(item.artist || item.author) && (
+                          <p className='text-xs text-gray-600 dark:text-gray-400 truncate mb-1'>
+                            {item.artist || item.author}
+                          </p>
+                        )}
+                        {item.duration && (
+                          <div className='flex items-center gap-1.5'>
+                            <span className='text-[10px] text-gray-500 dark:text-gray-500 font-medium'>
+                              {item.duration}
+                            </span>
+                            {item.type === 'video' && (
+                              <span className='text-[10px] text-blue-600 dark:text-blue-400 font-medium'>
+                                Watch →
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Desktop: horizontal scroll */}
+          <div className='hidden sm:block featured-scroll'>
             <div className='flex gap-3 pt-1 pb-2 pl-4 sm:pl-6 lg:pl-8'>
               {/* Spacer to align with centered content */}
               <div

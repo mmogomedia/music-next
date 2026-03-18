@@ -17,6 +17,7 @@ export default withAuth(
       '/albums',
       '/search',
       '/timeline', // Timeline page is public
+      '/league', // PULSE³ League page is public
 
       // Authentication pages
       '/login',
@@ -46,6 +47,10 @@ export default withAuth(
       '/api/public',
       '/api/timeline/feed', // Timeline feed is public
       '/api/timeline/featured', // Featured content is public
+      '/api/pulse/league', // PULSE³ League is public
+      '/api/pulse/debug', // PULSE³ debug endpoint (requires auth)
+      '/api/pulse/eligibility/recalculate', // Protected by CRON_SECRET (Bearer)
+      '/api/pulse/league/run', // Protected by CRON_SECRET (Bearer)
 
       // Static assets
       '/_next',
@@ -112,6 +117,7 @@ export default withAuth(
           '/albums',
           '/search',
           '/timeline', // Timeline page is public
+          '/league', // PULSE³ League page is public
 
           // Authentication pages
           '/login',
@@ -141,6 +147,9 @@ export default withAuth(
           '/api/public',
           '/api/timeline/feed', // Timeline feed is public
           '/api/timeline/featured', // Featured content is public
+          '/api/pulse/league', // PULSE³ League is public
+          '/api/pulse/eligibility/recalculate', // Protected by CRON_SECRET (Bearer)
+          '/api/pulse/league/run', // Protected by CRON_SECRET (Bearer)
 
           // Static assets
           '/_next',

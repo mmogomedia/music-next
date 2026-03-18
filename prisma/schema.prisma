@@ -81,6 +81,16 @@ model User {
   timelineFollowing    TimelineFollow[]      @relation("TimelineFollowing")
   timelineFeedCache    TimelineFeedCache[]   @relation("TimelineFeedCache")
   canPublishNews       Boolean               @default(false) // For publishers
+  articles             Article[]             @relation("ArticleAuthor")
+  articleVersions      ArticleVersion[]      @relation("ArticleVersionSavedBy")
+  splitSheets          SplitSheet[]
+  revenueEstimates     RevenueEstimate[]
+
+  // Enhanced AI memory relations
+  conversationEmbeddings ConversationEmbedding[]
+  preferences            UserPreference[]
+  conversationEntities   ConversationEntity[]
+  memoryProfile          UserMemoryProfile?
 
   @@map("users")
 }
@@ -94,41 +104,47 @@ model VerificationToken {
 }
 
 model ArtistProfile {
-  id              String                @id @default(uuid())
-  userId          String?               @unique
-  artistName      String                @unique
-  bio             String?
-  profileImage    String?
-  coverImage      String?
-  location        String? // Legacy field - kept for backward compatibility
-  country         String?
-  province        String?
-  city            String?
-  website         String?
-  genre           String? // Legacy field - kept for backward compatibility
-  genreId         String?
-  slug            String?               @unique
-  socialLinks     Json?
-  streamingLinks  Json?
-  isPublic        Boolean               @default(true)
-  isVerified      Boolean               @default(false)
-  isActive        Boolean               @default(true)
-  isUnclaimed     Boolean               @default(false)
-  totalPlays      Int                   @default(0)
-  totalLikes      Int                   @default(0)
-  totalFollowers  Int                   @default(0)
-  profileViews    Int                   @default(0)
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-  user            User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  genreRef        Genre?                @relation(fields: [genreId], references: [id], onDelete: SetNull)
-  tracks          Track[]
-  quickLinks      QuickLink[]           @relation("ProfileQuickLinks")
-  albumQuickLinks QuickLink[]           @relation("AlbumArtistQuickLinks")
-  strengthScores  ArtistStrengthScore[] @relation("ArtistStrengthScores")
-  metrics         ArtistMetrics[]       @relation("ArtistMetrics")
-  trends          ArtistTrends[]        @relation("ArtistTrends")
-  skills          ArtistProfileSkill[]
+  id                     String                  @id @default(uuid())
+  userId                 String?                 @unique
+  artistName             String                  @unique
+  bio                    String?
+  profileImage           String?
+  coverImage             String?
+  location               String? // Legacy field - kept for backward compatibility
+  country                String?
+  province               String?
+  city                   String?
+  website                String?
+  genre                  String? // Legacy field - kept for backward compatibility
+  genreId                String?
+  slug                   String?                 @unique
+  socialLinks            Json?
+  streamingLinks         Json?
+  isPublic               Boolean                 @default(true)
+  isVerified             Boolean                 @default(false)
+  isActive               Boolean                 @default(true)
+  isUnclaimed            Boolean                 @default(false)
+  totalPlays             Int                     @default(0)
+  totalLikes             Int                     @default(0)
+  totalFollowers         Int                     @default(0)
+  profileViews           Int                     @default(0)
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  user                   User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  genreRef               Genre?                  @relation(fields: [genreId], references: [id], onDelete: SetNull)
+  tracks                 Track[]
+  quickLinks             QuickLink[]             @relation("ProfileQuickLinks")
+  albumQuickLinks        QuickLink[]             @relation("AlbumArtistQuickLinks")
+  strengthScores         ArtistStrengthScore[]   @relation("ArtistStrengthScores")
+  metrics                ArtistMetrics[]         @relation("ArtistMetrics")
+  trends                 ArtistTrends[]          @relation("ArtistTrends")
+  skills                 ArtistProfileSkill[]
+  pulseEligibilityScores PulseEligibilityScore[] @relation("PulseEligibilityScores")
+  pulseMomentumScores    PulseMomentumScore[]    @relation("PulseMomentumScores")
+  pulseMonitoringStatus  PulseMonitoringStatus?  @relation("PulseMonitoringStatus")
+  pulsePlatformData      PulsePlatformData[]     @relation("PulsePlatformData")
+  leagueEntries          LeagueEntry[]           @relation("LeagueEntries")
+  pulseEligibilityRecalcArtistLogs PulseEligibilityRecalcArtistLog[] @relation("PulseEligibilityRecalcArtistLogs")
 
   @@map("artist_profiles")
 }
@@ -179,6 +195,8 @@ model Track {
   completionPercentage Int                  @default(0) // 0-100, calculated based on field completion
   strength             Int                  @default(0) // 0-100 quality/completeness score
   language             String? // ISO 639-1 code (e.g., "en", "zu", "xh", "fr", "pt", "sn", "nd", "other")
+  embedding            Unsupported("vector(1536)")? // pgvector — added via raw SQL in migration
+  embeddingUpdatedAt   DateTime? // when the embedding was last generated
   playEvents           PlayEvent[]          @relation("TrackPlays")
   likeEvents           LikeEvent[]          @relation("TrackLikes")
   saveEvents           SaveEvent[]          @relation("TrackSaves")
@@ -196,7 +214,13 @@ model Track {
   artistProfile        ArtistProfile?       @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
   user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   genreRef             Genre?               @relation(fields: [genreId], references: [id], onDelete: SetNull)
+  splitSheets          SplitSheet[]
 
+  @@index([title])
+  @@index([artist])
+  @@index([genreId])
+  @@index([strength])
+  @@index([playCount])
   @@map("tracks")
 }
 
@@ -850,6 +874,239 @@ model ArtistTrends {
   @@map("artist_trends")
 }
 
+// ===== PULSE³ SCORING TABLES =====
+
+model PulseEligibilityScore {
+  id                     String   @id @default(cuid())
+  artistProfileId        String
+  score                  Float // 0-100
+  followerScore          Float? // 0-100 component score
+  engagementScore        Float? // 0-100 component score
+  consistencyScore       Float? // 0-100 component score
+  platformDiversityScore Float? // 0-100 component score
+  rank                   Int? // Rank among all artists (1 = highest)
+  calculatedAt           DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  // Relations
+  artistProfile ArtistProfile @relation("PulseEligibilityScores", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([artistProfileId, calculatedAt])
+  @@index([score])
+  @@index([rank])
+  @@index([artistProfileId])
+  @@index([calculatedAt])
+  @@map("pulse_eligibility_scores")
+}
+
+model PulseMomentumScore {
+  id              String   @id @default(cuid())
+  artistProfileId String
+  score           Float // 0-100
+  position        Int? // 1-100 on Top 100 chart (1 = highest momentum)
+  calculatedAt    DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  artistProfile ArtistProfile @relation("PulseMomentumScores", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([artistProfileId, calculatedAt])
+  @@index([score])
+  @@index([position])
+  @@index([artistProfileId])
+  @@index([calculatedAt])
+  @@map("pulse_momentum_scores")
+}
+
+model PulseMonitoringStatus {
+  id                  String   @id @default(cuid())
+  artistProfileId     String   @unique
+  isActivelyMonitored Boolean  @default(false)
+  lastCalculatedAt    DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  artistProfile ArtistProfile @relation("PulseMonitoringStatus", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@index([isActivelyMonitored])
+  @@index([artistProfileId])
+  @@map("pulse_monitoring_status")
+}
+
+model PulsePlatformData {
+  id              String   @id @default(cuid())
+  artistProfileId String
+  platform        String // 'tiktok' | 'spotify' | 'youtube'
+  data            Json // Platform-specific data (follower_count, video_count, etc.)
+  fetchedAt       DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  // Relations
+  artistProfile ArtistProfile @relation("PulsePlatformData", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@index([artistProfileId])
+  @@index([platform])
+  @@index([fetchedAt])
+  @@map("pulse_platform_data")
+}
+
+// ===== PULSE³ LEAGUE TABLES =====
+
+enum LeagueRunType {
+  SCHEDULED
+  MANUAL
+}
+
+enum LeagueBandState {
+  SECURE
+  BELOW_RANGE
+  ABOVE_RANGE
+}
+
+enum LeagueStatusChange {
+  NEW
+  UP
+  DOWN
+  UNCHANGED
+  PROMOTED
+  DEMOTED
+  EXITED
+}
+
+model LeagueTier {
+  id                   String   @id @default(cuid())
+  code                 String   @unique // e.g. 'TIER1', 'TIER2'
+  name                 String // e.g. 'Top 50', 'Watchlist'
+  targetSize           Int // number of artists to show
+  minScore             Float // desired lower bound (inclusive)
+  maxScore             Float? // nullable upper bound (inclusive)
+  refreshIntervalHours Int // how often this tier refreshes
+  isActive             Boolean  @default(true)
+  sortOrder            Int // UI ordering
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  leagueRuns LeagueRun[]
+
+  @@index([code])
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("league_tiers")
+}
+
+model LeagueRun {
+  id        String        @id @default(cuid())
+  tierId    String
+  runType   LeagueRunType // 'SCHEDULED' | 'MANUAL'
+  runAt     DateTime      @default(now())
+  createdAt DateTime      @default(now())
+
+  // Relations
+  tier    LeagueTier    @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  entries LeagueEntry[]
+
+  @@index([tierId])
+  @@index([runAt])
+  @@index([runType])
+  @@map("league_runs")
+}
+
+model LeagueEntry {
+  id              String             @id @default(cuid())
+  leagueRunId     String
+  artistProfileId String
+  rank            Int // 1-based rank
+  score           Float // eligibility score
+  bandState       LeagueBandState // 'SECURE' | 'BELOW_RANGE' | 'ABOVE_RANGE'
+  isAtRisk        Boolean
+  previousRank    Int? // rank from previous run
+  rankDelta       Int? // change in rank (positive = up, negative = down)
+  statusChange    LeagueStatusChange // 'NEW' | 'UP' | 'DOWN' | 'UNCHANGED' | 'PROMOTED' | 'DEMOTED' | 'EXITED'
+  highlight       Boolean            @default(false) // true if rank <= 3
+  createdAt       DateTime           @default(now())
+
+  // Relations
+  leagueRun     LeagueRun     @relation(fields: [leagueRunId], references: [id], onDelete: Cascade)
+  artistProfile ArtistProfile @relation("LeagueEntries", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@index([leagueRunId])
+  @@index([artistProfileId])
+  @@index([rank])
+  @@index([bandState])
+  @@map("league_entries")
+}
+
+// ===== PULSE³ ACTIVITY LOGGING =====
+
+model PulseEligibilityRecalcLog {
+  id                String   @id @default(cuid())
+  startedAt         DateTime @default(now())
+  completedAt       DateTime?
+  totalDurationMs   Int? // milliseconds
+  artistsProcessed  Int      @default(0)
+  successCount      Int      @default(0)
+  errorCount        Int      @default(0)
+  rateLimitCount    Int      @default(0)
+  top100Updated     Int      @default(0)
+  status            String   @default("running") // 'running' | 'completed' | 'failed' | 'aborted'
+  errorMessage     String?
+  createdAt         DateTime @default(now())
+
+  // Relations
+  artistLogs PulseEligibilityRecalcArtistLog[]
+
+  @@index([startedAt])
+  @@index([status])
+  @@map("pulse_eligibility_recalc_logs")
+}
+
+model PulseEligibilityRecalcArtistLog {
+  id                    String   @id @default(cuid())
+  recalcLogId           String
+  artistProfileId       String
+  startedAt             DateTime @default(now())
+  completedAt           DateTime?
+  durationMs            Int? // milliseconds
+  success               Boolean  @default(false)
+  score                 Float?
+  rank                  Int?
+  rateLimited           Boolean  @default(false)
+  errorMessage          String?
+  tiktokUserInfoFetched Boolean  @default(false)
+  tiktokVideosFetched   Boolean  @default(false)
+  createdAt             DateTime @default(now())
+
+  // Relations
+  recalcLog     PulseEligibilityRecalcLog @relation(fields: [recalcLogId], references: [id], onDelete: Cascade)
+  artistProfile ArtistProfile             @relation("PulseEligibilityRecalcArtistLogs", fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@index([recalcLogId])
+  @@index([artistProfileId])
+  @@index([startedAt])
+  @@index([success])
+  @@map("pulse_eligibility_recalc_artist_logs")
+}
+
+model PulseLeagueRunLog {
+  id                String   @id @default(cuid())
+  startedAt         DateTime @default(now())
+  completedAt      DateTime?
+  totalDurationMs   Int? // milliseconds
+  tiersProcessed   Int      @default(0)
+  tiersSkipped     Int      @default(0)
+  tiersErrored     Int      @default(0)
+  entriesCreated   Int      @default(0)
+  promotionsProcessed Boolean @default(false)
+  status           String   @default("running") // 'running' | 'completed' | 'failed'
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+
+  @@index([startedAt])
+  @@index([status])
+  @@map("pulse_league_run_logs")
+}
+
 // AI Memory System Models
 model AIConversation {
   id        String   @id @default(cuid())
@@ -863,6 +1120,10 @@ model AIConversation {
   user           User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages       AIConversationMessage[]
   aiSearchEvents AISearchEvent[]         @relation("AISearchEvents")
+
+  // Enhanced memory relations
+  embeddings ConversationEmbedding[]
+  entities   ConversationEntity[]
 
   @@index([userId])
   @@index([userId, chatType])
@@ -879,7 +1140,8 @@ model AIConversationMessage {
   createdAt      DateTime @default(now())
 
   // Relations
-  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation         AIConversation           @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationEmbedding ConversationEmbedding[]
 
   @@index([conversationId])
   @@map("ai_conversation_messages")
@@ -1161,4 +1423,353 @@ model TimelineAd {
 
   @@index([isActive, startDate, endDate])
   @@map("timeline_ads")
+}
+
+// ============================================================================
+// ENHANCED AI MEMORY SYSTEM
+// ============================================================================
+
+// ---------- EPISODIC MEMORY (Conversation embeddings) ----------
+
+model ConversationEmbedding {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+  messageId      String?  // Optional — synthetic IDs from memory pipeline don't exist in ai_conversation_messages
+
+  // Content
+  summary        String    @db.Text // Human-readable summary
+  embedding      Unsupported("vector(1536)") // OpenAI text-embedding-3-small
+
+  // Metadata
+  importance     Float     @default(0.5) // 0-1 score (calculated)
+  messageCount   Int       @default(1)
+
+  // Temporal
+  startTime      DateTime  // First message timestamp
+  endTime        DateTime  // Last message timestamp
+  createdAt      DateTime  @default(now())
+
+  // Relations
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation AIConversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message      AIConversationMessage? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([userId])
+  @@index([importance])
+  @@index([startTime])
+  @@map("conversation_embeddings")
+}
+
+// ---------- SEMANTIC MEMORY (User preferences with decay) ----------
+
+model UserPreference {
+  id         String   @id @default(cuid())
+  userId     String
+
+  // Preference details
+  type       PreferenceType // GENRE, ARTIST, MOOD, TEMPO, ERA
+  entityId   String?  // Reference to Genre/Artist/Track if applicable
+  entityName String   // Human-readable name
+
+  // Scoring
+  explicitScore   Float @default(0.0) // User explicitly stated (weight: 1.0)
+  implicitScore   Float @default(0.0) // Inferred from behavior (weight: 0.5)
+  confidence      Float @default(0.5) // 0-1 confidence in preference
+
+  // Temporal tracking
+  firstSeenAt     DateTime @default(now())
+  lastSeenAt      DateTime @updatedAt
+  occurrenceCount Int      @default(1)
+
+  // Decay parameters
+  halfLifeDays    Int      @default(30) // How quickly preference decays
+
+  // Sentiment
+  sentiment       Float    @default(0.5) // 0=dislike, 0.5=neutral, 1=love
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, entityName])
+  @@index([userId, type])
+  @@index([userId, lastSeenAt])
+  @@map("user_preferences")
+}
+
+enum PreferenceType {
+  GENRE
+  ARTIST
+  TRACK
+  MOOD
+  TEMPO
+  ERA
+  LANGUAGE
+  INSTRUMENT
+}
+
+// ---------- ENTITY MEMORY (Entities mentioned in conversations) ----------
+
+model ConversationEntity {
+  id             String   @id @default(cuid())
+  conversationId String
+  userId         String
+
+  // Entity details
+  entityType     EntityType
+  entityId       String?  // ID if entity exists in system
+  entityName     String
+  mentions       Int      @default(1)
+
+  // Context
+  context        String   @db.Text // Surrounding text where entity was mentioned
+  sentiment      Float    @default(0.5) // User sentiment (0=negative, 1=positive)
+
+  // Temporal
+  firstMentioned DateTime @default(now())
+  lastMentioned  DateTime @updatedAt
+
+  // Relations
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, entityType])
+  @@index([conversationId])
+  @@index([entityId])
+  @@map("conversation_entities")
+}
+
+enum EntityType {
+  ARTIST
+  TRACK
+  ALBUM
+  PLAYLIST
+  GENRE
+  MOOD
+  LOCATION
+  EVENT
+}
+
+// ---------- USER MEMORY PROFILE (Consolidated view) ----------
+
+model UserMemoryProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+
+  // Listening patterns
+  favoriteGenres        Json // { "Amapiano": 0.9, "Afro House": 0.8 }
+  favoriteArtists       Json // { "Artist Name": 0.85 }
+  favoriteMoods         Json // { "Energetic": 0.7 }
+
+  // Temporal patterns
+  listeningTimes        Json // { "morning": ["Jazz"], "evening": ["Amapiano"] }
+
+  // Behavior patterns
+  averageSessionLength  Int      @default(0) // minutes
+  preferredQueryStyle   String?  // "specific", "exploratory", "mood-based"
+
+  // Metadata
+  totalConversations    Int      @default(0)
+  totalMessages         Int      @default(0)
+  lastActive            DateTime @updatedAt
+  profileCreatedAt      DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_memory_profiles")
+}
+
+// ============================================================================
+// ARTICLE MANAGEMENT SYSTEM
+// ============================================================================
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ClusterRole {
+  PILLAR
+  SPOKE
+}
+
+model ArticleCluster {
+  id                String        @id @default(cuid())
+  name              String
+  slug              String        @unique
+  description       String?       @db.Text  // Short summary shown in sidebars
+  about             String?       @db.Text  // Long-form "What is this cluster about?"
+  goal              String?                 // Editorial / SEO goal for this cluster
+  coverImageUrl     String?
+  targetKeywords    String[]      @default([])  // Auto-computed: all keywords combined
+  primaryKeywords   String[]      @default([])
+  secondaryKeywords String[]      @default([])
+  longTailKeywords  String[]      @default([])
+  audience          String?       // e.g. "Independent artists"
+  status            ArticleStatus @default(DRAFT)
+  articles          Article[]
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([status])
+  @@map("article_clusters")
+}
+
+model Article {
+  id              String        @id @default(cuid())
+  title           String
+  slug            String        @unique
+  body            String        @db.Text
+  excerpt         String?
+  coverImageUrl   String?
+  seoTitle        String?
+  metaDescription String?
+  targetKeywords  String[]      @default([])
+  primaryKeyword  String?       // The single most important SEO keyword
+  internalLinks   String[]      @default([])  // Slugs of articles to cross-link from this article
+  toolSlugs       String[]      @default([])  // Slugs of tools to embed below the article body
+  ctaText         String?       // Custom CTA headline (default shown if null)
+  ctaLink         String?       // Custom CTA URL (defaults to /)
+  clusterId       String?
+  clusterRole     ClusterRole   @default(SPOKE)
+  readTime        Int           @default(0)
+  status          ArticleStatus @default(DRAFT)
+  publishedAt     DateTime?
+  authorId        String
+  timelinePostId  String?       @unique
+
+  // Vector embedding for semantic search (pgvector)
+  embedding            Unsupported("vector(1536)")?
+  embeddingUpdatedAt   DateTime?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  cluster   ArticleCluster?  @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+  author    User             @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  versions  ArticleVersion[]
+
+  @@index([slug])
+  @@index([status, publishedAt])
+  @@index([clusterId])
+  @@index([authorId])
+  @@map("articles")
+}
+
+model ArticleVersion {
+  id              String   @id @default(cuid())
+  articleId       String
+  version         Int      // auto-incrementing per article
+  title           String
+  body            String   @db.Text
+  excerpt         String?
+  coverImageUrl   String?
+  seoTitle        String?
+  metaDescription String?
+  targetKeywords  String[] @default([])
+  primaryKeyword  String?
+  internalLinks   String[] @default([])
+  toolSlugs       String[] @default([])
+  ctaText         String?
+  ctaLink         String?
+  savedById       String
+  createdAt       DateTime @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  savedBy User    @relation("ArticleVersionSavedBy", fields: [savedById], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, version])
+  @@index([articleId])
+  @@map("article_versions")
+}
+
+model SplitSheet {
+  id               String   @id @default(cuid())
+  userId           String
+  name             String   @default("Untitled")
+  songTitle        String   @default("")
+  songDate         String   @default("")
+  masterSplits     Json     @default("[]")
+  publishingSplits Json     @default("[]")
+  trackId          String?  // Optional link to a Track in the system
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track? @relation(fields: [trackId], references: [id], onDelete: SetNull)
+
+  revenueEstimates RevenueEstimate[]
+
+  @@index([userId])
+  @@index([trackId])
+  @@map("split_sheets")
+}
+
+model RevenueEstimate {
+  id           String      @id @default(cuid())
+  userId       String
+  name         String      @default("Untitled")
+  streams      Json        @default("{}")
+  zarRate      Float       @default(18.5)
+  splitSheetId String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  splitSheet SplitSheet? @relation(fields: [splitSheetId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([splitSheetId])
+  @@map("revenue_estimates")
+}
+
+// ── Content Graph ─────────────────────────────────────────────────────────────
+
+model Tool {
+  slug        String   @id
+  name        String
+  tagline     String   @default("")
+  category    String   @default("")
+  gradient    String   @default("")
+  features    String[] @default([])
+  fullscreen  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("tools")
+}
+
+model ContentLink {
+  id        String      @id @default(cuid())
+  fromType  ContentType
+  fromId    String
+  toType    ContentType
+  toId      String
+  linkType  LinkType    @default(RELATED)
+  order     Int         @default(0)
+  createdAt DateTime    @default(now())
+
+  @@unique([fromType, fromId, toType, toId, linkType])
+  @@index([fromType, fromId])
+  @@index([toType, toId])
+  @@map("content_links")
+}
+
+enum ContentType {
+  ARTICLE
+  TOOL
+  ARTIST
+  TRACK
+}
+
+enum LinkType {
+  REFERENCES     // Article references a Tool / another Article
+  FEATURES       // Article features an Artist or Track
+  USES_TOOL      // Artist/Track uses a Tool
+  EXPLAINED_BY   // Tool is explained by an Article
+  RELATED        // Generic related content
 }

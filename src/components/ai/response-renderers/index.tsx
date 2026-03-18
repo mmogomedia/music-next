@@ -13,6 +13,7 @@ import { QuickLinkAlbumRenderer } from './quick-link-album-renderer';
 import { QuickLinkArtistRenderer } from './quick-link-artist-renderer';
 import { ClarificationRenderer } from './clarification-renderer';
 import { TimelinePostListRenderer } from './timeline-post-list-renderer';
+import { PreferencesRenderer } from './preferences-renderer';
 import type { AIResponse } from '@/types/ai-responses';
 import { responseRegistry } from '@/lib/ai/response-registry';
 import { useEffect } from 'react';
@@ -322,6 +323,28 @@ function registerDefaultHandlers() {
       },
     });
   }
+
+  if (!responseRegistry.isRegistered('user_preferences')) {
+    responseRegistry.register('user_preferences', {
+      component: PreferencesRenderer,
+      promptTemplate:
+        'Use when user asks about their own taste or music history',
+      schema: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'user_preferences' },
+          message: { type: 'string' },
+          data: { type: 'object' },
+        },
+        required: ['type', 'message', 'data'],
+      },
+      metadata: {
+        description: "User's taste profile",
+        category: 'info',
+        priority: 14,
+      },
+    });
+  }
 }
 
 // Register defaults immediately when module is loaded
@@ -597,6 +620,28 @@ export function ResponseRenderer({
           description: 'Clarification questions',
           category: 'info',
           priority: 15,
+        },
+      });
+    }
+
+    if (!responseRegistry.isRegistered('user_preferences')) {
+      responseRegistry.register('user_preferences', {
+        component: PreferencesRenderer,
+        promptTemplate:
+          'Use when user asks about their own taste or music history',
+        schema: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'user_preferences' },
+            message: { type: 'string' },
+            data: { type: 'object' },
+          },
+          required: ['type', 'message', 'data'],
+        },
+        metadata: {
+          description: "User's taste profile",
+          category: 'info',
+          priority: 14,
         },
       });
     }

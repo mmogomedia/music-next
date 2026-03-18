@@ -1,13 +1,12 @@
 'use client';
 
-import { Card, CardBody } from '@heroui/react';
 import {
   MusicalNoteIcon,
   PlayIcon,
   HeartIcon,
   ArrowDownTrayIcon,
   UserGroupIcon,
-} from '@heroicons/react/24/solid';
+} from '@heroicons/react/24/outline';
 
 interface StatsGridProps {
   stats: {
@@ -39,103 +38,78 @@ export default function StatsGrid({ stats, growth }: StatsGridProps) {
     );
   };
 
+  const statItems = [
+    {
+      label: 'Tracks',
+      value: stats.totalTracks,
+      icon: MusicalNoteIcon,
+      color: 'text-blue-600 dark:text-blue-400',
+      bgColor: 'bg-blue-50 dark:bg-blue-950/20',
+    },
+    {
+      label: 'Plays',
+      value: stats.totalPlays,
+      icon: PlayIcon,
+      color: 'text-green-600 dark:text-green-400',
+      bgColor: 'bg-green-50 dark:bg-green-950/20',
+      growth: growth?.playsGrowth,
+    },
+    {
+      label: 'Likes',
+      value: stats.totalLikes,
+      icon: HeartIcon,
+      color: 'text-red-600 dark:text-red-400',
+      bgColor: 'bg-red-50 dark:bg-red-950/20',
+      growth: growth?.likesGrowth,
+    },
+    {
+      label: 'Downloads',
+      value: stats.totalDownloads,
+      icon: ArrowDownTrayIcon,
+      color: 'text-orange-600 dark:text-orange-400',
+      bgColor: 'bg-orange-50 dark:bg-orange-950/20',
+    },
+    {
+      label: 'Listeners',
+      value: stats.uniqueListeners,
+      icon: UserGroupIcon,
+      color: 'text-teal-600 dark:text-teal-400',
+      bgColor: 'bg-teal-50 dark:bg-teal-950/20',
+    },
+  ];
+
   return (
-    <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4'>
-      <Card className='border border-gray-200 dark:border-slate-700 hover:shadow-md transition-shadow'>
-        <CardBody className='p-5'>
-          <div className='flex items-center gap-3'>
-            <div className='w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0'>
-              <MusicalNoteIcon className='w-6 h-6 text-white' />
+    <div className='grid grid-cols-2 gap-2'>
+      {statItems.map(item => {
+        const Icon = item.icon;
+        return (
+          <div
+            key={item.label}
+            className={`group flex items-center gap-2 p-2 rounded-lg ${item.bgColor} hover:bg-opacity-80 dark:hover:bg-opacity-30 transition-all border border-transparent hover:border-gray-200 dark:hover:border-slate-700`}
+          >
+            <div
+              className={`w-7 h-7 rounded-lg ${item.bgColor} flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}
+            >
+              <Icon className={`w-3.5 h-3.5 ${item.color}`} />
             </div>
             <div className='flex-1 min-w-0'>
-              <div className='text-2xl font-bold text-gray-900 dark:text-white'>
-                {stats.totalTracks}
+              <div className='text-xs font-medium text-gray-500 dark:text-gray-400'>
+                {item.label}
               </div>
-              <div className='text-sm text-gray-500 dark:text-gray-400'>
-                Tracks
+              <div className='flex items-baseline gap-1'>
+                <span className='text-base font-bold text-gray-900 dark:text-white'>
+                  {item.value.toLocaleString()}
+                </span>
+                {item.growth !== undefined && (
+                  <div className='flex-shrink-0 text-[10px]'>
+                    {formatGrowth(item.growth)}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        </CardBody>
-      </Card>
-
-      <Card className='border border-gray-200 dark:border-slate-700 hover:shadow-md transition-shadow'>
-        <CardBody className='p-5'>
-          <div className='flex items-center gap-3'>
-            <div className='w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0'>
-              <PlayIcon className='w-6 h-6 text-white' />
-            </div>
-            <div className='flex-1 min-w-0'>
-              <div className='text-2xl font-bold text-gray-900 dark:text-white'>
-                {stats.totalPlays.toLocaleString()}
-              </div>
-              <div className='text-sm text-gray-500 dark:text-gray-400'>
-                Plays
-              </div>
-              {growth && (
-                <div className='mt-1'>{formatGrowth(growth.playsGrowth)}</div>
-              )}
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-
-      <Card className='border border-gray-200 dark:border-slate-700 hover:shadow-md transition-shadow'>
-        <CardBody className='p-5'>
-          <div className='flex items-center gap-3'>
-            <div className='w-12 h-12 bg-red-600 rounded-xl flex items-center justify-center flex-shrink-0'>
-              <HeartIcon className='w-6 h-6 text-white' />
-            </div>
-            <div className='flex-1 min-w-0'>
-              <div className='text-2xl font-bold text-gray-900 dark:text-white'>
-                {stats.totalLikes.toLocaleString()}
-              </div>
-              <div className='text-sm text-gray-500 dark:text-gray-400'>
-                Likes
-              </div>
-              {growth && (
-                <div className='mt-1'>{formatGrowth(growth.likesGrowth)}</div>
-              )}
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-
-      <Card className='border border-gray-200 dark:border-slate-700 hover:shadow-md transition-shadow'>
-        <CardBody className='p-5'>
-          <div className='flex items-center gap-3'>
-            <div className='w-12 h-12 bg-orange-600 rounded-xl flex items-center justify-center flex-shrink-0'>
-              <ArrowDownTrayIcon className='w-6 h-6 text-white' />
-            </div>
-            <div className='flex-1 min-w-0'>
-              <div className='text-2xl font-bold text-gray-900 dark:text-white'>
-                {stats.totalDownloads.toLocaleString()}
-              </div>
-              <div className='text-sm text-gray-500 dark:text-gray-400'>
-                Downloads
-              </div>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-
-      <Card className='border border-gray-200 dark:border-slate-700 hover:shadow-md transition-shadow'>
-        <CardBody className='p-5'>
-          <div className='flex items-center gap-3'>
-            <div className='w-12 h-12 bg-teal-600 rounded-xl flex items-center justify-center flex-shrink-0'>
-              <UserGroupIcon className='w-6 h-6 text-white' />
-            </div>
-            <div className='flex-1 min-w-0'>
-              <div className='text-2xl font-bold text-gray-900 dark:text-white'>
-                {stats.uniqueListeners.toLocaleString()}
-              </div>
-              <div className='text-sm text-gray-500 dark:text-gray-400'>
-                Listeners
-              </div>
-            </div>
-          </div>
-        </CardBody>
-      </Card>
+        );
+      })}
     </div>
   );
 }

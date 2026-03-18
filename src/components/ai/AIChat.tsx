@@ -20,11 +20,25 @@ import { formatDistanceToNow } from 'date-fns';
 import { logger } from '@/lib/utils/logger';
 import MoreMusicSection from './MoreMusicSection';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import type { SSEEvent } from '@/lib/ai/sse-event-emitter';
+import { DebugPanel } from './DebugPanel';
 import {
   ClipboardIcon,
   CheckIcon,
   InformationCircleIcon,
+  XMarkIcon,
+  StopCircleIcon,
 } from '@heroicons/react/24/outline';
+
+const CHAT_PLACEHOLDERS = [
+  'Ask for any song, artist, mood, playlist…',
+  'Try: "Songs about love"',
+  'Try: "Show me trending Amapiano"',
+  'Try: "Music for a road trip"',
+  'Try: "Who is Nasty C?"',
+  'Try: "Uplifting gospel songs"',
+  'Try: "Show me the top 10 playlist"',
+];
 
 interface Message {
   id: string;
@@ -81,10 +95,14 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const isSubmittingRef = useRef(false);
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const [placeholderIndex, setPlaceholderIndex] = useState(0);
     const loadedConversationIdRef = useRef<string | undefined>(undefined);
     const { playTrack } = useMusicPlayer();
     const [quickLinkResponse, setQuickLinkResponse] =
       useState<StructuredAIResponse | null>(null);
+    const [debugEvents, setDebugEvents] = useState<SSEEvent[]>([]);
+    const [debugUserMessage, setDebugUserMessage] = useState<string>('');
 
     // Detect mobile for responsive layout
     useEffect(() => {
@@ -163,6 +181,8 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
         setLoading(true);
         setError(null);
         setStatusMessage(null);
+        setDebugEvents([]);
+        setDebugUserMessage(msg.trim());
         isSubmittingRef.current = true;
 
         try {
@@ -180,6 +200,10 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
               selectedProvider === 'auto' ? undefined : selectedProvider,
           };
 
+          // Create a new AbortController so the user can cancel this request
+          const abortController = new AbortController();
+          abortControllerRef.current = abortController;
+
           // Use SSE stream instead of regular POST
           const res = await fetch('/api/ai/chat/stream', {
             method: 'POST',
@@ -187,6 +211,7 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
               'Content-Type': 'application/json',
             },
             body: JSON.stringify(requestBody),
+            signal: abortController.signal,
           });
 
           if (!res.ok) {
@@ -215,6 +240,11 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
               if (line.startsWith('data: ')) {
                 try {
                   const data = JSON.parse(line.slice(6));
+
+                  // Collect all events for the debug panel (dev only)
+                  if (process.env.NODE_ENV !== 'production') {
+                    setDebugEvents(prev => [...prev, data as SSEEvent]);
+                  }
 
                   // Handle different event types
                   switch (data.type) {
@@ -339,12 +369,17 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
             isSubmittingRef.current = false;
           }
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'An error occurred');
+          if (err instanceof Error && err.name === 'AbortError') {
+            // User hit stop — not an error, just clear state silently
+          } else {
+            setError(err instanceof Error ? err.message : 'An error occurred');
+          }
           setStatusMessage(null);
           isSubmittingRef.current = false;
         } finally {
           setLoading(false);
           setStatusMessage(null);
+          abortControllerRef.current = null;
         }
       },
       [
@@ -431,6 +466,25 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
       setMessage('');
     };
 
+    // Enter sends; Shift+Enter inserts a newline
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (message.trim() && !loading) {
+          const msg = message;
+          setMessage('');
+          performSubmit(msg);
+        }
+      }
+    };
+
+    // Cancel the in-flight SSE request
+    const handleStop = () => {
+      abortControllerRef.current?.abort();
+      setLoading(false);
+      setStatusMessage(null);
+    };
+
     // Load conversation messages when propConversationId changes (only if authenticated)
     // Skip loading if we're currently submitting a message to avoid race conditions
     useEffect(() => {
@@ -495,6 +549,20 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
       }
     }, [message]);
 
+    // Auto-focus the textarea when the chat mounts
+    useEffect(() => {
+      textareaRef.current?.focus();
+    }, []);
+
+    // Rotate placeholder text every 3.5 s — only when the input is empty
+    useEffect(() => {
+      if (message) return;
+      const id = setInterval(() => {
+        setPlaceholderIndex(prev => (prev + 1) % CHAT_PLACEHOLDERS.length);
+      }, 3500);
+      return () => clearInterval(id);
+    }, [message]);
+
     const handleCopyMessage = async (msgId: string, content: string) => {
       try {
         await navigator.clipboard.writeText(content);
@@ -519,10 +587,10 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
     );
 
     return (
-      <div className='w-full h-full flex flex-col'>
+      <div className='w-full h-full flex flex-col overflow-x-hidden'>
         {/* Scrollable messages area - takes remaining space */}
         <div
-          className='flex-1 overflow-y-auto space-y-4 px-4 lg:px-6'
+          className='flex-1 overflow-y-auto overflow-x-hidden space-y-4 px-4 lg:px-6'
           style={{
             paddingTop: '0px',
             paddingBottom: isMobile ? '120px' : '24px', // Extra padding on mobile for fixed input
@@ -554,7 +622,7 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                         You
                       </div>
                       <div className='relative px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-gray-900 dark:text-gray-100 border border-blue-200 dark:border-blue-800/50'>
-                        <p className='text-sm whitespace-pre-wrap leading-relaxed'>
+                        <p className='text-sm whitespace-pre-wrap break-words leading-relaxed overflow-wrap-anywhere'>
                           {userMsg.content}
                         </p>
                         {/* Copy button - visible on hover */}
@@ -582,204 +650,225 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                   </div>
 
                   {/* Results - Full Width Below User Message */}
-                  {assistantMsg?.data?.type && (
-                    <div className='mb-6 w-full'>
-                      <ResponseRenderer
-                        response={
-                          {
-                            type: assistantMsg.data.type,
-                            message: assistantMsg.content,
-                            timestamp: assistantMsg.timestamp,
-                            data: assistantMsg.data.data,
-                            actions: assistantMsg.data.actions,
-                          } as StructuredAIResponse
-                        }
-                        onPlayTrack={(_trackId: string, track: any) => {
-                          // Normalize track to ensure all required properties are present
-                          const normalizedTrack: Track = {
-                            id: track.id,
-                            title: track.title ?? 'Untitled',
-                            filePath: track.filePath ?? '',
-                            fileUrl: track.fileUrl ?? '',
-                            coverImageUrl:
-                              track.coverImageUrl ??
-                              track.albumArtwork ??
-                              undefined,
-                            albumArtwork: track.albumArtwork ?? undefined,
-                            genre: track.genre ?? undefined,
-                            album: track.album ?? undefined,
-                            description: track.description ?? undefined,
-                            duration:
-                              typeof track.duration === 'number' &&
-                              Number.isFinite(track.duration)
-                                ? track.duration
-                                : undefined,
-                            playCount: track.playCount ?? 0,
-                            likeCount: track.likeCount ?? 0,
-                            artistId:
-                              track.artistId ?? track.artistProfileId ?? '',
-                            artistProfileId: track.artistProfileId ?? undefined,
-                            userId: track.userId ?? '',
-                            createdAt:
-                              track.createdAt ?? new Date().toISOString(),
-                            updatedAt:
-                              track.updatedAt ?? new Date().toISOString(),
-                            artist:
-                              track.artist ??
-                              track.artistProfile?.artistName ??
-                              'Unknown Artist',
-                          };
-                          playTrack(normalizedTrack);
-                        }}
-                        onClarificationAnswer={async answers => {
-                          // Build a message from clarification answers
-                          const answerParts: string[] = [];
+                  {assistantMsg &&
+                    (assistantMsg.data?.type || assistantMsg.content) && (
+                      <div className='mb-6 w-full'>
+                        <ResponseRenderer
+                          response={
+                            assistantMsg.data?.type
+                              ? ({
+                                  type: assistantMsg.data.type,
+                                  message: assistantMsg.content,
+                                  timestamp: assistantMsg.timestamp,
+                                  data: assistantMsg.data.data,
+                                  actions: assistantMsg.data.actions,
+                                } as StructuredAIResponse)
+                              : ({
+                                  type: 'text',
+                                  message: assistantMsg.content,
+                                  timestamp: assistantMsg.timestamp,
+                                } as StructuredAIResponse)
+                          }
+                          onPlayTrack={(_trackId: string, track: any) => {
+                            // Normalize track to ensure all required properties are present
+                            const normalizedTrack: Track = {
+                              id: track.id,
+                              title: track.title ?? 'Untitled',
+                              filePath: track.filePath ?? '',
+                              fileUrl: track.fileUrl ?? '',
+                              coverImageUrl:
+                                track.coverImageUrl ??
+                                track.albumArtwork ??
+                                undefined,
+                              albumArtwork: track.albumArtwork ?? undefined,
+                              genre: track.genre ?? undefined,
+                              album: track.album ?? undefined,
+                              description: track.description ?? undefined,
+                              duration:
+                                typeof track.duration === 'number' &&
+                                Number.isFinite(track.duration)
+                                  ? track.duration
+                                  : undefined,
+                              playCount: track.playCount ?? 0,
+                              likeCount: track.likeCount ?? 0,
+                              artistId:
+                                track.artistId ?? track.artistProfileId ?? '',
+                              artistProfileId:
+                                track.artistProfileId ?? undefined,
+                              userId: track.userId ?? '',
+                              createdAt:
+                                track.createdAt ?? new Date().toISOString(),
+                              updatedAt:
+                                track.updatedAt ?? new Date().toISOString(),
+                              artist:
+                                track.artist ??
+                                track.artistProfile?.artistName ??
+                                'Unknown Artist',
+                            };
+                            playTrack(normalizedTrack);
+                          }}
+                          onClarificationAnswer={async answers => {
+                            // Build a message from clarification answers
+                            const answerParts: string[] = [];
 
-                          // Find the original user message that triggered clarification
-                          const userMessages = messages.filter(
-                            m => m.role === 'user'
-                          );
-                          const originalMessage =
-                            userMessages[userMessages.length - 1]?.content ||
-                            '';
+                            // Find the original user message that triggered clarification
+                            const userMessages = messages.filter(
+                              m => m.role === 'user'
+                            );
+                            const originalMessage =
+                              userMessages[userMessages.length - 1]?.content ||
+                              '';
 
-                          // Build enriched message from answers
-                          // Map question IDs to natural language
-                          Object.entries(answers).forEach(
-                            ([questionId, value]) => {
-                              if (Array.isArray(value)) {
-                                if (value.length > 0) {
-                                  // For genre selections, format nicely
-                                  if (questionId === 'genre') {
-                                    answerParts.push(`in ${value.join(', ')}`);
+                            // Build enriched message from answers
+                            // Map question IDs to natural language
+                            Object.entries(answers).forEach(
+                              ([questionId, value]) => {
+                                if (Array.isArray(value)) {
+                                  if (value.length > 0) {
+                                    // For genre selections, format nicely
+                                    if (questionId === 'genre') {
+                                      answerParts.push(
+                                        `in ${value.join(', ')}`
+                                      );
+                                    } else {
+                                      answerParts.push(value.join(', '));
+                                    }
+                                  }
+                                } else if (value) {
+                                  // Map intent values to natural language
+                                  if (questionId === 'intent') {
+                                    if (value === 'recommendation') {
+                                      answerParts.push(
+                                        'I want recommendations'
+                                      );
+                                    } else if (value === 'discovery') {
+                                      answerParts.push('I want to find music');
+                                    }
                                   } else {
-                                    answerParts.push(value.join(', '));
-                                  }
-                                }
-                              } else if (value) {
-                                // Map intent values to natural language
-                                if (questionId === 'intent') {
-                                  if (value === 'recommendation') {
-                                    answerParts.push('I want recommendations');
-                                  } else if (value === 'discovery') {
-                                    answerParts.push('I want to find music');
-                                  }
-                                } else {
-                                  answerParts.push(value);
-                                }
-                              }
-                            }
-                          );
-
-                          // Combine original message with answers in a natural way
-                          let enrichedMessage = originalMessage;
-                          if (answerParts.length > 0) {
-                            // If original message is very short/ambiguous, replace it
-                            if (
-                              originalMessage.trim().split(/\s+/).length <= 3
-                            ) {
-                              enrichedMessage = answerParts.join(' ');
-                            } else {
-                              enrichedMessage = `${originalMessage}. ${answerParts.join(', ')}`;
-                            }
-                          }
-
-                          // Submit the enriched message
-                          await performSubmit(enrichedMessage);
-                        }}
-                        onAction={(action: any) => {
-                          // Handle actions from response renderers
-                          switch (action.type) {
-                            case 'search_genre':
-                              // Search for top 10 songs in the selected genre
-                              performSubmit(
-                                `Show me the top 10 ${action.data.genre} songs`
-                              );
-                              break;
-                            case 'play_track':
-                              if (action.data.trackId) {
-                                // Find track in response data
-                                const responseData = assistantMsg.data.data;
-                                if (responseData?.tracks) {
-                                  const track = responseData.tracks.find(
-                                    (t: any) => t.id === action.data.trackId
-                                  );
-                                  if (track) {
-                                    // Normalize track to ensure all required properties are present
-                                    const normalizedTrack: Track = {
-                                      id: track.id,
-                                      title: track.title ?? 'Untitled',
-                                      filePath: track.filePath ?? '',
-                                      fileUrl: track.fileUrl ?? '',
-                                      coverImageUrl:
-                                        track.coverImageUrl ??
-                                        track.albumArtwork ??
-                                        undefined,
-                                      albumArtwork:
-                                        track.albumArtwork ?? undefined,
-                                      genre: track.genre ?? undefined,
-                                      album: track.album ?? undefined,
-                                      description:
-                                        track.description ?? undefined,
-                                      duration:
-                                        typeof track.duration === 'number' &&
-                                        Number.isFinite(track.duration)
-                                          ? track.duration
-                                          : undefined,
-                                      playCount: track.playCount ?? 0,
-                                      likeCount: track.likeCount ?? 0,
-                                      artistId:
-                                        track.artistId ??
-                                        track.artistProfileId ??
-                                        '',
-                                      artistProfileId:
-                                        track.artistProfileId ?? undefined,
-                                      userId: track.userId ?? '',
-                                      createdAt:
-                                        track.createdAt ??
-                                        new Date().toISOString(),
-                                      updatedAt:
-                                        track.updatedAt ??
-                                        new Date().toISOString(),
-                                      artist:
-                                        track.artist ??
-                                        track.artistProfile?.artistName ??
-                                        'Unknown Artist',
-                                    };
-                                    playTrack(normalizedTrack);
+                                    answerParts.push(value);
                                   }
                                 }
                               }
-                              break;
-                            case 'play_playlist':
-                              // TODO: Implement playlist playback
-                              break;
-                            case 'view_artist':
-                              // TODO: Navigate to artist page
-                              break;
-                            case 'share_track':
-                              // Share functionality is handled in renderers
-                              break;
-                            default:
-                              // Unhandled action type
-                              break;
-                          }
-                        }}
-                      />
+                            );
 
-                      {/* Featured Tracks from "other" field - Show for all track results */}
-                      {assistantMsg.data?.type === 'track_list' &&
-                        assistantMsg.data?.data &&
-                        assistantMsg.data.data.other &&
-                        Array.isArray(assistantMsg.data.data.other) &&
-                        assistantMsg.data.data.other.length > 0 && (
-                          <MoreMusicSection
-                            tracks={assistantMsg.data.data.other}
-                            onTrackPlay={playTrack}
-                          />
-                        )}
-                    </div>
-                  )}
+                            // Combine original message with answers in a natural way
+                            let enrichedMessage = originalMessage;
+                            if (answerParts.length > 0) {
+                              // If original message is very short/ambiguous, replace it
+                              if (
+                                originalMessage.trim().split(/\s+/).length <= 3
+                              ) {
+                                enrichedMessage = answerParts.join(' ');
+                              } else {
+                                enrichedMessage = `${originalMessage}. ${answerParts.join(', ')}`;
+                              }
+                            }
+
+                            // Submit the enriched message
+                            await performSubmit(enrichedMessage);
+                          }}
+                          onAction={(action: any) => {
+                            // Handle actions from response renderers
+                            switch (action.type) {
+                              case 'send_message':
+                                if (action.data?.message) {
+                                  performSubmit(action.data.message);
+                                }
+                                break;
+                              case 'search_genre':
+                                performSubmit(
+                                  `Show me the top 10 ${action.data.genre} songs`
+                                );
+                                break;
+                              case 'search_artist':
+                                performSubmit(
+                                  `Show me music by ${action.data.query}`
+                                );
+                                break;
+                              case 'play_track':
+                                if (action.data.trackId) {
+                                  // Find track in response data
+                                  const responseData = assistantMsg.data.data;
+                                  if (responseData?.tracks) {
+                                    const track = responseData.tracks.find(
+                                      (t: any) => t.id === action.data.trackId
+                                    );
+                                    if (track) {
+                                      // Normalize track to ensure all required properties are present
+                                      const normalizedTrack: Track = {
+                                        id: track.id,
+                                        title: track.title ?? 'Untitled',
+                                        filePath: track.filePath ?? '',
+                                        fileUrl: track.fileUrl ?? '',
+                                        coverImageUrl:
+                                          track.coverImageUrl ??
+                                          track.albumArtwork ??
+                                          undefined,
+                                        albumArtwork:
+                                          track.albumArtwork ?? undefined,
+                                        genre: track.genre ?? undefined,
+                                        album: track.album ?? undefined,
+                                        description:
+                                          track.description ?? undefined,
+                                        duration:
+                                          typeof track.duration === 'number' &&
+                                          Number.isFinite(track.duration)
+                                            ? track.duration
+                                            : undefined,
+                                        playCount: track.playCount ?? 0,
+                                        likeCount: track.likeCount ?? 0,
+                                        artistId:
+                                          track.artistId ??
+                                          track.artistProfileId ??
+                                          '',
+                                        artistProfileId:
+                                          track.artistProfileId ?? undefined,
+                                        userId: track.userId ?? '',
+                                        createdAt:
+                                          track.createdAt ??
+                                          new Date().toISOString(),
+                                        updatedAt:
+                                          track.updatedAt ??
+                                          new Date().toISOString(),
+                                        artist:
+                                          track.artist ??
+                                          track.artistProfile?.artistName ??
+                                          'Unknown Artist',
+                                      };
+                                      playTrack(normalizedTrack);
+                                    }
+                                  }
+                                }
+                                break;
+                              case 'play_playlist':
+                                // TODO: Implement playlist playback
+                                break;
+                              case 'view_artist':
+                                // TODO: Navigate to artist page
+                                break;
+                              case 'share_track':
+                                // Share functionality is handled in renderers
+                                break;
+                              default:
+                                // Unhandled action type
+                                break;
+                            }
+                          }}
+                        />
+
+                        {/* Featured Tracks from "other" field - Show for all track results */}
+                        {assistantMsg.data?.type === 'track_list' &&
+                          assistantMsg.data?.data &&
+                          assistantMsg.data.data.other &&
+                          Array.isArray(assistantMsg.data.data.other) &&
+                          assistantMsg.data.data.other.length > 0 && (
+                            <MoreMusicSection
+                              tracks={assistantMsg.data.data.other}
+                              onTrackPlay={playTrack}
+                            />
+                          )}
+                      </div>
+                    )}
                 </React.Fragment>
               );
             })}
@@ -844,7 +933,8 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
           {/* Input Form */}
           <div className='border-t border-gray-200 dark:border-slate-700'>
             <form onSubmit={handleSubmit} className='flex gap-3 py-3 px-4'>
-              <div className='flex-1 h-12 rounded-full bg-gray-100 dark:bg-slate-800 px-4 flex items-center gap-2'>
+              {/* Input pill — grows vertically with content */}
+              <div className='flex-1 min-h-[48px] rounded-2xl bg-gray-100 dark:bg-slate-800 px-4 py-2.5 flex items-center gap-2'>
                 <button
                   type='button'
                   onClick={() => {
@@ -855,7 +945,7 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                       setIsInfoBannerExpanded(!isInfoBannerExpanded);
                     }
                   }}
-                  className='flex-shrink-0 p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors'
+                  className='flex-shrink-0 self-center p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors'
                   aria-label='Toggle information'
                 >
                   <InformationCircleIcon
@@ -870,42 +960,49 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                   ref={textareaRef}
                   value={message}
                   onChange={e => setMessage(e.target.value)}
-                  placeholder='Ask for any song, artist, mood, playlist…'
+                  onKeyDown={handleKeyDown}
+                  placeholder={CHAT_PLACEHOLDERS[placeholderIndex]}
                   disabled={loading}
-                  className='flex-1 h-8 bg-transparent border-none outline-none focus:outline-none focus:ring-0 resize-none text-sm placeholder:text-xs md:placeholder:text-sm placeholder-gray-400 dark:placeholder-gray-500'
+                  rows={1}
+                  className='flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 resize-none text-sm placeholder:text-xs md:placeholder:text-sm placeholder-gray-400 dark:placeholder-gray-500 max-h-32 overflow-y-auto leading-normal'
                 />
-              </div>
-              <button
-                type='submit'
-                disabled={!message.trim() || loading}
-                className={`h-12 w-12 rounded-full flex items-center justify-center transition-colors ${
-                  !message.trim() || loading
-                    ? 'bg-blue-200 dark:bg-blue-900/40 text-blue-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-600 via-purple-500 to-blue-600 text-white hover:opacity-90 shadow-lg'
-                }`}
-                aria-label='Send message'
-              >
-                {loading ? (
-                  <svg
-                    className='w-5 h-5 animate-spin text-white/80'
-                    viewBox='0 0 24 24'
+                {/* Clear button — shown only when text is present */}
+                {message && !loading && (
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setMessage('');
+                      textareaRef.current?.focus();
+                    }}
+                    className='flex-shrink-0 self-center p-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors'
+                    aria-label='Clear message'
                   >
-                    <circle
-                      className='opacity-25'
-                      cx='12'
-                      cy='12'
-                      r='10'
-                      stroke='currentColor'
-                      strokeWidth='4'
-                      fill='none'
-                    />
-                    <path
-                      className='opacity-75'
-                      fill='currentColor'
-                      d='M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z'
-                    />
-                  </svg>
-                ) : (
+                    <XMarkIcon className='w-4 h-4 text-gray-400 dark:text-gray-500' />
+                  </button>
+                )}
+              </div>
+
+              {/* Stop button while generating; send button otherwise */}
+              {loading ? (
+                <button
+                  type='button'
+                  onClick={handleStop}
+                  className='h-12 w-12 flex-shrink-0 rounded-full flex items-center justify-center bg-red-500 hover:bg-red-600 text-white transition-colors shadow-md'
+                  aria-label='Stop generating'
+                >
+                  <StopCircleIcon className='w-6 h-6' />
+                </button>
+              ) : (
+                <button
+                  type='submit'
+                  disabled={!message.trim()}
+                  className={`h-12 w-12 flex-shrink-0 rounded-full flex items-center justify-center transition-colors ${
+                    !message.trim()
+                      ? 'bg-blue-200 dark:bg-blue-900/40 text-blue-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-blue-600 via-purple-500 to-blue-600 text-white hover:opacity-90 shadow-lg'
+                  }`}
+                  aria-label='Send message'
+                >
                   <svg
                     className='w-5 h-5'
                     viewBox='0 0 24 24'
@@ -918,11 +1015,32 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
                     <line x1='22' y1='2' x2='11' y2='13' />
                     <polygon points='22 2 15 22 11 13 2 9 22 2' />
                   </svg>
-                )}
-              </button>
+                </button>
+              )}
             </form>
+            {/* Keyboard shortcut hint — slides in while the user is typing */}
+            <div
+              className={`px-5 overflow-hidden transition-all duration-300 ${
+                message.trim()
+                  ? 'max-h-6 pb-2 opacity-100'
+                  : 'max-h-0 pb-0 opacity-0 pointer-events-none'
+              }`}
+            >
+              <p className='text-[10px] text-gray-400 dark:text-gray-500'>
+                Enter ↵ to send &nbsp;·&nbsp; Shift+Enter for new line
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* Dev-only debug panel — shows SSE event trace in real time */}
+        {process.env.NODE_ENV !== 'production' && (
+          <DebugPanel
+            events={debugEvents}
+            isLoading={loading}
+            userMessage={debugUserMessage}
+          />
+        )}
       </div>
     );
   }

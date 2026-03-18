@@ -55,6 +55,8 @@ import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 import ArtistNavigation from '@/components/dashboard/artist/ArtistNavigation';
 import UnifiedLayout from '@/components/layout/UnifiedLayout';
 import QuickLinksManager from '@/components/dashboard/quick-links/QuickLinksManager';
+import PulseCard from '@/components/dashboard/pulse/PulseCard';
+import { usePulseData } from '@/hooks/usePulseData';
 
 export default function DashboardContent() {
   const { data: session, status } = useSession();
@@ -75,13 +77,14 @@ export default function DashboardContent() {
   ] as const;
 
   type TabId = (typeof TAB_IDS)[number];
+  type AllTabId = TabId | 'pulse';
   const DEFAULT_TAB: TabId = 'overview';
 
   const isValidTab = (tab: string | null): tab is TabId =>
     !!tab && TAB_IDS.includes(tab as TabId);
 
   const createHrefForTab = useCallback(
-    (tab: TabId) => {
+    (tab: AllTabId) => {
       const params = new URLSearchParams(searchParams.toString());
       if (tab === DEFAULT_TAB) {
         params.delete('tab');
@@ -125,6 +128,11 @@ export default function DashboardContent() {
     createProfile,
     updateProfile,
   } = useArtistProfile();
+  const {
+    pulseData,
+    loading: pulseLoading,
+    refresh: refreshPulseData,
+  } = usePulseData();
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -258,39 +266,44 @@ export default function DashboardContent() {
 
   const header = (
     <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
-      <div className='py-4 px-4 sm:px-6 lg:px-8'>
+      <div className='py-3 px-4 sm:px-5 lg:px-6'>
         <div className='flex items-center justify-between'>
           <div>
-            <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
-              {tabNames[activeTab] || 'Artist Dashboard'}
+            <h1 className='text-lg font-bold text-gray-900 dark:text-white'>
+              {tabNames[activeTab] || 'Dashboard'}
             </h1>
-            <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-              {activeTab === 'overview'
-                ? 'Manage your music and track your performance'
-                : `Manage ${tabNames[activeTab]?.toLowerCase()}`}
-            </p>
+            {activeTab === 'overview' && (
+              <p className='mt-0.5 text-xs text-gray-500 dark:text-gray-400'>
+                Track your performance
+              </p>
+            )}
           </div>
-          <div className='flex items-center gap-3'>
+          <div className='flex items-center gap-2'>
             {/* Quick Stats Pills */}
-            <div className='hidden md:flex items-center gap-2'>
-              <Chip size='sm' color='primary' variant='flat'>
+            <div className='hidden md:flex items-center gap-1.5'>
+              <Chip
+                size='sm'
+                color='primary'
+                variant='flat'
+                className='h-6 text-xs'
+              >
                 {stats?.overview?.totalTracks || 0} tracks
               </Chip>
-              <Chip size='sm' color='success' variant='flat'>
+              <Chip
+                size='sm'
+                color='success'
+                variant='flat'
+                className='h-6 text-xs'
+              >
                 {(stats?.overview?.totalPlays || 0).toLocaleString()} plays
               </Chip>
-              {profile && (
-                <Chip size='sm' color='secondary' variant='flat'>
-                  {profile.artistName}
-                </Chip>
-              )}
             </div>
             {activeTab !== 'upload' && (
               <Button
                 size='sm'
                 color='primary'
-                className='hidden sm:flex'
-                startContent={<PlusIcon className='w-4 h-4' />}
+                className='hidden sm:flex h-8 text-xs'
+                startContent={<PlusIcon className='w-3.5 h-3.5' />}
                 onPress={() => navigateToTab('upload')}
               >
                 Upload
@@ -314,29 +327,29 @@ export default function DashboardContent() {
         contentClassName='w-full'
         header={header}
       >
-        <div className='w-full py-8 px-4 sm:px-6 lg:px-8'>
+        <div className='w-full py-4 px-4 sm:px-5 lg:px-6'>
           {/* Overview Tab */}
           {activeTab === 'overview' && (
-            <div className='space-y-8'>
-              {/* Time Range Selector */}
-              <div className='flex justify-between items-center'>
-                <h2 className='text-2xl font-bold text-gray-900 dark:text-white'>
-                  Dashboard Overview
+            <div className='space-y-4'>
+              {/* Compact Header with Time Range */}
+              <div className='flex items-center justify-between'>
+                <h2 className='text-xl font-bold text-gray-900 dark:text-white'>
+                  Overview
                 </h2>
                 <Dropdown>
                   <DropdownTrigger>
-                    <Button variant='bordered' size='sm'>
+                    <Button variant='bordered' size='sm' className='h-8'>
                       {timeRange === '24h'
-                        ? 'Last 24 Hours'
+                        ? '24h'
                         : timeRange === '7d'
-                          ? 'Last 7 Days'
+                          ? '7d'
                           : timeRange === '30d'
-                            ? 'Last 30 Days'
+                            ? '30d'
                             : timeRange === '90d'
-                              ? 'Last 90 Days'
+                              ? '90d'
                               : timeRange === '1y'
-                                ? 'Last Year'
-                                : 'All Time'}
+                                ? '1y'
+                                : 'All'}
                     </Button>
                   </DropdownTrigger>
                   <DropdownMenu
@@ -356,48 +369,70 @@ export default function DashboardContent() {
               </div>
 
               {statsLoading ? (
-                <div className='flex justify-center items-center h-32'>
-                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
+                <div className='flex justify-center items-center h-24'>
+                  <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600'></div>
                 </div>
               ) : statsError ? (
-                <div className='text-center text-red-600 dark:text-red-400 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800'>
+                <div className='text-center text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 text-sm'>
                   Error loading stats: {statsError}
                 </div>
               ) : (
-                <>
-                  <StatsGrid
-                    stats={{
-                      totalTracks: displayStats.totalTracks,
-                      totalPlays: displayStats.totalPlays,
-                      totalLikes: displayStats.totalLikes,
-                      totalDownloads: displayStats.totalDownloads,
-                      uniqueListeners: displayStats.uniqueListeners,
-                    }}
-                    growth={stats?.growthMetrics}
-                  />
+                <div className='space-y-4'>
+                  {/* Stats on Left, PULSE³ on Right */}
+                  <div className='flex flex-col lg:flex-row gap-4 items-stretch'>
+                    {/* Stats - Takes 2 columns on desktop */}
+                    <div className='flex-1 lg:flex-[2] flex'>
+                      <div className='bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-3 w-full flex flex-col'>
+                        <h3 className='text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2'>
+                          Statistics
+                        </h3>
+                        <StatsGrid
+                          stats={{
+                            totalTracks: displayStats.totalTracks,
+                            totalPlays: displayStats.totalPlays,
+                            totalLikes: displayStats.totalLikes,
+                            totalDownloads: displayStats.totalDownloads,
+                            uniqueListeners: displayStats.uniqueListeners,
+                          }}
+                          growth={stats?.growthMetrics}
+                        />
+                      </div>
+                    </div>
 
-                  {stats?.topTracks && stats.topTracks.length > 0 && (
-                    <div className='mt-6'>
+                    {/* PULSE³ Card - Takes 1 column on desktop */}
+                    <div className='flex-1 flex'>
+                      <div className='w-full flex'>
+                        <PulseCard
+                          pulseData={pulseData}
+                          loading={pulseLoading}
+                          onRefresh={refreshPulseData}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Top Tracks and Recent Activity in grid */}
+                  <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+                    {stats?.topTracks && stats.topTracks.length > 0 && (
                       <TopPerformingTracks
                         topTracks={stats.topTracks}
                         onViewAll={() => navigateToTab('library')}
                       />
-                    </div>
-                  )}
-
-                  <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                    <RecentTracks
-                      tracks={recentTracks}
-                      onViewAll={() => navigateToTab('library')}
-                      onPlay={playTrack}
-                    />
+                    )}
 
                     <RecentActivity
                       activity={stats?.recentActivity}
                       useSSE={true}
                     />
                   </div>
-                </>
+
+                  {/* Recent Tracks */}
+                  <RecentTracks
+                    tracks={recentTracks}
+                    onViewAll={() => navigateToTab('library')}
+                    onPlay={playTrack}
+                  />
+                </div>
               )}
             </div>
           )}

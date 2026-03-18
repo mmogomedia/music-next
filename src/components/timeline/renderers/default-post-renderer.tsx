@@ -13,10 +13,18 @@ import FollowButton from '../FollowButton';
 import { logger } from '@/lib/utils/logger';
 import type { TimelinePostRendererProps } from './index';
 
-/**
- * Default post renderer for generic post types
- * Clean, minimal design
- */
+function timeAgo(date: Date) {
+  const diff = Date.now() - date.getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d`;
+  return date.toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' });
+}
+
 export function DefaultPostRenderer({
   post,
   onLike,
@@ -33,6 +41,8 @@ export function DefaultPostRenderer({
     post.userFollowsAuthor || false
   );
 
+  const postDate = new Date(post.publishedAt || post.createdAt);
+
   const handleLike = async () => {
     if (isLiking || !onLike) return;
     setIsLiking(true);
@@ -47,15 +57,6 @@ export function DefaultPostRenderer({
     }
   };
 
-  const handleShare = async () => {
-    if (!onShare) return;
-    try {
-      await onShare(post.id);
-    } catch (error) {
-      logger.error('Error sharing post:', error);
-    }
-  };
-
   const handleFollow = async (authorId: string, currentFollowing: boolean) => {
     if (!onFollow) return;
     try {
@@ -67,114 +68,106 @@ export function DefaultPostRenderer({
   };
 
   return (
-    <div className='bg-gray-100 dark:bg-slate-800 rounded-xl p-4 hover:bg-gray-200/50 dark:hover:bg-slate-700/50 transition-all duration-200'>
-      {/* Compact Header */}
-      <div className='flex items-center gap-2.5 mb-3'>
-        <div className='w-8 h-8 rounded-full bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center flex-shrink-0 overflow-hidden'>
-          {post.author.image ? (
-            <Image
-              src={post.author.image}
-              alt={post.author.name || post.author.email}
-              width={32}
-              height={32}
-              className='rounded-full'
+    <div className='bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden'>
+      <div className='px-4 pt-4 pb-3'>
+        {/* Author row */}
+        <div className='flex items-center gap-2.5 mb-3'>
+          <div className='relative flex-shrink-0'>
+            <div className='w-9 h-9 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center overflow-hidden ring-2 ring-white dark:ring-slate-800'>
+              {post.author.image ? (
+                <Image
+                  src={post.author.image}
+                  alt={post.author.name || post.author.email}
+                  width={36}
+                  height={36}
+                  className='rounded-full object-cover'
+                />
+              ) : (
+                <span className='text-white text-xs font-bold'>
+                  {(post.author.name || post.author.email)[0].toUpperCase()}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className='flex-1 min-w-0'>
+            <p className='text-xs font-semibold text-gray-900 dark:text-white truncate leading-tight'>
+              {post.author.name || post.author.email}
+            </p>
+            <p className='text-[10px] text-gray-400 dark:text-gray-500 leading-tight'>
+              {timeAgo(postDate)}
+            </p>
+          </div>
+          {onFollow && post.author.id && (
+            <FollowButton
+              authorId={post.author.id}
+              isFollowing={isFollowing}
+              onFollow={handleFollow}
+              size='sm'
             />
-          ) : (
-            <span className='text-white text-xs font-semibold'>
-              {(post.author.name || post.author.email)[0].toUpperCase()}
-            </span>
           )}
+          <span className='px-2 py-0.5 text-[10px] font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 uppercase tracking-wide'>
+            {post.postType.replace(/_/g, ' ')}
+          </span>
         </div>
-        <div className='flex-1 min-w-0'>
-          <p className='text-xs font-medium text-gray-900 dark:text-white truncate'>
-            {post.author.name || post.author.email}
-          </p>
-          <p className='text-[10px] text-gray-500 dark:text-gray-400'>
-            {post.publishedAt
-              ? new Date(post.publishedAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })
-              : new Date(post.createdAt).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-          </p>
-        </div>
-        {onFollow && post.author.id && (
-          <FollowButton
-            authorId={post.author.id}
-            isFollowing={isFollowing}
-            onFollow={handleFollow}
-            size='sm'
-          />
+
+        {/* Content */}
+        {post.title && (
+          <h3 className='text-sm font-bold text-gray-900 dark:text-white mb-1.5 leading-snug line-clamp-2'>
+            {post.title}
+          </h3>
         )}
-        <span className='px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gray-500/10 dark:bg-gray-500/20 text-gray-600 dark:text-gray-400'>
-          {post.postType.replace('_', ' ')}
-        </span>
-      </div>
+        {post.description && (
+          <p className='text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-3 leading-relaxed'>
+            {post.description}
+          </p>
+        )}
+        {post.coverImageUrl && (
+          <div className='relative w-full h-44 rounded-xl overflow-hidden mb-3 bg-gray-100 dark:bg-slate-800'>
+            <Image
+              src={post.coverImageUrl}
+              alt={post.title || 'Post image'}
+              fill
+              className='object-cover'
+            />
+          </div>
+        )}
 
-      {/* Post Content */}
-      {post.title && (
-        <h3 className='text-sm font-bold text-gray-900 dark:text-white mb-2 line-clamp-2'>
-          {post.title}
-        </h3>
-      )}
-      {post.description && (
-        <p className='text-xs text-gray-600 dark:text-gray-400 mb-3 line-clamp-3 whitespace-pre-wrap'>
-          {post.description}
-        </p>
-      )}
-      {post.coverImageUrl && (
-        <div className='relative w-full h-40 rounded-lg overflow-hidden mb-3 bg-gray-200 dark:bg-slate-700'>
-          <Image
-            src={post.coverImageUrl}
-            alt={post.title || 'Post image'}
-            fill
-            className='object-cover'
-          />
-        </div>
-      )}
-
-      {/* Engagement */}
-      <div className='flex items-center gap-3 pt-2 border-t border-gray-200/50 dark:border-slate-700/50'>
-        <button
-          onClick={handleLike}
-          disabled={isLiking}
-          className={`flex items-center gap-1.5 transition-colors ${
-            isLiked
-              ? 'text-red-600 dark:text-red-400'
-              : 'text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400'
-          }`}
-        >
-          {isLiked ? (
-            <HeartSolidIcon className='w-4 h-4' />
-          ) : (
-            <HeartIcon className='w-4 h-4' />
-          )}
-          <span className='text-xs font-medium'>{likeCount}</span>
-        </button>
-        <button
-          onClick={() => onComment?.(post.id, '')}
-          className='flex items-center gap-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors'
-        >
-          <ChatBubbleLeftIcon className='w-4 h-4' />
-          <span className='text-xs font-medium'>
+        {/* Engagement bar */}
+        <div className='flex items-center gap-1 pt-2.5 border-t border-gray-50 dark:border-slate-800'>
+          <button
+            onClick={handleLike}
+            disabled={isLiking}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              isLiked
+                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
+                : 'text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+            }`}
+          >
+            {isLiked ? (
+              <HeartSolidIcon className='w-3.5 h-3.5' />
+            ) : (
+              <HeartIcon className='w-3.5 h-3.5' />
+            )}
+            {likeCount}
+          </button>
+          <button
+            onClick={() => onComment?.(post.id, '')}
+            className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all'
+          >
+            <ChatBubbleLeftIcon className='w-3.5 h-3.5' />
             {post.commentCount || post._count?.comments || 0}
-          </span>
-        </button>
-        <button
-          onClick={handleShare}
-          className='flex items-center gap-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors'
-        >
-          <ShareIcon className='w-4 h-4' />
-          <span className='text-xs font-medium'>
+          </button>
+          <button
+            onClick={() => onShare?.(post.id)}
+            className='flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all'
+          >
+            <ShareIcon className='w-3.5 h-3.5' />
             {post.shareCount || post._count?.shares || 0}
-          </span>
-        </button>
-        <div className='flex items-center gap-1.5 text-gray-400 dark:text-gray-500 ml-auto'>
-          <EyeIcon className='w-3.5 h-3.5' />
-          <span className='text-[10px]'>{post.viewCount || 0}</span>
+          </button>
+          <div className='flex items-center gap-1 ml-auto text-[10px] text-gray-400 dark:text-gray-500'>
+            <EyeIcon className='w-3 h-3' />
+            {post.viewCount || 0}
+          </div>
         </div>
       </div>
     </div>

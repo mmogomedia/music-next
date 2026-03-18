@@ -16,6 +16,19 @@ import {
   AnalyticsService,
 } from '@/lib/services';
 import { constructFileUrl } from '@/lib/url-utils';
+import {
+  SearchTracksOutputSchema,
+  SearchTracksByThemeOutputSchema,
+  GetTracksByGenreOutputSchema,
+  GetTrendingTracksOutputSchema,
+  GetTrackOutputSchema,
+  GetPlaylistsByGenreOutputSchema,
+  GetPlaylistsByProvinceOutputSchema,
+  GetTopChartsOutputSchema,
+  GetFeaturedPlaylistsOutputSchema,
+  GetArtistOutputSchema,
+  GetGenresOutputSchema,
+} from './output-schemas';
 
 /**
  * Search for tracks by query string
@@ -73,7 +86,6 @@ export const searchTracksTool = new DynamicStructuredTool({
         limit: 10, // Hard limit - never more than 10
         offset: 0,
         orderBy,
-        minStrength: 70,
         excludeIds, // Exclude already-returned tracks for pagination
       });
 
@@ -85,7 +97,7 @@ export const searchTracksTool = new DynamicStructuredTool({
         firstTrackStrength: tracks[0]?.strength || 'N/A',
       });
 
-      return JSON.stringify({
+      const result = {
         tracks: tracks.map(track => ({
           id: track.id,
           title: track.title,
@@ -100,6 +112,7 @@ export const searchTracksTool = new DynamicStructuredTool({
           filePath: track.filePath,
           fileUrl: track.fileUrl,
           artistId: track.artistProfileId,
+          artistProfileId: track.artistProfileId,
           userId: track.userId,
           createdAt: track.createdAt,
           updatedAt: track.updatedAt,
@@ -109,14 +122,44 @@ export const searchTracksTool = new DynamicStructuredTool({
           attributes: track.attributes || [],
           mood: track.mood || [],
           downloadCount: track.downloadCount || 0,
+          shareCount: track.shareCount ?? undefined,
           strength: track.strength || 0,
+          // Extended metadata
+          bpm: track.bpm ?? undefined,
+          year: track.year ?? undefined,
+          language: track.language ?? undefined,
+          lyrics: track.lyrics ?? undefined,
+          isExplicit: track.isExplicit ?? false,
+          isPublic: track.isPublic ?? true,
+          album: track.album ?? undefined,
+          composer: track.composer ?? undefined,
+          isrc: track.isrc ?? undefined,
+          copyrightInfo: track.copyrightInfo ?? undefined,
+          streamingLinks: track.streamingLinks ?? [],
+          artistProfile: track.artistProfile
+            ? {
+                id: track.artistProfile.id,
+                artistName: track.artistProfile.artistName,
+                bio: track.artistProfile.bio ?? null,
+                isVerified: track.artistProfile.isVerified ?? false,
+                location: track.artistProfile.location ?? null,
+                profileImage: track.artistProfile.profileImage ?? null,
+                socialLinks: track.artistProfile.socialLinks ?? null,
+                streamingLinks: track.artistProfile.streamingLinks ?? null,
+              }
+            : undefined,
         })),
         count: tracks.length,
-      });
+      };
+      const validated = SearchTracksOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
-      console.error('Error in searchTracksTool:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error('Error in searchTracksTool:', errorMessage);
       return JSON.stringify({
         error: 'Failed to search tracks',
+        errorDetail: errorMessage, // visible in LangSmith traces for debugging
         tracks: [],
         count: 0,
       });
@@ -138,10 +181,11 @@ export const getTrackTool = new DynamicStructuredTool({
       const track = await MusicService.getTrackById(trackId);
 
       if (!track) {
-        return JSON.stringify({ error: 'Track not found', track: null });
+        const validated = GetTrackOutputSchema.parse({ track: null });
+        return JSON.stringify(validated);
       }
 
-      return JSON.stringify({
+      const result = {
         track: {
           id: track.id,
           title: track.title,
@@ -153,12 +197,48 @@ export const getTrackTool = new DynamicStructuredTool({
           description: track.description,
           playCount: track.playCount,
           likeCount: track.likeCount,
-          shareCount: track.shareCount,
+          shareCount: track.shareCount ?? undefined,
           coverImageUrl: track.coverImageUrl,
           uniqueUrl: track.uniqueUrl,
+          filePath: track.filePath,
+          fileUrl: track.fileUrl,
           isDownloadable: track.isDownloadable,
+          isExplicit: track.isExplicit ?? false,
+          isPublic: track.isPublic ?? true,
+          bpm: track.bpm ?? undefined,
+          year: track.year ?? undefined,
+          language: track.language ?? undefined,
+          lyrics: track.lyrics ?? undefined,
+          composer: track.composer ?? undefined,
+          isrc: track.isrc ?? undefined,
+          copyrightInfo: track.copyrightInfo ?? undefined,
+          artistId: track.artistProfileId,
+          artistProfileId: track.artistProfileId,
+          userId: track.userId,
+          createdAt: track.createdAt,
+          updatedAt: track.updatedAt,
+          albumArtwork: track.albumArtwork,
+          attributes: track.attributes || [],
+          mood: track.mood || [],
+          downloadCount: track.downloadCount || 0,
+          strength: track.strength || 0,
+          streamingLinks: track.streamingLinks ?? [],
+          artistProfile: track.artistProfile
+            ? {
+                id: track.artistProfile.id,
+                artistName: track.artistProfile.artistName,
+                bio: track.artistProfile.bio ?? null,
+                isVerified: track.artistProfile.isVerified ?? false,
+                location: track.artistProfile.location ?? null,
+                profileImage: track.artistProfile.profileImage ?? null,
+                socialLinks: track.artistProfile.socialLinks ?? null,
+                streamingLinks: track.artistProfile.streamingLinks ?? null,
+              }
+            : undefined,
         },
-      });
+      };
+      const validated = GetTrackOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
       console.error('Error in getTrackTool:', error);
       return JSON.stringify({ error: 'Failed to get track', track: null });
@@ -247,28 +327,35 @@ export const getArtistTool = new DynamicStructuredTool({
       const artist = await ArtistService.getArtistBySlug(artistIdentifier);
 
       if (!artist) {
-        return JSON.stringify({ error: 'Artist not found', artist: null });
+        const validated = GetArtistOutputSchema.parse({ artist: null });
+        return JSON.stringify(validated);
       }
 
-      return JSON.stringify({
+      const result = {
         artist: {
           id: artist.id,
           artistName: artist.artistName,
           bio: artist.bio,
           genre: artist.genre,
           location: artist.location,
-          totalPlays: artist.totalPlays,
-          totalLikes: artist.totalLikes,
-          profileViews: artist.profileViews,
+          profileImageUrl: artist.profileImage ?? undefined,
+          isVerified: artist.isVerified ?? false,
+          totalPlays: artist.totalPlays ?? 0,
+          totalLikes: artist.totalLikes ?? 0,
+          profileViews: artist.profileViews ?? 0,
           trackCount: artist.tracks.length,
+          socialLinks: artist.socialLinks ?? null,
+          streamingLinks: artist.streamingLinks ?? null,
           tracks: artist.tracks.slice(0, 10).map(track => ({
             id: track.id,
             title: track.title,
-            genre: track.genre,
-            playCount: track.playCount,
+            genre: track.genre ?? undefined,
+            playCount: track.playCount ?? 0,
           })),
         },
-      });
+      };
+      const validated = GetArtistOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
       console.error('Error in getArtistTool:', error);
       return JSON.stringify({ error: 'Failed to get artist', artist: null });
@@ -296,12 +383,9 @@ export const getTopChartsTool = new DynamicStructuredTool({
     try {
       const playlists = await PlaylistService.getTopCharts(Math.min(limit, 20));
 
-      return JSON.stringify({
+      const result = {
         playlists: playlists.map(p => {
           const coverImage = p.coverImage;
-          // Construct full URL if coverImage is a relative path
-          // If it's already a full URL (http/https) or external URL, use as-is
-          // Otherwise, construct the full URL using constructFileUrl
           const coverImageUrl = coverImage
             ? coverImage.startsWith('http://') ||
               coverImage.startsWith('https://') ||
@@ -319,7 +403,9 @@ export const getTopChartsTool = new DynamicStructuredTool({
           };
         }),
         count: playlists.length,
-      });
+      };
+      const validated = GetTopChartsOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
       console.error('Error in getTopChartsTool:', error);
       return JSON.stringify({
@@ -350,12 +436,9 @@ export const getFeaturedPlaylistsTool = new DynamicStructuredTool({
         Math.min(limit, 20)
       );
 
-      return JSON.stringify({
+      const result = {
         playlists: playlists.map(p => {
           const coverImage = p.coverImage;
-          // Construct full URL if coverImage is a relative path
-          // If it's already a full URL (http/https) or external URL, use as-is
-          // Otherwise, construct the full URL using constructFileUrl
           const coverImageUrl = coverImage
             ? coverImage.startsWith('http://') ||
               coverImage.startsWith('https://') ||
@@ -373,7 +456,9 @@ export const getFeaturedPlaylistsTool = new DynamicStructuredTool({
           };
         }),
         count: playlists.length,
-      });
+      };
+      const validated = GetFeaturedPlaylistsOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
       console.error('Error in getFeaturedPlaylistsTool:', error);
       return JSON.stringify({
@@ -420,29 +505,77 @@ export const getTrendingTracksTool = new DynamicStructuredTool({
         firstTrackGenre: tracks[0]?.genre || 'N/A',
       });
 
-      return JSON.stringify({
-        tracks: tracks.map(track => ({
-          id: track.id,
-          title: track.title,
-          artist: track.artist || 'Unknown Artist',
-          genre: track.genre,
-          playCount: track.playCount,
-          likeCount: track.likeCount,
-          trendingScore: track.stats.trendingScore,
-          coverImageUrl: track.coverImageUrl,
-          duration: track.duration,
-          filePath: track.filePath,
-          fileUrl: constructFileUrl(track.filePath),
-          artistId: track.artistProfileId,
-          userId: track.userId,
-          createdAt: track.createdAt,
-          updatedAt: track.updatedAt,
-          albumArtwork: track.albumArtwork,
-          isDownloadable: track.isDownloadable,
-          strength: track.strength || 0,
-        })),
+      const result = {
+        tracks: tracks.map(rawTrack => {
+          // TrendingTrack extends Prisma Track which may have artistProfile via include
+          const track = rawTrack as typeof rawTrack & {
+            artistProfile?: {
+              id?: string;
+              artistName?: string;
+              bio?: string | null;
+              isVerified?: boolean;
+              location?: string | null;
+              profileImage?: string | null;
+              socialLinks?: unknown;
+              streamingLinks?: unknown;
+            } | null;
+          };
+          return {
+            id: track.id,
+            title: track.title,
+            artist:
+              track.artist ||
+              track.artistProfile?.artistName ||
+              'Unknown Artist',
+            genre: track.genre,
+            playCount: track.playCount,
+            likeCount: track.likeCount,
+            coverImageUrl: track.coverImageUrl,
+            duration: track.duration,
+            filePath: track.filePath,
+            fileUrl: constructFileUrl(track.filePath),
+            artistId: track.artistProfileId,
+            artistProfileId: track.artistProfileId,
+            userId: track.userId,
+            createdAt: track.createdAt,
+            updatedAt: track.updatedAt,
+            albumArtwork: track.albumArtwork,
+            isDownloadable: track.isDownloadable,
+            strength: track.strength || 0,
+            // Extended metadata
+            bpm: track.bpm ?? undefined,
+            year: track.year ?? undefined,
+            language: track.language ?? undefined,
+            lyrics: track.lyrics ?? undefined,
+            isExplicit: track.isExplicit ?? false,
+            isPublic: track.isPublic ?? true,
+            album: track.album ?? undefined,
+            composer: track.composer ?? undefined,
+            isrc: track.isrc ?? undefined,
+            copyrightInfo: track.copyrightInfo ?? undefined,
+            shareCount: track.shareCount ?? undefined,
+            downloadCount: track.downloadCount || 0,
+            attributes: (track as any).attributes || [],
+            mood: (track as any).mood || [],
+            streamingLinks: (track as any).streamingLinks ?? [],
+            artistProfile: track.artistProfile?.id
+              ? {
+                  id: track.artistProfile.id,
+                  artistName: track.artistProfile.artistName ?? '',
+                  bio: track.artistProfile.bio ?? null,
+                  isVerified: track.artistProfile.isVerified ?? false,
+                  location: track.artistProfile.location ?? null,
+                  profileImage: track.artistProfile.profileImage ?? null,
+                  socialLinks: track.artistProfile.socialLinks ?? null,
+                  streamingLinks: track.artistProfile.streamingLinks ?? null,
+                }
+              : undefined,
+          };
+        }),
         count: tracks.length,
-      });
+      };
+      const validated = GetTrendingTracksOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
       console.error('Error in getTrendingTracksTool:', error);
       return JSON.stringify({
@@ -476,12 +609,9 @@ export const getPlaylistsByGenreTool = new DynamicStructuredTool({
         Math.min(limit, 20)
       );
 
-      return JSON.stringify({
+      const result = {
         playlists: playlists.map(p => {
           const coverImage = p.coverImage;
-          // Construct full URL if coverImage is a relative path
-          // If it's already a full URL (http/https) or external URL, use as-is
-          // Otherwise, construct the full URL using constructFileUrl
           const coverImageUrl = coverImage
             ? coverImage.startsWith('http://') ||
               coverImage.startsWith('https://') ||
@@ -496,10 +626,14 @@ export const getPlaylistsByGenreTool = new DynamicStructuredTool({
             description: p.description,
             trackCount: p.trackCount,
             coverImage: coverImageUrl,
+            genre,
           };
         }),
+        genre,
         count: playlists.length,
-      });
+      };
+      const validated = GetPlaylistsByGenreOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
       console.error('Error in getPlaylistsByGenreTool:', error);
       return JSON.stringify({
@@ -535,12 +669,9 @@ export const getPlaylistsByProvinceTool = new DynamicStructuredTool({
         Math.min(limit, 20)
       );
 
-      return JSON.stringify({
+      const result = {
         playlists: playlists.map(p => {
           const coverImage = p.coverImage;
-          // Construct full URL if coverImage is a relative path
-          // If it's already a full URL (http/https) or external URL, use as-is
-          // Otherwise, construct the full URL using constructFileUrl
           const coverImageUrl = coverImage
             ? coverImage.startsWith('http://') ||
               coverImage.startsWith('https://') ||
@@ -555,10 +686,14 @@ export const getPlaylistsByProvinceTool = new DynamicStructuredTool({
             description: p.description,
             trackCount: p.trackCount,
             coverImage: coverImageUrl,
+            province,
           };
         }),
+        province,
         count: playlists.length,
-      });
+      };
+      const validated = GetPlaylistsByProvinceOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
       console.error('Error in getPlaylistsByProvinceTool:', error);
       return JSON.stringify({
@@ -593,13 +728,10 @@ export const getTracksByGenreTool = new DynamicStructuredTool({
     try {
       const tracks = await MusicService.getTracksByGenre(
         genre,
-        Math.min(limit, 50),
-        {
-          minStrength: 70,
-        }
+        Math.min(limit, 50)
       );
 
-      return JSON.stringify({
+      const result = {
         tracks: tracks.map(track => ({
           id: track.id,
           title: track.title,
@@ -613,6 +745,7 @@ export const getTracksByGenreTool = new DynamicStructuredTool({
           filePath: track.filePath,
           fileUrl: track.fileUrl,
           artistId: track.artistProfileId,
+          artistProfileId: track.artistProfileId,
           userId: track.userId,
           createdAt: track.createdAt,
           updatedAt: track.updatedAt,
@@ -622,14 +755,201 @@ export const getTracksByGenreTool = new DynamicStructuredTool({
           attributes: track.attributes || [],
           mood: track.mood || [],
           downloadCount: track.downloadCount || 0,
+          shareCount: track.shareCount ?? undefined,
           strength: track.strength || 0,
+          // Extended metadata
+          bpm: track.bpm ?? undefined,
+          year: track.year ?? undefined,
+          language: track.language ?? undefined,
+          lyrics: track.lyrics ?? undefined,
+          isExplicit: track.isExplicit ?? false,
+          isPublic: track.isPublic ?? true,
+          album: track.album ?? undefined,
+          composer: track.composer ?? undefined,
+          isrc: track.isrc ?? undefined,
+          copyrightInfo: track.copyrightInfo ?? undefined,
+          streamingLinks: track.streamingLinks ?? [],
+          artistProfile: track.artistProfile
+            ? {
+                id: track.artistProfile.id,
+                artistName: track.artistProfile.artistName,
+                bio: track.artistProfile.bio ?? null,
+                isVerified: track.artistProfile.isVerified ?? false,
+                location: track.artistProfile.location ?? null,
+                profileImage: track.artistProfile.profileImage ?? null,
+                socialLinks: track.artistProfile.socialLinks ?? null,
+                streamingLinks: track.artistProfile.streamingLinks ?? null,
+              }
+            : undefined,
         })),
+        genre,
         count: tracks.length,
-      });
+      };
+      const validated = GetTracksByGenreOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
       console.error('Error in getTracksByGenreTool:', error);
       return JSON.stringify({
         error: 'Failed to get tracks by genre',
+        tracks: [],
+        count: 0,
+      });
+    }
+  },
+});
+
+/**
+ * Search tracks by mood and theme/attribute tags (thematic search)
+ *
+ * Use this tool when the user's query is thematic or mood-based rather than
+ * searching for a specific title or artist — e.g.:
+ *   "music that celebrates mothers"
+ *   "uplifting afropop songs"
+ *   "songs about self-love"
+ *   "heartbreak music"
+ *   "music for women empowerment"
+ *
+ * Extract the relevant moods and themes from the user's message and pass them
+ * as arrays. The system matches them against the mood and attribute tags that
+ * artists attach to their tracks at upload time — so this works for ANY artist,
+ * including new or unknown ones.
+ *
+ * Common mood values: Uplifting, Romantic, Melancholic, Energetic, Calm, Joyful,
+ *   Emotional, Empowering, Sensual, Spiritual, Nostalgic, Aggressive, Playful
+ *
+ * Common attribute/theme values: Women empowerment, Self-love, Heartbreak, Love,
+ *   Faith, Family, Celebration, Heritage, Liberation, Street life, Unity, Freedom,
+ *   Hustle, Party, Dance, Protest, Resilience
+ */
+export const searchTracksByThemeTool = new DynamicStructuredTool({
+  name: 'search_tracks_by_theme',
+  description:
+    'Search for tracks by mood and thematic tags. Use this for queries like "uplifting music", "songs about mothers", "women empowerment tracks", or "heartbreak songs". Pass the moods and themes you extract from the user\'s query as arrays.',
+  schema: z.object({
+    moods: z
+      .array(z.string())
+      .optional()
+      .describe(
+        'Mood descriptors extracted from the query. E.g. ["Uplifting", "Romantic", "Joyful"] for "music that celebrates mothers". Use title-case.'
+      ),
+    attributes: z
+      .array(z.string())
+      .optional()
+      .describe(
+        'Theme or attribute tags extracted from the query. E.g. ["Women empowerment", "Family", "Love"] for "music that celebrates mothers". Use title-case.'
+      ),
+    genre: z
+      .string()
+      .optional()
+      .describe('Optional genre filter (e.g., Afropop, Amapiano, House)'),
+    province: z
+      .string()
+      .optional()
+      .describe('Optional province filter (e.g., Gauteng, Western Cape)'),
+    limit: z
+      .number()
+      .optional()
+      .default(20)
+      .describe('Number of tracks to return (1-30)'),
+  }),
+  func: async ({
+    moods = [],
+    attributes = [],
+    genre,
+    province,
+    limit = 20,
+  }) => {
+    // eslint-disable-next-line no-console
+    console.log('[search_tracks_by_theme Tool] ===== TOOL CALLED =====');
+    // eslint-disable-next-line no-console
+    console.log('[search_tracks_by_theme Tool] Parameters:', {
+      moods,
+      attributes,
+      genre,
+      province,
+      limit,
+    });
+
+    try {
+      const tracks = await MusicService.searchTracksByTheme({
+        moods,
+        attributes,
+        genre,
+        province,
+        limit: Math.min(limit, 30),
+      });
+
+      // eslint-disable-next-line no-console
+      console.log('[search_tracks_by_theme Tool] Results:', {
+        tracksFound: tracks.length,
+        firstTrackTitle: tracks[0]?.title || 'N/A',
+      });
+
+      const result = {
+        tracks: tracks.map(track => ({
+          id: track.id,
+          title: track.title,
+          artist:
+            track.artist || track.artistProfile?.artistName || 'Unknown Artist',
+          genre: track.genre,
+          duration: track.duration,
+          playCount: track.playCount,
+          likeCount: track.likeCount,
+          coverImageUrl: track.coverImageUrl,
+          uniqueUrl: track.uniqueUrl,
+          filePath: track.filePath,
+          fileUrl: track.fileUrl,
+          artistId: track.artistProfileId,
+          artistProfileId: track.artistProfileId,
+          userId: track.userId,
+          createdAt: track.createdAt,
+          updatedAt: track.updatedAt,
+          albumArtwork: track.albumArtwork,
+          isDownloadable: track.isDownloadable,
+          description: track.description,
+          attributes: track.attributes || [],
+          mood: track.mood || [],
+          downloadCount: track.downloadCount || 0,
+          shareCount: track.shareCount ?? undefined,
+          strength: track.strength || 0,
+          // Extended metadata
+          bpm: track.bpm ?? undefined,
+          year: track.year ?? undefined,
+          language: track.language ?? undefined,
+          lyrics: track.lyrics ?? undefined,
+          isExplicit: track.isExplicit ?? false,
+          isPublic: track.isPublic ?? true,
+          album: track.album ?? undefined,
+          composer: track.composer ?? undefined,
+          isrc: track.isrc ?? undefined,
+          copyrightInfo: track.copyrightInfo ?? undefined,
+          streamingLinks: track.streamingLinks ?? [],
+          artistProfile: track.artistProfile
+            ? {
+                id: track.artistProfile.id,
+                artistName: track.artistProfile.artistName,
+                bio: track.artistProfile.bio ?? null,
+                isVerified: track.artistProfile.isVerified ?? false,
+                location: track.artistProfile.location ?? null,
+                profileImage: track.artistProfile.profileImage ?? null,
+                socialLinks: track.artistProfile.socialLinks ?? null,
+                streamingLinks: track.artistProfile.streamingLinks ?? null,
+              }
+            : undefined,
+        })),
+        count: tracks.length,
+        searchedMoods: moods,
+        searchedAttributes: attributes,
+      };
+      const validated = SearchTracksByThemeOutputSchema.parse(result);
+      return JSON.stringify(validated);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error('Error in searchTracksByThemeTool:', errorMessage);
+      return JSON.stringify({
+        error: 'Failed to search tracks by theme',
+        errorDetail: errorMessage,
         tracks: [],
         count: 0,
       });
@@ -680,7 +1000,7 @@ export const getGenresTool = new DynamicStructuredTool({
         },
       });
 
-      return JSON.stringify({
+      const result = {
         genres: genres.map(genre => ({
           id: genre.id,
           name: genre.name,
@@ -691,7 +1011,9 @@ export const getGenresTool = new DynamicStructuredTool({
           trackCount: genre._count.tracks,
         })),
         count: genres.length,
-      });
+      };
+      const validated = GetGenresOutputSchema.parse(result);
+      return JSON.stringify(validated);
     } catch (error) {
       console.error('Error in getGenresTool:', error);
       return JSON.stringify({
@@ -704,10 +1026,109 @@ export const getGenresTool = new DynamicStructuredTool({
 });
 
 /**
+ * Search tracks by semantic meaning — mood, feeling, emotion, or theme.
+ * Uses pgvector cosine similarity against pre-computed track embeddings.
+ */
+export const searchTracksSemanticTool = new DynamicStructuredTool({
+  name: 'search_tracks_semantic',
+  description:
+    'Search tracks by semantic meaning — mood, feeling, emotion, or theme. Use for: "songs about love", "uplifting music", "heartbreak vibes", "chill Sunday music", "I feel in love", "when you\'re feeling sad". Returns tracks ranked by semantic similarity to the query.',
+  schema: z.object({
+    query: z
+      .string()
+      .describe(
+        'Free-form query describing the mood, feeling, theme, or emotion (e.g. "in love", "heartbreak and sadness", "uplifting motivation")'
+      ),
+    genre: z
+      .string()
+      .optional()
+      .describe('Optional genre filter (e.g., Amapiano, Afrobeat)'),
+    limit: z.number().optional().default(10).describe('Number of results'),
+  }),
+  func: async ({ query, genre, limit = 10 }) => {
+    try {
+      const tracks = await MusicService.searchTracksBySemantic(query, {
+        limit,
+        genre,
+      });
+
+      const result = {
+        tracks: tracks.map(track => ({
+          id: track.id,
+          title: track.title,
+          artist:
+            track.artist || track.artistProfile?.artistName || 'Unknown Artist',
+          genre: track.genre,
+          duration: track.duration,
+          playCount: track.playCount,
+          likeCount: track.likeCount,
+          coverImageUrl: track.coverImageUrl,
+          uniqueUrl: track.uniqueUrl,
+          filePath: track.filePath,
+          fileUrl: track.fileUrl,
+          artistId: track.artistProfileId,
+          artistProfileId: track.artistProfileId,
+          userId: track.userId,
+          createdAt: track.createdAt,
+          updatedAt: track.updatedAt,
+          albumArtwork: track.albumArtwork,
+          isDownloadable: track.isDownloadable,
+          description: track.description,
+          attributes: track.attributes || [],
+          mood: track.mood || [],
+          downloadCount: track.downloadCount || 0,
+          shareCount: track.shareCount ?? undefined,
+          strength: track.strength || 0,
+          bpm: track.bpm ?? undefined,
+          year: track.year ?? undefined,
+          language: track.language ?? undefined,
+          lyrics: track.lyrics ?? undefined,
+          isExplicit: track.isExplicit ?? false,
+          isPublic: track.isPublic ?? true,
+          album: track.album ?? undefined,
+          composer: track.composer ?? undefined,
+          isrc: track.isrc ?? undefined,
+          copyrightInfo: track.copyrightInfo ?? undefined,
+          streamingLinks: track.streamingLinks ?? [],
+          artistProfile: track.artistProfile
+            ? {
+                id: track.artistProfile.id,
+                artistName: track.artistProfile.artistName,
+                bio: track.artistProfile.bio ?? null,
+                isVerified: track.artistProfile.isVerified ?? false,
+                location: track.artistProfile.location ?? null,
+                profileImage: track.artistProfile.profileImage ?? null,
+                socialLinks: track.artistProfile.socialLinks ?? null,
+                streamingLinks: track.artistProfile.streamingLinks ?? null,
+              }
+            : undefined,
+        })),
+        count: tracks.length,
+      };
+
+      const validated = SearchTracksOutputSchema.parse(result);
+      return JSON.stringify(validated);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error('Error in searchTracksSemanticTool:', errorMessage);
+      return JSON.stringify({
+        error: 'Failed to search tracks semantically',
+        errorDetail: errorMessage,
+        tracks: [],
+        count: 0,
+      });
+    }
+  },
+});
+
+/**
  * Export all discovery tools as an array
  */
 export const discoveryTools = [
   searchTracksTool,
+  searchTracksByThemeTool,
+  searchTracksSemanticTool,
   getTrackTool,
   getPlaylistTool,
   getArtistTool,

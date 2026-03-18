@@ -5,6 +5,10 @@ import { prisma } from '@/lib/db';
 import { constructFileUrl } from '@/lib/url-utils';
 import { calculateTrackCompletionServer } from '@/lib/utils/track-completion-server';
 import type { TrackEditorValues } from '@/components/track/TrackEditor';
+import {
+  enqueueTrackEmbedding,
+  semanticFieldsChanged,
+} from '@/lib/ai/track-embedding-service';
 
 const sanitizeStringArray = (value: unknown): string[] =>
   Array.isArray(value)
@@ -272,6 +276,11 @@ export async function PUT(request: NextRequest) {
         },
       },
     });
+
+    // Fire-and-forget: re-embed only if semantic content changed
+    if (semanticFieldsChanged(existingTrack, body)) {
+      enqueueTrackEmbedding(updatedTrack);
+    }
 
     // Fetch full ArtistProfile objects for primary and featured artists
     const allArtistIds = [

@@ -9,6 +9,7 @@ import {
   GlobeAltIcon,
   Bars3Icon,
   XMarkIcon,
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 import {
   MusicalNoteIcon as MusicalNoteSolidIcon,
@@ -34,12 +35,14 @@ interface ChatNavigationProps {
   onQuickLinkClick?: (_message: string) => void;
   onConversationSelect?: (_conversationId: string) => void;
   getConversationId?: () => string | undefined;
+  activeView?: 'streaming' | 'timeline' | 'league';
 }
 
 export default function ChatNavigation({
   onQuickLinkClick,
   onConversationSelect,
   getConversationId,
+  activeView = 'streaming',
 }: ChatNavigationProps) {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
@@ -157,12 +160,35 @@ export default function ChatNavigation({
               <RecentConversations
                 onConversationSelect={onConversationSelect}
                 activeConversationId={getConversationId?.()}
-                chatType='STREAMING'
+                chatType={activeView === 'timeline' ? 'TIMELINE' : 'STREAMING'}
                 onSignInClick={() => {}}
                 onSignInModalOpen={setIsSignInModalOpen}
                 isSignInModalOpen={isSignInModalOpen}
                 showHeading={true}
               />
+            </div>
+
+            {/* Legal Links - Below conversations */}
+            <div className='px-4 py-3 border-t border-gray-200/60 dark:border-slate-700/60 flex-shrink-0 bg-gray-50/50 dark:bg-slate-800/30 rounded-b-lg'>
+              <p className='text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed flex items-start gap-1.5'>
+                <InformationCircleIcon className='w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5' />
+                <span>
+                  By using Flemoji, you agree to our{' '}
+                  <Link
+                    href='/privacy'
+                    className='font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 hover:underline underline-offset-2'
+                  >
+                    Privacy Policy
+                  </Link>{' '}
+                  and{' '}
+                  <Link
+                    href='/terms'
+                    className='font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 hover:underline underline-offset-2'
+                  >
+                    Terms & Conditions
+                  </Link>
+                </span>
+              </p>
             </div>
           </div>
 
@@ -273,13 +299,44 @@ export default function ChatNavigation({
                       onConversationSelect?.(id);
                     }}
                     activeConversationId={getConversationId?.()}
-                    chatType='STREAMING'
+                    chatType={
+                      activeView === 'timeline'
+                        ? 'TIMELINE'
+                        : activeView === 'league' || activeView === 'streaming'
+                          ? 'STREAMING'
+                          : 'STREAMING'
+                    }
                     onSignInClick={() => setIsOpen(false)}
                     onSignInModalOpen={setIsSignInModalOpen}
                     isSignInModalOpen={isSignInModalOpen}
                     showHeading={true}
                   />
                 </div>
+              </div>
+
+              {/* Legal Links - Below conversations */}
+              <div className='px-4 py-3 border-t border-gray-200/60 dark:border-slate-700/60 flex-shrink-0 bg-gray-50/50 dark:bg-slate-800/30 rounded-b-lg'>
+                <p className='text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed flex items-start gap-1.5'>
+                  <InformationCircleIcon className='w-3 h-3 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5' />
+                  <span>
+                    By using Flemoji, you agree to our{' '}
+                    <Link
+                      href='/privacy'
+                      className='font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 hover:underline underline-offset-2'
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Privacy Policy
+                    </Link>{' '}
+                    and{' '}
+                    <Link
+                      href='/terms'
+                      className='font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 hover:underline underline-offset-2'
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Terms & Conditions
+                    </Link>
+                  </span>
+                </p>
               </div>
             </div>
 

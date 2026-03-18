@@ -1,4 +1,38 @@
 import { BaseAgent, type AgentContext, type AgentResponse } from './base-agent';
+import { searchArticlesTool } from '@/lib/ai/tools/article-tools';
+
+const HELP_ACTIONS = [
+  {
+    type: 'send_message' as const,
+    label: 'Find music',
+    icon: '🎵',
+    data: { message: "I'm looking for music" },
+  },
+  {
+    type: 'send_message' as const,
+    label: 'Get recommendations',
+    icon: '✨',
+    data: { message: 'Recommend something for me' },
+  },
+  {
+    type: 'send_message' as const,
+    label: 'Browse genres',
+    icon: '🎸',
+    data: { message: 'Show me all genres' },
+  },
+  {
+    type: 'send_message' as const,
+    label: 'My taste profile',
+    icon: '👤',
+    data: { message: 'What music do I like?' },
+  },
+  {
+    type: 'send_message' as const,
+    label: 'Trending now',
+    icon: '🔥',
+    data: { message: "What's trending?" },
+  },
+];
 
 /**
  * Help Agent
@@ -24,6 +58,42 @@ export class HelpAgent extends BaseAgent {
     message: string,
     _context?: AgentContext
   ): Promise<AgentResponse> {
+    // Check if the query is about music business / industry knowledge
+    const isKnowledgeQuery =
+      /royalt|capasso|samro|isrc|distribut|streaming income|music rights|how (do|can) (i|artists?)|what is (an? )?(isrc|capasso|samro|royalt)/i.test(
+        message
+      );
+
+    if (isKnowledgeQuery) {
+      try {
+        const result = await searchArticlesTool.invoke({
+          query: message,
+          limit: 3,
+        });
+        const parsed = JSON.parse(result);
+        if (parsed.articles?.length > 0) {
+          const articleList = parsed.articles
+            .map(
+              (a: any) =>
+                `- [${a.title}](/learn/${a.slug}) (${a.readTime} min read)`
+            )
+            .join('\n');
+          const response = `Here are some articles that may help:\n\n${articleList}`;
+          return {
+            message: response,
+            data: {
+              type: 'text',
+              message: response,
+              timestamp: new Date(),
+              actions: HELP_ACTIONS,
+            },
+          };
+        }
+      } catch {
+        // Fall through to default response
+      }
+    }
+
     const response = this.buildHelpResponse(message);
 
     return {
@@ -32,6 +102,7 @@ export class HelpAgent extends BaseAgent {
         type: 'text',
         message: response,
         timestamp: new Date(),
+        actions: HELP_ACTIONS,
       },
     };
   }
@@ -51,15 +122,7 @@ export class HelpAgent extends BaseAgent {
         lowerMessage
       )
     ) {
-      return `You can search for music by simply asking me in natural language! Just type what you're looking for. Here are some examples:
-
-• **Search by genre**: "Play Amapiano tracks" or "Find Afrobeats music"
-• **Search by artist**: "Show me songs by Kabza De Small" or "Play Major League DJz"
-• **Search by mood**: "Find upbeat music" or "Show me chill songs"
-• **Search by location**: "Show me music from Gauteng" or "Find artists from Cape Town"
-• **Search by title**: "Play Desert Dreams" or "Find Fire Energy"
-
-Just type your request in the chat box and I'll help you discover the music you're looking for!`;
+      return 'Search by genre, artist, mood, or title — just ask in natural language.';
     }
 
     // Play/Listen related questions
@@ -69,14 +132,7 @@ Just type your request in the chat box and I'll help you discover the music you'
         lowerMessage
       )
     ) {
-      return `You can play music by asking me! Just tell me what you want to play. For example:
-
-• **Play specific songs**: "Play Desert Dreams" or "Play Fire Energy 31"
-• **Play by genre**: "Play Amapiano" or "Play some Gospel music"
-• **Play by artist**: "Play Kabza De Small" or "Play Major League DJz"
-• **Play by mood**: "Play upbeat music" or "Play something chill"
-
-Once I find the music, you can click on any track to play it. I can also create playlists for you!`;
+      return "Ask me to play anything — a track, genre, artist, or mood — and I'll find it.";
     }
 
     // General "what can you do" questions
@@ -88,35 +144,7 @@ Once I find the music, you can click on any track to play it. I can also create 
         lowerMessage
       )
     ) {
-      return `I'm your music assistant for Flemoji! I can help you with:
-
-🎵 **Discover Music**
-• Find songs, artists, playlists, and genres
-• Search by mood, location, or style
-• Browse South African music catalog
-
-🎧 **Play Music**
-• Play specific tracks or artists
-• Create playlists based on your preferences
-• Queue up music for your listening session
-
-💡 **Get Recommendations**
-• Personalized music suggestions
-• Discover new artists and tracks
-• Find music for different moods and occasions
-
-📚 **Learn About Music**
-• Get information about artists and genres
-• Learn about the South African music industry
-• Explore music culture and history
-
-Just ask me anything in natural language! For example:
-• "Play Amapiano tracks"
-• "Show me songs by Kabza De Small"
-• "Find upbeat music for a party"
-• "Recommend some new artists"
-
-What would you like to explore?`;
+      return 'I help you discover and play South African music. What would you like to do?';
     }
 
     // Navigation/Usage questions
@@ -128,34 +156,10 @@ What would you like to explore?`;
         lowerMessage
       )
     ) {
-      return `Getting started with Flemoji is easy! Here's how:
-
-1. **Search for Music**: Just type what you're looking for in the chat box
-   - Example: "Play Amapiano tracks" or "Find songs by Kabza De Small"
-
-2. **Play Music**: Click on any track I show you to start playing
-
-3. **Get Recommendations**: Ask me for suggestions
-   - Example: "What should I listen to?" or "Recommend some music"
-
-4. **Explore**: Browse by genre, artist, mood, or location
-   - Example: "Show me Gospel music" or "Find music from Gauteng"
-
-5. **Ask Questions**: I can help you learn about artists, genres, and the music industry
-   - Example: "Tell me about Kabza De Small" or "What is Amapiano?"
-
-Just start typing in the chat box - I'll help you discover amazing South African music! 🎵`;
+      return 'Just type what you want in natural language — a genre, artist, mood, or question.';
     }
 
     // Default help response
-    return `I'm here to help you discover and enjoy South African music on Flemoji! 
-
-You can ask me to:
-• **Search for music**: "Play Amapiano tracks" or "Find songs by Kabza De Small"
-• **Get recommendations**: "What should I listen to?" or "Recommend some music"
-• **Learn about music**: "Tell me about Amapiano" or "Who is Kabza De Small?"
-• **Play music**: Just ask me to play anything and I'll find it for you
-
-Just type your request in natural language and I'll help you! What would you like to do?`;
+    return "I'm your music assistant for Flemoji. Pick something below to get started:";
   }
 }

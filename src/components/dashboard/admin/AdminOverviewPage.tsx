@@ -1,28 +1,127 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import {
   ExclamationTriangleIcon,
-  UserGroupIcon,
-  MusicalNoteIcon,
   PlusIcon,
-  SparklesIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
-import {
-  UserGroupIcon as UserGroupSolidIcon,
-  MusicalNoteIcon as MusicalNoteSolidIcon,
-  ChartBarIcon as ChartBarSolidIcon,
-} from '@heroicons/react/24/solid';
 import AdminNavigation from './AdminNavigation';
 import UnifiedLayout from '@/components/layout/UnifiedLayout';
 import { useAdminDashboardStats } from '@/hooks/useAdminDashboardStats';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+
+// ── Types ──────────────────────────────────────────────────────────────────
+
+type HealthStatus = 'healthy' | 'warning' | 'critical';
+
+const HEALTH: Record<
+  HealthStatus,
+  { label: string; dot: string; text: string; bg: string; border: string }
+> = {
+  healthy: {
+    label: 'Healthy',
+    dot: 'bg-emerald-500 animate-pulse',
+    text: 'text-emerald-700 dark:text-emerald-400',
+    bg: 'bg-emerald-50 dark:bg-emerald-900/20',
+    border: 'border-emerald-200 dark:border-emerald-800',
+  },
+  warning: {
+    label: 'Warning',
+    dot: 'bg-yellow-500',
+    text: 'text-yellow-700 dark:text-yellow-400',
+    bg: 'bg-yellow-50 dark:bg-yellow-900/20',
+    border: 'border-yellow-200 dark:border-yellow-800',
+  },
+  critical: {
+    label: 'Critical',
+    dot: 'bg-red-500',
+    text: 'text-red-700 dark:text-red-400',
+    bg: 'bg-red-50 dark:bg-red-900/20',
+    border: 'border-red-200 dark:border-red-800',
+  },
+};
+
+const PRIORITY_CLASSES: Record<string, string> = {
+  high: 'text-red-600 dark:text-red-400',
+  medium: 'text-yellow-600 dark:text-yellow-500',
+  low: 'text-emerald-600 dark:text-emerald-400',
+};
+
+const PRIORITY_DOT: Record<string, string> = {
+  high: 'bg-red-500',
+  medium: 'bg-yellow-400',
+  low: 'bg-emerald-400',
+};
+
+function actionHref(type: string): string {
+  const routes: Record<string, string> = {
+    submission: '/admin/dashboard/submissions',
+    user: '/admin/dashboard/users',
+    track: '/admin/dashboard/track-completion',
+    playlist: '/admin/dashboard/playlists',
+    content: '/admin/dashboard/content',
+    article: '/admin/dashboard/content',
+    timeline: '/admin/dashboard/timeline-posts',
+  };
+  const match = Object.keys(routes).find(k => type.toLowerCase().includes(k));
+  return match ? routes[match] : '/admin/dashboard/overview';
+}
+
+// ── Shared primitives ──────────────────────────────────────────────────────
+
+function Card({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function CardHead({
+  title,
+  right,
+}: {
+  title: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className='px-5 py-3.5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between'>
+      <p className='text-sm font-semibold text-gray-900 dark:text-white'>
+        {title}
+      </p>
+      {right}
+    </div>
+  );
+}
+
+function SkeletonRows({ rows = 4, h = 'h-4' }: { rows?: number; h?: string }) {
+  return (
+    <div className='animate-pulse space-y-3'>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className={`${h} bg-gray-100 dark:bg-slate-700 rounded`} />
+      ))}
+    </div>
+  );
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────
 
 export default function AdminOverviewPage() {
   const router = useRouter();
   const { stats, loading, error, refetch } = useAdminDashboardStats();
 
-  const systemMetrics = stats?.systemMetrics || {
+  const systemMetrics = stats?.systemMetrics ?? {
     totalUsers: 0,
     totalArtists: 0,
     totalTracks: 0,
@@ -30,45 +129,105 @@ export default function AdminOverviewPage() {
     totalDownloads: 0,
     totalPageViews: 0,
     totalRevenue: 0,
-    platformHealth: 'healthy' as 'healthy' | 'warning' | 'critical',
+    platformHealth: 'healthy' as HealthStatus,
   };
 
-  const pendingActions = stats?.pendingActions || [];
+  const pendingActions = stats?.pendingActions ?? [];
+  const health = HEALTH[systemMetrics.platformHealth];
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'text-red-600 bg-red-100 dark:bg-red-900/20 dark:text-red-400';
-      case 'medium':
-        return 'text-yellow-600 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'low':
-        return 'text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400';
-      default:
-        return 'text-gray-600 bg-gray-100 dark:bg-gray-900/20 dark:text-gray-400';
+  // ── Derived data ───────────────────────────────────────────────────────
+
+  // Top tracks: aggregate play events by track
+  const topTracks = useMemo(() => {
+    const plays = stats?.recentActivity?.plays ?? [];
+    const map = new Map<
+      string,
+      { id: string; title: string; artist: string; count: number }
+    >();
+    plays.forEach(({ track }) => {
+      const existing = map.get(track.id);
+      if (existing) {
+        existing.count++;
+      } else {
+        map.set(track.id, { ...track, count: 1 });
+      }
+    });
+    return [...map.values()].sort((a, b) => b.count - a.count).slice(0, 5);
+  }, [stats?.recentActivity?.plays]);
+
+  // Activity sparkline: count play events per day (last 7 days)
+  const activityByDay = useMemo(() => {
+    const plays = stats?.recentActivity?.plays ?? [];
+    const days: { label: string; key: string; count: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push({
+        label: d.toLocaleDateString('en-ZA', { weekday: 'narrow' }),
+        key: d.toDateString(),
+        count: 0,
+      });
     }
-  };
+    plays.forEach(({ timestamp }) => {
+      const key = new Date(timestamp).toDateString();
+      const slot = days.find(d => d.key === key);
+      if (slot) slot.count++;
+    });
+    return days;
+  }, [stats?.recentActivity?.plays]);
+
+  const maxActivity = Math.max(...activityByDay.map(d => d.count), 1);
+
+  // Submissions breakdown from pendingActions + totalSubmissions
+  const submissionsAction = pendingActions.find(a =>
+    a.type.toLowerCase().includes('submission')
+  );
+  const pendingCount = submissionsAction?.count ?? 0;
+  const totalSubmissions = stats?.totalSubmissions ?? 0;
+  const reviewedCount = Math.max(0, totalSubmissions - pendingCount);
+
+  // Content health: high/medium priority pending actions as flags
+  const healthFlags = pendingActions.filter(
+    a => a.priority === 'high' || a.priority === 'medium'
+  );
+
+  // ── Page header ───────────────────────────────────────────────────────
+
+  const today = new Date().toLocaleDateString('en-ZA', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
 
   const header = (
-    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
-      <div className='py-3 px-4 sm:px-6'>
-        <div className='flex items-center justify-between'>
-          <div>
-            <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
-              Dashboard Overview
-            </h1>
-            <p className='mt-0.5 text-xs text-gray-500 dark:text-gray-400'>
-              Platform metrics and quick actions
-            </p>
+    <header className='bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 px-5 py-3.5'>
+      <div className='flex items-center justify-between gap-4'>
+        <div>
+          <h1 className='text-base font-semibold text-gray-900 dark:text-white'>
+            Overview
+          </h1>
+          <p className='text-xs text-gray-400 dark:text-gray-500 mt-0.5'>
+            {today}
+          </p>
+        </div>
+        <div className='flex items-center gap-2.5'>
+          <div
+            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${health.bg} ${health.border} ${health.text}`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${health.dot}`}
+            />
+            {health.label}
           </div>
           <button
             onClick={() =>
               router.push('/admin/dashboard/timeline-posts/create')
             }
-            className='flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-medium text-sm transition-all shadow-md hover:shadow-lg'
+            className='flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors'
           >
-            <PlusIcon className='w-4 h-4' />
-            <span className='hidden sm:inline'>New Timeline Post</span>
-            <span className='sm:hidden'>New Post</span>
+            <PlusIcon className='w-3.5 h-3.5' />
+            <span className='hidden sm:inline'>New Post</span>
           </button>
         </div>
       </div>
@@ -86,249 +245,415 @@ export default function AdminOverviewPage() {
       }
       header={header}
     >
-      <div className='w-full py-4 px-4 sm:px-6'>
-        <div className='space-y-4'>
-          {/* Loading State */}
-          {loading && (
-            <div className='flex justify-center items-center h-32'>
-              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
+      <div className='min-h-full bg-gray-50 dark:bg-slate-950/50 p-4 sm:p-5 space-y-4'>
+        {/* Error banner */}
+        {error && (
+          <div className='flex items-center justify-between gap-3 px-4 py-2.5 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-sm'>
+            <div className='flex items-center gap-2 text-red-600 dark:text-red-400 text-xs'>
+              <ExclamationTriangleIcon className='w-4 h-4 flex-shrink-0' />
+              Failed to load dashboard data
             </div>
-          )}
+            <button
+              onClick={refetch}
+              className='text-xs font-medium text-red-600 dark:text-red-400 hover:underline flex-shrink-0'
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
-          {/* Error State */}
-          {error && (
-            <div className='bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3'>
-              <div className='flex items-center'>
-                <ExclamationTriangleIcon className='w-4 h-4 text-red-600 dark:text-red-400 mr-2' />
-                <p className='text-sm text-red-600 dark:text-red-400'>
-                  Error loading dashboard data: {error}
+        {/* ── Stats: number-first, no decoration ─────────────────────── */}
+        <div className='grid grid-cols-3 xl:grid-cols-6 gap-3'>
+          {[
+            { label: 'Users', value: systemMetrics.totalUsers },
+            { label: 'Artists', value: systemMetrics.totalArtists },
+            { label: 'Tracks', value: systemMetrics.totalTracks },
+            { label: 'Plays', value: systemMetrics.totalPlays },
+            { label: 'Playlists', value: stats?.totalPlaylists ?? 0 },
+            { label: 'Submissions', value: stats?.totalSubmissions ?? 0 },
+          ].map(({ label, value }) => (
+            <Card
+              key={label}
+              className='p-5 hover:border-blue-200 dark:hover:border-blue-800 transition-colors'
+            >
+              {loading ? (
+                <div className='animate-pulse space-y-2'>
+                  <div className='h-7 bg-gray-100 dark:bg-slate-700 rounded w-14' />
+                  <div className='h-2.5 bg-gray-100 dark:bg-slate-700 rounded w-10' />
+                </div>
+              ) : (
+                <>
+                  <p className='text-2xl font-bold text-blue-600 dark:text-blue-400 tabular-nums leading-none'>
+                    {value.toLocaleString()}
+                  </p>
+                  <p className='text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-2'>
+                    {label}
+                  </p>
+                </>
+              )}
+            </Card>
+          ))}
+        </div>
+
+        {/* ── Row 1: Submissions queue + Top tracks ───────────────────── */}
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+          {/* Submissions queue */}
+          <Card>
+            <CardHead
+              title='Submissions Queue'
+              right={
+                <Link
+                  href='/admin/dashboard/submissions'
+                  className='text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors font-medium'
+                >
+                  View all →
+                </Link>
+              }
+            />
+            <div className='p-5'>
+              {loading ? (
+                <SkeletonRows rows={3} h='h-9' />
+              ) : totalSubmissions === 0 ? (
+                <p className='text-sm text-gray-400 dark:text-gray-500 py-3 text-center'>
+                  No submissions yet
                 </p>
-              </div>
-              <button
-                onClick={refetch}
-                className='mt-2 text-xs text-red-600 dark:text-red-400 hover:underline'
-              >
-                Try again
-              </button>
+              ) : (
+                <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
+                  {[
+                    {
+                      label: 'Pending review',
+                      value: pendingCount,
+                      dot: 'bg-yellow-400',
+                    },
+                    {
+                      label: 'Reviewed',
+                      value: reviewedCount,
+                      dot: 'bg-emerald-400',
+                    },
+                    {
+                      label: 'Total',
+                      value: totalSubmissions,
+                      dot: 'bg-gray-300 dark:bg-gray-600',
+                    },
+                  ].map(({ label, value, dot }) => (
+                    <div
+                      key={label}
+                      className='flex items-center justify-between py-3 first:pt-0 last:pb-0'
+                    >
+                      <div className='flex items-center gap-2.5'>
+                        <span
+                          className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`}
+                        />
+                        <span className='text-sm text-gray-600 dark:text-gray-300'>
+                          {label}
+                        </span>
+                      </div>
+                      <span className='text-sm font-semibold text-gray-900 dark:text-white tabular-nums'>
+                        {value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </Card>
 
-          {/* System Metrics - Compact Grid */}
-          {!loading && !error && (
-            <>
-              <div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
-                <div className='bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center gap-2.5'>
-                    <div className='w-9 h-9 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center flex-shrink-0'>
-                      <UserGroupSolidIcon className='w-5 h-5 text-blue-600 dark:text-blue-400' />
+          {/* Top tracks */}
+          <Card>
+            <CardHead
+              title='Top Tracks This Week'
+              right={
+                <Link
+                  href='/admin/dashboard/analytics'
+                  className='text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors font-medium'
+                >
+                  Analytics →
+                </Link>
+              }
+            />
+            <div className='p-5'>
+              {loading ? (
+                <SkeletonRows rows={5} h='h-9' />
+              ) : topTracks.length === 0 ? (
+                <p className='text-sm text-gray-400 dark:text-gray-500 py-3 text-center'>
+                  No play data yet
+                </p>
+              ) : (
+                <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
+                  {topTracks.map((track, i) => (
+                    <div
+                      key={track.id}
+                      className='flex items-center gap-3 py-2.5 first:pt-0 last:pb-0'
+                    >
+                      <span
+                        className={`text-xs font-bold w-4 flex-shrink-0 tabular-nums ${i === 0 ? 'text-blue-500 dark:text-blue-400' : 'text-gray-300 dark:text-gray-600'}`}
+                      >
+                        {i + 1}
+                      </span>
+                      <div className='flex-1 min-w-0'>
+                        <p className='text-sm font-medium text-gray-900 dark:text-white truncate'>
+                          {track.title}
+                        </p>
+                        <p className='text-xs text-gray-400 dark:text-gray-500 truncate'>
+                          {track.artist}
+                        </p>
+                      </div>
+                      <span className='text-xs text-gray-400 dark:text-gray-500 tabular-nums flex-shrink-0'>
+                        {track.count} plays
+                      </span>
                     </div>
-                    <div className='min-w-0'>
-                      <p className='text-xs font-medium text-gray-500 dark:text-gray-400'>
-                        Users
-                      </p>
-                      <p className='text-lg font-bold text-gray-900 dark:text-white'>
-                        {systemMetrics.totalUsers.toLocaleString()}
-                      </p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* ── Row 2: New users + Content health ───────────────────────── */}
+        <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+          {/* New users / activity sparkline */}
+          <Card>
+            <CardHead
+              title='New Users'
+              right={
+                <Link
+                  href='/admin/dashboard/users'
+                  className='text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors font-medium'
+                >
+                  Manage →
+                </Link>
+              }
+            />
+            <div className='p-5'>
+              {loading ? (
+                <div className='space-y-4'>
+                  <SkeletonRows rows={1} h='h-10' />
+                  <SkeletonRows rows={1} h='h-14' />
+                  <SkeletonRows rows={1} h='h-4' />
+                </div>
+              ) : (
+                <div className='space-y-5'>
+                  {/* Activity sparkline — bars and labels in separate rows */}
+                  <div>
+                    <p className='text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2'>
+                      Play activity · last 7 days
+                    </p>
+                    {/* Bar row */}
+                    <div className='flex items-end gap-1.5 h-16'>
+                      {activityByDay.map(({ count }, i) => {
+                        const heightPx = Math.max(
+                          3,
+                          Math.round((count / maxActivity) * 64)
+                        );
+                        const isMax = count === maxActivity && count > 0;
+                        return (
+                          <div
+                            key={i}
+                            className={`flex-1 rounded-sm ${isMax ? 'bg-blue-500 dark:bg-blue-400' : 'bg-blue-200 dark:bg-blue-900/60'}`}
+                            style={{ height: `${heightPx}px` }}
+                          />
+                        );
+                      })}
+                    </div>
+                    {/* Label row */}
+                    <div className='flex gap-1.5 mt-1.5'>
+                      {activityByDay.map(({ label }, i) => (
+                        <span
+                          key={i}
+                          className='flex-1 text-center text-[9px] text-gray-400 dark:text-gray-500 font-medium'
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Artist conversion */}
+                  <div className='pt-1'>
+                    <div className='flex items-center justify-between text-xs mb-2'>
+                      <span className='text-gray-400 dark:text-gray-500'>
+                        Artist conversion
+                      </span>
+                      <span className='font-semibold text-gray-700 dark:text-gray-300 tabular-nums'>
+                        {systemMetrics.totalUsers > 0
+                          ? `${((systemMetrics.totalArtists / systemMetrics.totalUsers) * 100).toFixed(1)}%`
+                          : '—'}
+                      </span>
+                    </div>
+                    <div className='h-1.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden'>
+                      <div
+                        className='h-full bg-blue-500 dark:bg-blue-400 rounded-full transition-all'
+                        style={{
+                          width: `${
+                            systemMetrics.totalUsers > 0
+                              ? Math.min(
+                                  100,
+                                  (systemMetrics.totalArtists /
+                                    systemMetrics.totalUsers) *
+                                    100
+                                )
+                              : 0
+                          }%`,
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
+              )}
+            </div>
+          </Card>
 
-                <div className='bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center gap-2.5'>
-                    <div className='w-9 h-9 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center flex-shrink-0'>
-                      <MusicalNoteSolidIcon className='w-5 h-5 text-green-600 dark:text-green-400' />
-                    </div>
-                    <div className='min-w-0'>
-                      <p className='text-xs font-medium text-gray-500 dark:text-gray-400'>
-                        Artists
-                      </p>
-                      <p className='text-lg font-bold text-gray-900 dark:text-white'>
-                        {systemMetrics.totalArtists.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
+          {/* Content health */}
+          <Card>
+            <CardHead title='Content Health' />
+            <div className='p-5'>
+              {loading ? (
+                <SkeletonRows rows={4} h='h-11' />
+              ) : healthFlags.length === 0 ? (
+                <div className='flex flex-col items-center justify-center py-8 gap-2.5'>
+                  <CheckCircleIcon className='w-8 h-8 text-emerald-400' />
+                  <p className='text-sm font-medium text-gray-600 dark:text-gray-300'>
+                    All clear
+                  </p>
+                  <p className='text-xs text-gray-400 dark:text-gray-500'>
+                    No content issues detected
+                  </p>
                 </div>
-
-                <div className='bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center gap-2.5'>
-                    <div className='w-9 h-9 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center flex-shrink-0'>
-                      <MusicalNoteIcon className='w-5 h-5 text-purple-600 dark:text-purple-400' />
-                    </div>
-                    <div className='min-w-0'>
-                      <p className='text-xs font-medium text-gray-500 dark:text-gray-400'>
-                        Tracks
-                      </p>
-                      <p className='text-lg font-bold text-gray-900 dark:text-white'>
-                        {systemMetrics.totalTracks.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
+              ) : (
+                <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
+                  {healthFlags.map(flag => (
+                    <Link
+                      key={flag.id}
+                      href={actionHref(flag.type)}
+                      className='flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:opacity-80 transition-opacity group'
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${PRIORITY_DOT[flag.priority] ?? 'bg-gray-300'}`}
+                      />
+                      <div className='flex-1 min-w-0'>
+                        <p className='text-sm font-medium text-gray-900 dark:text-white truncate'>
+                          {flag.title}
+                        </p>
+                        <p className='text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5'>
+                          {flag.description}
+                        </p>
+                      </div>
+                      <div className='flex items-center gap-2 flex-shrink-0'>
+                        <span
+                          className={`text-xs font-semibold capitalize ${PRIORITY_CLASSES[flag.priority] ?? ''}`}
+                        >
+                          {flag.priority}
+                        </span>
+                        <span className='text-sm font-bold text-gray-900 dark:text-white tabular-nums'>
+                          {flag.count}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
+              )}
+            </div>
+          </Card>
+        </div>
 
-                <div className='bg-white dark:bg-slate-800 rounded-lg p-3 shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='flex items-center gap-2.5'>
-                    <div className='w-9 h-9 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center flex-shrink-0'>
-                      <ChartBarSolidIcon className='w-5 h-5 text-orange-600 dark:text-orange-400' />
-                    </div>
-                    <div className='min-w-0'>
-                      <p className='text-xs font-medium text-gray-500 dark:text-gray-400'>
-                        Plays
-                      </p>
-                      <p className='text-lg font-bold text-gray-900 dark:text-white'>
-                        {systemMetrics.totalPlays.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
-                {/* Quick Actions */}
-                <div className='lg:col-span-2'>
-                  <div className='bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700'>
-                    <div className='px-4 py-3 border-b border-gray-200 dark:border-slate-700'>
-                      <h3 className='text-sm font-semibold text-gray-900 dark:text-white'>
-                        Quick Actions
-                      </h3>
-                    </div>
-                    <div className='p-4'>
-                      <div className='grid grid-cols-2 gap-3'>
-                        <button
-                          onClick={() =>
-                            router.push(
-                              '/admin/dashboard/timeline-posts/create'
-                            )
-                          }
-                          className='flex items-center gap-2 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-900/30 dark:hover:to-purple-900/30 rounded-lg border border-blue-200 dark:border-blue-800 transition-all group'
-                        >
-                          <SparklesIcon className='w-5 h-5 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform' />
-                          <div className='text-left'>
-                            <p className='text-xs font-medium text-gray-900 dark:text-white'>
-                              Timeline Post
-                            </p>
-                            <p className='text-xs text-gray-500 dark:text-gray-400'>
-                              Create new
-                            </p>
-                          </div>
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            router.push('/admin/dashboard/timeline-posts')
-                          }
-                          className='flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600 transition-all group'
-                        >
-                          <SparklesIcon className='w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:scale-110 transition-transform' />
-                          <div className='text-left'>
-                            <p className='text-xs font-medium text-gray-900 dark:text-white'>
-                              Manage Posts
-                            </p>
-                            <p className='text-xs text-gray-500 dark:text-gray-400'>
-                              View all posts
-                            </p>
-                          </div>
-                        </button>
-
-                        <button
-                          onClick={() => router.push('/admin/dashboard/users')}
-                          className='flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600 transition-all group'
-                        >
-                          <UserGroupIcon className='w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:scale-110 transition-transform' />
-                          <div className='text-left'>
-                            <p className='text-xs font-medium text-gray-900 dark:text-white'>
-                              Manage Users
-                            </p>
-                            <p className='text-xs text-gray-500 dark:text-gray-400'>
-                              View all users
-                            </p>
-                          </div>
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            router.push('/admin/dashboard/content')
-                          }
-                          className='flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600 transition-all group'
-                        >
-                          <MusicalNoteIcon className='w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:scale-110 transition-transform' />
-                          <div className='text-left'>
-                            <p className='text-xs font-medium text-gray-900 dark:text-white'>
-                              Content
-                            </p>
-                            <p className='text-xs text-gray-500 dark:text-gray-400'>
-                              Review tracks
-                            </p>
-                          </div>
-                        </button>
+        {/* ── Row 3: Recent activity + Pending actions ─────────────────── */}
+        <div className='grid grid-cols-1 lg:grid-cols-5 gap-4'>
+          {/* Activity feed */}
+          <Card className='lg:col-span-3'>
+            <CardHead
+              title='Recent Activity'
+              right={
+                <span className='flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium'>
+                  <span className='w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse' />
+                  Live
+                </span>
+              }
+            />
+            <div className='p-5'>
+              {loading ? (
+                <div className='animate-pulse space-y-4'>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className='flex gap-3'>
+                      <div className='w-7 h-7 rounded-full bg-gray-100 dark:bg-slate-700 flex-shrink-0' />
+                      <div className='flex-1 space-y-1.5'>
+                        <div className='h-3 bg-gray-100 dark:bg-slate-700 rounded w-3/4' />
+                        <div className='h-2.5 bg-gray-100 dark:bg-slate-700 rounded w-1/2' />
                       </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
+              ) : (
+                <RecentActivity
+                  activity={stats?.recentActivity}
+                  useSSE={true}
+                  scope='admin'
+                  noCard={true}
+                  noHeader={true}
+                />
+              )}
+            </div>
+          </Card>
 
-                {/* Pending Actions - Compact */}
-                <div className='bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700'>
-                  <div className='px-4 py-3 border-b border-gray-200 dark:border-slate-700'>
-                    <h3 className='text-sm font-semibold text-gray-900 dark:text-white'>
-                      Pending Actions
-                    </h3>
-                  </div>
-                  <div className='p-4'>
-                    <div className='space-y-2'>
-                      {pendingActions.length === 0 ? (
-                        <p className='text-xs text-gray-500 dark:text-gray-400 text-center py-4'>
-                          No pending actions
+          {/* Pending actions */}
+          <Card className='lg:col-span-2'>
+            <CardHead
+              title='Pending Actions'
+              right={
+                !loading && pendingActions.length > 0 ? (
+                  <span className='inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-[11px] font-bold text-white bg-red-500 rounded-full tabular-nums'>
+                    {pendingActions.reduce((s, a) => s + a.count, 0)}
+                  </span>
+                ) : null
+              }
+            />
+            <div className='p-5'>
+              {loading ? (
+                <SkeletonRows rows={4} h='h-12' />
+              ) : pendingActions.length === 0 ? (
+                <div className='flex flex-col items-center justify-center py-8 gap-2.5'>
+                  <CheckCircleIcon className='w-8 h-8 text-emerald-400' />
+                  <p className='text-sm font-medium text-gray-600 dark:text-gray-300'>
+                    All clear
+                  </p>
+                  <p className='text-xs text-gray-400 dark:text-gray-500'>
+                    No pending actions
+                  </p>
+                </div>
+              ) : (
+                <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
+                  {pendingActions.map(action => (
+                    <Link
+                      key={action.id}
+                      href={actionHref(action.type)}
+                      className='flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:opacity-80 transition-opacity'
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${PRIORITY_DOT[action.priority] ?? 'bg-gray-300'}`}
+                      />
+                      <div className='flex-1 min-w-0'>
+                        <p className='text-sm font-medium text-gray-900 dark:text-white truncate'>
+                          {action.title}
                         </p>
-                      ) : (
-                        pendingActions.slice(0, 3).map(action => (
-                          <div
-                            key={action.id}
-                            className='flex items-center justify-between p-2.5 bg-gray-50 dark:bg-slate-700/50 rounded-lg'
-                          >
-                            <div className='flex-1 min-w-0'>
-                              <h4 className='text-xs font-medium text-gray-900 dark:text-white truncate'>
-                                {action.title}
-                              </h4>
-                              <p className='text-xs text-gray-500 dark:text-gray-400 truncate'>
-                                {action.description}
-                              </p>
-                            </div>
-                            <div className='flex items-center gap-2 ml-2'>
-                              <span
-                                className={`px-1.5 py-0.5 text-xs font-medium rounded ${getPriorityColor(action.priority)}`}
-                              >
-                                {action.priority}
-                              </span>
-                              <span className='text-xs font-semibold text-gray-900 dark:text-white'>
-                                {action.count}
-                              </span>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
+                        <p className='text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5'>
+                          {action.description}
+                        </p>
+                      </div>
+                      <div className='flex items-center gap-2.5 flex-shrink-0'>
+                        <span
+                          className={`text-xs font-semibold capitalize ${PRIORITY_CLASSES[action.priority] ?? ''}`}
+                        >
+                          {action.priority}
+                        </span>
+                        <span className='text-sm font-bold text-gray-900 dark:text-white tabular-nums min-w-[1rem] text-right'>
+                          {action.count}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-              </div>
-
-              {/* Recent Activity - Compact */}
-              <div className='bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-700'>
-                <div className='px-4 py-3 border-b border-gray-200 dark:border-slate-700'>
-                  <h3 className='text-sm font-semibold text-gray-900 dark:text-white'>
-                    Recent Activity
-                  </h3>
-                </div>
-                <div className='p-4'>
-                  <RecentActivity
-                    activity={stats?.recentActivity}
-                    useSSE={true}
-                    scope='admin'
-                    noCard={true}
-                    noHeader={true}
-                  />
-                </div>
-              </div>
-            </>
-          )}
+              )}
+            </div>
+          </Card>
         </div>
       </div>
     </UnifiedLayout>

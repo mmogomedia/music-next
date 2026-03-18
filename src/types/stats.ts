@@ -9,7 +9,8 @@ export type SourceType =
   | 'direct'
   | 'share'
   | 'player'
-  | 'timeline';
+  | 'timeline'
+  | 'league';
 
 export type PlatformType =
   | 'twitter'

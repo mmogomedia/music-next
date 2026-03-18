@@ -3,18 +3,19 @@
 import HeroSection from '@/components/landing/HeroSection';
 import SearchSection from '@/components/landing/SearchSection';
 import PlaylistShowcase from '@/components/landing/PlaylistShowcase';
+import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { Playlist } from '@/types/playlist';
 import { Track } from '@/types/track';
 
 export default function SubmissionsPage() {
+  const { playTrack } = useMusicPlayer();
+
   const handlePlaylistClick = (_playlist: Playlist) => {
     // TODO: Navigate to playlist detail page
-    // console.log('Playlist clicked:', _playlist);
   };
 
-  const handleTrackPlay = (_track: Track) => {
-    // TODO: Integrate with music player context
-    // console.log('Track play clicked:', _track);
+  const handleTrackPlay = (track: Track) => {
+    playTrack(track, 'landing');
   };
 
   return (

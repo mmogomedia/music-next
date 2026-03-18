@@ -33,6 +33,7 @@ import {
   TagIcon,
 } from '@heroicons/react/24/outline';
 import type { Track } from '@/types/track';
+import { SuggestedActions } from './suggested-actions';
 
 interface GenreOption {
   id: string;
@@ -558,6 +559,27 @@ export function PlaylistRenderer({
           No tracks in this playlist.
         </div>
       )}
+
+      {/* Context-aware follow-up suggestions */}
+      <SuggestedActions
+        suggestions={[
+          {
+            label: 'Similar playlists',
+            message: `Find playlists similar to "${playlistName}"`,
+          },
+          selectedGenreOption
+            ? {
+                label: `More ${selectedGenreOption.name}`,
+                message: `Show me more ${selectedGenreOption.name} playlists`,
+              }
+            : { label: 'Browse genres', message: 'Show me all genres' },
+          {
+            label: 'Recommend music',
+            message: 'Recommend music based on my taste',
+          },
+        ]}
+        onAction={_onAction}
+      />
 
       {/* Save Playlist Modal */}
       <Modal

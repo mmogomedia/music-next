@@ -3,6 +3,7 @@
 import type { ArtistResponse } from '@/types/ai-responses';
 import { Button } from '@heroui/react';
 import Image from 'next/image';
+import { SuggestedActions } from './suggested-actions';
 
 interface ArtistRendererProps {
   response: ArtistResponse;
@@ -32,6 +33,12 @@ export function ArtistRenderer({
   const handleViewArtist = () => {
     if (onViewArtist) {
       onViewArtist(artist.id);
+    } else if (onAction) {
+      // Fallback: send a message to show tracks by this artist
+      onAction({
+        type: 'send_message',
+        data: { message: `Show me tracks by ${displayName}` },
+      });
     }
   };
 
@@ -204,6 +211,29 @@ export function ArtistRenderer({
           ))}
         </div>
       )}
+
+      {/* Follow-up suggestions */}
+      <SuggestedActions
+        suggestions={[
+          {
+            label: 'Show their tracks',
+            message: `Show me tracks by ${displayName}`,
+          },
+          {
+            label: 'Similar artists',
+            message: `Find artists similar to ${displayName}`,
+          },
+          ...(artist?.genre
+            ? [
+                {
+                  label: 'Browse genre',
+                  message: `Show me ${artist.genre} artists`,
+                },
+              ]
+            : []),
+        ]}
+        onAction={onAction}
+      />
     </div>
   );
 }

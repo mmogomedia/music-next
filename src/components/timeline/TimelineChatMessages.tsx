@@ -28,6 +28,7 @@ interface TimelineChatMessagesProps {
   onViewArtist?: (_artistId: string) => void;
   onAction?: (_action: any) => void;
   onClarificationAnswer?: (_answers: Record<string, string | string[]>) => void;
+  fullWidth?: boolean;
 }
 
 export default function TimelineChatMessages({
@@ -39,6 +40,7 @@ export default function TimelineChatMessages({
   onViewArtist,
   onAction,
   onClarificationAnswer,
+  fullWidth = false,
 }: TimelineChatMessagesProps) {
   const { playTrack: contextPlayTrack, setQueue } = useMusicPlayer();
   const router = useRouter();
@@ -147,10 +149,16 @@ export default function TimelineChatMessages({
   }, [messages, loading, statusMessage, error]);
 
   return (
-    <div className='space-y-4 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto mb-6'>
+    <div
+      className={`space-y-4 px-4 sm:px-6 lg:px-8 mb-6 ${
+        fullWidth ? 'w-full' : 'max-w-3xl mx-auto'
+      }`}
+    >
       {/* Loading State */}
       {loading && messages.length === 0 && (
-        <div className='px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto pt-4 pb-2'>
+        <div
+          className={`pt-4 pb-2 ${fullWidth ? 'w-full' : 'max-w-3xl mx-auto'}`}
+        >
           <GhostLoader variant='conversation' count={4} />
         </div>
       )}

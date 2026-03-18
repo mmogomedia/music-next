@@ -3,7 +3,7 @@
 import AdminNavigation from './AdminNavigation';
 import UnifiedLayout from '@/components/layout/UnifiedLayout';
 import { useAdminDashboardStats } from '@/hooks/useAdminDashboardStats';
-import TrackManagement from './TrackManagement';
+import ArticleManagement from './ArticleManagement';
 
 export default function AdminContentPage() {
   const { stats } = useAdminDashboardStats();
@@ -15,10 +15,10 @@ export default function AdminContentPage() {
         <div className='flex items-center justify-between'>
           <div>
             <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
-              Content
+              Articles
             </h1>
             <p className='mt-1 text-sm text-gray-500 dark:text-gray-400'>
-              Manage content
+              Manage SEO content clusters and articles
             </p>
           </div>
         </div>
@@ -38,7 +38,7 @@ export default function AdminContentPage() {
       header={header}
     >
       <div className='w-full py-8 px-4 sm:px-6'>
-        <TrackManagement onTrackPlay={() => {}} />
+        <ArticleManagement />
       </div>
     </UnifiedLayout>
   );

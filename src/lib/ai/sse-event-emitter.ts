@@ -37,6 +37,8 @@ export interface SSEEvent {
   parameters?: Record<string, any>;
   resultCount?: number;
   originalMessage?: string; // Original user message for debugging
+  // Debug
+  traceId?: string;
   // Completion
   data?: any;
   // Error

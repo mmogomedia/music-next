@@ -9,13 +9,23 @@
  */
 
 import type {
-  TrackWithArtist,
-  PlaylistWithTracks,
-  PlaylistInfo,
-  ArtistProfileComplete,
-  TimelinePostWithAuthor,
-} from '@/lib/services';
+  TrackItem,
+  PlaylistItem,
+  ArtistItem,
+  GenreItem,
+  TimelinePostItem,
+} from '@/lib/ai/tools/output-schemas';
+import type { PlaylistWithTracks } from '@/lib/services';
 import type { PostType } from '@prisma/client';
+
+// Re-export canonical AI layer types for convenience
+export type {
+  TrackItem,
+  PlaylistItem,
+  ArtistItem,
+  GenreItem,
+  TimelinePostItem,
+};
 
 /**
  * Base interface for all AI responses
@@ -32,6 +42,7 @@ export interface BaseAIResponse {
  */
 export interface TextResponse extends BaseAIResponse {
   type: 'text';
+  actions?: Action[];
 }
 
 /**
@@ -47,13 +58,15 @@ export interface Action {
     | 'open_playlist'
     | 'view_artist'
     | 'share_track'
-    | 'save_playlist';
+    | 'save_playlist'
+    | 'send_message';
   label: string;
   icon?: string;
   data: {
     trackId?: string;
     playlistId?: string;
     artistId?: string;
+    message?: string;
     [key: string]: any;
   };
 }
@@ -64,8 +77,8 @@ export interface Action {
 export interface TrackListResponse extends BaseAIResponse {
   type: 'track_list';
   data: {
-    tracks: TrackWithArtist[];
-    other?: TrackWithArtist[]; // Additional/featured tracks (e.g., for single track results)
+    tracks: TrackItem[];
+    other?: TrackItem[]; // Additional/featured tracks (e.g., for single track results)
     summary?: string; // AI-generated summary for single track results
     metadata?: {
       genre?: string;
@@ -92,7 +105,7 @@ export interface PlaylistResponse extends BaseAIResponse {
 export interface PlaylistGridResponse extends BaseAIResponse {
   type: 'playlist_grid';
   data: {
-    playlists: PlaylistInfo[];
+    playlists: PlaylistItem[];
     metadata?: {
       genre?: string;
       province?: string;
@@ -107,7 +120,7 @@ export interface PlaylistGridResponse extends BaseAIResponse {
  */
 export interface ArtistResponse extends BaseAIResponse {
   type: 'artist';
-  data: ArtistProfileComplete;
+  data: ArtistItem;
   actions?: Action[];
 }
 
@@ -117,8 +130,8 @@ export interface ArtistResponse extends BaseAIResponse {
 export interface SearchResultsResponse extends BaseAIResponse {
   type: 'search_results';
   data: {
-    tracks?: TrackWithArtist[];
-    artists?: ArtistProfileComplete[];
+    tracks?: TrackItem[];
+    artists?: ArtistItem[];
     metadata?: {
       query: string;
       total?: number;
@@ -128,17 +141,9 @@ export interface SearchResultsResponse extends BaseAIResponse {
 }
 
 /**
- * Genre information
+ * Genre information (alias for canonical GenreItem for backwards compatibility)
  */
-export interface GenreInfo {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  colorHex?: string;
-  icon?: string;
-  trackCount?: number;
-}
+export type GenreInfo = GenreItem;
 
 /**
  * Response containing a list of available genres
@@ -146,7 +151,7 @@ export interface GenreInfo {
 export interface GenreListResponse extends BaseAIResponse {
   type: 'genre_list';
   data: {
-    genres: GenreInfo[];
+    genres: GenreItem[];
     metadata?: {
       total?: number;
     };
@@ -336,7 +341,7 @@ export interface ClarificationResponse extends BaseAIResponse {
 export interface TimelinePostListResponse extends BaseAIResponse {
   type: 'timeline_post_list';
   data: {
-    posts: TimelinePostWithAuthor[];
+    posts: TimelinePostItem[];
     metadata?: {
       total?: number;
       query?: string;
@@ -344,6 +349,29 @@ export interface TimelinePostListResponse extends BaseAIResponse {
     };
   };
   actions?: Action[];
+}
+
+/**
+ * A single preference item (genre, artist, or mood)
+ */
+export interface PreferenceItem {
+  name: string;
+  type: 'GENRE' | 'ARTIST' | 'MOOD';
+  score: number;
+  confidence: number;
+}
+
+/**
+ * Response showing the user's stored taste profile
+ */
+export interface UserPreferencesResponse extends BaseAIResponse {
+  type: 'user_preferences';
+  data: {
+    genres: PreferenceItem[];
+    artists: PreferenceItem[];
+    moods: PreferenceItem[];
+    hasHistory: boolean;
+  };
 }
 
 /**
@@ -362,7 +390,8 @@ export type AIResponse =
   | QuickLinkAlbumResponse
   | QuickLinkArtistResponse
   | ClarificationResponse
-  | TimelinePostListResponse;
+  | TimelinePostListResponse
+  | UserPreferencesResponse;
 
 /**
  * Registry of available response types
@@ -381,6 +410,7 @@ export const RESPONSE_TYPES = {
   quick_link_artist: 'quick_link_artist',
   clarification: 'clarification',
   timeline_post_list: 'timeline_post_list',
+  user_preferences: 'user_preferences',
 } as const;
 
 /**

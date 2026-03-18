@@ -33,6 +33,7 @@ interface ArtistNavigationProps {
       | 'library'
       | 'upload'
       | 'quick-links'
+      | 'pulse'
   ) => string;
 }
 
@@ -67,7 +68,8 @@ export default function ArtistNavigation({
     | 'overview'
     | 'library'
     | 'upload'
-    | 'quick-links';
+    | 'quick-links'
+    | 'pulse';
 
   const navItems: Array<Omit<NavItem, 'id'> & { id: TabId }> = [
     {

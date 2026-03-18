@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { conversationStore } from '@/lib/ai/memory/conversation-store';
+import { conversationStore } from '@/lib/ai/memory/bootstrap';
 import { logger } from '@/lib/utils/logger';
 
 interface RouteParams {
