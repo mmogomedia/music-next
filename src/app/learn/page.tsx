@@ -10,9 +10,10 @@ import { absoluteUrl } from '@/lib/utils/site-url';
 
 export const dynamic = 'force-dynamic';
 
-const TITLE = 'Learn | Flemoji';
+const TITLE =
+  'Music Industry Guides for Independent South African Artists | Flemoji';
 const DESCRIPTION =
-  'Music industry guides for independent South African artists — royalties, streaming, distribution, promotion, and more.';
+  'Free music industry guides for independent South African artists — royalties, streaming, distribution, promotion, and more.';
 
 export const metadata: Metadata = {
   title: TITLE,
