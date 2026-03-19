@@ -9,6 +9,7 @@ import SessionProvider from '@/components/providers/SessionProvider';
 import { MusicPlayerProvider } from '@/contexts/MusicPlayerContext';
 import BProgressProvider from '@/components/ui/BProgressProvider';
 import { ToastProvider } from '@/components/ui/Toast';
+import { GoogleAnalytics } from '@next/third-parties/google';
 import { SITE_URL } from '@/lib/utils/site-url';
 
 // Optimize font loading - only essential weights for faster FCP
@@ -101,6 +102,7 @@ export default function RootLayout({
         {/* Analytics moved to bottom - loaded after page content with defer */}
         <SpeedInsights />
         <Analytics />
+        <GoogleAnalytics gaId='G-19MJR1SM8W' />
       </body>
     </html>
   );
