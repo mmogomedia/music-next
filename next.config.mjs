@@ -33,19 +33,6 @@ const nextConfig = {
       'framer-motion',
     ],
   },
-  // Redirect www → non-www to consolidate SEO authority on one canonical domain.
-  // NEXT_PUBLIC_SITE_URL must be set to https://flemoji.com in Vercel so that
-  // canonical/og:url tags always use the non-www form as well.
-  async redirects() {
-    return [
-      {
-        source: '/:path*',
-        has: [{ type: 'host', value: 'www.flemoji.com' }],
-        destination: 'https://flemoji.com/:path*',
-        permanent: true,
-      },
-    ];
-  },
   async rewrites() {
     return [
       {
