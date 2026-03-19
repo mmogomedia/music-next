@@ -4,7 +4,9 @@
  * Single source of truth for building absolute URLs.
  *
  * Priority order:
- *  1. NEXT_PUBLIC_SITE_URL  — explicit canonical URL (set this in Vercel)
+ *  1. NEXT_PUBLIC_SITE_URL  — explicit canonical URL; MUST be set to https://flemoji.com
+ *                             in Vercel so canonical/og:url always uses the non-www form,
+ *                             even if VERCEL_PROJECT_PRODUCTION_URL returns www.flemoji.com.
  *  2. VERCEL_PROJECT_PRODUCTION_URL — Vercel's stable custom-domain env var (no protocol)
  *  3. Hard-coded fallback   — https://flemoji.com
  *
