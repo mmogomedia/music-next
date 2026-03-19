@@ -35,6 +35,16 @@ export default withAuth(
       '/faq',
       '/unauthorized',
 
+      // Content & tools (acquisition funnel — must be public)
+      '/learn',
+      '/tools',
+      '/articles',
+
+      // Public share pages
+      '/smart', // Smart link landing pages
+      '/quick', // Quick link landing pages
+      '/artist', // Public artist profiles
+
       // Public API endpoints
       '/api/health',
       '/api/tracks',
@@ -44,6 +54,7 @@ export default withAuth(
       '/api/search',
       '/api/play-events', // For tracking plays (anonymous)
       '/api/smart-links',
+      '/api/quick-links',
       '/api/public',
       '/api/timeline/feed', // Timeline feed is public
       '/api/timeline/featured', // Featured content is public
@@ -51,6 +62,7 @@ export default withAuth(
       '/api/pulse/debug', // PULSE³ debug endpoint (requires auth)
       '/api/pulse/eligibility/recalculate', // Protected by CRON_SECRET (Bearer)
       '/api/pulse/league/run', // Protected by CRON_SECRET (Bearer)
+      '/api/articles', // Public article content
 
       // Static assets
       '/_next',
@@ -93,7 +105,9 @@ export default withAuth(
       }
     }
 
-    if (path.startsWith('/artist')) {
+    // /artist/[slug] = public profiles (handled above via publicRoutes)
+    // /artist-profile = artist management dashboard (ARTIST/ADMIN only)
+    if (path.startsWith('/artist-profile')) {
       if (token.role !== 'ARTIST' && token.role !== 'ADMIN') {
         return NextResponse.redirect(new URL('/unauthorized', req.url));
       }
@@ -135,6 +149,16 @@ export default withAuth(
           '/faq',
           '/unauthorized',
 
+          // Content & tools (acquisition funnel — must be public)
+          '/learn',
+          '/tools',
+          '/articles',
+
+          // Public share pages
+          '/smart', // Smart link landing pages
+          '/quick', // Quick link landing pages
+          '/artist', // Public artist profiles
+
           // Public API endpoints
           '/api/health',
           '/api/tracks',
@@ -144,12 +168,14 @@ export default withAuth(
           '/api/search',
           '/api/play-events',
           '/api/smart-links',
+          '/api/quick-links',
           '/api/public',
           '/api/timeline/feed', // Timeline feed is public
           '/api/timeline/featured', // Featured content is public
           '/api/pulse/league', // PULSE³ League is public
           '/api/pulse/eligibility/recalculate', // Protected by CRON_SECRET (Bearer)
           '/api/pulse/league/run', // Protected by CRON_SECRET (Bearer)
+          '/api/articles', // Public article content
 
           // Static assets
           '/_next',

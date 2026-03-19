@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Input, Link as HeroUILink } from '@heroui/react';
+import { signIn } from 'next-auth/react';
+import { Button, Input, Link as HeroUILink, Divider } from '@heroui/react';
 import Link from 'next/link';
 import { registerSchema } from '@/lib/validations/auth';
 import PasswordStrength from '@/components/auth/PasswordStrength';
@@ -292,6 +293,17 @@ export default function RegisterPage() {
               Create Account
             </Button>
           </form>
+
+          <Divider className='my-6 bg-gray-200' />
+
+          <Button
+            variant='bordered'
+            size='md'
+            className='w-full border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 hover:scale-105 font-semibold text-gray-700'
+            onPress={() => signIn('google', { callbackUrl: '/' })}
+          >
+            Continue with Google
+          </Button>
 
           <div className='mt-4 text-center'>
             <p className='text-sm text-gray-600'>
