@@ -17,3 +17,9 @@ dist
 .DS_Store
 .vercel
 .env.production
+
+# Yarn Berry install cache (regenerated on every install)
+.yarn/install-state.gz
+
+# TypeScript incremental build cache (regenerated on every tsc run)
+tsconfig.tsbuildinfo
