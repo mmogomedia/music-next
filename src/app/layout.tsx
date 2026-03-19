@@ -9,6 +9,7 @@ import SessionProvider from '@/components/providers/SessionProvider';
 import { MusicPlayerProvider } from '@/contexts/MusicPlayerContext';
 import BProgressProvider from '@/components/ui/BProgressProvider';
 import { ToastProvider } from '@/components/ui/Toast';
+import { SITE_URL } from '@/lib/utils/site-url';
 
 // Optimize font loading - only essential weights for faster FCP
 const inter = Inter({
@@ -35,40 +36,30 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 });
 
-const siteUrl = 'https://flemoji.com';
-const shareImage = '/social-card.png';
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: 'Flemoji Music Streaming Platform',
+  metadataBase: new URL(SITE_URL),
+  title: 'Flemoji — AI-Powered South African Music Discovery',
   description:
-    'Discover and stream South African music. Upload tracks, build your audience, and track success with Pulse³.',
+    'Discover and stream South African music with AI. Chat with Flemoji to find new tracks, explore artists, and build your perfect playlist.',
   alternates: {
-    canonical: '/',
+    canonical: SITE_URL,
   },
   openGraph: {
-    title: 'Flemoji Music Streaming Platform',
+    title: 'Flemoji — AI-Powered South African Music Discovery',
     description:
-      'Discover and stream South African music. Upload tracks, build your audience, and track success with Pulse³.',
-    url: siteUrl,
+      'Discover and stream South African music with AI. Chat with Flemoji to find new tracks, explore artists, and build your perfect playlist.',
+    url: SITE_URL,
     siteName: 'Flemoji',
-    images: [
-      {
-        url: shareImage,
-        width: 1200,
-        height: 630,
-        alt: 'Flemoji Music Streaming Platform',
-      },
-    ],
+    // OG image is auto-discovered from src/app/opengraph-image.tsx
     locale: 'en_ZA',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Flemoji Music Streaming Platform',
+    title: 'Flemoji — AI-Powered South African Music Discovery',
     description:
-      'Discover and stream South African music. Upload tracks, build your audience, and track success with Pulse³.',
-    images: [shareImage],
+      'Discover and stream South African music with AI. Chat with Flemoji to find new tracks, explore artists, and build your perfect playlist.',
+    site: '@flemoji',
   },
   appleWebApp: {
     capable: true,

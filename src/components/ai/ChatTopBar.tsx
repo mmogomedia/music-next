@@ -1,21 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import {
-  Button,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-} from '@heroui/react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Button } from '@heroui/react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import MiniPlayer from '@/components/music/MiniPlayer';
 import {
   ClockIcon,
   SparklesIcon,
   TrophyIcon,
-  EllipsisVerticalIcon,
   BookOpenIcon,
+  WrenchScrewdriverIcon,
+  EllipsisVerticalIcon,
 } from '@heroicons/react/24/outline';
 
 export type ViewType = 'timeline' | 'streaming' | 'league';
@@ -25,173 +22,184 @@ interface ChatTopBarProps {
   onViewChange: (_view: ViewType) => void;
 }
 
+// Visible tabs on mobile
+const mobileTabs = [
+  { key: 'timeline' as ViewType, label: 'Timeline', icon: ClockIcon },
+  { key: 'streaming' as ViewType, label: 'Streaming', icon: SparklesIcon },
+  { key: 'learn', label: 'Learn', href: '/learn', icon: BookOpenIcon },
+] as const;
+
+// Overflow menu items (3-dot)
+const overflowItems = [
+  {
+    key: 'league' as ViewType,
+    label: 'League',
+    icon: TrophyIcon,
+    type: 'view' as const,
+  },
+  {
+    key: 'tools',
+    label: 'Tools',
+    href: '/tools',
+    icon: WrenchScrewdriverIcon,
+    type: 'link' as const,
+  },
+] as const;
+
+// All buttons for desktop pill
+const desktopViewButtons = [
+  { key: 'timeline' as ViewType, label: 'Timeline', icon: ClockIcon },
+  { key: 'streaming' as ViewType, label: 'AI Streaming', icon: SparklesIcon },
+  { key: 'league' as ViewType, label: 'League', icon: TrophyIcon },
+] as const;
+
+const desktopLinkButtons = [
+  { href: '/learn', label: 'Learn', icon: BookOpenIcon },
+  { href: '/tools', label: 'Tools', icon: WrenchScrewdriverIcon },
+] as const;
+
 export default function ChatTopBar({
   activeView,
   onViewChange,
 }: ChatTopBarProps) {
-  const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(
+    null
+  );
+  const triggerRef = useRef<HTMLDivElement>(null);
 
+  // Close when clicking outside
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
+    if (!overflowOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node)
+      ) {
+        setOverflowOpen(false);
+      }
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [overflowOpen]);
 
-  // Mobile layout
-  if (isMobile) {
-    return (
-      <div className='sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-gray-200/80 dark:border-slate-700/80'>
-        <div className='px-3 py-2'>
-          <div className='flex items-center justify-between gap-2'>
-            {/* Active view pill */}
-            <div className='flex-1 min-w-0'>
-              <div className='inline-flex items-center gap-2 rounded-full bg-gray-100/80 dark:bg-slate-800/80 px-3 py-2 border border-gray-200/60 dark:border-slate-700/70 shadow-sm'>
-                {activeView === 'timeline' ? (
-                  <ClockIcon className='w-4 h-4 text-gray-700 dark:text-gray-300' />
-                ) : activeView === 'streaming' ? (
-                  <SparklesIcon className='w-4 h-4 text-gray-700 dark:text-gray-300' />
-                ) : (
-                  <TrophyIcon className='w-4 h-4 text-gray-700 dark:text-gray-300' />
-                )}
-                <span className='text-xs font-medium text-gray-800 dark:text-gray-200 truncate'>
-                  {activeView === 'timeline'
-                    ? 'Timeline'
-                    : activeView === 'streaming'
-                      ? 'Streaming'
-                      : 'League'}
-                </span>
-              </div>
-            </div>
+  const openMenu = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom,
+        right: window.innerWidth - rect.right,
+      });
+    }
+    setOverflowOpen(v => !v);
+  };
 
-            {/* 3-dot menu for view toggles */}
-            <Dropdown placement='bottom-end'>
-              <DropdownTrigger>
-                <Button
-                  isIconOnly
-                  size='sm'
-                  variant='light'
-                  radius='full'
-                  className='h-9 w-9 min-w-9 bg-gray-100/80 dark:bg-slate-800/80 border border-gray-200/60 dark:border-slate-700/70'
-                  aria-label='More'
+  return (
+    <div className='sticky top-0 z-30 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
+      {/* ── Mobile tab bar ── */}
+      <div className='lg:hidden pt-2'>
+        <div className='flex h-12'>
+          {mobileTabs.map(tab => {
+            const Icon = tab.icon;
+            const isActive = 'href' in tab ? false : activeView === tab.key;
+            const sharedCls =
+              'flex-1 flex flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors border-b-2';
+
+            if ('href' in tab) {
+              return (
+                <Link
+                  key={tab.key}
+                  href={tab.href}
+                  className={`${sharedCls} border-transparent text-gray-500 dark:text-gray-400`}
                 >
-                  <EllipsisVerticalIcon className='w-5 h-5' />
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                aria-label='Header menu'
-                className='z-[80]'
-                classNames={{
-                  base: 'bg-white dark:bg-slate-900 border border-gray-200/70 dark:border-slate-700/70 shadow-xl rounded-xl overflow-hidden',
-                  list: 'p-1',
-                }}
+                  <Icon className='w-5 h-5' />
+                  {tab.label}
+                </Link>
+              );
+            }
+
+            return (
+              <button
+                key={tab.key}
+                onClick={() => onViewChange(tab.key)}
+                className={`${sharedCls} ${
+                  isActive
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 dark:text-gray-400'
+                }`}
               >
-                <DropdownItem
-                  key='view-timeline'
-                  startContent={<ClockIcon className='w-4 h-4' />}
-                  onPress={() => onViewChange('timeline')}
-                >
-                  Timeline
-                </DropdownItem>
-                <DropdownItem
-                  key='view-streaming'
-                  startContent={<SparklesIcon className='w-4 h-4' />}
-                  onPress={() => onViewChange('streaming')}
-                >
-                  Streaming
-                </DropdownItem>
-                <DropdownItem
-                  key='view-league'
-                  startContent={<TrophyIcon className='w-4 h-4' />}
-                  onPress={() => onViewChange('league')}
-                >
-                  League
-                </DropdownItem>
-                <DropdownItem
-                  key='view-learn'
-                  startContent={<BookOpenIcon className='w-4 h-4' />}
-                  href='/learn'
-                >
-                  Learn
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
+                <Icon className='w-5 h-5' />
+                {tab.label}
+              </button>
+            );
+          })}
+
+          {/* 3-dot trigger — portals the menu to <body> to escape stacking context */}
+          <div
+            ref={triggerRef}
+            className='flex items-center justify-center px-3 border-b-2 border-transparent'
+          >
+            <button
+              onClick={openMenu}
+              className={`transition-colors ${
+                activeView === 'league'
+                  ? 'text-primary'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`}
+              aria-label='More options'
+              aria-expanded={overflowOpen}
+            >
+              <EllipsisVerticalIcon className='w-5 h-5' />
+            </button>
           </div>
         </div>
       </div>
-    );
-  }
 
-  // Desktop layout: buttons and mini player side by side
-  return (
-    <div className='hidden lg:block sticky top-0 z-40 border-b border-gray-200/80 dark:border-slate-700/80 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm'>
-      <div className='px-4 py-3 flex items-center gap-4'>
-        {/* View Toggle Buttons */}
-        <div className='flex items-center flex-shrink-0'>
+      {/* ── Desktop pill bar ── */}
+      <div className='hidden lg:flex px-4 py-3 items-center gap-4'>
+        <div className='flex-shrink-0'>
           <div className='inline-flex items-center gap-1.5 rounded-full bg-gray-100/80 dark:bg-slate-800/80 p-1 border border-gray-200/60 dark:border-slate-700/70 shadow-sm'>
-            <Button
-              size='sm'
-              variant={activeView === 'timeline' ? 'solid' : 'light'}
-              color={activeView === 'timeline' ? 'primary' : 'default'}
-              onPress={() => onViewChange('timeline')}
-              className={`gap-1.5 rounded-full text-xs font-medium ${
-                activeView === 'timeline'
-                  ? 'shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300'
-              }`}
-              startContent={
-                <ClockIcon className='w-4 h-4' aria-hidden='true' />
-              }
-            >
-              AI Timeline
-            </Button>
-            <Button
-              size='sm'
-              variant={activeView === 'streaming' ? 'solid' : 'light'}
-              color={activeView === 'streaming' ? 'primary' : 'default'}
-              onPress={() => onViewChange('streaming')}
-              className={`gap-1.5 rounded-full text-xs font-medium ${
-                activeView === 'streaming'
-                  ? 'shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300'
-              }`}
-              startContent={
-                <SparklesIcon className='w-4 h-4' aria-hidden='true' />
-              }
-            >
-              AI Streaming
-            </Button>
-            <Button
-              size='sm'
-              variant={activeView === 'league' ? 'solid' : 'light'}
-              color={activeView === 'league' ? 'primary' : 'default'}
-              onPress={() => onViewChange('league')}
-              className={`gap-1.5 rounded-full text-xs font-medium ${
-                activeView === 'league'
-                  ? 'shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300'
-              }`}
-              startContent={
-                <TrophyIcon className='w-4 h-4' aria-hidden='true' />
-              }
-            >
-              League
-            </Button>
-            <Link href='/learn'>
+            {desktopViewButtons.map(({ key, label, icon: Icon }) => (
               <Button
+                key={key}
                 size='sm'
-                variant='light'
-                color='default'
-                className='gap-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300'
+                variant={activeView === key ? 'solid' : 'light'}
+                color={activeView === key ? 'primary' : 'default'}
+                onPress={() => onViewChange(key)}
+                className={`gap-1.5 rounded-full text-xs font-medium px-3 ${
+                  activeView === key
+                    ? 'shadow-sm'
+                    : 'text-gray-700 dark:text-gray-300'
+                }`}
                 startContent={
-                  <BookOpenIcon className='w-4 h-4' aria-hidden='true' />
+                  <Icon className='w-4 h-4 flex-shrink-0' aria-hidden='true' />
                 }
               >
-                Learn
+                {label}
               </Button>
-            </Link>
+            ))}
+
+            <div className='w-px h-5 bg-gray-300/50 dark:bg-slate-600/50 mx-0.5' />
+
+            {desktopLinkButtons.map(({ href, label, icon: Icon }) => (
+              <Link key={href} href={href}>
+                <Button
+                  size='sm'
+                  variant='light'
+                  color='default'
+                  className='gap-1.5 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300 px-3'
+                  startContent={
+                    <Icon
+                      className='w-4 h-4 flex-shrink-0'
+                      aria-hidden='true'
+                    />
+                  }
+                >
+                  {label}
+                </Button>
+              </Link>
+            ))}
           </div>
         </div>
 
@@ -201,6 +209,60 @@ export default function ChatTopBar({
           </div>
         </div>
       </div>
+
+      {/* Overflow menu — portalled to <body> so it's never clipped by the sticky bar */}
+      {overflowOpen &&
+        menuPos &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <>
+            {/* Transparent backdrop */}
+            <button
+              className='fixed inset-0 z-[9998] cursor-default'
+              onClick={() => setOverflowOpen(false)}
+              aria-label='Close menu'
+              tabIndex={-1}
+            />
+            {/* Menu */}
+            <div
+              style={{
+                position: 'fixed',
+                top: menuPos.top + 8,
+                right: menuPos.right,
+                zIndex: 9999,
+              }}
+              className='min-w-[160px] rounded-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 shadow-xl overflow-hidden'
+            >
+              {overflowItems.map(item => {
+                const Icon = item.icon;
+                const isActive =
+                  item.type === 'view' && activeView === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    onClick={() => {
+                      setOverflowOpen(false);
+                      if (item.type === 'view') {
+                        onViewChange(item.key as ViewType);
+                      } else {
+                        router.push(item.href);
+                      }
+                    }}
+                    className={`w-full flex items-center gap-2.5 px-4 py-3 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-slate-800 ${
+                      isActive
+                        ? 'text-primary font-medium'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    <Icon className='w-4 h-4 flex-shrink-0' />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </>,
+          document.body
+        )}
     </div>
   );
 }

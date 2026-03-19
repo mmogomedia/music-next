@@ -6,18 +6,32 @@ import { constructFileUrl } from '@/lib/url-utils';
 import { format } from 'date-fns';
 import LearnHeader from '@/components/layout/LearnHeader';
 import type { Article, ArticleCluster } from '@/types/articles';
+import { absoluteUrl } from '@/lib/utils/site-url';
 
 export const dynamic = 'force-dynamic';
 
+const TITLE =
+  'Music Industry Guides for Independent South African Artists | Flemoji';
+const DESCRIPTION =
+  'Free music industry guides for independent South African artists — royalties, streaming, distribution, promotion, and more.';
+
 export const metadata: Metadata = {
-  title: 'Learn | Flemoji',
-  description:
-    'Music industry guides for independent South African artists — royalties, streaming, distribution, promotion, and more.',
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: absoluteUrl('/learn') },
   openGraph: {
-    title: 'Learn | Flemoji',
-    description:
-      'Music industry guides for independent South African artists — royalties, streaming, distribution, promotion, and more.',
+    title: TITLE,
+    description: DESCRIPTION,
+    url: absoluteUrl('/learn'),
+    siteName: 'Flemoji',
     type: 'website',
+    // OG image is auto-discovered from src/app/learn/opengraph-image.tsx
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: TITLE,
+    description: DESCRIPTION,
+    site: '@flemoji',
   },
 };
 

@@ -7,6 +7,8 @@ import { ToolRenderer } from '@/components/tools/ToolRenderer';
 import LearnHeader from '@/components/layout/LearnHeader';
 import { getLinksTo } from '@/lib/services/graph-service';
 import { prisma } from '@/lib/db';
+import { absoluteUrl, SITE_URL } from '@/lib/utils/site-url';
+import { serializeJsonLd } from '@/lib/utils/seo';
 
 interface ToolPageProps {
   params: Promise<{ slug: string }>;
@@ -22,13 +24,27 @@ export async function generateMetadata({
   const { slug } = await params;
   const tool = getToolBySlug(slug);
   if (!tool) return {};
+
+  const url = absoluteUrl(`/tools/${slug}`);
+
   return {
+    metadataBase: new URL(SITE_URL),
     title: `${tool.name} | Flemoji Tools`,
     description: tool.description,
+    alternates: { canonical: url },
     openGraph: {
       title: `${tool.name} | Flemoji Tools`,
       description: tool.description,
       type: 'website',
+      url,
+      siteName: 'Flemoji',
+      // OG image inherits from src/app/tools/opengraph-image.tsx
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${tool.name} | Flemoji Tools`,
+      description: tool.description,
+      site: '@flemoji',
     },
   };
 }
@@ -68,10 +84,40 @@ export default async function ToolPage({ params }: ToolPageProps) {
   const tool = getToolBySlug(slug);
   if (!tool) notFound();
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: tool.name,
+    description: tool.description,
+    url: absoluteUrl(`/tools/${slug}`),
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Any',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'ZAR',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Flemoji',
+      url: absoluteUrl('/'),
+      logo: {
+        '@type': 'ImageObject',
+        url: absoluteUrl('/main_logo.png'),
+      },
+    },
+    inLanguage: 'en-ZA',
+    keywords: tool.features.join(', '),
+  };
+
   // ── Fullscreen layout (e.g. Split Sheet) ──────────────────────────────────
   if (tool.fullscreen) {
     return (
       <div className='flex flex-col h-screen overflow-hidden bg-white dark:bg-slate-900'>
+        <script
+          type='application/ld+json'
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+        />
         <LearnHeader />
         <div className='flex-1 overflow-hidden'>
           <ToolRenderer slug={slug} />
@@ -85,6 +131,10 @@ export default async function ToolPage({ params }: ToolPageProps) {
   // ── Standard layout ───────────────────────────────────────────────────────
   return (
     <div className='min-h-screen bg-white dark:bg-slate-900'>
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
       <LearnHeader />
 
       {/* Gradient accent bar */}

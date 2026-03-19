@@ -286,13 +286,13 @@ export default function TrackCard({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className={`h-10 w-10 flex items-center justify-center rounded-full border border-gray-200 dark:border-slate-700 transition-colors ${
+      className={`h-8 w-full flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
         disabled
           ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
           : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
       }`}
     >
-      <Icon className='w-4 h-4' />
+      <Icon className='w-3.5 h-3.5' />
     </button>
   );
 
@@ -445,13 +445,13 @@ export default function TrackCard({
             )}
           </div>
 
-          {/* Action buttons - visible on hover or always if current track */}
+          {/* Action buttons — hidden on mobile (touch has no hover), visible on sm+ via hover or always if current track */}
           {showActions && (
             <div
-              className={`flex items-start gap-1.5 flex-shrink-0 transition-opacity ${
+              className={`items-start gap-1.5 flex-shrink-0 transition-opacity ${
                 isCurrentTrack
-                  ? 'opacity-100'
-                  : 'opacity-0 group-hover:opacity-100'
+                  ? 'hidden sm:flex opacity-100'
+                  : 'hidden sm:flex opacity-0 group-hover:opacity-100'
               }`}
             >
               <button
@@ -592,10 +592,10 @@ export default function TrackCard({
 
         {showActions && (
           <div
-            className={`flex items-center gap-1 flex-shrink-0 transition-opacity ${
+            className={`items-center gap-1 flex-shrink-0 transition-opacity ${
               isCurrentTrack
-                ? 'opacity-100'
-                : 'opacity-0 group-hover:opacity-100'
+                ? 'hidden sm:flex opacity-100'
+                : 'hidden sm:flex opacity-0 group-hover:opacity-100'
             }`}
           >
             <button
@@ -638,8 +638,6 @@ export default function TrackCard({
 
   // Spotlight variant (large tile with overlay info)
   if (variant === 'spotlight') {
-    const durationSeconds = normalizeDuration(track.duration);
-
     const handleKeyActivate = (event: React.KeyboardEvent<HTMLDivElement>) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -657,13 +655,13 @@ export default function TrackCard({
             tabIndex={0}
             onClick={handleClick}
             onKeyDown={handleKeyActivate}
-            className={`group flex h-full flex-col overflow-hidden rounded-[32px] border transition-all duration-500 cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-500/30 dark:focus:ring-blue-400/30 ${
+            className={`group flex h-full flex-col overflow-hidden rounded-2xl border transition-all duration-500 cursor-pointer focus:outline-none focus:ring-4 focus:ring-blue-500/30 dark:focus:ring-blue-400/30 ${
               isCurrentTrack
                 ? 'border-blue-500/70 dark:border-blue-400/70 shadow-2xl shadow-blue-500/20'
                 : 'border-gray-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl hover:shadow-blue-500/10'
             }`}
           >
-            <div className='relative w-full min-h-[260px] overflow-hidden bg-gradient-to-br from-blue-300/30 via-purple-300/15 to-blue-400/25 dark:from-blue-900/30 dark:via-purple-900/25 dark:to-blue-900/35'>
+            <div className='relative w-full min-h-[180px] overflow-hidden bg-gradient-to-br from-blue-300/30 via-purple-300/15 to-blue-400/25 dark:from-blue-900/30 dark:via-purple-900/25 dark:to-blue-900/35'>
               {track.coverImageUrl || track.albumArtwork ? (
                 <TrackArtwork
                   artworkUrl={track.coverImageUrl || track.albumArtwork}
@@ -719,11 +717,11 @@ export default function TrackCard({
               </div>
             </div>
 
-            <div className='flex flex-1 flex-col justify-between bg-white dark:bg-slate-900 px-5 pb-5 pt-4'>
-              <div className='space-y-3 text-gray-900 dark:text-white'>
-                <div className='space-y-1'>
+            <div className='flex flex-1 flex-col justify-between bg-white dark:bg-slate-900 px-3.5 pb-3.5 pt-3'>
+              <div className='space-y-2 text-gray-900 dark:text-white'>
+                <div className='space-y-0.5'>
                   <div className='flex items-center gap-2'>
-                    <p className='text-lg font-semibold leading-tight flex-1'>
+                    <p className='text-sm font-semibold leading-tight flex-1 truncate'>
                       {track.title}
                     </p>
                     {track.completionPercentage !== undefined && (
@@ -734,33 +732,17 @@ export default function TrackCard({
                       />
                     )}
                   </div>
-                  <p className='text-xs text-gray-600 dark:text-gray-300 truncate uppercase tracking-wide'>
+                  <p className='text-xs text-gray-500 dark:text-gray-400 truncate'>
                     <ArtistDisplay track={track} />
                   </p>
                 </div>
-                <div className='flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 flex-wrap'>
-                  {showDuration && durationSeconds && (
-                    <span className='flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-300'>
-                      <svg
-                        className='w-3.5 h-3.5'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
-                        <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                          strokeWidth={2}
-                          d='M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'
-                        />
-                      </svg>
-                      {formatDuration(durationSeconds)}
-                    </span>
-                  )}
+
+                {/* Compact single-line meta: play count + genre badge only */}
+                <div className='flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 overflow-hidden'>
                   {typeof track.playCount === 'number' && (
-                    <span className='flex items-center gap-1'>
+                    <span className='flex items-center gap-0.5 flex-shrink-0'>
                       <svg
-                        className='w-3.5 h-3.5'
+                        className='w-3 h-3'
                         fill='currentColor'
                         viewBox='0 0 24 24'
                       >
@@ -769,35 +751,21 @@ export default function TrackCard({
                       {track.playCount.toLocaleString?.() ?? track.playCount}
                     </span>
                   )}
-                  {typeof track.downloadCount === 'number' && (
-                    <span className='flex items-center gap-1'>
-                      <ArrowDownTrayIcon className='w-3.5 h-3.5' />
-                      {track.downloadCount.toLocaleString?.() ??
-                        track.downloadCount}
-                    </span>
-                  )}
                   {track.genre && (
-                    <span className='px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800/60 text-gray-700 dark:text-gray-200 font-semibold uppercase tracking-wide'>
+                    <span className='px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800/60 text-gray-600 dark:text-gray-300 font-semibold uppercase text-[10px] truncate'>
                       {track.genre}
                     </span>
                   )}
-                </div>
-
-                <div className='h-4 flex items-end'>
                   {isCurrentlyPlaying && (
-                    <div className='flex gap-1 text-blue-500'>
-                      <span className='w-1 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]' />
+                    <div className='flex gap-0.5 items-end ml-auto flex-shrink-0'>
+                      <span className='w-1 h-2.5 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]' />
                       <span
-                        className='w-1 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
+                        className='w-1 h-3.5 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
                         style={{ animationDelay: '0.1s' }}
                       />
                       <span
-                        className='w-1 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
+                        className='w-1 h-2.5 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
                         style={{ animationDelay: '0.2s' }}
-                      />
-                      <span
-                        className='w-1 bg-blue-500/70 rounded-full animate-[music-bounce_0.6s_ease-in-out_infinite]'
-                        style={{ animationDelay: '0.3s' }}
                       />
                     </div>
                   )}
@@ -805,7 +773,7 @@ export default function TrackCard({
               </div>
 
               {showActions && (
-                <div className='mt-3 grid grid-cols-4 gap-2'>
+                <div className='mt-2 hidden sm:grid grid-cols-4 gap-1'>
                   <ActionButton
                     icon={QueueListIcon}
                     label='Add to queue'

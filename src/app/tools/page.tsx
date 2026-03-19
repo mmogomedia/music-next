@@ -4,16 +4,31 @@ import Image from 'next/image';
 import { getAllTools, getToolsByCategory } from '@/lib/tools/registry';
 import { ToolSummaryCard } from '@/components/tools/ToolSummaryCard';
 import LearnHeader from '@/components/layout/LearnHeader';
+import { absoluteUrl, SITE_URL } from '@/lib/utils/site-url';
 
 export const metadata: Metadata = {
-  title: 'Tools | Flemoji',
+  metadataBase: new URL(SITE_URL),
+  title: 'Free Music Business Tools for Independent Artists | Flemoji',
   description:
-    'Free interactive tools for South African independent artists — split sheet calculator, revenue predictor, and more.',
+    'Free interactive tools for South African independent artists — split sheet calculator, revenue predictor, and more. No sign-up needed.',
+  alternates: {
+    canonical: absoluteUrl('/tools'),
+  },
   openGraph: {
-    title: 'Tools | Flemoji',
+    title: 'Free Music Business Tools for Independent Artists | Flemoji',
     description:
-      'Free interactive tools for independent artists — split sheets, revenue prediction, and more.',
+      'Free interactive calculators to help independent artists navigate royalties, earnings, and the music business.',
     type: 'website',
+    url: absoluteUrl('/tools'),
+    siteName: 'Flemoji',
+    // OG image is auto-discovered from src/app/tools/opengraph-image.tsx
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Free Music Business Tools | Flemoji',
+    description:
+      'Free interactive calculators for independent artists — split sheets, revenue prediction, and more.',
+    site: '@flemoji',
   },
 };
 

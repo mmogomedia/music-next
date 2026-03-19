@@ -688,6 +688,34 @@ import { Button, Card, Input } from '@heroui/react';
 </div>
 ```
 
+## Git Workflow
+
+> **Golden Rule: Never develop directly on `develop` or `main`. Always checkout to an appropriate feature branch before making any changes.**
+
+When a user requests changes:
+
+1. **Check the current branch** — if on `develop` or `main`, stop and create a feature branch first
+2. **Checkout a new branch** with a descriptive name based on the work:
+   ```bash
+   git checkout -b feat/add-user-notifications
+   git checkout -b fix/playlist-query-error
+   git checkout -b chore/update-dependencies
+   ```
+3. **Make changes, commit, and push** the feature branch
+4. **Open a PR** from the feature branch into `develop`
+
+**Branch naming conventions:**
+
+- `feat/` — new features
+- `fix/` — bug fixes
+- `chore/` — maintenance, dependency updates, config
+- `docs/` — documentation only changes
+- `refactor/` — code restructuring without behaviour change
+
+**Never commit directly to `develop` or `main`.**
+
+---
+
 ## Build & Deployment
 
 ### Build Process

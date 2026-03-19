@@ -1,6 +1,7 @@
 import { headers, cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
+import { serializeJsonLd } from '@/lib/utils/seo';
 import {
   getQuickLinkLandingData,
   recordQuickLinkEvent,
@@ -10,6 +11,7 @@ import QuickLinkAlbumView from '@/components/quick-links/AlbumLandingView';
 import QuickLinkArtistView from '@/components/quick-links/ArtistLandingView';
 import Link from 'next/link';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import { absoluteUrl, SITE_URL } from '@/lib/utils/site-url';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -45,23 +47,22 @@ export async function generateMetadata({
   }
 
   const quickLink = data.quickLink;
+  const pageUrl = absoluteUrl(`/quick/${resolvedParams.slug}`);
+
   let baseTitle = quickLink.title;
   let baseDescription = quickLink.description;
   let image: string | null = null;
+  let ogType: 'music.song' | 'profile' | 'website' = 'website';
 
-  // Build metadata based on quick link type
   if (quickLink.type === 'TRACK' && data.track) {
-    // Use track metadata
     const artistName = data.track.artist || 'Unknown Artist';
     baseTitle = baseTitle || `${data.track.title} by ${artistName}`;
     baseDescription =
       baseDescription ||
-      `Listen to "${data.track.title}" by ${artistName}${
-        data.track.genre ? ` • ${data.track.genre}` : ''
-      }${data.track.description ? ` • ${data.track.description.slice(0, 100)}` : ''} on Flemoji.`;
+      `Listen to "${data.track.title}" by ${artistName}${data.track.genre ? ` • ${data.track.genre}` : ''}${(data.track as { description?: string }).description ? ` • ${(data.track as { description?: string }).description!.slice(0, 100)}` : ''} on Flemoji.`;
     image = data.track.coverImageUrl || data.track.albumArtwork || null;
+    ogType = 'music.song';
   } else if (quickLink.type === 'ARTIST' && data.artist?.profile) {
-    // Use artist metadata
     const artistName = data.artist.profile.artistName || 'Artist';
     baseTitle = baseTitle || `${artistName} on Flemoji`;
     const bioExcerpt = data.artist.profile.bio
@@ -69,34 +70,25 @@ export async function generateMetadata({
       : '';
     baseDescription =
       baseDescription ||
-      `Discover ${artistName}${
-        data.artist.profile.genre ? ` • ${data.artist.profile.genre}` : ''
-      }${bioExcerpt ? ` • ${bioExcerpt}` : ''} on Flemoji.`;
-    // Use artist profile image or cover image
+      `Discover ${artistName}${data.artist.profile.genre ? ` • ${data.artist.profile.genre}` : ''}${bioExcerpt ? ` • ${bioExcerpt}` : ''} on Flemoji.`;
     image =
       data.artist.profile.profileImage ||
-      data.artist.profile.coverImage ||
+      (data.artist.profile as { coverImage?: string }).coverImage ||
       null;
+    ogType = 'profile';
   } else if (quickLink.type === 'ALBUM' && data.album) {
-    // Use album metadata
     const artistName = data.album.artist?.artistName || 'Unknown Artist';
     baseTitle = baseTitle || `${data.album.albumName} by ${artistName}`;
     baseDescription =
       baseDescription ||
-      `Explore "${data.album.albumName}" by ${artistName}${
-        data.album.tracks.length > 0
-          ? ` • ${data.album.tracks.length} track${data.album.tracks.length > 1 ? 's' : ''}`
-          : ''
-      } on Flemoji.`;
-    // Use first track's artwork, or artist cover image as fallback
+      `Explore "${data.album.albumName}" by ${artistName}${data.album.tracks.length > 0 ? ` • ${data.album.tracks.length} track${data.album.tracks.length > 1 ? 's' : ''}` : ''} on Flemoji.`;
     image =
       data.album.tracks[0]?.albumArtwork ||
       data.album.tracks[0]?.coverImageUrl ||
-      data.album.artist?.coverImage ||
+      (data.album.artist as { coverImage?: string } | null)?.coverImage ||
       data.album.artist?.profileImage ||
       null;
   } else {
-    // Fallback metadata
     baseDescription =
       baseDescription ||
       (quickLink.type === 'TRACK'
@@ -106,41 +98,34 @@ export async function generateMetadata({
           : 'Explore this album on Flemoji.');
   }
 
-  // Ensure image is an absolute URL (service already converts via ensureAbsoluteUrl/constructFileUrl)
-  // Just verify it's absolute, if not convert relative URLs to absolute
-  const imageUrl = image
-    ? image.startsWith('http://') || image.startsWith('https://')
+  // Ensure absolute image URL
+  const absImage = image
+    ? image.startsWith('http')
       ? image
-      : image.startsWith('/')
-        ? `https://flemoji.co.za${image}`
-        : `https://flemoji.co.za/${image}`
+      : absoluteUrl(image.startsWith('/') ? image : `/${image}`)
     : null;
 
-  // Determine OpenGraph type based on quick link type
-  const ogType =
-    quickLink.type === 'TRACK'
-      ? 'music.song'
-      : quickLink.type === 'ARTIST'
-        ? 'profile'
-        : 'website';
-
   return {
+    metadataBase: new URL(SITE_URL),
     title: `${baseTitle} • Flemoji`,
-    description: baseDescription,
+    description: baseDescription ?? undefined,
+    alternates: { canonical: pageUrl },
     openGraph: {
       title: `${baseTitle} • Flemoji`,
-      description: baseDescription,
-      url: `https://flemoji.co.za/quick/${resolvedParams.slug}`,
+      description: baseDescription ?? undefined,
+      url: pageUrl,
       type: ogType,
-      images: imageUrl
-        ? [{ url: imageUrl, width: 1200, height: 630, alt: baseTitle }]
+      siteName: 'Flemoji',
+      images: absImage
+        ? [{ url: absImage, width: 1200, height: 630, alt: baseTitle }]
         : undefined,
     },
     twitter: {
       card: 'summary_large_image',
       title: `${baseTitle} • Flemoji`,
-      description: baseDescription,
-      images: imageUrl ? [imageUrl] : undefined,
+      description: baseDescription ?? undefined,
+      site: '@flemoji',
+      images: absImage ? [absImage] : undefined,
     },
   };
 }
@@ -237,8 +222,70 @@ export default async function QuickLinkPage({
 
   const viewInChatHref = `/?quickLinkSlug=${quickLink.slug}`;
 
+  // ── JSON-LD structured data ─────────────────────────────────────────────
+  const trackImg =
+    data.track?.coverImageUrl || data.track?.albumArtwork || undefined;
+  const artistImg =
+    (data.artist?.profile?.profileImage as string | undefined) || undefined;
+  const albumImg =
+    data.album?.tracks[0]?.albumArtwork ||
+    data.album?.tracks[0]?.coverImageUrl ||
+    undefined;
+
+  const jsonLd =
+    quickLink.type === 'TRACK' && data.track
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'MusicRecording',
+          name: data.track.title,
+          byArtist: {
+            '@type': 'MusicGroup',
+            name: data.track.artist || 'Unknown Artist',
+          },
+          ...(data.track.genre ? { genre: data.track.genre } : {}),
+          ...(trackImg ? { image: trackImg } : {}),
+          url: absoluteUrl(`/quick/${quickLink.slug}`),
+          inLanguage: 'en-ZA',
+        }
+      : quickLink.type === 'ARTIST' && data.artist?.profile
+        ? {
+            '@context': 'https://schema.org',
+            '@type': 'MusicGroup',
+            name: data.artist.profile.artistName,
+            ...(data.artist.profile.bio
+              ? { description: data.artist.profile.bio.slice(0, 200) }
+              : {}),
+            ...(data.artist.profile.genre
+              ? { genre: data.artist.profile.genre }
+              : {}),
+            ...(artistImg ? { image: artistImg } : {}),
+            url: absoluteUrl(`/quick/${quickLink.slug}`),
+            inLanguage: 'en-ZA',
+          }
+        : quickLink.type === 'ALBUM' && data.album
+          ? {
+              '@context': 'https://schema.org',
+              '@type': 'MusicAlbum',
+              name: data.album.albumName,
+              byArtist: {
+                '@type': 'MusicGroup',
+                name: data.album.artist?.artistName || 'Unknown Artist',
+              },
+              numTracks: data.album.tracks.length,
+              ...(albumImg ? { image: albumImg } : {}),
+              url: absoluteUrl(`/quick/${quickLink.slug}`),
+              inLanguage: 'en-ZA',
+            }
+          : null;
+
   return (
     <div className='relative min-h-screen bg-white text-slate-900'>
+      {jsonLd && (
+        <script
+          type='application/ld+json'
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+        />
+      )}
       <div className='absolute inset-0 pointer-events-none'>
         <div className='absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(63,131,248,0.12),_transparent_45%),_radial-gradient(circle_at_bottom_right,_rgba(139,92,246,0.12),_transparent_40%)]' />
         {backgroundShapes.map((shape, idx) => (
