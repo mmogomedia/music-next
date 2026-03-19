@@ -3779,6 +3779,14 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@next/swc-darwin-arm64@npm:^16.2.0":
+  version: 16.2.0
+  resolution: "@next/swc-darwin-arm64@npm:16.2.0"
+  checksum: 10c0/eca34da9ff35d467b411472288f1afb041589e6bf2660b1629700c89572094dd48920a52b36f199eb5a8b9d61bd253f8fee9dc1f44b8a29b517269cf5b221283
+  conditions: os=darwin & cpu=arm64
+  languageName: node
+  linkType: hard
+
 "@next/swc-darwin-x64@npm:15.5.7":
   version: 15.5.7
   resolution: "@next/swc-darwin-x64@npm:15.5.7"
@@ -9641,6 +9649,7 @@ __metadata:
     "@langchain/google-genai": "npm:^1.0.0"
     "@langchain/openai": "npm:^1.0.0"
     "@next-auth/prisma-adapter": "npm:^1.0.7"
+    "@next/swc-darwin-arm64": "npm:^16.2.0"
     "@next/third-parties": "npm:^16.2.0"
     "@prisma/client": "npm:^5.22.0"
     "@tailwindcss/postcss": "npm:^4.1.13"
