@@ -22,6 +22,8 @@ import {
   FolderIcon,
   InformationCircleIcon,
   EyeIcon,
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -36,6 +38,10 @@ import type {
 import { useImageUpload } from '@/lib/image-upload';
 import { constructFileUrl } from '@/lib/url-utils';
 import { getToolBySlug } from '@/lib/tools/registry';
+import {
+  parseClusterMd,
+  serializeClusterMd,
+} from '@/lib/utils/parse-cluster-md';
 import { ToolSummaryCard } from '@/components/tools/ToolSummaryCard';
 
 const ArticleEditor = lazy(() => import('@/components/articles/ArticleEditor'));
@@ -1246,9 +1252,65 @@ function ClusterForm({ initial, onSave, onCancel, saving }: ClusterFormProps) {
   const [longTailKeywords, setLongTailKeywords] = useState<string[]>(
     initial?.longTailKeywords ?? []
   );
+  const importRef = useRef<HTMLInputElement>(null);
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const text = ev.target?.result as string;
+      const parsed = parseClusterMd(text);
+      if (parsed.name) setName(parsed.name);
+      if (parsed.description) setDescription(parsed.description);
+      if (parsed.about) setAbout(parsed.about);
+      if (parsed.goal) setGoal(parsed.goal);
+      if (parsed.audience) setAudience(parsed.audience);
+      if (parsed.primaryKeywords?.length)
+        setPrimaryKeywords(parsed.primaryKeywords);
+      if (parsed.secondaryKeywords?.length)
+        setSecondaryKeywords(parsed.secondaryKeywords);
+      if (parsed.longTailKeywords?.length)
+        setLongTailKeywords(parsed.longTailKeywords);
+    };
+    reader.readAsText(file);
+    // Reset so the same file can be re-imported
+    e.target.value = '';
+  };
 
   return (
     <div className='space-y-7'>
+      {/* ── Import toolbar ── */}
+      <input
+        ref={importRef}
+        type='file'
+        accept='.md'
+        className='hidden'
+        onChange={handleImport}
+      />
+      <div className='flex items-center gap-2 p-3 bg-gray-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-gray-200 dark:border-slate-700'>
+        <span className='flex-1 text-xs text-gray-400 dark:text-gray-500'>
+          Import a <code className='font-mono'>.md</code> file to prefill this
+          form
+        </span>
+        <a
+          href='/flemoji-cluster-template.md'
+          download
+          className='flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors'
+        >
+          <ArrowDownTrayIcon className='w-3.5 h-3.5' />
+          Template
+        </a>
+        <button
+          type='button'
+          onClick={() => importRef.current?.click()}
+          className='flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors'
+        >
+          <ArrowUpTrayIcon className='w-3.5 h-3.5' />
+          Import .md
+        </button>
+      </div>
+
       {/* ── Identity ── */}
       <SectionDivider label='Identity' />
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
@@ -1584,6 +1646,7 @@ interface ClusterSectionProps {
   spokes: Article[];
   onEditCluster: (_c: ArticleCluster) => void;
   onDeleteCluster: (_id: string) => void;
+  onExportCluster: (_c: ClusterWithCount) => void;
   onAddArticle: (_clusterId: string) => void;
   onEditArticle: (_a: Article) => void;
   onPublishArticle: (_id: string) => void;
@@ -1598,6 +1661,7 @@ function ClusterSection({
   spokes,
   onEditCluster,
   onDeleteCluster,
+  onExportCluster,
   onAddArticle,
   onEditArticle,
   onPublishArticle,
@@ -1661,6 +1725,13 @@ function ClusterSection({
           >
             <PlusIcon className='w-3.5 h-3.5' />
             <span className='hidden sm:inline'>Add</span>
+          </button>
+          <button
+            onClick={() => onExportCluster(cluster)}
+            title='Export cluster as .md'
+            className='p-1.5 text-gray-400 hover:text-green-500 rounded-md transition-colors'
+          >
+            <ArrowDownTrayIcon className='w-3.5 h-3.5' />
           </button>
           <button
             onClick={() => onEditCluster(cluster)}
@@ -2138,6 +2209,27 @@ export default function ArticleManagement() {
     }
   };
 
+  const handleExportCluster = (cluster: ClusterWithCount) => {
+    const md = serializeClusterMd({
+      name: cluster.name,
+      slug: cluster.slug,
+      audience: cluster.audience,
+      description: cluster.description,
+      about: cluster.about,
+      goal: cluster.goal,
+      primaryKeywords: cluster.primaryKeywords,
+      secondaryKeywords: cluster.secondaryKeywords,
+      longTailKeywords: cluster.longTailKeywords,
+    });
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cluster-${cluster.slug}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // ── Modal meta ───────────────────────────────────────────────────────────
 
   const isClusterModal =
@@ -2256,6 +2348,7 @@ export default function ArticleManagement() {
                   setModal({ type: 'cluster-edit', cluster: c })
                 }
                 onDeleteCluster={handleDeleteCluster}
+                onExportCluster={handleExportCluster}
                 onAddArticle={cid =>
                   setModal({ type: 'article-create', prefillClusterId: cid })
                 }
