@@ -9,7 +9,9 @@ import SessionProvider from '@/components/providers/SessionProvider';
 import { MusicPlayerProvider } from '@/contexts/MusicPlayerContext';
 import BProgressProvider from '@/components/ui/BProgressProvider';
 import { ToastProvider } from '@/components/ui/Toast';
+import { GoogleAnalytics } from '@next/third-parties/google';
 import { SITE_URL } from '@/lib/utils/site-url';
+import { serializeJsonLd } from '@/lib/utils/seo';
 
 // Optimize font loading - only essential weights for faster FCP
 const inter = Inter({
@@ -73,6 +75,41 @@ export const metadata: Metadata = {
   },
 };
 
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Flemoji',
+  url: SITE_URL,
+  description:
+    'AI-powered South African music discovery and artist promotion platform.',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+    },
+    'query-input': 'required name=search_term_string',
+  },
+};
+
+const organizationJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Flemoji',
+  url: SITE_URL,
+  logo: `${SITE_URL}/logo.png`,
+  sameAs: [
+    'https://www.instagram.com/flemoji',
+    'https://www.tiktok.com/@flemoji',
+    'https://twitter.com/flemoji',
+  ],
+  contactPoint: {
+    '@type': 'ContactPoint',
+    email: 'support@flemoji.com',
+    contactType: 'customer support',
+  },
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -84,6 +121,18 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`dark ${inter.variable} ${poppins.variable} ${jetbrainsMono.variable}`}
     >
+      <head>
+        <script
+          type='application/ld+json'
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteJsonLd) }}
+        />
+        <script
+          type='application/ld+json'
+          dangerouslySetInnerHTML={{
+            __html: serializeJsonLd(organizationJsonLd),
+          }}
+        />
+      </head>
       <body suppressHydrationWarning className={inter.className}>
         <a href='#content' className='skip-link'>
           Skip to content
@@ -101,6 +150,7 @@ export default function RootLayout({
         {/* Analytics moved to bottom - loaded after page content with defer */}
         <SpeedInsights />
         <Analytics />
+        <GoogleAnalytics gaId='G-19MJR1SM8W' />
       </body>
     </html>
   );

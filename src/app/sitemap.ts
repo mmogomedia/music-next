@@ -33,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     },
     {
-      url: `${SITE_URL}/browse`,
+      url: `${SITE_URL}/league`,
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.6,
@@ -77,5 +77,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }));
 
-  return [...staticRoutes, ...toolRoutes, ...articleRoutes, ...artistRoutes];
+  // ── Genre landing page routes ──────────────────────────────────────────────
+  const genres = await prisma.genre.findMany({
+    where: { isActive: true },
+    select: { slug: true, updatedAt: true },
+  });
+
+  const genreRoutes: MetadataRoute.Sitemap = genres.map(genre => ({
+    url: `${SITE_URL}/genres/${genre.slug}`,
+    lastModified: genre.updatedAt,
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
+  }));
+
+  return [
+    ...staticRoutes,
+    ...toolRoutes,
+    ...articleRoutes,
+    ...artistRoutes,
+    ...genreRoutes,
+  ];
 }
