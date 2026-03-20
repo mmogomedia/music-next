@@ -1,10 +1,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { getServerSession } from 'next-auth';
 import { getArticles, getClusters } from '@/lib/services/article-service';
 import { constructFileUrl } from '@/lib/url-utils';
 import { format } from 'date-fns';
 import LearnHeader from '@/components/layout/LearnHeader';
+import { authOptions } from '@/lib/auth';
 import type {
   Article,
   ArticleCluster,
@@ -42,7 +44,95 @@ type ArticleWithClusterName = Article & {
   cluster: Pick<ArticleCluster, 'id' | 'name' | 'slug'> | null;
 };
 
-// ── Article card (grid view) ──────────────────────────────────────────────────
+// ── Gradient placeholder ───────────────────────────────────────────────────────
+
+function GradientPlaceholder({ letter }: { letter: string }) {
+  return (
+    <div className='absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center'>
+      <span className='text-white/20 text-7xl font-black select-none font-poppins'>
+        {letter}
+      </span>
+    </div>
+  );
+}
+
+// ── Cluster hub card ───────────────────────────────────────────────────────────
+
+function ClusterHubCard({ cluster }: { cluster: ClusterWithCount }) {
+  const isEmpty = cluster._count.articles === 0;
+  const cover = constructFileUrl(cluster.coverImageUrl);
+
+  const card = (
+    <div
+      className={`group flex flex-col bg-white dark:bg-slate-800 border rounded-2xl overflow-hidden transition-all duration-300 h-full ${
+        isEmpty
+          ? 'border-gray-100 dark:border-slate-700 opacity-50'
+          : 'border-gray-100 dark:border-slate-700 hover:shadow-xl hover:shadow-purple-500/5 hover:border-purple-200 dark:hover:border-purple-700 cursor-pointer'
+      }`}
+    >
+      {/* Cover */}
+      <div className='relative h-40 bg-gray-100 dark:bg-slate-700 flex-shrink-0 overflow-hidden'>
+        {cover ? (
+          <Image
+            src={cover}
+            alt={cluster.name}
+            fill
+            className={`object-cover ${!isEmpty ? 'group-hover:scale-105 transition-transform duration-500' : ''}`}
+          />
+        ) : (
+          <GradientPlaceholder letter={cluster.name.charAt(0)} />
+        )}
+        {cluster.audience && (
+          <span className='absolute bottom-3 left-3 px-2 py-0.5 text-[10px] font-semibold bg-black/50 text-white rounded-md backdrop-blur-sm'>
+            For: {cluster.audience}
+          </span>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className='flex flex-col flex-1 p-5'>
+        <h2
+          className={`font-poppins text-base font-bold text-gray-900 dark:text-white leading-snug mb-2 ${
+            !isEmpty
+              ? 'group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors'
+              : ''
+          }`}
+        >
+          {cluster.name}
+        </h2>
+        {cluster.description && (
+          <p className='text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2 flex-1'>
+            {cluster.description}
+          </p>
+        )}
+        <div className='flex items-center justify-between mt-4 pt-3 border-t border-gray-50 dark:border-slate-700'>
+          <span className='text-xs text-gray-400 tabular-nums'>
+            {cluster._count.articles}{' '}
+            {cluster._count.articles === 1 ? 'guide' : 'guides'}
+          </span>
+          {isEmpty ? (
+            <span className='text-[11px] text-gray-400 italic'>
+              Coming soon
+            </span>
+          ) : (
+            <span className='text-[11px] font-semibold text-purple-500 dark:text-purple-400 group-hover:underline'>
+              Explore topic →
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isEmpty) return card;
+  return (
+    <Link href={`/learn/topic/${cluster.slug}`} className='block h-full'>
+      {card}
+    </Link>
+  );
+}
+
+// ── Article card (grid view) ───────────────────────────────────────────────────
 
 function ArticleCard({ article }: { article: ArticleWithClusterName }) {
   const cover = constructFileUrl(article.coverImageUrl);
@@ -106,225 +196,6 @@ function ArticleCard({ article }: { article: ArticleWithClusterName }) {
   );
 }
 
-// ── Cluster view ──────────────────────────────────────────────────────────────
-
-function ClusterView({
-  clusters,
-  articles,
-}: {
-  clusters: ClusterWithCount[];
-  articles: ArticleWithClusterName[];
-}) {
-  // Group articles by clusterId
-  const byCluster = new Map<string, ArticleWithClusterName[]>();
-  const unclustered: ArticleWithClusterName[] = [];
-
-  for (const article of articles) {
-    if (!article.clusterId) {
-      unclustered.push(article);
-    } else {
-      if (!byCluster.has(article.clusterId))
-        byCluster.set(article.clusterId, []);
-      byCluster.get(article.clusterId)!.push(article);
-    }
-  }
-
-  // Sort articles within each cluster: pillar first, then by publishedAt
-  byCluster.forEach(arts => {
-    arts.sort((a, b) => {
-      if (a.clusterRole === 'PILLAR') return -1;
-      if (b.clusterRole === 'PILLAR') return 1;
-      return (
-        new Date(a.publishedAt ?? 0).getTime() -
-        new Date(b.publishedAt ?? 0).getTime()
-      );
-    });
-  });
-
-  const activeClusters = clusters.filter(
-    c => (byCluster.get(c.id)?.length ?? 0) > 0
-  );
-
-  if (activeClusters.length === 0 && unclustered.length === 0) {
-    return (
-      <div className='text-center py-24'>
-        <p className='text-gray-400 dark:text-gray-500 font-medium'>
-          No articles published yet.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className='space-y-14'>
-      {activeClusters.map(cluster => {
-        const clusterArticles = byCluster.get(cluster.id) ?? [];
-        const pillar = clusterArticles.find(a => a.clusterRole === 'PILLAR');
-        const spokes = clusterArticles.filter(a => a.clusterRole !== 'PILLAR');
-
-        return (
-          <section key={cluster.id}>
-            {/* Cluster header */}
-            <div className='flex items-start justify-between gap-4 mb-6 pb-4 border-b border-gray-100 dark:border-slate-800'>
-              <div className='flex-1 min-w-0'>
-                <div className='flex items-center gap-2 mb-1'>
-                  <span className='text-[10px] font-bold uppercase tracking-widest text-purple-500 dark:text-purple-400'>
-                    Topic
-                  </span>
-                  {cluster.audience && (
-                    <>
-                      <span className='text-gray-300 dark:text-slate-600'>
-                        ·
-                      </span>
-                      <span className='text-[10px] text-gray-400 dark:text-gray-500'>
-                        For: {cluster.audience}
-                      </span>
-                    </>
-                  )}
-                </div>
-                <h2 className='font-poppins text-xl font-bold text-gray-900 dark:text-white'>
-                  {cluster.name}
-                </h2>
-                {cluster.description && (
-                  <p className='text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-2xl'>
-                    {cluster.description}
-                  </p>
-                )}
-              </div>
-              <span className='flex-shrink-0 text-xs text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-slate-800 px-2.5 py-1 rounded-lg border border-gray-100 dark:border-slate-700 tabular-nums'>
-                {clusterArticles.length}{' '}
-                {clusterArticles.length === 1 ? 'article' : 'articles'}
-              </span>
-            </div>
-
-            {/* Pillar article — featured */}
-            {pillar && (
-              <Link
-                href={`/learn/${pillar.slug}`}
-                className='group flex flex-col sm:flex-row gap-0 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-purple-500/5 hover:border-purple-200 dark:hover:border-purple-700 transition-all duration-300 mb-5'
-              >
-                {/* Cover */}
-                <div className='relative sm:w-72 h-48 sm:h-auto flex-shrink-0 bg-gray-100 dark:bg-slate-700'>
-                  {constructFileUrl(pillar.coverImageUrl) ? (
-                    <Image
-                      src={constructFileUrl(pillar.coverImageUrl)!}
-                      alt={pillar.title}
-                      fill
-                      className='object-cover group-hover:scale-105 transition-transform duration-500'
-                    />
-                  ) : (
-                    <div className='absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center'>
-                      <span className='text-white/20 text-8xl font-black select-none font-poppins'>
-                        {pillar.title.charAt(0)}
-                      </span>
-                    </div>
-                  )}
-                  <span className='absolute top-3 left-3 inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold bg-amber-400 text-amber-950 rounded-full uppercase tracking-wider shadow-sm'>
-                    ★ Pillar Guide
-                  </span>
-                </div>
-
-                {/* Content */}
-                <div className='flex flex-col flex-1 p-6'>
-                  <p className='text-[10px] font-bold uppercase tracking-widest text-purple-500 dark:text-purple-400 mb-2'>
-                    Start here
-                  </p>
-                  <h3 className='font-poppins text-lg font-bold text-gray-900 dark:text-white leading-snug group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors mb-3'>
-                    {pillar.title}
-                  </h3>
-                  {pillar.excerpt && (
-                    <p className='text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-3 flex-1'>
-                      {pillar.excerpt}
-                    </p>
-                  )}
-                  <div className='flex items-center gap-3 mt-4 pt-4 border-t border-gray-50 dark:border-slate-700'>
-                    <span className='text-xs text-gray-400'>
-                      {pillar.readTime} min read
-                    </span>
-                    {pillar.publishedAt && (
-                      <>
-                        <span className='text-gray-300 dark:text-slate-600'>
-                          ·
-                        </span>
-                        <span className='text-xs text-gray-400'>
-                          {format(new Date(pillar.publishedAt), 'd MMM yyyy')}
-                        </span>
-                      </>
-                    )}
-                    <span className='ml-auto text-xs font-semibold text-purple-500 dark:text-purple-400 group-hover:underline'>
-                      Read guide →
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            )}
-
-            {/* Spoke articles — compact grid */}
-            {spokes.length > 0 && (
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-                {spokes.map(spoke => {
-                  const cover = constructFileUrl(spoke.coverImageUrl);
-                  return (
-                    <Link
-                      key={spoke.id}
-                      href={`/learn/${spoke.slug}`}
-                      className='group flex gap-4 p-4 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl hover:shadow-md hover:border-purple-200 dark:hover:border-purple-700 transition-all duration-200'
-                    >
-                      {/* Thumbnail */}
-                      <div className='relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 dark:bg-slate-700'>
-                        {cover ? (
-                          <Image
-                            src={cover}
-                            alt={spoke.title}
-                            fill
-                            className='object-cover'
-                          />
-                        ) : (
-                          <div className='absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center'>
-                            <span className='text-white/30 text-xl font-black select-none font-poppins'>
-                              {spoke.title.charAt(0)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Text */}
-                      <div className='flex-1 min-w-0'>
-                        <h3 className='text-sm font-semibold text-gray-900 dark:text-white leading-snug group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2 mb-1'>
-                          {spoke.title}
-                        </h3>
-                        <p className='text-[11px] text-gray-400 dark:text-gray-500'>
-                          {spoke.readTime} min read
-                        </p>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        );
-      })}
-
-      {/* Unclustered articles */}
-      {unclustered.length > 0 && (
-        <section>
-          <div className='mb-6 pb-4 border-b border-gray-100 dark:border-slate-800'>
-            <h2 className='font-poppins text-xl font-bold text-gray-900 dark:text-white'>
-              More Articles
-            </h2>
-          </div>
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-            {unclustered.map(article => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
-  );
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function LearnIndexPage({
@@ -335,15 +206,17 @@ export default async function LearnIndexPage({
   const { cluster, page: pageParam, view } = await searchParams;
   const page = Number(pageParam ?? 1);
   const clusterId = cluster ?? undefined;
-  const isClusterView = view === 'clusters';
+  const isGridView = view === 'grid';
 
-  const [{ articles, total, pages }, clusters] = await Promise.all([
-    isClusterView
-      ? getArticles({ status: 'PUBLISHED', limit: 200 }) // all articles for grouping
-      : getArticles({ status: 'PUBLISHED', clusterId, page, limit: 12 }),
+  const [{ articles, total, pages }, clusters, session] = await Promise.all([
+    isGridView
+      ? getArticles({ status: 'PUBLISHED', clusterId, page, limit: 12 })
+      : getArticles({ status: 'PUBLISHED', limit: 1 }), // hub: only need total
     getClusters(),
+    getServerSession(authOptions),
   ]);
 
+  const isAdmin = session?.user?.role === 'ADMIN';
   const activeCluster = clusters.find(c => c.id === clusterId);
 
   return (
@@ -404,31 +277,32 @@ export default async function LearnIndexPage({
         </div>
       </section>
 
-      {/* ── Filter bar + view toggle ── */}
+      {/* ── Filter / nav bar ── */}
       <div className='border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-10 shadow-sm'>
         <div className='max-w-5xl mx-auto px-6'>
           <div className='flex items-center gap-2'>
-            {/* Cluster filter tabs (only in grid view) */}
+            {/* Left side */}
             <div
               className='flex gap-1 overflow-x-auto py-3 flex-1'
               style={{ scrollbarWidth: 'none' }}
             >
-              {!isClusterView && (
+              {isGridView ? (
+                /* Grid view: cluster filter tabs */
                 <>
                   <Link
-                    href='/learn'
+                    href='/learn?view=grid'
                     className={`flex-shrink-0 px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                       !clusterId
                         ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
                         : 'text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10'
                     }`}
                   >
-                    All topics
+                    All articles
                   </Link>
                   {clusters.map(c => (
                     <Link
                       key={c.id}
-                      href={`/learn?cluster=${c.id}`}
+                      href={`/learn?view=grid&cluster=${c.id}`}
                       className={`flex-shrink-0 px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
                         clusterId === c.id
                           ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
@@ -439,21 +313,57 @@ export default async function LearnIndexPage({
                     </Link>
                   ))}
                 </>
-              )}
-              {isClusterView && (
+              ) : (
+                /* Hub view: "All Topics" label */
                 <span className='flex items-center text-xs font-semibold text-purple-600 dark:text-purple-400 py-1.5 px-1'>
-                  Browse by topic
+                  All Topics
                 </span>
               )}
             </div>
 
-            {/* View toggle */}
-            <div className='flex-shrink-0 flex items-center gap-1 py-3 pl-2 border-l border-gray-100 dark:border-slate-800 ml-1'>
+            {/* Right side: toggles + admin button */}
+            <div className='flex-shrink-0 flex items-center gap-2 py-3 pl-3 border-l border-gray-100 dark:border-slate-800 ml-1'>
+              {isAdmin && !isGridView && (
+                <Link
+                  href='/admin/articles?tab=clusters'
+                  className='flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors whitespace-nowrap'
+                >
+                  + New Topic
+                </Link>
+              )}
+
+              {/* Hub/cluster view toggle */}
               <Link
                 href='/learn'
+                title='Topic hub'
+                className={`p-1.5 rounded-lg transition-colors ${
+                  !isGridView
+                    ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
+                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'
+                }`}
+              >
+                {/* Folder/topic icon */}
+                <svg
+                  className='w-4 h-4'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z'
+                  />
+                </svg>
+              </Link>
+
+              {/* Grid view toggle */}
+              <Link
+                href='/learn?view=grid'
                 title='Grid view'
                 className={`p-1.5 rounded-lg transition-colors ${
-                  !isClusterView
+                  isGridView
                     ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'
                 }`}
@@ -473,30 +383,6 @@ export default async function LearnIndexPage({
                   />
                 </svg>
               </Link>
-              <Link
-                href='/learn?view=clusters'
-                title='Cluster view'
-                className={`p-1.5 rounded-lg transition-colors ${
-                  isClusterView
-                    ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'
-                    : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                {/* Folder/layers icon */}
-                <svg
-                  className='w-4 h-4'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z'
-                  />
-                </svg>
-              </Link>
             </div>
           </div>
         </div>
@@ -504,12 +390,43 @@ export default async function LearnIndexPage({
 
       {/* ── Content ── */}
       <div className='max-w-5xl mx-auto px-6 py-10'>
-        {isClusterView ? (
-          <ClusterView
-            clusters={clusters}
-            articles={articles as ArticleWithClusterName[]}
-          />
+        {!isGridView ? (
+          /* ── Cluster hub ── */
+          <>
+            {clusters.length === 0 ? (
+              <div className='text-center py-24'>
+                <div className='w-16 h-16 bg-gray-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4'>
+                  <svg
+                    className='w-7 h-7 text-gray-400'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={1.5}
+                      d='M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z'
+                    />
+                  </svg>
+                </div>
+                <p className='text-gray-400 dark:text-gray-500 font-medium'>
+                  No topics yet.
+                </p>
+                <p className='text-gray-400 dark:text-gray-500 text-sm mt-1'>
+                  Check back soon.
+                </p>
+              </div>
+            ) : (
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+                {clusters.map(c => (
+                  <ClusterHubCard key={c.id} cluster={c} />
+                ))}
+              </div>
+            )}
+          </>
         ) : (
+          /* ── Grid view ── */
           <>
             {activeCluster && (
               <div className='mb-8'>
@@ -561,7 +478,7 @@ export default async function LearnIndexPage({
                   <div className='flex items-center justify-center gap-3 mt-14'>
                     {page > 1 && (
                       <Link
-                        href={`/learn?${clusterId ? `cluster=${clusterId}&` : ''}page=${page - 1}`}
+                        href={`/learn?view=grid${clusterId ? `&cluster=${clusterId}` : ''}&page=${page - 1}`}
                         className='px-5 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-purple-300 dark:hover:border-purple-700 transition-colors'
                       >
                         ← Previous
@@ -572,7 +489,7 @@ export default async function LearnIndexPage({
                     </span>
                     {page < pages && (
                       <Link
-                        href={`/learn?${clusterId ? `cluster=${clusterId}&` : ''}page=${page + 1}`}
+                        href={`/learn?view=grid${clusterId ? `&cluster=${clusterId}` : ''}&page=${page + 1}`}
                         className='px-5 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 hover:border-purple-300 dark:hover:border-purple-700 transition-colors'
                       >
                         Next →
