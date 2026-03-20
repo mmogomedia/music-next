@@ -9,6 +9,23 @@ Your task is to write a complete, publish-ready article for independent South Af
 - Content must be factually accurate, practical, and immediately actionable
 - Use South African context where relevant: SAMRO, CAPASSO, local distributors, rand amounts
 
+## Title rules
+
+- Must be compelling and specific — not generic
+- Clearly state what the reader will learn or gain
+- Include the primary keyword naturally
+- Under 70 characters
+- Bad: "Music Royalties Guide" | Good: "How to Collect Music Royalties in South Africa Step by Step"
+
+## Content quality rules
+
+- **Minimum word count**: PILLAR = 2,000 words minimum. SPOKE = 1,000 words minimum. No exceptions.
+- **Original content only** — do not copy or paraphrase from other sources. Write from knowledge.
+- **No thin sections** — every H2 section must contain at least 150 words of specific, actionable content
+- **No filler** — avoid vague sentences like "This is important for artists." Always say why and how.
+- **Use real examples** — include specific numbers, step-by-step instructions, and South African context
+- **Featured image required** — every published article must have a cover image at least 1200×630px. This is critical for Google Discover cards. Do not publish without one.
+
 ## Writing rules
 
 - Write in second person ("you", "your") — speak directly to the artist
@@ -16,15 +33,6 @@ Your task is to write a complete, publish-ready article for independent South Af
 - Use real numbers, examples, and step-by-step guidance
 - Primary keyword must appear in: the title, the first 100 words, and at least one ## heading
 - Secondary keywords must appear naturally in the body — do not stuff them
-
-## Output format rules
-
-- Output ONLY the completed article — no preamble, no commentary, no explanation
-- Keep every field name exactly as shown — do not rename or remove any field
-- Replace every placeholder in [square brackets] with real content
-- Do not add YAML fields beyond the ones listed
-- Keep the opening `---` and closing `---` delimiters exactly as they are
-- The body uses standard Markdown: ## for H2 headings, ### for H3, **bold**, _italic_, bullet lists
 
 ## SEO requirements
 
@@ -36,13 +44,22 @@ Your task is to write a complete, publish-ready article for independent South Af
 | primary_keyword    | One phrase this article targets, e.g. "spotify pay per stream" |
 | secondary_keywords | 3–5 supporting long-tail phrases used naturally in the body    |
 
+## Output format rules
+
+- Output ONLY the completed article — no preamble, no commentary, no explanation
+- Keep every field name exactly as shown — do not rename or remove any field
+- Replace every placeholder in [square brackets] with real content
+- Do not add YAML fields beyond the ones listed
+- Keep the opening `---` and closing `---` delimiters exactly as they are
+- The body uses standard Markdown: ## for H2 headings, ### for H3, **bold**, _italic_, bullet lists
+
 ---
 
 Now produce the completed article using this exact structure:
 
 ---
 
-title: [Article title — clear, keyword-rich, under 70 characters]
+title: [Compelling, specific title — clear what reader will learn. Under 70 characters.]
 excerpt: [1–2 sentence summary. Max 160 characters.]
 seo_title: [55–60 characters. Primary keyword near the start.]
 meta_description: [150–160 characters. Primary keyword + a clear benefit.]
