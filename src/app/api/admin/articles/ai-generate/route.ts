@@ -43,6 +43,21 @@ Your job is to help create high-quality, SEO-optimised articles that educate ind
 - All articles target independent South African artists and music professionals
 - Content must be factually accurate, practical, and immediately actionable
 
+## TITLE RULES
+- Must be compelling and specific — never generic
+- Clearly state what the reader will learn or gain
+- Include the primary keyword naturally
+- Under 70 characters
+- BAD: "Music Royalties Guide" | GOOD: "How to Collect Music Royalties in South Africa Step by Step"
+
+## CONTENT QUALITY RULES (MANDATORY)
+- Minimum word count: PILLAR = 2,000 words minimum. SPOKE = 1,000 words minimum. Never produce less.
+- Original content only — write from knowledge, never copy or closely paraphrase other sources
+- No thin sections — every H2 section must contain at least 150 words of specific, actionable content
+- No filler — never write vague sentences like "This is important." Always say why and how, with specifics
+- Use real examples — include specific numbers, step-by-step instructions, and South African context
+- Featured image note — remind the editor in the body's opening comment that a 1200×630px cover image is required for Google Discover. Do NOT skip this.
+
 ## WRITING STYLE
 - Second person ("you", "your") — speak directly to the artist
 - Plain, clear language — avoid jargon without explanation
@@ -226,7 +241,8 @@ function buildActionMessage(action: Action, req: GenerateRequest): string {
     case 'generate': {
       const topic =
         req.generateTopic || s.title || 'independent music in South Africa';
-      return `Write a complete ${role} article about: "${topic}".${kw ? ` Primary keyword: "${kw}".` : ''} Populate all fields using update_article_fields.`;
+      const minWords = role === 'PILLAR' ? 2000 : 1000;
+      return `Write a complete ${role} article about: "${topic}".${kw ? ` Primary keyword: "${kw}".` : ''} The article body must be at least ${minWords} words — use specific examples, step-by-step guidance, and real South African context. Every H2 section must contain at least 150 words. No filler. No vague statements. Populate all fields using update_article_fields.`;
     }
     case 'fill_seo': {
       return `Analyze this article and call update_article_fields with ONLY these SEO fields: excerpt, seo_title, meta_description, primary_keyword, secondary_keywords. Do NOT include title or body in the function call.\n\nTitle: ${s.title || '(untitled)'}\n\nBody:\n${s.body || '(empty)'}`;
@@ -234,7 +250,8 @@ function buildActionMessage(action: Action, req: GenerateRequest): string {
     case 'generate_outline': {
       const topic =
         s.title || req.generateTopic || 'music industry in South Africa';
-      return `Create a detailed article outline for a ${role} article about: "${topic}".${kw ? ` Primary keyword: "${kw}".` : ''}\n\nCall update_article_fields with: title, primary_keyword, secondary_keywords, cluster_role, seo_title, meta_description, excerpt, and a body that is the full outline. Use ## for H2 sections and ### for H3 subsections. Each section should have 2–3 bullet points describing what to cover. Write [WRITE HERE] as a placeholder instead of actual prose.`;
+      const minWords = role === 'PILLAR' ? 2000 : 1000;
+      return `Create a detailed article outline for a ${role} article about: "${topic}".${kw ? ` Primary keyword: "${kw}".` : ''}\n\nCall update_article_fields with: title, primary_keyword, secondary_keywords, cluster_role, seo_title, meta_description, excerpt, and a body that is the full outline. Requirements:\n- The title must be compelling and specific — not generic. Clearly state what the reader will learn.\n- Plan enough H2 sections to reach ${minWords} words when fully written (PILLAR needs 6–8 sections, SPOKE needs 4–6)\n- Each section must plan 150–300 words of specific, actionable content — no vague or filler sections\n- Use ## for H2 sections and ### for H3 subsections. Each section should have 2–3 bullet points describing what to cover. Write [WRITE HERE] as a placeholder instead of actual prose.`;
     }
     case 'improve_readability': {
       return `Improve the readability of this article body:\n- Rewrite passive voice → active voice\n- Split sentences over 25 words into shorter ones\n- Replace unexplained jargon with plain English\n- Keep all headings, facts, examples, and structure intact\n\nCall update_article_fields with only the improved body field.\n\nTitle: ${s.title || '(untitled)'}\n\nBody:\n${s.body || '(empty)'}`;
