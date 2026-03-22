@@ -7,7 +7,8 @@ export { ToastProvider, useToast } from './Toast';
 
 // ── HeroUI wrappers ───────────────────────────────────────────────────────────
 export { default as FButton } from './FButton';
-export { default as FCard } from './FCard';
+export { default as FCard, FCardSkeleton } from './FCard';
+export type { FCardProps } from './FCard';
 export { default as FBadge } from './FBadge';
 export { default as FInput } from './FInput';
 export { default as FTextarea } from './FTextarea';

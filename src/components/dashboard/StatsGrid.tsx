@@ -1,6 +1,7 @@
 'use client';
 
 import StatCard, { StatCardSkeleton } from '@/components/ui/StatCard';
+import FCard from '@/components/ui/FCard';
 
 interface StatsGridProps {
   stats: {
@@ -24,8 +25,8 @@ export default function StatsGrid({
   loading = false,
 }: StatsGridProps) {
   return (
-    <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm px-6 py-5'>
-      <div className='grid grid-cols-2 sm:grid-cols-4 gap-6 divide-x divide-gray-100 dark:divide-slate-700'>
+    <FCard padding='none'>
+      <div className='grid grid-cols-2 sm:grid-cols-4 gap-6 divide-x divide-gray-100 dark:divide-slate-700 px-6 py-5'>
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
         ) : (
@@ -45,6 +46,6 @@ export default function StatsGrid({
           </>
         )}
       </div>
-    </div>
+    </FCard>
   );
 }

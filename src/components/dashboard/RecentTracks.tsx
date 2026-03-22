@@ -36,19 +36,13 @@ export default function RecentTracks({
 
   return (
     <FCard
-      variant='default'
-      padding='md'
-      className='rounded-2xl shadow-sm border-0'
-    >
-      <div className='flex items-center justify-between mb-4'>
-        <h3 className='text-lg font-medium text-gray-900 dark:text-white'>
-          Recent Tracks
-        </h3>
+      title='Recent Uploads'
+      action={
         <FButton size='sm' variant='ghost' onPress={onViewAll}>
           View All
         </FButton>
-      </div>
-
+      }
+    >
       {tracks.length === 0 ? (
         <FEmptyState
           icon={MusicalNoteIcon}

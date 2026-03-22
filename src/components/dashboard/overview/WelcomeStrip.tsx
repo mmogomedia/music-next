@@ -10,6 +10,7 @@ import {
 } from '@heroui/react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { toAbsoluteUrl } from '@/lib/url-utils';
+import FCard from '@/components/ui/FCard';
 
 interface WelcomeStripProps {
   artistName: string;
@@ -48,17 +49,19 @@ export default function WelcomeStrip({
 }: WelcomeStripProps) {
   if (loading) {
     return (
-      <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm p-5 flex items-center justify-between gap-4 animate-pulse'>
-        <div className='flex items-center gap-3'>
-          <div className='w-12 h-12 rounded-full bg-gray-200 dark:bg-slate-700 flex-shrink-0' />
-          <div className='space-y-2'>
-            <div className='h-3 w-24 bg-gray-200 dark:bg-slate-700 rounded' />
-            <div className='h-5 w-36 bg-gray-200 dark:bg-slate-700 rounded' />
-            <div className='h-3 w-28 bg-gray-200 dark:bg-slate-700 rounded' />
+      <FCard padding='none'>
+        <div className='p-5 flex items-center justify-between gap-4 animate-pulse'>
+          <div className='flex items-center gap-3'>
+            <div className='w-12 h-12 rounded-full bg-gray-200 dark:bg-slate-700 flex-shrink-0' />
+            <div className='space-y-2'>
+              <div className='h-3 w-24 bg-gray-200 dark:bg-slate-700 rounded' />
+              <div className='h-5 w-36 bg-gray-200 dark:bg-slate-700 rounded' />
+              <div className='h-3 w-28 bg-gray-200 dark:bg-slate-700 rounded' />
+            </div>
           </div>
+          <div className='h-8 w-32 bg-gray-200 dark:bg-slate-700 rounded-lg' />
         </div>
-        <div className='h-8 w-32 bg-gray-200 dark:bg-slate-700 rounded-lg' />
-      </div>
+      </FCard>
     );
   }
 
@@ -67,44 +70,46 @@ export default function WelcomeStrip({
     TIME_RANGE_OPTIONS[1].label;
 
   return (
-    <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm p-5 flex items-center justify-between gap-4'>
-      <div className='flex items-center gap-3 min-w-0'>
-        <Avatar
-          size='sm'
-          src={toAbsoluteUrl(profileImage) ?? undefined}
-          name={artistName}
-          className='w-12 h-12 flex-shrink-0'
-        />
-        <div className='min-w-0'>
-          <p className='text-xs font-medium text-gray-500 dark:text-gray-400'>
-            {getGreeting()},
-          </p>
-          <h2 className='text-xl font-bold text-gray-900 dark:text-white truncate'>
-            {artistName}
-          </h2>
-          <p className='text-sm text-gray-500 dark:text-gray-400 mt-0.5'>
-            {totalTracks} {totalTracks === 1 ? 'track' : 'tracks'} &middot;{' '}
-            {totalPlays.toLocaleString()} plays
-          </p>
-        </div>
-      </div>
-
-      <Dropdown>
-        <DropdownTrigger>
-          <Button
-            variant='bordered'
+    <FCard padding='none'>
+      <div className='p-5 flex items-center justify-between gap-4'>
+        <div className='flex items-center gap-3 min-w-0'>
+          <Avatar
             size='sm'
-            endContent={<ChevronDownIcon className='w-3 h-3' />}
-          >
-            {timeRangeLabel}
-          </Button>
-        </DropdownTrigger>
-        <DropdownMenu onAction={key => onTimeRangeChange(key as string)}>
-          {TIME_RANGE_OPTIONS.map(option => (
-            <DropdownItem key={option.key}>{option.label}</DropdownItem>
-          ))}
-        </DropdownMenu>
-      </Dropdown>
-    </div>
+            src={toAbsoluteUrl(profileImage) ?? undefined}
+            name={artistName}
+            className='w-12 h-12 flex-shrink-0'
+          />
+          <div className='min-w-0'>
+            <p className='text-xs font-medium text-gray-500 dark:text-gray-400'>
+              {getGreeting()},
+            </p>
+            <h2 className='text-xl font-bold text-gray-900 dark:text-white truncate'>
+              {artistName}
+            </h2>
+            <p className='text-sm text-gray-500 dark:text-gray-400 mt-0.5'>
+              {totalTracks} {totalTracks === 1 ? 'track' : 'tracks'} &middot;{' '}
+              {totalPlays.toLocaleString()} plays
+            </p>
+          </div>
+        </div>
+
+        <Dropdown>
+          <DropdownTrigger>
+            <Button
+              variant='bordered'
+              size='sm'
+              endContent={<ChevronDownIcon className='w-3 h-3' />}
+            >
+              {timeRangeLabel}
+            </Button>
+          </DropdownTrigger>
+          <DropdownMenu onAction={key => onTimeRangeChange(key as string)}>
+            {TIME_RANGE_OPTIONS.map(option => (
+              <DropdownItem key={option.key}>{option.label}</DropdownItem>
+            ))}
+          </DropdownMenu>
+        </Dropdown>
+      </div>
+    </FCard>
   );
 }

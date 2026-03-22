@@ -7,6 +7,7 @@ import {
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import StatCard from '@/components/ui/StatCard';
+import FCard from '@/components/ui/FCard';
 import AdminNavigation from './AdminNavigation';
 import UnifiedLayout from '@/components/layout/UnifiedLayout';
 import { useAdminDashboardStats } from '@/hooks/useAdminDashboardStats';
@@ -72,39 +73,6 @@ function actionHref(type: string): string {
 }
 
 // ── Shared primitives ──────────────────────────────────────────────────────
-
-function Card({
-  children,
-  className = '',
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
-
-function CardHead({
-  title,
-  right,
-}: {
-  title: string;
-  right?: React.ReactNode;
-}) {
-  return (
-    <div className='px-5 py-3.5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between'>
-      <p className='text-sm font-semibold text-gray-900 dark:text-white'>
-        {title}
-      </p>
-      {right}
-    </div>
-  );
-}
 
 function SkeletonRows({ rows = 4, h = 'h-4' }: { rows?: number; h?: string }) {
   return (
@@ -258,8 +226,8 @@ export default function AdminOverviewPage() {
         )}
 
         {/* ── Stats: number-first, no decoration ─────────────────────── */}
-        <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm px-6 py-5'>
-          <div className='grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-6 divide-x divide-gray-100 dark:divide-slate-700'>
+        <FCard padding='none'>
+          <div className='grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-6 divide-x divide-gray-100 dark:divide-slate-700 px-6 py-5'>
             <StatCard label='Users' value={systemMetrics.totalUsers} />
             <StatCard label='Artists' value={systemMetrics.totalArtists} />
             <StatCard label='Tracks' value={systemMetrics.totalTracks} />
@@ -270,367 +238,351 @@ export default function AdminOverviewPage() {
               value={stats?.totalSubmissions ?? 0}
             />
           </div>
-        </div>
+        </FCard>
 
         {/* ── Row 1: Submissions queue + Top tracks ───────────────────── */}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
           {/* Submissions queue */}
-          <Card>
-            <CardHead
-              title='Submissions Queue'
-              right={
-                <Link
-                  href='/admin/dashboard/submissions'
-                  className='text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors font-medium'
-                >
-                  View all →
-                </Link>
-              }
-            />
-            <div className='p-5'>
-              {loading ? (
-                <SkeletonRows rows={3} h='h-9' />
-              ) : totalSubmissions === 0 ? (
-                <p className='text-sm text-gray-400 dark:text-gray-500 py-3 text-center'>
-                  No submissions yet
-                </p>
-              ) : (
-                <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
-                  {[
-                    {
-                      label: 'Pending review',
-                      value: pendingCount,
-                      dot: 'bg-yellow-400',
-                    },
-                    {
-                      label: 'Reviewed',
-                      value: reviewedCount,
-                      dot: 'bg-emerald-400',
-                    },
-                    {
-                      label: 'Total',
-                      value: totalSubmissions,
-                      dot: 'bg-gray-300 dark:bg-gray-600',
-                    },
-                  ].map(({ label, value, dot }) => (
-                    <div
-                      key={label}
-                      className='flex items-center justify-between py-3 first:pt-0 last:pb-0'
-                    >
-                      <div className='flex items-center gap-2.5'>
-                        <span
-                          className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`}
-                        />
-                        <span className='text-sm text-gray-600 dark:text-gray-300'>
-                          {label}
-                        </span>
-                      </div>
-                      <span className='text-sm font-semibold text-gray-900 dark:text-white tabular-nums'>
-                        {value}
+          <FCard
+            title='Submissions Queue'
+            action={
+              <Link
+                href='/admin/dashboard/submissions'
+                className='text-xs text-primary-500 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors font-medium'
+              >
+                View all →
+              </Link>
+            }
+          >
+            {loading ? (
+              <SkeletonRows rows={3} h='h-9' />
+            ) : totalSubmissions === 0 ? (
+              <p className='text-sm text-gray-400 dark:text-gray-500 py-3 text-center'>
+                No submissions yet
+              </p>
+            ) : (
+              <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
+                {[
+                  {
+                    label: 'Pending review',
+                    value: pendingCount,
+                    dot: 'bg-yellow-400',
+                  },
+                  {
+                    label: 'Reviewed',
+                    value: reviewedCount,
+                    dot: 'bg-emerald-400',
+                  },
+                  {
+                    label: 'Total',
+                    value: totalSubmissions,
+                    dot: 'bg-gray-300 dark:bg-gray-600',
+                  },
+                ].map(({ label, value, dot }) => (
+                  <div
+                    key={label}
+                    className='flex items-center justify-between py-3 first:pt-0 last:pb-0'
+                  >
+                    <div className='flex items-center gap-2.5'>
+                      <span
+                        className={`w-2 h-2 rounded-full flex-shrink-0 ${dot}`}
+                      />
+                      <span className='text-sm text-gray-600 dark:text-gray-300'>
+                        {label}
                       </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Card>
+                    <span className='text-sm font-semibold text-gray-900 dark:text-white tabular-nums'>
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </FCard>
 
           {/* Top tracks */}
-          <Card>
-            <CardHead
-              title='Top Tracks This Week'
-              right={
-                <Link
-                  href='/admin/dashboard/analytics'
-                  className='text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors font-medium'
-                >
-                  Analytics →
-                </Link>
-              }
-            />
-            <div className='p-5'>
-              {loading ? (
-                <SkeletonRows rows={5} h='h-9' />
-              ) : topTracks.length === 0 ? (
-                <p className='text-sm text-gray-400 dark:text-gray-500 py-3 text-center'>
-                  No play data yet
-                </p>
-              ) : (
-                <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
-                  {topTracks.map((track, i) => (
-                    <div
-                      key={track.id}
-                      className='flex items-center gap-3 py-2.5 first:pt-0 last:pb-0'
+          <FCard
+            title='Top Tracks This Week'
+            action={
+              <Link
+                href='/admin/dashboard/analytics'
+                className='text-xs text-primary-500 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors font-medium'
+              >
+                Analytics →
+              </Link>
+            }
+          >
+            {loading ? (
+              <SkeletonRows rows={5} h='h-9' />
+            ) : topTracks.length === 0 ? (
+              <p className='text-sm text-gray-400 dark:text-gray-500 py-3 text-center'>
+                No play data yet
+              </p>
+            ) : (
+              <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
+                {topTracks.map((track, i) => (
+                  <div
+                    key={track.id}
+                    className='flex items-center gap-3 py-2.5 first:pt-0 last:pb-0'
+                  >
+                    <span
+                      className={`text-xs font-bold w-4 flex-shrink-0 tabular-nums ${i === 0 ? 'text-primary-500 dark:text-primary-400' : 'text-gray-300 dark:text-gray-600'}`}
                     >
-                      <span
-                        className={`text-xs font-bold w-4 flex-shrink-0 tabular-nums ${i === 0 ? 'text-blue-500 dark:text-blue-400' : 'text-gray-300 dark:text-gray-600'}`}
-                      >
-                        {i + 1}
-                      </span>
-                      <div className='flex-1 min-w-0'>
-                        <p className='text-sm font-medium text-gray-900 dark:text-white truncate'>
-                          {track.title}
-                        </p>
-                        <p className='text-xs text-gray-400 dark:text-gray-500 truncate'>
-                          {track.artist}
-                        </p>
-                      </div>
-                      <span className='text-xs text-gray-400 dark:text-gray-500 tabular-nums flex-shrink-0'>
-                        {track.count} plays
-                      </span>
+                      {i + 1}
+                    </span>
+                    <div className='flex-1 min-w-0'>
+                      <p className='text-sm font-medium text-gray-900 dark:text-white truncate'>
+                        {track.title}
+                      </p>
+                      <p className='text-xs text-gray-400 dark:text-gray-500 truncate'>
+                        {track.artist}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Card>
+                    <span className='text-xs text-gray-400 dark:text-gray-500 tabular-nums flex-shrink-0'>
+                      {track.count} plays
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </FCard>
         </div>
 
         {/* ── Row 2: New users + Content health ───────────────────────── */}
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
           {/* New users / activity sparkline */}
-          <Card>
-            <CardHead
-              title='New Users'
-              right={
-                <Link
-                  href='/admin/dashboard/users'
-                  className='text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors font-medium'
-                >
-                  Manage →
-                </Link>
-              }
-            />
-            <div className='p-5'>
-              {loading ? (
-                <div className='space-y-4'>
-                  <SkeletonRows rows={1} h='h-10' />
-                  <SkeletonRows rows={1} h='h-14' />
-                  <SkeletonRows rows={1} h='h-4' />
-                </div>
-              ) : (
-                <div className='space-y-5'>
-                  {/* Activity sparkline — bars and labels in separate rows */}
-                  <div>
-                    <p className='text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2'>
-                      Play activity · last 7 days
-                    </p>
-                    {/* Bar row */}
-                    <div className='flex items-end gap-1.5 h-16'>
-                      {activityByDay.map(({ count }, i) => {
-                        const heightPx = Math.max(
-                          3,
-                          Math.round((count / maxActivity) * 64)
-                        );
-                        const isMax = count === maxActivity && count > 0;
-                        return (
-                          <div
-                            key={i}
-                            className={`flex-1 rounded-sm ${isMax ? 'bg-blue-500 dark:bg-blue-400' : 'bg-blue-200 dark:bg-blue-900/60'}`}
-                            style={{ height: `${heightPx}px` }}
-                          />
-                        );
-                      })}
-                    </div>
-                    {/* Label row */}
-                    <div className='flex gap-1.5 mt-1.5'>
-                      {activityByDay.map(({ label }, i) => (
-                        <span
+          <FCard
+            title='New Users'
+            action={
+              <Link
+                href='/admin/dashboard/users'
+                className='text-xs text-primary-500 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors font-medium'
+              >
+                Manage →
+              </Link>
+            }
+          >
+            {loading ? (
+              <div className='space-y-4'>
+                <SkeletonRows rows={1} h='h-10' />
+                <SkeletonRows rows={1} h='h-14' />
+                <SkeletonRows rows={1} h='h-4' />
+              </div>
+            ) : (
+              <div className='space-y-5'>
+                {/* Activity sparkline — bars and labels in separate rows */}
+                <div>
+                  <p className='text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2'>
+                    Play activity · last 7 days
+                  </p>
+                  {/* Bar row */}
+                  <div className='flex items-end gap-1.5 h-16'>
+                    {activityByDay.map(({ count }, i) => {
+                      const heightPx = Math.max(
+                        3,
+                        Math.round((count / maxActivity) * 64)
+                      );
+                      const isMax = count === maxActivity && count > 0;
+                      return (
+                        <div
                           key={i}
-                          className='flex-1 text-center text-[9px] text-gray-400 dark:text-gray-500 font-medium'
-                        >
-                          {label}
-                        </span>
-                      ))}
-                    </div>
+                          className={`flex-1 rounded-sm ${isMax ? 'bg-blue-500 dark:bg-blue-400' : 'bg-blue-200 dark:bg-blue-900/60'}`}
+                          style={{ height: `${heightPx}px` }}
+                        />
+                      );
+                    })}
                   </div>
-
-                  {/* Artist conversion */}
-                  <div className='pt-1'>
-                    <div className='flex items-center justify-between text-xs mb-2'>
-                      <span className='text-gray-400 dark:text-gray-500'>
-                        Artist conversion
+                  {/* Label row */}
+                  <div className='flex gap-1.5 mt-1.5'>
+                    {activityByDay.map(({ label }, i) => (
+                      <span
+                        key={i}
+                        className='flex-1 text-center text-[9px] text-gray-400 dark:text-gray-500 font-medium'
+                      >
+                        {label}
                       </span>
-                      <span className='font-semibold text-gray-700 dark:text-gray-300 tabular-nums'>
-                        {systemMetrics.totalUsers > 0
-                          ? `${((systemMetrics.totalArtists / systemMetrics.totalUsers) * 100).toFixed(1)}%`
-                          : '—'}
-                      </span>
-                    </div>
-                    <div className='h-1.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden'>
-                      <div
-                        className='h-full bg-blue-500 dark:bg-blue-400 rounded-full transition-all'
-                        style={{
-                          width: `${
-                            systemMetrics.totalUsers > 0
-                              ? Math.min(
-                                  100,
-                                  (systemMetrics.totalArtists /
-                                    systemMetrics.totalUsers) *
-                                    100
-                                )
-                              : 0
-                          }%`,
-                        }}
-                      />
-                    </div>
+                    ))}
                   </div>
                 </div>
-              )}
-            </div>
-          </Card>
+
+                {/* Artist conversion */}
+                <div className='pt-1'>
+                  <div className='flex items-center justify-between text-xs mb-2'>
+                    <span className='text-gray-400 dark:text-gray-500'>
+                      Artist conversion
+                    </span>
+                    <span className='font-semibold text-gray-700 dark:text-gray-300 tabular-nums'>
+                      {systemMetrics.totalUsers > 0
+                        ? `${((systemMetrics.totalArtists / systemMetrics.totalUsers) * 100).toFixed(1)}%`
+                        : '—'}
+                    </span>
+                  </div>
+                  <div className='h-1.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden'>
+                    <div
+                      className='h-full bg-blue-500 dark:bg-blue-400 rounded-full transition-all'
+                      style={{
+                        width: `${
+                          systemMetrics.totalUsers > 0
+                            ? Math.min(
+                                100,
+                                (systemMetrics.totalArtists /
+                                  systemMetrics.totalUsers) *
+                                  100
+                              )
+                            : 0
+                        }%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </FCard>
 
           {/* Content health */}
-          <Card>
-            <CardHead title='Content Health' />
-            <div className='p-5'>
-              {loading ? (
-                <SkeletonRows rows={4} h='h-11' />
-              ) : healthFlags.length === 0 ? (
-                <div className='flex flex-col items-center justify-center py-8 gap-2.5'>
-                  <CheckCircleIcon className='w-8 h-8 text-emerald-400' />
-                  <p className='text-sm font-medium text-gray-600 dark:text-gray-300'>
-                    All clear
-                  </p>
-                  <p className='text-xs text-gray-400 dark:text-gray-500'>
-                    No content issues detected
-                  </p>
-                </div>
-              ) : (
-                <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
-                  {healthFlags.map(flag => (
-                    <Link
-                      key={flag.id}
-                      href={actionHref(flag.type)}
-                      className='flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:opacity-80 transition-opacity group'
-                    >
+          <FCard title='Content Health'>
+            {loading ? (
+              <SkeletonRows rows={4} h='h-11' />
+            ) : healthFlags.length === 0 ? (
+              <div className='flex flex-col items-center justify-center py-8 gap-2.5'>
+                <CheckCircleIcon className='w-8 h-8 text-emerald-400' />
+                <p className='text-sm font-medium text-gray-600 dark:text-gray-300'>
+                  All clear
+                </p>
+                <p className='text-xs text-gray-400 dark:text-gray-500'>
+                  No content issues detected
+                </p>
+              </div>
+            ) : (
+              <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
+                {healthFlags.map(flag => (
+                  <Link
+                    key={flag.id}
+                    href={actionHref(flag.type)}
+                    className='flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:opacity-80 transition-opacity group'
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full flex-shrink-0 ${PRIORITY_DOT[flag.priority] ?? 'bg-gray-300'}`}
+                    />
+                    <div className='flex-1 min-w-0'>
+                      <p className='text-sm font-medium text-gray-900 dark:text-white truncate'>
+                        {flag.title}
+                      </p>
+                      <p className='text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5'>
+                        {flag.description}
+                      </p>
+                    </div>
+                    <div className='flex items-center gap-2 flex-shrink-0'>
                       <span
-                        className={`w-2 h-2 rounded-full flex-shrink-0 ${PRIORITY_DOT[flag.priority] ?? 'bg-gray-300'}`}
-                      />
-                      <div className='flex-1 min-w-0'>
-                        <p className='text-sm font-medium text-gray-900 dark:text-white truncate'>
-                          {flag.title}
-                        </p>
-                        <p className='text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5'>
-                          {flag.description}
-                        </p>
-                      </div>
-                      <div className='flex items-center gap-2 flex-shrink-0'>
-                        <span
-                          className={`text-xs font-semibold capitalize ${PRIORITY_CLASSES[flag.priority] ?? ''}`}
-                        >
-                          {flag.priority}
-                        </span>
-                        <span className='text-sm font-bold text-gray-900 dark:text-white tabular-nums'>
-                          {flag.count}
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Card>
+                        className={`text-xs font-semibold capitalize ${PRIORITY_CLASSES[flag.priority] ?? ''}`}
+                      >
+                        {flag.priority}
+                      </span>
+                      <span className='text-sm font-bold text-gray-900 dark:text-white tabular-nums'>
+                        {flag.count}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </FCard>
         </div>
 
         {/* ── Row 3: Recent activity + Pending actions ─────────────────── */}
         <div className='grid grid-cols-1 lg:grid-cols-5 gap-4'>
           {/* Activity feed */}
-          <Card className='lg:col-span-3'>
-            <CardHead
-              title='Recent Activity'
-              right={
-                <span className='flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium'>
-                  <span className='w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse' />
-                  Live
-                </span>
-              }
-            />
-            <div className='p-5'>
-              {loading ? (
-                <div className='animate-pulse space-y-4'>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className='flex gap-3'>
-                      <div className='w-7 h-7 rounded-full bg-gray-100 dark:bg-slate-700 flex-shrink-0' />
-                      <div className='flex-1 space-y-1.5'>
-                        <div className='h-3 bg-gray-100 dark:bg-slate-700 rounded w-3/4' />
-                        <div className='h-2.5 bg-gray-100 dark:bg-slate-700 rounded w-1/2' />
-                      </div>
+          <FCard
+            className='lg:col-span-3'
+            title='Recent Activity'
+            action={
+              <span className='flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium'>
+                <span className='w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse' />
+                Live
+              </span>
+            }
+          >
+            {loading ? (
+              <div className='animate-pulse space-y-4'>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className='flex gap-3'>
+                    <div className='w-7 h-7 rounded-full bg-gray-100 dark:bg-slate-700 flex-shrink-0' />
+                    <div className='flex-1 space-y-1.5'>
+                      <div className='h-3 bg-gray-100 dark:bg-slate-700 rounded w-3/4' />
+                      <div className='h-2.5 bg-gray-100 dark:bg-slate-700 rounded w-1/2' />
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <RecentActivity
-                  activity={stats?.recentActivity}
-                  useSSE={true}
-                  scope='admin'
-                  noCard={true}
-                  noHeader={true}
-                />
-              )}
-            </div>
-          </Card>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <RecentActivity
+                activity={stats?.recentActivity}
+                useSSE={true}
+                scope='admin'
+                noCard={true}
+                noHeader={true}
+              />
+            )}
+          </FCard>
 
           {/* Pending actions */}
-          <Card className='lg:col-span-2'>
-            <CardHead
-              title='Pending Actions'
-              right={
-                !loading && pendingActions.length > 0 ? (
-                  <span className='inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-[11px] font-bold text-white bg-red-500 rounded-full tabular-nums'>
-                    {pendingActions.reduce((s, a) => s + a.count, 0)}
-                  </span>
-                ) : null
-              }
-            />
-            <div className='p-5'>
-              {loading ? (
-                <SkeletonRows rows={4} h='h-12' />
-              ) : pendingActions.length === 0 ? (
-                <div className='flex flex-col items-center justify-center py-8 gap-2.5'>
-                  <CheckCircleIcon className='w-8 h-8 text-emerald-400' />
-                  <p className='text-sm font-medium text-gray-600 dark:text-gray-300'>
-                    All clear
-                  </p>
-                  <p className='text-xs text-gray-400 dark:text-gray-500'>
-                    No pending actions
-                  </p>
-                </div>
-              ) : (
-                <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
-                  {pendingActions.map(action => (
-                    <Link
-                      key={action.id}
-                      href={actionHref(action.type)}
-                      className='flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:opacity-80 transition-opacity'
-                    >
+          <FCard
+            className='lg:col-span-2'
+            title='Pending Actions'
+            action={
+              !loading && pendingActions.length > 0 ? (
+                <span className='inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-[11px] font-bold text-white bg-rose-500 rounded-full tabular-nums'>
+                  {pendingActions.reduce((s, a) => s + a.count, 0)}
+                </span>
+              ) : undefined
+            }
+          >
+            {loading ? (
+              <SkeletonRows rows={4} h='h-12' />
+            ) : pendingActions.length === 0 ? (
+              <div className='flex flex-col items-center justify-center py-8 gap-2.5'>
+                <CheckCircleIcon className='w-8 h-8 text-emerald-400' />
+                <p className='text-sm font-medium text-gray-600 dark:text-gray-300'>
+                  All clear
+                </p>
+                <p className='text-xs text-gray-400 dark:text-gray-500'>
+                  No pending actions
+                </p>
+              </div>
+            ) : (
+              <div className='divide-y divide-gray-100 dark:divide-slate-700/50'>
+                {pendingActions.map(action => (
+                  <Link
+                    key={action.id}
+                    href={actionHref(action.type)}
+                    className='flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:opacity-80 transition-opacity'
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full flex-shrink-0 ${PRIORITY_DOT[action.priority] ?? 'bg-gray-300'}`}
+                    />
+                    <div className='flex-1 min-w-0'>
+                      <p className='text-sm font-medium text-gray-900 dark:text-white truncate'>
+                        {action.title}
+                      </p>
+                      <p className='text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5'>
+                        {action.description}
+                      </p>
+                    </div>
+                    <div className='flex items-center gap-2.5 flex-shrink-0'>
                       <span
-                        className={`w-2 h-2 rounded-full flex-shrink-0 ${PRIORITY_DOT[action.priority] ?? 'bg-gray-300'}`}
-                      />
-                      <div className='flex-1 min-w-0'>
-                        <p className='text-sm font-medium text-gray-900 dark:text-white truncate'>
-                          {action.title}
-                        </p>
-                        <p className='text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5'>
-                          {action.description}
-                        </p>
-                      </div>
-                      <div className='flex items-center gap-2.5 flex-shrink-0'>
-                        <span
-                          className={`text-xs font-semibold capitalize ${PRIORITY_CLASSES[action.priority] ?? ''}`}
-                        >
-                          {action.priority}
-                        </span>
-                        <span className='text-sm font-bold text-gray-900 dark:text-white tabular-nums min-w-[1rem] text-right'>
-                          {action.count}
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Card>
+                        className={`text-xs font-semibold capitalize ${PRIORITY_CLASSES[action.priority] ?? ''}`}
+                      >
+                        {action.priority}
+                      </span>
+                      <span className='text-sm font-bold text-gray-900 dark:text-white tabular-nums min-w-[1rem] text-right'>
+                        {action.count}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </FCard>
         </div>
       </div>
     </UnifiedLayout>
