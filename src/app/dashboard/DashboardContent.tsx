@@ -6,31 +6,16 @@
 import { useSession } from 'next-auth/react';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import {
-  Card,
-  CardBody,
-  Button,
-  Chip,
-  Avatar,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-} from '@heroui/react';
+import { Card, CardBody, Button, Chip, Avatar } from '@heroui/react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import {
-  PlayIcon,
-  PauseIcon,
   PencilIcon,
-  TrashIcon,
   MapPinIcon,
   GlobeAltIcon,
-  ClockIcon,
   MusicalNoteIcon,
   PlusIcon,
   UserIcon,
   ChartBarIcon,
-  EllipsisVerticalIcon,
   ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
 import FileUpload from '@/components/upload/FileUpload';
@@ -40,10 +25,8 @@ import RecentTracks from '@/components/dashboard/RecentTracks';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import TopPerformingTracks from '@/components/dashboard/TopPerformingTracks';
 import PlaylistSubmissionsTab from '@/components/dashboard/artist/PlaylistSubmissionsTab';
+import LibraryTab from '@/components/dashboard/artist/LibraryTab';
 import QuickSubmitModal from '@/components/dashboard/artist/QuickSubmitModal';
-import TrackArtwork from '@/components/music/TrackArtwork';
-import ArtistDisplay from '@/components/track/ArtistDisplay';
-import CompletionBadge from '@/components/track/CompletionBadge';
 import { useArtistProfile } from '@/hooks/useArtistProfile';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import {
@@ -51,7 +34,6 @@ import {
   UpdateArtistProfileData,
 } from '@/types/artist-profile';
 import { Track } from '@/types/track';
-import { SourceType } from '@/types/stats';
 import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 import ArtistNavigation from '@/components/dashboard/artist/ArtistNavigation';
 import UnifiedLayout from '@/components/layout/UnifiedLayout';
@@ -72,7 +54,7 @@ export default function DashboardContent({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { playTrack, currentTrack, isPlaying } = useMusicPlayer();
+  const { playTrack } = useMusicPlayer();
   const [timeRange, setTimeRange] = useState('7d');
 
   const TAB_IDS = [
@@ -674,169 +656,16 @@ export default function DashboardContent({
 
           {/* Library Tab */}
           {activeTab === 'library' && (
-            <Card>
-              <CardBody className='p-6 overflow-visible'>
-                <div className='flex items-center justify-between mb-6'>
-                  <h3 className='text-xl font-bold text-gray-900 dark:text-white'>
-                    My Music Library
-                  </h3>
-                  <Button
-                    color='primary'
-                    className='flex justify-start'
-                    startContent={<PlusIcon className='w-4 h-4' />}
-                    onPress={() => navigateToTab('upload')}
-                  >
-                    Upload New Track
-                  </Button>
-                </div>
-
-                {tracks.length === 0 ? (
-                  <div className='text-center py-12'>
-                    <div className='w-20 h-20 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4'>
-                      <MusicalNoteIcon className='w-10 h-10 text-gray-400' />
-                    </div>
-                    <h4 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
-                      No tracks yet
-                    </h4>
-                    <p className='text-gray-500 dark:text-gray-400 mb-6'>
-                      Upload your first track to start building your music
-                      library
-                    </p>
-                    <Button
-                      color='primary'
-                      size='lg'
-                      className='flex justify-start'
-                      startContent={<PlusIcon className='w-5 h-5' />}
-                      onPress={() => navigateToTab('upload')}
-                    >
-                      Upload Music
-                    </Button>
-                  </div>
-                ) : (
-                  <div className='space-y-3 overflow-visible'>
-                    {tracks.map(track => (
-                      <div
-                        key={track.id}
-                        className='flex items-center gap-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors relative'
-                      >
-                        <div className='flex-shrink-0'>
-                          <TrackArtwork
-                            artworkUrl={
-                              track.albumArtwork || track.coverImageUrl
-                            }
-                            title={track.title}
-                            size='md'
-                          />
-                        </div>
-
-                        <div className='flex-1 min-w-0'>
-                          <h4 className='font-medium text-gray-900 dark:text-white truncate mb-1'>
-                            {track.title}
-                          </h4>
-                          <div className='flex items-center gap-2 flex-wrap mb-1'>
-                            <p className='text-sm text-gray-500 dark:text-gray-400'>
-                              <ArtistDisplay track={track} />
-                            </p>
-                            {track.completionPercentage !== undefined && (
-                              <>
-                                <span className='text-xs text-gray-400 dark:text-gray-500'>
-                                  •
-                                </span>
-                                <CompletionBadge
-                                  percentage={track.completionPercentage}
-                                  size='sm'
-                                  className='flex-shrink-0'
-                                />
-                              </>
-                            )}
-                          </div>
-                          <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400'>
-                            <span className='flex items-center gap-1'>
-                              <PlayIcon className='w-3 h-3' />
-                              {track.playCount?.toLocaleString() || 0} plays
-                            </span>
-                            <span className='flex items-center gap-1'>
-                              <ClockIcon className='w-3 h-3' />
-                              {track.duration
-                                ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}`
-                                : '0:00'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className='flex items-center gap-2'>
-                          <Button
-                            isIconOnly
-                            size='sm'
-                            color='primary'
-                            onPress={() =>
-                              playTrack(track, 'dashboard' as SourceType)
-                            }
-                          >
-                            {currentTrack?.id === track.id && isPlaying ? (
-                              <PauseIcon className='w-4 h-4' />
-                            ) : (
-                              <PlayIcon className='w-4 h-4' />
-                            )}
-                          </Button>
-
-                          {/* 3-dot menu with HeroUI Dropdown */}
-                          <Dropdown placement='bottom-end'>
-                            <DropdownTrigger>
-                              <Button
-                                isIconOnly
-                                size='sm'
-                                variant='light'
-                                className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                              >
-                                <EllipsisVerticalIcon className='w-4 h-4' />
-                              </Button>
-                            </DropdownTrigger>
-                            <DropdownMenu aria-label='Track actions'>
-                              <DropdownItem
-                                key='submit'
-                                startContent={
-                                  <MusicalNoteIcon className='w-4 h-4' />
-                                }
-                                onPress={() => {
-                                  setSelectedTrackForSubmit(track);
-                                  setSelectedPlaylistForSubmit(null);
-                                  setShowQuickSubmit(true);
-                                }}
-                              >
-                                Submit to Playlists
-                              </DropdownItem>
-                              <DropdownItem
-                                key='edit'
-                                startContent={
-                                  <PencilIcon className='w-4 h-4' />
-                                }
-                                onPress={() =>
-                                  router.push(
-                                    `/dashboard/tracks/${track.id}/edit`
-                                  )
-                                }
-                              >
-                                Edit Track
-                              </DropdownItem>
-                              <DropdownItem
-                                key='delete'
-                                className='text-danger'
-                                color='danger'
-                                startContent={<TrashIcon className='w-4 h-4' />}
-                                onPress={() => confirmDelete(track.id)}
-                              >
-                                Delete Track
-                              </DropdownItem>
-                            </DropdownMenu>
-                          </Dropdown>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardBody>
-            </Card>
+            <LibraryTab
+              tracks={tracks}
+              onUpload={() => navigateToTab('upload')}
+              onDelete={confirmDelete}
+              onSubmitToPlaylist={track => {
+                setSelectedTrackForSubmit(track);
+                setSelectedPlaylistForSubmit(null);
+                setShowQuickSubmit(true);
+              }}
+            />
           )}
 
           {/* Submissions Tab */}
