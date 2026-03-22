@@ -680,9 +680,7 @@ export default function DashboardContent({
           )}
 
           {/* Tools Tab */}
-          {activeTab === 'tools' && (
-            <ToolsTab tracks={tracks} profile={profile} />
-          )}
+          {activeTab === 'tools' && <ToolsTab />}
 
           {/* Quick Links Tab — kept for backward-compat; accessible via Tools tab */}
           {activeTab === 'quick-links' && (

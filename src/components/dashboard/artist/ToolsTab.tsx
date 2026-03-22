@@ -1,26 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   WrenchScrewdriverIcon,
   ScaleIcon,
   BanknotesIcon,
   MegaphoneIcon,
   LinkIcon,
-  ArrowLeftIcon,
-  ArrowRightIcon,
 } from '@heroicons/react/24/outline';
-import { FCard, FButton, FStat } from '@/components/ui';
+import { FCard, FStat } from '@/components/ui';
 import { getAllTools } from '@/lib/tools/registry';
 import { ToolSummaryCard } from '@/components/tools/ToolSummaryCard';
-import QuickLinksManager from '@/components/dashboard/quick-links/QuickLinksManager';
-import type { Track } from '@/types/track';
-import type { ArtistProfile } from '@/types/artist-profile';
-
-interface ToolsTabProps {
-  tracks: Track[];
-  profile: ArtistProfile | null;
-}
 
 // Quick Links lives in the dashboard, not the public registry
 const QUICK_LINKS_CARD = {
@@ -36,35 +26,17 @@ const QUICK_LINKS_CARD = {
   ],
 };
 
-export default function ToolsTab({ tracks, profile }: ToolsTabProps) {
-  const [openTool, setOpenTool] = useState<string | null>(null);
+export default function ToolsTab() {
+  const router = useRouter();
   const publicTools = getAllTools();
 
   const grouped = {
     royalties: publicTools.filter(t => t.category === 'royalties').length,
     finance: publicTools.filter(t => t.category === 'finance').length,
-    promotion: publicTools.filter(t => t.category === 'promotion').length + 1, // +1 for Quick Links
+    promotion: publicTools.filter(t => t.category === 'promotion').length + 1,
   };
   const totalTools = publicTools.length + 1;
 
-  // ── Quick Links open ─────────────────────────────────────────────────────
-  if (openTool === 'quick-links') {
-    return (
-      <div className='space-y-4'>
-        <FButton
-          variant='ghost'
-          size='sm'
-          startContent={<ArrowLeftIcon className='w-4 h-4' />}
-          onPress={() => setOpenTool(null)}
-        >
-          Back to Tools
-        </FButton>
-        <QuickLinksManager tracks={tracks} profile={profile} />
-      </div>
-    );
-  }
-
-  // ── Tools grid ────────────────────────────────────────────────────────────
   return (
     <div className='space-y-4'>
       {/* Stats row — mirrors LibraryTab */}
@@ -103,7 +75,7 @@ export default function ToolsTab({ tracks, profile }: ToolsTabProps) {
         </FCard>
       </div>
 
-      {/* Tools card — mirrors the tracks FCard in LibraryTab */}
+      {/* Tools grid — mirrors the tracks FCard in LibraryTab */}
       <FCard padding='none' title='Artist Tools'>
         <div className='p-5 sm:p-6'>
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
@@ -112,10 +84,10 @@ export default function ToolsTab({ tracks, profile }: ToolsTabProps) {
               <ToolSummaryCard key={tool.slug} tool={tool} />
             ))}
 
-            {/* Quick Links — dashboard-native tool, opens inline */}
+            {/* Quick Links — navigates to its own dashboard page */}
             <button
               type='button'
-              onClick={() => setOpenTool('quick-links')}
+              onClick={() => router.push('/dashboard/tools/quick-links')}
               className='group relative flex flex-col rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-lg hover:shadow-black/8 dark:hover:shadow-black/30 transition-all duration-200 text-left cursor-pointer'
             >
               {/* Hover glow */}
@@ -135,7 +107,19 @@ export default function ToolsTab({ tracks, profile }: ToolsTabProps) {
                   </p>
                 </div>
                 <div className='w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0 opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-200 shadow-sm'>
-                  <ArrowRightIcon className='w-3.5 h-3.5 text-white' />
+                  <svg
+                    className='w-3.5 h-3.5 text-white'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2.5}
+                      d='M17 8l4 4m0 0l-4 4m4-4H3'
+                    />
+                  </svg>
                 </div>
               </div>
 
