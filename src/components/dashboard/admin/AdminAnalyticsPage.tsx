@@ -27,13 +27,7 @@ export default function AdminAnalyticsPage() {
 
   return (
     <UnifiedLayout
-      sidebar={
-        <AdminNavigation
-          activeTab='analytics'
-          onTabChange={() => {}}
-          systemHealth={systemHealth}
-        />
-      }
+      sidebar={<AdminNavigation systemHealth={systemHealth} />}
       header={header}
     >
       <div className='w-full py-8 px-4 sm:px-6'>

@@ -112,13 +112,7 @@ export default function AdminDashboard() {
 
   return (
     <UnifiedLayout
-      sidebar={
-        <AdminNavigation
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          systemHealth={systemMetrics.platformHealth}
-        />
-      }
+      sidebar={<AdminNavigation systemHealth={systemMetrics.platformHealth} />}
       header={header}
     >
       <div className='w-full py-8 px-4 sm:px-6'>

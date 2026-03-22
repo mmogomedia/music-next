@@ -28,13 +28,7 @@ export default function AdminUsersPage() {
 
   return (
     <UnifiedLayout
-      sidebar={
-        <AdminNavigation
-          activeTab='users'
-          onTabChange={() => {}}
-          systemHealth={systemHealth}
-        />
-      }
+      sidebar={<AdminNavigation systemHealth={systemHealth} />}
       header={header}
     >
       <div className='w-full py-8 px-4 sm:px-6'>

@@ -237,13 +237,7 @@ export default function AdminOverviewPage() {
 
   return (
     <UnifiedLayout
-      sidebar={
-        <AdminNavigation
-          activeTab='overview'
-          onTabChange={() => {}}
-          systemHealth={systemMetrics.platformHealth}
-        />
-      }
+      sidebar={<AdminNavigation systemHealth={systemMetrics.platformHealth} />}
       header={header}
     >
       <div className='min-h-full bg-gray-50 dark:bg-slate-950/50 p-4 sm:p-5 space-y-4'>

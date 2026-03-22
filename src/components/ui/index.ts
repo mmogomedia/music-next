@@ -30,3 +30,5 @@ export type { StatCardProps } from './StatCard';
 export { default as FEmptyState } from './FEmptyState';
 export { default as FPageHeader } from './FPageHeader';
 export { default as FSection } from './FSection';
+export { default as FSideNav } from './FSideNav';
+export type { FSideNavProps, FSideNavGroup, FSideNavItem } from './FSideNav';

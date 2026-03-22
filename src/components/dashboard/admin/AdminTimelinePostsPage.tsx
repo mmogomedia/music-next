@@ -28,13 +28,7 @@ export default function AdminTimelinePostsPage() {
 
   return (
     <UnifiedLayout
-      sidebar={
-        <AdminNavigation
-          activeTab='timeline-posts'
-          onTabChange={() => {}}
-          systemHealth={systemHealth}
-        />
-      }
+      sidebar={<AdminNavigation systemHealth={systemHealth} />}
       header={header}
     >
       <div className='w-full py-4 px-4 sm:px-6'>

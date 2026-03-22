@@ -93,13 +93,7 @@ export default function PulseAdminPage() {
 
   return (
     <UnifiedLayout
-      sidebar={
-        <AdminNavigation
-          activeTab='pulse'
-          onTabChange={() => {}}
-          systemHealth={systemHealth}
-        />
-      }
+      sidebar={<AdminNavigation systemHealth={systemHealth} />}
       header={header}
     >
       <div className='w-full bg-gray-50 dark:bg-slate-900'>
