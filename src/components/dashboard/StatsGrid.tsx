@@ -1,7 +1,5 @@
 'use client';
 
-import React from 'react';
-
 interface StatsGridProps {
   stats: {
     totalTracks: number;
@@ -21,46 +19,41 @@ interface StatsGridProps {
 interface StatCardProps {
   label: string;
   value: number;
-  borderColor: string;
   growthValue?: number;
 }
 
-function StatCard({ label, value, borderColor, growthValue }: StatCardProps) {
-  const isPositive = growthValue !== undefined && growthValue >= 0;
+function StatCard({ label, value, growthValue }: StatCardProps) {
+  const hasGrowth = growthValue !== undefined;
+  const isPositive = hasGrowth && growthValue >= 0;
 
   return (
-    <div
-      className={`bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm p-5 border-l-4 ${borderColor}`}
-    >
-      <p className='text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1'>
+    <div className='flex flex-col gap-1 px-1'>
+      <p className='text-xs text-gray-400 dark:text-gray-500 font-medium'>
         {label}
       </p>
-      <p className='text-3xl font-bold text-gray-900 dark:text-white leading-none'>
+      <p className='text-2xl font-semibold text-gray-900 dark:text-white tabular-nums'>
         {value.toLocaleString()}
       </p>
-      {/* growth row — always render to keep height consistent */}
-      <div className='mt-2 h-5 flex items-center'>
-        {growthValue !== undefined ? (
-          <span
-            className={`text-xs font-medium ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
-          >
-            {isPositive ? '↑' : '↓'} {Math.abs(growthValue).toFixed(1)}%{' '}
-            <span className='text-gray-400 dark:text-gray-500 font-normal'>
-              vs prev period
-            </span>
-          </span>
-        ) : null}
-      </div>
+      {hasGrowth ? (
+        <p
+          className={`text-xs font-medium ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}
+        >
+          {isPositive ? '+' : ''}
+          {growthValue.toFixed(1)}%
+        </p>
+      ) : (
+        <p className='text-xs text-transparent select-none'>—</p>
+      )}
     </div>
   );
 }
 
 function SkeletonCard() {
   return (
-    <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm p-5 border-l-4 border-l-gray-200 dark:border-l-slate-700 animate-pulse'>
-      <div className='h-3 w-16 bg-gray-200 dark:bg-slate-700 rounded mb-2' />
-      <div className='h-8 w-24 bg-gray-200 dark:bg-slate-700 rounded mb-3' />
-      <div className='h-3 w-20 bg-gray-200 dark:bg-slate-700 rounded' />
+    <div className='flex flex-col gap-1 px-1 animate-pulse'>
+      <div className='h-3 w-14 bg-gray-100 dark:bg-slate-700 rounded' />
+      <div className='h-7 w-20 bg-gray-100 dark:bg-slate-700 rounded' />
+      <div className='h-3 w-10 bg-gray-100 dark:bg-slate-700 rounded' />
     </div>
   );
 }
@@ -72,38 +65,32 @@ export default function StatsGrid({
 }: StatsGridProps) {
   if (loading) {
     return (
-      <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
+      <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm px-6 py-5'>
+        <div className='grid grid-cols-2 sm:grid-cols-4 gap-6 divide-x divide-gray-100 dark:divide-slate-700'>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
-      <StatCard
-        label='Plays'
-        value={stats.totalPlays}
-        borderColor='border-l-emerald-500'
-        growthValue={growth?.playsGrowth}
-      />
-      <StatCard
-        label='Likes'
-        value={stats.totalLikes}
-        borderColor='border-l-rose-500'
-        growthValue={growth?.likesGrowth}
-      />
-      <StatCard
-        label='Listeners'
-        value={stats.uniqueListeners}
-        borderColor='border-l-primary-500'
-      />
-      <StatCard
-        label='Downloads'
-        value={stats.totalDownloads}
-        borderColor='border-l-violet-500'
-      />
+    <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm px-6 py-5'>
+      <div className='grid grid-cols-2 sm:grid-cols-4 gap-6 divide-x divide-gray-100 dark:divide-slate-700'>
+        <StatCard
+          label='Plays'
+          value={stats.totalPlays}
+          growthValue={growth?.playsGrowth}
+        />
+        <StatCard
+          label='Likes'
+          value={stats.totalLikes}
+          growthValue={growth?.likesGrowth}
+        />
+        <StatCard label='Listeners' value={stats.uniqueListeners} />
+        <StatCard label='Downloads' value={stats.totalDownloads} />
+      </div>
     </div>
   );
 }
