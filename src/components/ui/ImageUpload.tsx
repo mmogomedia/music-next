@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@heroui/react';
 import {
   PhotoIcon,
   ScissorsIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import ImageCropper from './ImageCropper';
+import FButton from './FButton';
 
 interface ImageUploadProps {
   label?: string;
@@ -25,7 +25,7 @@ interface ImageUploadProps {
   acceptedTypes?: string[];
   showCropButton?: boolean;
   showRemoveButton?: boolean;
-  previewSize?: 'sm' | 'md' | 'lg';
+  previewSize?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -46,7 +46,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   showRemoveButton = true,
   previewSize = 'md',
 }) => {
-  const [isUploading] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [originalImageFile, setOriginalImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>(preview || '');
@@ -64,7 +63,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     sm: 'w-16 h-16',
     md: 'w-32 h-32',
     lg: 'w-48 h-48',
+    xl: 'w-80 h-80',
   };
+
+  const inputId = `image-upload-${label ? label.toLowerCase().replace(/\s+/g, '-') : 'file'}`;
 
   const validateImage = (file: File): { valid: boolean; error?: string } => {
     // Check file type
@@ -222,22 +224,23 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         </label>
       )}
 
-      <div className='space-y-4'>
-        {/* Image Preview */}
+      <div className='space-y-3'>
+        {/* Image Preview — shown when an image is set */}
         {previewUrl && (
           <div className='flex justify-center'>
             <div className='relative'>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewUrl}
                 alt='Preview'
-                className={`${previewSizes[previewSize]} object-cover rounded-lg border-2 border-gray-200 dark:border-gray-600`}
+                className={`${previewSizes[previewSize]} object-cover rounded-xl border border-gray-200 dark:border-gray-700`}
               />
               <div className='absolute -top-2 -right-2 flex gap-1'>
                 {showCropButton && (originalImageFile || previewUrl) && (
                   <button
                     type='button'
                     onClick={handleCropClick}
-                    className='w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-blue-600'
+                    className='w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 shadow-sm'
                     title='Crop image'
                     disabled={disabled}
                   >
@@ -248,7 +251,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                   <button
                     type='button'
                     onClick={handleRemove}
-                    className='w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600'
+                    className='w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center hover:bg-rose-600 shadow-sm'
                     title='Remove image'
                     disabled={disabled}
                   >
@@ -260,33 +263,49 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           </div>
         )}
 
-        {/* Upload Area */}
-        <div className='border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors'>
-          <PhotoIcon className='w-12 h-12 text-gray-400 mx-auto mb-2' />
-          <p className='text-sm text-gray-500 dark:text-gray-400 mb-2'>
-            Upload an image (min {minWidth}x{minHeight}px) and crop it to the
-            correct size
-          </p>
-          <input
-            ref={fileInputRef}
-            type='file'
-            accept={acceptedTypes.join(',')}
-            onChange={handleImageChange}
-            className='hidden'
-            id={`image-upload-${label.toLowerCase().replace(/\s+/g, '-')}`}
-            disabled={disabled}
-          />
-          <Button
-            as='label'
-            htmlFor={`image-upload-${label.toLowerCase().replace(/\s+/g, '-')}`}
-            variant='bordered'
-            size='sm'
-            disabled={disabled || isUploading}
-            isLoading={isUploading}
-          >
-            {isUploading ? 'Uploading...' : 'Choose Image'}
-          </Button>
-        </div>
+        {/* Hidden file input — always in DOM so fileInputRef is always valid */}
+        <input
+          ref={fileInputRef}
+          type='file'
+          accept={acceptedTypes.join(',')}
+          onChange={handleImageChange}
+          className='hidden'
+          id={inputId}
+          disabled={disabled}
+        />
+
+        {/* Upload area — shown only when no image is set */}
+        {!previewUrl && (
+          <div className='border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-6 text-center hover:border-primary-400 dark:hover:border-primary-500 transition-colors'>
+            <PhotoIcon className='w-10 h-10 text-gray-400 mx-auto mb-2' />
+            <p className='text-sm text-gray-500 dark:text-gray-400 mb-3'>
+              Upload an image (min {minWidth}&times;{minHeight}px)
+            </p>
+            <FButton
+              variant='outline'
+              size='sm'
+              isDisabled={disabled}
+              onPress={() => fileInputRef.current?.click()}
+            >
+              Choose Image
+            </FButton>
+          </div>
+        )}
+
+        {/* Compact change-image button — shown when image is already set */}
+        {previewUrl && (
+          <div className='flex justify-center gap-2'>
+            <FButton
+              variant='outline'
+              size='sm'
+              startContent={<PhotoIcon className='w-4 h-4' />}
+              isDisabled={disabled}
+              onPress={() => fileInputRef.current?.click()}
+            >
+              Change image
+            </FButton>
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (

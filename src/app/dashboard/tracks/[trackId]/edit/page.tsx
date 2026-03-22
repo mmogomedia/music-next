@@ -70,6 +70,9 @@ export default async function EditTrackPage({ params }: EditTrackPageProps) {
       : '',
     attributes: Array.isArray(track.attributes) ? track.attributes : [],
     mood: Array.isArray(track.mood) ? track.mood : [],
+    streamingLinks: Array.isArray(track.streamingLinks)
+      ? (track.streamingLinks as { platform: string; url: string }[])
+      : [],
   };
 
   return (

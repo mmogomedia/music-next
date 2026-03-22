@@ -161,28 +161,6 @@ export default function TrackEditPageClient({
 
             {/* Sidebar */}
             <aside className='space-y-4 lg:sticky lg:top-6'>
-              <FCard padding='md' title='Save track'>
-                <div className='space-y-2 pt-1'>
-                  <FButton
-                    variant='primary'
-                    className='w-full'
-                    onPress={handleQuickSave}
-                    isDisabled={!readyToSave || isSaving}
-                    isLoading={isSaving}
-                  >
-                    {isSaving ? 'Saving…' : 'Save changes'}
-                  </FButton>
-                  <FButton
-                    variant='ghost'
-                    className='w-full'
-                    onPress={handleBack}
-                    isDisabled={isSaving}
-                  >
-                    Back to library
-                  </FButton>
-                </div>
-              </FCard>
-
               <FCard padding='md' title='Tips'>
                 <ul className='space-y-2 text-sm text-gray-600 dark:text-gray-400 pt-1'>
                   <li className='flex gap-2'>

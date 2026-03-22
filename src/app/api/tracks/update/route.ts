@@ -59,6 +59,7 @@ export async function PUT(request: NextRequest) {
       albumArtwork,
       attributes = [],
       mood = [],
+      streamingLinks,
       strength,
     } = body;
 
@@ -238,6 +239,7 @@ export async function PUT(request: NextRequest) {
       albumArtwork: albumArtwork?.trim() || null,
       attributes: sanitizedAttributes,
       mood: sanitizedMood,
+      streamingLinks: Array.isArray(streamingLinks) ? streamingLinks : [],
       updatedAt: new Date(),
     };
 

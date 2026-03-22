@@ -25,6 +25,8 @@ export {
 } from './FModal';
 
 // ── Native primitives (no HeroUI dependency) ─────────────────────────────────
+export { FImage } from './FImage';
+export type { FImageProps } from './FImage';
 export { default as FChip } from './FChip';
 export { default as FStat } from './FStat';
 export { default as StatCard, StatCardSkeleton } from './StatCard';
