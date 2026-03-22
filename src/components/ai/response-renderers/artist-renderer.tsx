@@ -46,6 +46,7 @@ export function ArtistRenderer({
       // Fallback: send a message to show tracks by this artist
       onAction({
         type: 'send_message',
+        label: `Show tracks by ${displayName}`,
         data: { message: `Show me tracks by ${displayName}` },
       });
     }
@@ -118,7 +119,7 @@ export function ArtistRenderer({
       </div>
 
       {/* Bio */}
-      {artist?.bio && (
+      {typeof artist?.bio === 'string' && artist.bio && (
         <div className='rounded-lg bg-gray-50 dark:bg-slate-800 p-4'>
           <p className='text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap'>
             {artist.bio}
@@ -128,26 +129,26 @@ export function ArtistRenderer({
 
       {/* Stats */}
       <div className='flex gap-4'>
-        {artist?.totalPlays > 0 && (
+        {(artist?.totalPlays ?? 0) > 0 && (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-              {artist.totalPlays.toLocaleString()}
+              {(artist.totalPlays ?? 0).toLocaleString()}
             </p>
             <p className='text-xs text-gray-600 dark:text-gray-400'>Plays</p>
           </div>
         )}
-        {artist?.totalLikes > 0 && (
+        {(artist?.totalLikes ?? 0) > 0 && (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-              {artist.totalLikes.toLocaleString()}
+              {(artist.totalLikes ?? 0).toLocaleString()}
             </p>
             <p className='text-xs text-gray-600 dark:text-gray-400'>Likes</p>
           </div>
         )}
-        {artist?.profileViews > 0 && (
+        {(artist?.profileViews ?? 0) > 0 && (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-              {artist.profileViews.toLocaleString()}
+              {(artist.profileViews ?? 0).toLocaleString()}
             </p>
             <p className='text-xs text-gray-600 dark:text-gray-400'>Views</p>
           </div>
@@ -155,9 +156,9 @@ export function ArtistRenderer({
       </div>
 
       {/* Social Links */}
-      {(artist.socialLinks || artist.streamingLinks) && (
+      {(Boolean(artist.socialLinks) || Boolean(artist.streamingLinks)) && (
         <div className='flex gap-2 flex-wrap'>
-          {artist.socialLinks &&
+          {Boolean(artist.socialLinks) &&
             typeof artist.socialLinks === 'object' &&
             Object.entries(artist.socialLinks as Record<string, unknown>).map(
               ([platform, linkData]) => {
@@ -185,7 +186,7 @@ export function ArtistRenderer({
                 );
               }
             )}
-          {artist.streamingLinks &&
+          {Boolean(artist.streamingLinks) &&
             typeof artist.streamingLinks === 'object' &&
             Object.entries(
               artist.streamingLinks as Record<string, unknown>

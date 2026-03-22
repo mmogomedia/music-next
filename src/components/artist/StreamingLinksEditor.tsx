@@ -268,7 +268,9 @@ export default function StreamingLinksEditor({
                       type='number'
                       value={
                         linkData
-                          ? getStreamingCount(linkData as StreamingLinkValue)
+                          ? String(
+                              getStreamingCount(linkData as StreamingLinkValue)
+                            )
                           : ''
                       }
                       onChange={e =>

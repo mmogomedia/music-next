@@ -221,7 +221,7 @@ export default function SocialLinksEditor({
                       id={`${platform.key}-followers`}
                       label='Followers'
                       type='number'
-                      value={linkData ? getSocialCount(linkData) : ''}
+                      value={linkData ? String(getSocialCount(linkData)) : ''}
                       onChange={e =>
                         handleLinkChange(
                           platform.key,
