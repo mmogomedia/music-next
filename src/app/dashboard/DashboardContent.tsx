@@ -31,6 +31,7 @@ import {
   UserIcon,
   ChartBarIcon,
   EllipsisVerticalIcon,
+  ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
 import FileUpload from '@/components/upload/FileUpload';
 import ArtistProfileForm from '@/components/artist/ArtistProfileForm';
@@ -310,6 +311,20 @@ export default function DashboardContent({
                 {(stats?.overview?.totalPlays || 0).toLocaleString()} plays
               </Chip>
             </div>
+            {profile?.slug && (
+              <Button
+                as='a'
+                href={`/artist/${profile.slug}`}
+                target='_blank'
+                rel='noopener noreferrer'
+                size='sm'
+                variant='bordered'
+                className='hidden sm:flex h-8 text-xs'
+                endContent={<ArrowTopRightOnSquareIcon className='w-3 h-3' />}
+              >
+                View Profile
+              </Button>
+            )}
             {activeTab !== 'upload' && (
               <Button
                 size='sm'
