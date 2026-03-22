@@ -157,12 +157,12 @@ export default function TopPerformingTracks({
                     }}
                     className={
                       isCurrentlyPlaying
-                        ? 'text-blue-600 dark:text-blue-400'
+                        ? 'text-primary-600 dark:text-primary-400'
                         : ''
                     }
                   >
                     {isCurrentlyPlaying ? (
-                      <div className='w-4 h-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin'></div>
+                      <div className='w-4 h-4 border-2 border-primary-600 dark:border-primary-400 border-t-transparent rounded-full animate-spin'></div>
                     ) : (
                       <PlayIcon className='w-4 h-4' />
                     )}

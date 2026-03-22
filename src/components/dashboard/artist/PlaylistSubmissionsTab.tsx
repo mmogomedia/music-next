@@ -114,7 +114,7 @@ export default function PlaylistSubmissionsTab({
     return (
       <Card>
         <CardBody className='p-8 text-center'>
-          <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4'>
+          <div className='w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mx-auto mb-4'>
             <MusicalNoteIcon className='w-5 h-5 text-white' />
           </div>
           <p className='text-gray-600 dark:text-gray-400'>
@@ -145,7 +145,7 @@ export default function PlaylistSubmissionsTab({
           onClick={() => setActiveTab('available')}
           className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 ${
             activeTab === 'available'
-              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+              ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-sm'
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           }`}
         >
@@ -156,7 +156,7 @@ export default function PlaylistSubmissionsTab({
           onClick={() => setActiveTab('my-submissions')}
           className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-all duration-200 ${
             activeTab === 'my-submissions'
-              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+              ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-sm'
               : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
           }`}
         >

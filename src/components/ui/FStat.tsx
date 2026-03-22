@@ -35,8 +35,8 @@ interface FStatProps {
  */
 const colorMap: Record<FStatColor, { accent: string; icon: string }> = {
   purple: {
-    accent: 'bg-blue-600',
-    icon: 'text-blue-500 dark:text-blue-400',
+    accent: 'bg-primary-600',
+    icon: 'text-primary-500 dark:text-primary-400',
   },
   indigo: {
     accent: 'bg-indigo-500',
@@ -68,8 +68,8 @@ const colorMap: Record<FStatColor, { accent: string; icon: string }> = {
     icon: 'text-violet-500 dark:text-violet-400',
   },
   teal: {
-    accent: 'bg-blue-600',
-    icon: 'text-blue-500 dark:text-blue-400',
+    accent: 'bg-primary-600',
+    icon: 'text-primary-500 dark:text-primary-400',
   },
 };
 

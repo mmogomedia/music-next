@@ -49,7 +49,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
       <span className='w-6 text-center text-sm text-slate-400 font-medium flex-shrink-0'>
         {index + 1}
       </span>
-      <div className='w-10 h-10 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center flex-shrink-0'>
+      <div className='w-10 h-10 rounded-lg bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900/30 dark:to-primary-800/30 flex items-center justify-center flex-shrink-0'>
         {track.coverImageUrl ? (
           <img
             src={track.coverImageUrl}
@@ -57,7 +57,7 @@ function TrackRow({ track, index }: { track: Track; index: number }) {
             className='w-10 h-10 rounded-lg object-cover'
           />
         ) : (
-          <MusicalNoteIcon className='w-4 h-4 text-blue-400' />
+          <MusicalNoteIcon className='w-4 h-4 text-primary-400' />
         )}
       </div>
       <div className='flex-1 min-w-0'>
@@ -90,8 +90,8 @@ function EmptyState({
 }) {
   return (
     <div className='flex flex-col items-center justify-center py-16 px-4 text-center'>
-      <div className='w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-4'>
-        <Icon className='w-7 h-7 text-blue-400' />
+      <div className='w-14 h-14 rounded-2xl bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center mb-4'>
+        <Icon className='w-7 h-7 text-primary-400' />
       </div>
       <h3 className='text-base font-semibold text-gray-900 dark:text-white mb-2'>
         {title}
@@ -102,7 +102,7 @@ function EmptyState({
       {cta && onCta && (
         <button
           onClick={onCta}
-          className='text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline'
+          className='text-sm font-medium text-primary-600 dark:text-primary-400 hover:underline'
         >
           {cta}
         </button>
@@ -115,9 +115,9 @@ function UpgradeCard() {
   const router = useRouter();
 
   return (
-    <div className='rounded-xl border border-blue-100 dark:border-blue-800/40 bg-blue-50 dark:bg-blue-900/10 p-5'>
+    <div className='rounded-xl border border-primary-100 dark:border-primary-800/40 bg-primary-50 dark:bg-primary-900/10 p-5'>
       <div className='flex items-start gap-4'>
-        <div className='w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0'>
+        <div className='w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center flex-shrink-0'>
           <MusicalNoteIcon className='w-5 h-5 text-white' />
         </div>
         <div className='flex-1'>
@@ -130,7 +130,7 @@ function UpgradeCard() {
           </p>
           <button
             onClick={() => router.push('/profile/select')}
-            className='text-xs font-semibold px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors'
+            className='text-xs font-semibold px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors'
           >
             Get Started →
           </button>
@@ -174,7 +174,7 @@ function TrendingTab() {
         </div>
         {loading ? (
           <div className='flex items-center justify-center py-12'>
-            <div className='w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin' />
+            <div className='w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin' />
           </div>
         ) : tracks.length > 0 ? (
           <div className='divide-y divide-gray-50 dark:divide-slate-700/50 px-2 py-2'>
@@ -264,8 +264,8 @@ function ProfileTab() {
   return (
     <div className='rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6'>
       <div className='flex items-center gap-4 mb-6'>
-        <div className='w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center'>
-          <UserCircleIcon className='w-8 h-8 text-blue-400' />
+        <div className='w-14 h-14 rounded-2xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center'>
+          <UserCircleIcon className='w-8 h-8 text-primary-400' />
         </div>
         <div>
           <h3 className='text-lg font-bold text-gray-900 dark:text-white'>
@@ -325,7 +325,7 @@ export default function FanDashboardContent(_props: FanDashboardContentProps) {
   if (status === 'loading') {
     return (
       <div className='min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center'>
-        <div className='w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin' />
+        <div className='w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin' />
       </div>
     );
   }

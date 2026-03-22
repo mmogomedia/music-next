@@ -124,7 +124,7 @@ function NavLink({
       onClick={onClick}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
         isActive
-          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
           : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
       }`}
     >
@@ -138,14 +138,14 @@ function UpgradeCTA({ onClose }: { onClose?: () => void }) {
   const router = useRouter();
 
   return (
-    <div className='mx-3 mb-3 p-3.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50'>
+    <div className='mx-3 mb-3 p-3.5 rounded-xl bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800/50'>
       <div className='flex items-center gap-2 mb-2'>
-        <MusicalNoteSolid className='w-4 h-4 text-blue-600 dark:text-blue-400' />
-        <span className='text-xs font-semibold text-blue-700 dark:text-blue-300'>
+        <MusicalNoteSolid className='w-4 h-4 text-primary-600 dark:text-primary-400' />
+        <span className='text-xs font-semibold text-primary-700 dark:text-primary-300'>
           Share Your Music
         </span>
       </div>
-      <p className='text-xs text-blue-600 dark:text-blue-400 mb-3'>
+      <p className='text-xs text-primary-600 dark:text-primary-400 mb-3'>
         Create your artist profile and reach new listeners.
       </p>
       <button
@@ -153,7 +153,7 @@ function UpgradeCTA({ onClose }: { onClose?: () => void }) {
           onClose?.();
           router.push('/profile/select');
         }}
-        className='w-full text-xs font-semibold px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors'
+        className='w-full text-xs font-semibold px-3 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition-colors'
       >
         Get Started →
       </button>

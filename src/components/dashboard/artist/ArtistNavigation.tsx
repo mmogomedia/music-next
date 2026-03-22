@@ -139,7 +139,7 @@ function NavLink({
       onClick={onClick}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
         isActive
-          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
           : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
       }`}
     >

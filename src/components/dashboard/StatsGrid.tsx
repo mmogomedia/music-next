@@ -73,8 +73,8 @@ export default function StatsGrid({ stats, growth }: StatsGridProps) {
       label: 'Listeners',
       value: stats.uniqueListeners,
       icon: UserGroupIcon,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-950/20',
+      color: 'text-primary-600 dark:text-primary-400',
+      bgColor: 'bg-primary-50 dark:bg-primary-950/20',
     },
   ];
 
