@@ -19,6 +19,7 @@ import {
   ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
 import UploadTab from '@/components/dashboard/artist/UploadTab';
+import ToolsTab from '@/components/dashboard/artist/ToolsTab';
 import ArtistProfileForm from '@/components/artist/ArtistProfileForm';
 import StatsGrid from '@/components/dashboard/StatsGrid';
 import RecentTracks from '@/components/dashboard/RecentTracks';
@@ -62,7 +63,8 @@ export default function DashboardContent({
     'library',
     'upload',
     'submissions',
-    'quick-links',
+    'tools',
+    'quick-links', // kept for backward-compat deep links; accessible via Tools tab
     'analytics',
     'profile',
   ] as const;
@@ -255,6 +257,7 @@ export default function DashboardContent({
     library: 'Library',
     upload: 'Upload',
     submissions: 'Submissions',
+    tools: 'Tools',
     'quick-links': 'Quick Links',
     analytics: 'Analytics',
     profile: 'Profile',
@@ -676,7 +679,12 @@ export default function DashboardContent({
             />
           )}
 
-          {/* Quick Links Tab */}
+          {/* Tools Tab */}
+          {activeTab === 'tools' && (
+            <ToolsTab tracks={tracks} profile={profile} />
+          )}
+
+          {/* Quick Links Tab — kept for backward-compat; accessible via Tools tab */}
           {activeTab === 'quick-links' && (
             <QuickLinksManager tracks={tracks} profile={profile} />
           )}

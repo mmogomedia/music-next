@@ -6,7 +6,7 @@ import {
   PlusIcon,
   UserIcon,
   FolderOpenIcon,
-  LinkIcon,
+  WrenchScrewdriverIcon,
   HomeIcon,
 } from '@heroicons/react/24/outline';
 import {
@@ -15,7 +15,7 @@ import {
   PlusIcon as PlusSolid,
   UserIcon as UserSolid,
   FolderOpenIcon as FolderOpenSolid,
-  LinkIcon as LinkSolid,
+  WrenchScrewdriverIcon as WrenchScrewdriverSolid,
   HomeIcon as HomeSolid,
 } from '@heroicons/react/24/solid';
 import UserDetailsFooter from '@/components/layout/UserDetailsFooter';
@@ -26,7 +26,7 @@ type TabId =
   | 'library'
   | 'upload'
   | 'submissions'
-  | 'quick-links'
+  | 'tools'
   | 'analytics'
   | 'profile'
   | 'pulse';
@@ -70,10 +70,10 @@ const NAV_GROUP_DEFS = [
         activeIcon: FolderOpenSolid,
       },
       {
-        id: 'quick-links' as TabId,
-        label: 'Quick Links',
-        icon: LinkIcon,
-        activeIcon: LinkSolid,
+        id: 'tools' as TabId,
+        label: 'Tools',
+        icon: WrenchScrewdriverIcon,
+        activeIcon: WrenchScrewdriverSolid,
       },
     ],
   },
