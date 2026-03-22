@@ -227,7 +227,7 @@ export default function ArtistNavigation({
   // Desktop sidebar
   if (!isMobile) {
     return (
-      <aside className='fixed left-0 top-0 h-screen w-64 bg-white dark:bg-slate-900 border-r border-gray-100 dark:border-slate-800 flex flex-col z-30'>
+      <aside className='relative w-64 flex-shrink-0 bg-white dark:bg-slate-900 border-r border-gray-100 dark:border-slate-800 flex flex-col z-30'>
         <SidebarContent activeTab={activeTab} getTabHref={getTabHref} />
       </aside>
     );
