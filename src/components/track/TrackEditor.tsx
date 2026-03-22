@@ -7,20 +7,17 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import {
-  Button,
   Card,
   CardBody,
-  Input,
   Select,
   SelectItem,
   Switch,
   Tab,
   Tabs,
-  Textarea,
   Progress,
-  Chip,
   Tooltip,
 } from '@heroui/react';
+import { FButton, FInput, FTextarea, FChip } from '@/components/ui';
 import {
   DocumentTextIcon,
   PhotoIcon,
@@ -670,48 +667,45 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
         className={`space-y-6 ${className ?? ''}`}
       >
         {/* Completion Display */}
-        <div className='space-y-3 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700'>
+        <div className='space-y-3 p-4 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700/60'>
           <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-3'>
-              <div>
-                <div className='flex items-center gap-2'>
-                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                    Track Completion
-                  </span>
-                  <Chip
-                    size='sm'
-                    color={getCompletionColor(completionBreakdown.percentage)}
-                    variant='flat'
-                  >
-                    {completionBreakdown.percentage}%
-                  </Chip>
-                  <span className='text-xs text-gray-500 dark:text-gray-400'>
-                    {getCompletionStatus(completionBreakdown.percentage)}
-                  </span>
-                </div>
-                <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-                  {completionBreakdown.isComplete
-                    ? 'Track is complete!'
-                    : `${100 - completionBreakdown.percentage}% remaining to complete`}
-                </p>
-              </div>
+            <div className='flex items-center gap-2.5'>
+              <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                Track Completion
+              </span>
+              <FChip
+                size='xs'
+                color={
+                  getCompletionColor(completionBreakdown.percentage) as
+                    | 'success'
+                    | 'warning'
+                    | 'danger'
+                    | 'default'
+                }
+                variant='flat'
+              >
+                {completionBreakdown.percentage}%
+              </FChip>
+              <span className='hidden sm:inline text-xs text-gray-400 dark:text-gray-500'>
+                {getCompletionStatus(completionBreakdown.percentage)}
+              </span>
             </div>
-            <Button
+            <FButton
+              variant='ghost'
               size='sm'
-              variant='light'
               onPress={() =>
                 setShowCompletionBreakdown(!showCompletionBreakdown)
               }
               endContent={
                 showCompletionBreakdown ? (
-                  <ChevronUpIcon className='w-4 h-4' />
+                  <ChevronUpIcon className='w-3.5 h-3.5' />
                 ) : (
-                  <ChevronDownIcon className='w-4 h-4' />
+                  <ChevronDownIcon className='w-3.5 h-3.5' />
                 )
               }
             >
-              {showCompletionBreakdown ? 'Hide' : 'Show'} Details
-            </Button>
+              {showCompletionBreakdown ? 'Hide' : 'Details'}
+            </FButton>
           </div>
 
           <Progress
@@ -794,7 +788,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
           >
             <div className='space-y-4 pt-4'>
               <div className='space-y-4'>
-                <Input
+                <FInput
                   label='Title *'
                   placeholder='Enter track title'
                   value={values.title}
@@ -843,7 +837,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                   </p>
                 )}
 
-                <Input
+                <FInput
                   label='Album'
                   placeholder='Album name'
                   value={values.album || ''}
@@ -915,29 +909,23 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                       placement='top'
                       showArrow
                     >
-                      <Button
-                        isIconOnly
-                        size='sm'
-                        variant='light'
-                        className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                      >
+                      <FButton isIconOnly size='sm' variant='ghost'>
                         <InformationCircleIcon className='w-5 h-5' />
-                      </Button>
+                      </FButton>
                     </Tooltip>
                   </div>
-                  <Textarea
+                  <FTextarea
                     id='lyrics-textarea'
                     placeholder='Paste your song lyrics here...'
                     value={values.lyrics || ''}
                     onValueChange={value => updateValue('lyrics', value)}
-                    rows={12}
+                    minRows={12}
                     className='font-mono text-sm'
                   />
                   <div className='flex items-center gap-2'>
-                    <Button
+                    <FButton
+                      variant='secondary'
                       size='sm'
-                      variant='flat'
-                      color='secondary'
                       startContent={<AIIcon className='w-4 h-4' size={16} />}
                       onPress={handleGenerateMetadata}
                       isLoading={isGeneratingMetadata}
@@ -949,7 +937,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                       {isGeneratingMetadata
                         ? 'Generating...'
                         : 'Generate Description & Attributes'}
-                    </Button>
+                    </FButton>
                   </div>
                   {metadataRateLimitInfo && (
                     <p className='text-xs text-gray-500 dark:text-gray-400'>
@@ -958,18 +946,17 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                     </p>
                   )}
                   {metadataError && (
-                    <div className='flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-sm text-red-600 dark:text-red-400'>
+                    <div className='flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-sm text-red-600 dark:text-red-400'>
                       <XCircleIcon className='w-4 h-4 flex-shrink-0' />
                       <span className='flex-1'>{metadataError}</span>
-                      <Button
+                      <FButton
                         size='sm'
-                        variant='light'
-                        color='danger'
+                        variant='danger-ghost'
                         onPress={handleGenerateMetadata}
                         isDisabled={isGeneratingMetadata}
                       >
                         Retry
-                      </Button>
+                      </FButton>
                     </div>
                   )}
                   {generationNotice && (
@@ -988,12 +975,12 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                     >
                       Description
                     </label>
-                    <Textarea
+                    <FTextarea
                       id='description-textarea'
                       placeholder='Track description (auto-generated from lyrics or write your own)...'
                       value={values.description || ''}
                       onValueChange={value => updateValue('description', value)}
-                      rows={4}
+                      minRows={4}
                     />
                   </div>
 
@@ -1007,18 +994,17 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                           Themes & topics
                         </p>
                       </div>
-                      <Button
-                        variant='flat'
-                        color='primary'
+                      <FButton
+                        variant='primary-ghost'
                         className='sm:w-auto'
                         onPress={handleAddAttribute}
                         isDisabled={!attributeInput.trim()}
                         size='sm'
                       >
-                        Add Attribute
-                      </Button>
+                        Add
+                      </FButton>
                     </div>
-                    <Input
+                    <FInput
                       placeholder='e.g. women empowerment'
                       value={attributeInput}
                       onValueChange={setAttributeInput}
@@ -1026,7 +1012,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                       className='flex-1'
                       size='sm'
                     />
-                    <div className='flex flex-wrap gap-2 min-h-[60px] p-3 border border-gray-200 dark:border-slate-700 rounded-lg'>
+                    <div className='flex flex-wrap gap-2 min-h-[60px] p-3 border border-gray-200 dark:border-slate-700 rounded-xl'>
                       {(values.attributes || []).length === 0 && (
                         <p className='text-xs text-gray-500 dark:text-gray-400'>
                           Add at least 3 attributes to capture the song&apos;s
@@ -1034,7 +1020,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                         </p>
                       )}
                       {(values.attributes || []).map(attribute => (
-                        <Chip
+                        <FChip
                           key={attribute}
                           variant='flat'
                           color='primary'
@@ -1049,7 +1035,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                           }`}
                         >
                           {attribute}
-                        </Chip>
+                        </FChip>
                       ))}
                     </div>
                   </div>
@@ -1064,18 +1050,17 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                           Displayed as pills in AI
                         </p>
                       </div>
-                      <Button
-                        variant='flat'
-                        color='primary'
+                      <FButton
+                        variant='primary-ghost'
                         className='sm:w-auto'
                         onPress={handleAddMood}
                         isDisabled={!moodInput.trim()}
                         size='sm'
                       >
-                        Add Mood
-                      </Button>
+                        Add
+                      </FButton>
                     </div>
-                    <Input
+                    <FInput
                       placeholder='e.g. uplifting'
                       value={moodInput}
                       onValueChange={setMoodInput}
@@ -1083,27 +1068,27 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                       className='flex-1'
                       size='sm'
                     />
-                    <div className='flex flex-wrap gap-2 min-h-[60px] p-3 border border-gray-200 dark:border-slate-700 rounded-lg'>
+                    <div className='flex flex-wrap gap-2 min-h-[60px] p-3 border border-gray-200 dark:border-slate-700 rounded-xl'>
                       {(values.mood || []).length === 0 && (
                         <p className='text-xs text-gray-500 dark:text-gray-400'>
                           Add mood tags to help users discover your track.
                         </p>
                       )}
                       {(values.mood || []).map(mood => (
-                        <Chip
+                        <FChip
                           key={mood}
                           variant='flat'
-                          color='secondary'
+                          color='info'
                           onClose={() => removeListValue('mood', mood)}
                           size='sm'
                           className={`transition-all duration-300 ${
                             recentlyAddedMood === mood
-                              ? 'ring-2 ring-secondary-500 ring-offset-2 scale-105 animate-pulse'
+                              ? 'ring-2 ring-sky-500 ring-offset-2 scale-105 animate-pulse'
                               : ''
                           }`}
                         >
                           {mood}
-                        </Chip>
+                        </FChip>
                       ))}
                     </div>
                   </div>
@@ -1180,14 +1165,14 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
           >
             <div className='space-y-4 pt-4'>
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                <Input
+                <FInput
                   label='Composer'
                   placeholder='Composer name'
                   value={values.composer || ''}
                   onValueChange={value => updateValue('composer', value)}
                 />
 
-                <Input
+                <FInput
                   type='number'
                   label='Year'
                   placeholder='2024'
@@ -1199,14 +1184,14 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                   errorMessage={errors.year}
                 />
 
-                <Input
+                <FInput
                   type='date'
                   label='Release Date'
                   value={values.releaseDate || ''}
                   onValueChange={value => updateValue('releaseDate', value)}
                 />
 
-                <Input
+                <FInput
                   type='number'
                   label='BPM'
                   placeholder='120'
@@ -1218,7 +1203,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                   errorMessage={errors.bpm}
                 />
 
-                <Input
+                <FInput
                   label='ISRC'
                   placeholder='USRC17607839'
                   value={values.isrc || ''}
@@ -1347,22 +1332,22 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                 ))}
               </Select>
 
-              <Textarea
+              <FTextarea
                 label='Copyright Information'
                 placeholder='© 2024 Artist Name. All rights reserved.'
                 value={values.copyrightInfo || ''}
                 onValueChange={value => updateValue('copyrightInfo', value)}
-                rows={2}
+                minRows={2}
               />
 
-              <Textarea
+              <FTextarea
                 label='Distribution Rights'
                 placeholder='Describe distribution rights and restrictions...'
                 value={values.distributionRights || ''}
                 onValueChange={value =>
                   updateValue('distributionRights', value)
                 }
-                rows={3}
+                minRows={3}
               />
             </div>
           </Tab>
@@ -1379,24 +1364,24 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
         {showFooterActions && (
           <div className='flex gap-3 justify-end'>
             {onCancel && (
-              <Button
-                variant='light'
+              <FButton
+                variant='ghost'
                 onPress={onCancel}
-                disabled={isSubmitting || isSaving}
+                isDisabled={isSubmitting || isSaving}
               >
                 {cancelLabel || 'Cancel'}
-              </Button>
+              </FButton>
             )}
-            <Button
+            <FButton
+              variant='primary'
               type='submit'
-              color='primary'
               isLoading={isSubmitting || isSaving || isUploadingArtwork}
-              disabled={!values.title.trim() || isUploadingArtwork}
+              isDisabled={!values.title.trim() || isUploadingArtwork}
             >
               {isUploadingArtwork
                 ? 'Uploading Artwork...'
                 : effectiveSubmitLabel}
-            </Button>
+            </FButton>
           </div>
         )}
       </form>
