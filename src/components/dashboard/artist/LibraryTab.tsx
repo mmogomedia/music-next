@@ -2,13 +2,11 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Button,
   Chip,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-  Input,
 } from '@heroui/react';
 import {
   PlusIcon,
@@ -30,6 +28,10 @@ import TrackArtwork from '@/components/music/TrackArtwork';
 import ArtistDisplay from '@/components/track/ArtistDisplay';
 import CompletionBadge from '@/components/track/CompletionBadge';
 import FCard from '@/components/ui/FCard';
+import FStat from '@/components/ui/FStat';
+import FEmptyState from '@/components/ui/FEmptyState';
+import FInput from '@/components/ui/FInput';
+import FButton from '@/components/ui/FButton';
 import type { Track } from '@/types/track';
 import type { SourceType } from '@/types/stats';
 
@@ -113,26 +115,17 @@ export default function LibraryTab({
   if (tracks.length === 0) {
     return (
       <FCard padding='none'>
-        <div className='flex flex-col items-center justify-center py-20 px-6 text-center'>
-          <div className='w-20 h-20 bg-primary-50 dark:bg-primary-900/20 rounded-2xl flex items-center justify-center mb-5'>
-            <MusicalNoteIcon className='w-10 h-10 text-primary-400' />
-          </div>
-          <h4 className='text-xl font-bold text-gray-900 dark:text-white mb-2'>
-            Your library is empty
-          </h4>
-          <p className='text-sm text-gray-500 dark:text-gray-400 max-w-xs mb-8'>
-            Upload your first track to start building your music library and
-            reach new listeners.
-          </p>
-          <Button
-            color='primary'
-            size='lg'
-            startContent={<PlusIcon className='w-5 h-5' />}
-            onPress={onUpload}
-          >
-            Upload Your First Track
-          </Button>
-        </div>
+        <FEmptyState
+          icon={MusicalNoteIcon}
+          title='Your library is empty'
+          description='Upload your first track to start building your music library and reach new listeners.'
+          size='lg'
+          action={{
+            label: 'Upload Your First Track',
+            onPress: onUpload,
+            variant: 'primary',
+          }}
+        />
       </FCard>
     );
   }
@@ -141,55 +134,38 @@ export default function LibraryTab({
     <div className='space-y-4'>
       {/* Stats row */}
       <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
-        {[
-          {
-            label: 'Tracks',
-            value: tracks.length,
-            icon: MusicalNoteIcon,
-            color: 'text-primary-500',
-            bg: 'bg-primary-50 dark:bg-primary-900/20',
-          },
-          {
-            label: 'Total Plays',
-            value: formatCount(totalPlays),
-            icon: PlayIcon,
-            color: 'text-emerald-500',
-            bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-          },
-          {
-            label: 'Total Likes',
-            value: formatCount(totalLikes),
-            icon: HeartIcon,
-            color: 'text-rose-500',
-            bg: 'bg-rose-50 dark:bg-rose-900/20',
-          },
-          {
-            label: 'Downloads',
-            value: formatCount(totalDownloads),
-            icon: ArrowDownTrayIcon,
-            color: 'text-amber-500',
-            bg: 'bg-amber-50 dark:bg-amber-900/20',
-          },
-        ].map(({ label, value, icon: Icon, color, bg }) => (
-          <div
-            key={label}
-            className='bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl p-4 flex items-center gap-3'
-          >
-            <div
-              className={`w-9 h-9 ${bg} rounded-lg flex items-center justify-center flex-shrink-0`}
-            >
-              <Icon className={`w-4.5 h-4.5 ${color}`} />
-            </div>
-            <div className='min-w-0'>
-              <p className='text-lg font-bold text-gray-900 dark:text-white leading-tight'>
-                {value}
-              </p>
-              <p className='text-xs text-gray-500 dark:text-gray-400'>
-                {label}
-              </p>
-            </div>
-          </div>
-        ))}
+        <FCard padding='sm'>
+          <FStat
+            label='Tracks'
+            value={tracks.length}
+            icon={MusicalNoteIcon}
+            color='purple'
+          />
+        </FCard>
+        <FCard padding='sm'>
+          <FStat
+            label='Total Plays'
+            value={formatCount(totalPlays)}
+            icon={PlayIcon}
+            color='emerald'
+          />
+        </FCard>
+        <FCard padding='sm'>
+          <FStat
+            label='Total Likes'
+            value={formatCount(totalLikes)}
+            icon={HeartIcon}
+            color='rose'
+          />
+        </FCard>
+        <FCard padding='sm'>
+          <FStat
+            label='Downloads'
+            value={formatCount(totalDownloads)}
+            icon={ArrowDownTrayIcon}
+            color='amber'
+          />
+        </FCard>
       </div>
 
       {/* Tracks card */}
@@ -197,42 +173,38 @@ export default function LibraryTab({
         padding='none'
         title='My Tracks'
         action={
-          <Button
-            color='primary'
+          <FButton
+            variant='primary'
             size='sm'
             startContent={<PlusIcon className='w-4 h-4' />}
             onPress={onUpload}
           >
             Upload
-          </Button>
+          </FButton>
         }
       >
         {/* Controls */}
         <div className='px-5 py-3 flex items-center gap-3 border-b border-gray-100 dark:border-slate-700'>
-          <Input
+          <FInput
             placeholder='Search tracks…'
             size='sm'
-            variant='bordered'
             value={search}
             onValueChange={setSearch}
             startContent={
               <MagnifyingGlassIcon className='w-4 h-4 text-gray-400 flex-shrink-0' />
             }
-            classNames={{
-              base: 'flex-1 max-w-xs',
-              inputWrapper: 'border-gray-200 dark:border-slate-600',
-            }}
+            classNames={{ base: 'flex-1 max-w-xs' }}
           />
           <Dropdown>
             <DropdownTrigger>
-              <Button
+              <FButton
+                variant='outline'
                 size='sm'
-                variant='bordered'
                 endContent={<ChevronUpDownIcon className='w-3.5 h-3.5' />}
-                className='border-gray-200 dark:border-slate-600 text-gray-600 dark:text-gray-300 flex-shrink-0'
+                className='flex-shrink-0'
               >
                 {sortLabels[sort]}
-              </Button>
+              </FButton>
             </DropdownTrigger>
             <DropdownMenu
               selectedKeys={[sort]}
@@ -270,8 +242,12 @@ export default function LibraryTab({
 
         {/* Track rows */}
         {filtered.length === 0 ? (
-          <div className='px-5 py-10 text-center text-sm text-gray-400 dark:text-gray-500'>
-            No tracks match &ldquo;{search}&rdquo;
+          <div className='px-5 py-8'>
+            <FEmptyState
+              icon={MagnifyingGlassIcon}
+              title={`No results for "${search}"`}
+              size='sm'
+            />
           </div>
         ) : (
           <div className='divide-y divide-gray-50 dark:divide-slate-700/50'>
@@ -391,15 +367,15 @@ export default function LibraryTab({
                   <div className='flex items-center gap-1 flex-shrink-0'>
                     <Dropdown placement='bottom-end'>
                       <DropdownTrigger>
-                        <Button
+                        <FButton
                           isIconOnly
                           size='sm'
-                          variant='light'
-                          className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity'
+                          variant='ghost'
+                          className='opacity-0 group-hover:opacity-100 transition-opacity'
                           aria-label='Track options'
                         >
                           <EllipsisVerticalIcon className='w-4 h-4' />
-                        </Button>
+                        </FButton>
                       </DropdownTrigger>
                       <DropdownMenu aria-label='Track actions'>
                         <DropdownItem
