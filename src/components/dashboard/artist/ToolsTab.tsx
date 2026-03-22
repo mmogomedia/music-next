@@ -51,25 +51,14 @@ export default function ToolsTab({ tracks, profile }: ToolsTabProps) {
   if (openTool === 'quick-links') {
     return (
       <div className='space-y-4'>
-        <div className='flex items-center gap-3'>
-          <FButton
-            variant='ghost'
-            size='sm'
-            isIconOnly
-            onPress={() => setOpenTool(null)}
-            aria-label='Back to tools'
-          >
-            <ArrowLeftIcon className='w-4 h-4' />
-          </FButton>
-          <div>
-            <p className='text-[11px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-medium'>
-              Tools
-            </p>
-            <h2 className='text-base font-semibold text-gray-900 dark:text-white leading-none'>
-              Quick Links
-            </h2>
-          </div>
-        </div>
+        <FButton
+          variant='ghost'
+          size='sm'
+          startContent={<ArrowLeftIcon className='w-4 h-4' />}
+          onPress={() => setOpenTool(null)}
+        >
+          Back to Tools
+        </FButton>
         <QuickLinksManager tracks={tracks} profile={profile} />
       </div>
     );
