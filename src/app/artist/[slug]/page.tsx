@@ -189,10 +189,10 @@ export default function PublicArtistProfilePage() {
         <div className='max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-4'>
-              <div className='w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0'>
-                {profile.profileImage ? (
+              <div className='w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center flex-shrink-0'>
+                {profile.profileImageUrl || profile.profileImage ? (
                   <Image
-                    src={profile.profileImage}
+                    src={profile.profileImageUrl || profile.profileImage!}
                     alt={profile.artistName}
                     width={64}
                     height={64}

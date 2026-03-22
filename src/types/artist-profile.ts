@@ -110,7 +110,9 @@ export interface ArtistProfile {
   artistName: string;
   bio?: string;
   profileImage?: string;
+  profileImageUrl?: string | null;
   coverImage?: string;
+  coverImageUrl?: string | null;
   location?: string;
   website?: string;
   genre?: string;
