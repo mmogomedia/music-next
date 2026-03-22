@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@heroui/react';
+import { cn } from '@/lib/utils/cn';
 import FButton from './FButton';
 
 interface FEmptyStateProps {

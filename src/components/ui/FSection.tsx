@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@heroui/react';
+import { cn } from '@/lib/utils/cn';
 
 type FMaxWidth = 'narrow' | 'default' | 'wide' | 'full';
 type FSectionPadding = 'none' | 'sm' | 'md' | 'lg';

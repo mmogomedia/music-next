@@ -1,6 +1,7 @@
 'use client';
 
-import { Avatar, type AvatarProps, cn } from '@heroui/react';
+import { Avatar, type AvatarProps } from '@heroui/react';
+import { cn } from '@/lib/utils/cn';
 
 type FAvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 

@@ -1,10 +1,10 @@
-import { Divider, type DividerProps, cn } from '@heroui/react';
+import { cn } from '@/lib/utils/cn';
 
 type FDividerSpacing = 'sm' | 'md' | 'lg';
 
 interface FDividerProps {
   spacing?: FDividerSpacing;
-  orientation?: DividerProps['orientation'];
+  orientation?: 'horizontal' | 'vertical';
   className?: string;
 }
 
@@ -19,10 +19,25 @@ export default function FDivider({
   orientation = 'horizontal',
   className,
 }: FDividerProps) {
+  if (orientation === 'vertical') {
+    return (
+      <div
+        className={cn(
+          'w-px self-stretch bg-gray-200 dark:bg-slate-700',
+          className
+        )}
+        role='separator'
+        aria-orientation='vertical'
+      />
+    );
+  }
   return (
-    <Divider
-      orientation={orientation}
-      className={cn(spacingClasses[spacing], className)}
+    <hr
+      className={cn(
+        'border-0 border-t border-gray-200 dark:border-slate-700',
+        spacingClasses[spacing],
+        className
+      )}
     />
   );
 }

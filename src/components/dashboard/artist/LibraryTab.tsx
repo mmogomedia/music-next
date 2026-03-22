@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from 'react';
 import {
-  Chip,
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
@@ -32,6 +31,7 @@ import FStat from '@/components/ui/FStat';
 import FEmptyState from '@/components/ui/FEmptyState';
 import FInput from '@/components/ui/FInput';
 import FButton from '@/components/ui/FButton';
+import FChip from '@/components/ui/FChip';
 import type { Track } from '@/types/track';
 import type { SourceType } from '@/types/stats';
 
@@ -322,24 +322,13 @@ export default function LibraryTab({
                             <span className='text-gray-300 dark:text-gray-600'>
                               ·
                             </span>
-                            <Chip
-                              size='sm'
-                              variant='flat'
-                              className='h-4 text-[10px] px-1.5'
-                            >
-                              {track.genre}
-                            </Chip>
+                            <FChip size='xs'>{track.genre}</FChip>
                           </>
                         )}
                         {track.isExplicit && (
-                          <Chip
-                            size='sm'
-                            variant='flat'
-                            color='danger'
-                            className='h-4 text-[10px] px-1.5'
-                          >
+                          <FChip size='xs' color='danger'>
                             E
-                          </Chip>
+                          </FChip>
                         )}
                         {track.completionPercentage !== undefined && (
                           <CompletionBadge

@@ -5,7 +5,7 @@ export { default as ImageCropper } from './ImageCropper';
 export { default as ImageUpload } from './ImageUpload';
 export { ToastProvider, useToast } from './Toast';
 
-// ── HeroUI wrappers ───────────────────────────────────────────────────────────
+// ── UI primitives (HeroUI wrappers: FButton, FInput, FSelect, FTextarea, FAvatar, FModal) ──
 export { default as FButton } from './FButton';
 export { default as FCard, FCardSkeleton } from './FCard';
 export type { FCardProps } from './FCard';
@@ -24,7 +24,8 @@ export {
   ModalFooter,
 } from './FModal';
 
-// ── New primitives ────────────────────────────────────────────────────────────
+// ── Native primitives (no HeroUI dependency) ─────────────────────────────────
+export { default as FChip } from './FChip';
 export { default as FStat } from './FStat';
 export { default as StatCard, StatCardSkeleton } from './StatCard';
 export type { StatCardProps } from './StatCard';

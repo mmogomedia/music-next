@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { cn } from '@heroui/react';
+import { cn } from '@/lib/utils/cn';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
