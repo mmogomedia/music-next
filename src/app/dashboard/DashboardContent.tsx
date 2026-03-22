@@ -18,7 +18,7 @@ import {
   ChartBarIcon,
   ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
-import FileUpload from '@/components/upload/FileUpload';
+import UploadTab from '@/components/dashboard/artist/UploadTab';
 import ArtistProfileForm from '@/components/artist/ArtistProfileForm';
 import StatsGrid from '@/components/dashboard/StatsGrid';
 import RecentTracks from '@/components/dashboard/RecentTracks';
@@ -624,34 +624,23 @@ export default function DashboardContent({
 
           {/* Upload Tab */}
           {activeTab === 'upload' && (
-            <Card>
-              <CardBody className='p-6'>
-                <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-6'>
-                  Upload Music
-                </h3>
-                <FileUpload
-                  onUploadComplete={_jobId => {
-                    // Refresh tracks after successful upload
-                    const fetchTracks = async () => {
-                      try {
-                        const response = await fetch('/api/tracks');
-                        if (response.ok) {
-                          const data = await response.json();
-                          setTracks(data.tracks || []);
-                        }
-                      } catch (error) {
-                        console.error('Error fetching tracks:', error);
-                      }
-                    };
-                    fetchTracks();
-                  }}
-                  onViewLibrary={() => navigateToTab('library')}
-                  onUploadAnother={() => {
-                    // Reset upload state is handled in the component
-                  }}
-                />
-              </CardBody>
-            </Card>
+            <UploadTab
+              onUploadComplete={_jobId => {
+                const fetchTracks = async () => {
+                  try {
+                    const response = await fetch('/api/tracks');
+                    if (response.ok) {
+                      const data = await response.json();
+                      setTracks(data.tracks || []);
+                    }
+                  } catch (err) {
+                    console.error('Error fetching tracks:', err);
+                  }
+                };
+                fetchTracks();
+              }}
+              onViewLibrary={() => navigateToTab('library')}
+            />
           )}
 
           {/* Library Tab */}
