@@ -6,6 +6,7 @@ import {
   PlusIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
+import { StatCard } from '@/components/ui/StatCard';
 import AdminNavigation from './AdminNavigation';
 import UnifiedLayout from '@/components/layout/UnifiedLayout';
 import { useAdminDashboardStats } from '@/hooks/useAdminDashboardStats';
@@ -263,36 +264,18 @@ export default function AdminOverviewPage() {
         )}
 
         {/* ── Stats: number-first, no decoration ─────────────────────── */}
-        <div className='grid grid-cols-3 xl:grid-cols-6 gap-3'>
-          {[
-            { label: 'Users', value: systemMetrics.totalUsers },
-            { label: 'Artists', value: systemMetrics.totalArtists },
-            { label: 'Tracks', value: systemMetrics.totalTracks },
-            { label: 'Plays', value: systemMetrics.totalPlays },
-            { label: 'Playlists', value: stats?.totalPlaylists ?? 0 },
-            { label: 'Submissions', value: stats?.totalSubmissions ?? 0 },
-          ].map(({ label, value }) => (
-            <Card
-              key={label}
-              className='p-5 hover:border-blue-200 dark:hover:border-blue-800 transition-colors'
-            >
-              {loading ? (
-                <div className='animate-pulse space-y-2'>
-                  <div className='h-7 bg-gray-100 dark:bg-slate-700 rounded w-14' />
-                  <div className='h-2.5 bg-gray-100 dark:bg-slate-700 rounded w-10' />
-                </div>
-              ) : (
-                <>
-                  <p className='text-2xl font-bold text-blue-600 dark:text-blue-400 tabular-nums leading-none'>
-                    {value.toLocaleString()}
-                  </p>
-                  <p className='text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-2'>
-                    {label}
-                  </p>
-                </>
-              )}
-            </Card>
-          ))}
+        <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm px-6 py-5'>
+          <div className='grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-6 divide-x divide-gray-100 dark:divide-slate-700'>
+            <StatCard label='Users' value={systemMetrics.totalUsers} />
+            <StatCard label='Artists' value={systemMetrics.totalArtists} />
+            <StatCard label='Tracks' value={systemMetrics.totalTracks} />
+            <StatCard label='Plays' value={systemMetrics.totalPlays} />
+            <StatCard label='Playlists' value={stats?.totalPlaylists ?? 0} />
+            <StatCard
+              label='Submissions'
+              value={stats?.totalSubmissions ?? 0}
+            />
+          </div>
         </div>
 
         {/* ── Row 1: Submissions queue + Top tracks ───────────────────── */}

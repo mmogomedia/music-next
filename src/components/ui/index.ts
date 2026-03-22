@@ -25,6 +25,8 @@ export {
 
 // ── New primitives ────────────────────────────────────────────────────────────
 export { default as FStat } from './FStat';
+export { default as StatCard, StatCardSkeleton } from './StatCard';
+export type { StatCardProps } from './StatCard';
 export { default as FEmptyState } from './FEmptyState';
 export { default as FPageHeader } from './FPageHeader';
 export { default as FSection } from './FSection';

@@ -13,10 +13,8 @@ import {
   MusicalNoteIcon,
   CheckIcon,
 } from '@heroicons/react/24/outline';
-import {
-  PlayIcon as PlaySolidIcon,
-  HeartIcon as HeartSolidIcon,
-} from '@heroicons/react/24/solid';
+import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import { StatCard } from '@/components/ui/StatCard';
 import ArtistProfileCard from '@/components/artist/ArtistProfileCard';
 import { ArtistProfile } from '@/types/artist-profile';
 import Image from 'next/image';
@@ -272,57 +270,14 @@ export default function PublicArtistProfilePage() {
           {/* Sidebar */}
           <div className='space-y-6'>
             {/* Quick Stats */}
-            <Card>
-              <CardBody className='p-6'>
-                <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-4'>
-                  Stats
-                </h3>
-                <div className='space-y-4'>
-                  <div className='flex justify-between items-center'>
-                    <div className='flex items-center gap-2'>
-                      <PlaySolidIcon className='w-4 h-4 text-blue-600' />
-                      <span className='text-sm text-gray-600 dark:text-gray-400'>
-                        Total Plays
-                      </span>
-                    </div>
-                    <span className='font-semibold text-gray-900 dark:text-white'>
-                      {profile.totalPlays.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className='flex justify-between items-center'>
-                    <div className='flex items-center gap-2'>
-                      <HeartSolidIcon className='w-4 h-4 text-pink-600' />
-                      <span className='text-sm text-gray-600 dark:text-gray-400'>
-                        Total Likes
-                      </span>
-                    </div>
-                    <span className='font-semibold text-gray-900 dark:text-white'>
-                      {profile.totalLikes.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className='flex justify-between items-center'>
-                    <div className='flex items-center gap-2'>
-                      <span className='text-sm text-gray-600 dark:text-gray-400'>
-                        Followers
-                      </span>
-                    </div>
-                    <span className='font-semibold text-gray-900 dark:text-white'>
-                      {followerCount.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className='flex justify-between items-center'>
-                    <div className='flex items-center gap-2'>
-                      <span className='text-sm text-gray-600 dark:text-gray-400'>
-                        Profile Views
-                      </span>
-                    </div>
-                    <span className='font-semibold text-gray-900 dark:text-white'>
-                      {profile.profileViews.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
+            <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm px-6 py-5'>
+              <div className='grid grid-cols-2 gap-6'>
+                <StatCard label='Plays' value={profile.totalPlays} />
+                <StatCard label='Likes' value={profile.totalLikes} />
+                <StatCard label='Followers' value={followerCount} />
+                <StatCard label='Profile Views' value={profile.profileViews} />
+              </div>
+            </div>
 
             {/* Location & Website */}
             {(profile.location || profile.website) && (
