@@ -278,75 +278,71 @@ export default function DashboardContent({
   };
 
   const header = (
-    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 h-16 flex items-center'>
-      <div className='flex items-center justify-between w-full px-4 sm:px-5 lg:px-6'>
-        <div className='flex items-center justify-between'>
-          <div>
-            <h1 className='text-lg font-bold text-gray-900 dark:text-white'>
-              {tabNames[activeTab] || 'Dashboard'}
-            </h1>
-            {activeTab === 'overview' && (
-              <p className='mt-0.5 text-xs text-gray-500 dark:text-gray-400'>
-                Track your performance
-              </p>
-            )}
-          </div>
-          <div className='flex items-center gap-2'>
-            {/* Quick Stats Pills */}
-            <div className='hidden md:flex items-center gap-1.5'>
-              <Chip
-                size='sm'
-                color='primary'
-                variant='flat'
-                className='h-6 text-xs'
-              >
-                {stats?.overview?.totalTracks || 0} tracks
-              </Chip>
-              <Chip
-                size='sm'
-                color='primary'
-                variant='flat'
-                className='h-6 text-xs'
-              >
-                {(stats?.overview?.totalPlays || 0).toLocaleString()} plays
-              </Chip>
-            </div>
-            {profile && (
-              <Button
-                as={profile.slug ? 'a' : 'button'}
-                href={profile.slug ? `/artist/${profile.slug}` : undefined}
-                target={profile.slug ? '_blank' : undefined}
-                rel={profile.slug ? 'noopener noreferrer' : undefined}
-                isDisabled={!profile.slug}
-                title={
-                  profile.slug
-                    ? 'View your public profile'
-                    : 'Set a profile URL in your profile settings first'
-                }
-                size='sm'
-                variant='bordered'
-                className='hidden sm:flex h-8 text-xs'
-                endContent={<ArrowTopRightOnSquareIcon className='w-3 h-3' />}
-                onPress={
-                  !profile.slug ? () => navigateToTab('profile') : undefined
-                }
-              >
-                View Profile
-              </Button>
-            )}
-            {activeTab !== 'upload' && (
-              <Button
-                size='sm'
-                color='primary'
-                className='hidden sm:flex h-8 text-xs'
-                startContent={<PlusIcon className='w-3.5 h-3.5' />}
-                onPress={() => navigateToTab('upload')}
-              >
-                Upload
-              </Button>
-            )}
-          </div>
+    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 h-16 flex items-center px-4 sm:px-5 lg:px-6'>
+      {/* Left — page title */}
+      <div className='flex-1 min-w-0'>
+        <h1 className='text-lg font-bold text-gray-900 dark:text-white truncate'>
+          {tabNames[activeTab] || 'Dashboard'}
+        </h1>
+        {activeTab === 'overview' && (
+          <p className='text-xs text-gray-500 dark:text-gray-400'>
+            Track your performance
+          </p>
+        )}
+      </div>
+
+      {/* Right — stats chips + actions */}
+      <div className='flex items-center gap-2 flex-shrink-0'>
+        <div className='hidden md:flex items-center gap-1.5'>
+          <Chip
+            size='sm'
+            color='primary'
+            variant='flat'
+            className='h-6 text-xs'
+          >
+            {stats?.overview?.totalTracks || 0} tracks
+          </Chip>
+          <Chip
+            size='sm'
+            color='primary'
+            variant='flat'
+            className='h-6 text-xs'
+          >
+            {(stats?.overview?.totalPlays || 0).toLocaleString()} plays
+          </Chip>
         </div>
+        {profile && (
+          <Button
+            as={profile.slug ? 'a' : 'button'}
+            href={profile.slug ? `/artist/${profile.slug}` : undefined}
+            target={profile.slug ? '_blank' : undefined}
+            rel={profile.slug ? 'noopener noreferrer' : undefined}
+            isDisabled={!profile.slug}
+            title={
+              profile.slug
+                ? 'View your public profile'
+                : 'Set a profile URL in your profile settings first'
+            }
+            size='sm'
+            variant='bordered'
+            className='hidden sm:flex h-8 text-xs'
+            endContent={<ArrowTopRightOnSquareIcon className='w-3 h-3' />}
+            onPress={!profile.slug ? () => navigateToTab('profile') : undefined}
+          >
+            View Profile
+          </Button>
+        )}
+        {activeTab !== 'upload' && (
+          <Button
+            size='sm'
+            color='primary'
+            className='hidden sm:flex h-8 text-xs'
+            startContent={<PlusIcon className='w-3.5 h-3.5' />}
+            onPress={() => navigateToTab('upload')}
+          >
+            Upload
+          </Button>
+        )}
       </div>
     </header>
   );
