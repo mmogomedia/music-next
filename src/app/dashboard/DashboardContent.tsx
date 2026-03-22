@@ -311,16 +311,25 @@ export default function DashboardContent({
                 {(stats?.overview?.totalPlays || 0).toLocaleString()} plays
               </Chip>
             </div>
-            {profile?.slug && (
+            {profile && (
               <Button
-                as='a'
-                href={`/artist/${profile.slug}`}
-                target='_blank'
-                rel='noopener noreferrer'
+                as={profile.slug ? 'a' : 'button'}
+                href={profile.slug ? `/artist/${profile.slug}` : undefined}
+                target={profile.slug ? '_blank' : undefined}
+                rel={profile.slug ? 'noopener noreferrer' : undefined}
+                isDisabled={!profile.slug}
+                title={
+                  profile.slug
+                    ? 'View your public profile'
+                    : 'Set a profile URL in your profile settings first'
+                }
                 size='sm'
                 variant='bordered'
                 className='hidden sm:flex h-8 text-xs'
                 endContent={<ArrowTopRightOnSquareIcon className='w-3 h-3' />}
+                onPress={
+                  !profile.slug ? () => navigateToTab('profile') : undefined
+                }
               >
                 View Profile
               </Button>
