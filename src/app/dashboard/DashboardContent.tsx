@@ -54,11 +54,18 @@ import { SourceType } from '@/types/stats';
 import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 import ArtistNavigation from '@/components/dashboard/artist/ArtistNavigation';
 import UnifiedLayout from '@/components/layout/UnifiedLayout';
+import FanDashboardContent from '@/components/dashboard/fan/FanDashboardContent';
 import QuickLinksManager from '@/components/dashboard/quick-links/QuickLinksManager';
 import PulseCard from '@/components/dashboard/pulse/PulseCard';
 import { usePulseData } from '@/hooks/usePulseData';
 
-export default function DashboardContent() {
+interface DashboardContentProps {
+  hasArtistProfile?: boolean;
+}
+
+export default function DashboardContent({
+  hasArtistProfile = true,
+}: DashboardContentProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -180,6 +187,11 @@ export default function DashboardContent() {
     }
   }, [status, router]);
 
+  // Fan users (no artist profile) get the fan dashboard — must be after all hooks
+  if (!hasArtistProfile) {
+    return <FanDashboardContent />;
+  }
+
   // Delete track function
   const deleteTrack = async (trackId: string) => {
     setDeletingTrack(trackId);
@@ -221,7 +233,7 @@ export default function DashboardContent() {
       <RoleBasedRedirect>
         <div className='min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center'>
           <div className='text-center'>
-            <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4'>
+            <div className='w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4'>
               <MusicalNoteIcon className='w-5 h-5 text-white' />
             </div>
             <p className='text-gray-600 dark:text-gray-400'>Loading...</p>
@@ -291,7 +303,7 @@ export default function DashboardContent() {
               </Chip>
               <Chip
                 size='sm'
-                color='success'
+                color='primary'
                 variant='flat'
                 className='h-6 text-xs'
               >
@@ -370,7 +382,7 @@ export default function DashboardContent() {
 
               {statsLoading ? (
                 <div className='flex justify-center items-center h-24'>
-                  <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600'></div>
+                  <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600'></div>
                 </div>
               ) : statsError ? (
                 <div className='text-center text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 text-sm'>
@@ -401,7 +413,7 @@ export default function DashboardContent() {
 
                     {/* PULSE³ Card - Takes 1 column on desktop */}
                     <div className='flex-1 flex'>
-                      <div className='w-full flex'>
+                      <div className='w-full flex h-full'>
                         <PulseCard
                           pulseData={pulseData}
                           loading={pulseLoading}
@@ -443,7 +455,7 @@ export default function DashboardContent() {
               {!profile && !isEditingProfile ? (
                 <Card>
                   <CardBody className='p-8 text-center'>
-                    <div className='w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4'>
+                    <div className='w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4'>
                       <UserIcon className='w-8 h-8 text-white' />
                     </div>
                     <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
@@ -623,7 +635,7 @@ export default function DashboardContent() {
                               href={profile.website}
                               target='_blank'
                               rel='noopener noreferrer'
-                              className='text-blue-600 dark:text-blue-400 hover:underline'
+                              className='text-purple-600 dark:text-purple-400 hover:underline'
                             >
                               Website
                             </a>
@@ -864,7 +876,7 @@ export default function DashboardContent() {
           {activeTab === 'analytics' && (
             <Card>
               <CardBody className='p-8 text-center'>
-                <div className='w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6'>
+                <div className='w-20 h-20 bg-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6'>
                   <ChartBarIcon className='w-10 h-10 text-white' />
                 </div>
                 <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
