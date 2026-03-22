@@ -54,8 +54,8 @@ function ScoreRing({
   const circumference = 2 * Math.PI * radius;
   const progress = Math.min(value / max, 1);
   const strokeDashoffset = circumference * (1 - progress);
-  const strokeColor = color === 'blue' ? '#3b82f6' : '#10b981';
-  const trackColor = color === 'blue' ? '#1e3a5f' : '#064e3b';
+  const strokeColor = color === 'blue' ? '#a855f7' : '#10b981';
+  const trackColor = color === 'blue' ? '#3b1f5e' : '#064e3b';
 
   return (
     <svg
@@ -118,10 +118,12 @@ function ComponentBar({
 
   return (
     <div className='flex items-center gap-2'>
-      <Icon className='w-3 h-3 text-blue-300/70 flex-shrink-0' />
+      <Icon className='w-3 h-3 text-purple-300/70 flex-shrink-0' />
       <div className='flex-1 min-w-0'>
         <div className='flex items-center justify-between mb-0.5'>
-          <span className='text-[10px] text-blue-200/60 truncate'>{label}</span>
+          <span className='text-[10px] text-purple-200/60 truncate'>
+            {label}
+          </span>
           <span className='text-[10px] font-semibold text-blue-100/80 ml-1'>
             {pct}
           </span>
@@ -150,7 +152,7 @@ export default function PulseCard({
   // Loading state
   if (loading || !pulseData) {
     return (
-      <div className='h-full w-full rounded-xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 border border-slate-700/50 animate-pulse overflow-hidden'>
+      <div className='h-full w-full rounded-xl bg-gradient-to-br from-slate-900 via-purple-950 to-blue-900 border border-purple-800/30 animate-pulse overflow-hidden'>
         <div className='p-5 space-y-4'>
           <div className='flex items-center gap-3'>
             <div className='w-10 h-10 bg-white/10 rounded-xl' />
@@ -180,7 +182,7 @@ export default function PulseCard({
   if (!pulseData.hasConnection) {
     return (
       <>
-        <div className='h-full w-full rounded-xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 border border-slate-700/50 overflow-hidden flex flex-col'>
+        <div className='h-full w-full rounded-xl bg-gradient-to-br from-slate-900 via-purple-950 to-blue-900 border border-purple-800/30 overflow-hidden flex flex-col'>
           {/* Header */}
           <div className='px-5 pt-5 pb-4 flex items-center justify-between'>
             <div className='flex items-center gap-3'>
@@ -191,19 +193,19 @@ export default function PulseCard({
                 <h3 className='text-base font-bold text-white tracking-wide'>
                   PULSE³
                 </h3>
-                <p className='text-xs text-blue-300/80'>
+                <p className='text-xs text-purple-300/80'>
                   Momentum intelligence
                 </p>
               </div>
             </div>
-            <span className='text-[10px] font-semibold bg-blue-500/20 border border-blue-400/30 text-blue-300 px-2 py-0.5 rounded-full'>
+            <span className='text-[10px] font-semibold bg-purple-500/20 border border-purple-400/30 text-purple-300 px-2 py-0.5 rounded-full'>
               NEW
             </span>
           </div>
 
           {/* Body */}
           <div className='flex-1 px-5 pb-5 flex flex-col justify-between'>
-            <p className='text-sm text-blue-100/70 leading-relaxed mb-4'>
+            <p className='text-sm text-purple-100/70 leading-relaxed mb-4'>
               Connect your social platforms to unlock your PULSE³ score and see
               where you rank on the Top 100 artist chart.
             </p>
@@ -216,10 +218,10 @@ export default function PulseCard({
                 { icon: BoltIcon, text: 'Real-time platform monitoring' },
               ].map(({ icon: Icon, text }) => (
                 <div key={text} className='flex items-center gap-2'>
-                  <div className='w-5 h-5 bg-blue-500/20 rounded-md flex items-center justify-center flex-shrink-0'>
-                    <Icon className='w-3 h-3 text-blue-400' />
+                  <div className='w-5 h-5 bg-purple-500/20 rounded-md flex items-center justify-center flex-shrink-0'>
+                    <Icon className='w-3 h-3 text-purple-400' />
                   </div>
-                  <span className='text-xs text-blue-200/70'>{text}</span>
+                  <span className='text-xs text-purple-200/70'>{text}</span>
                 </div>
               ))}
             </div>
@@ -260,7 +262,7 @@ export default function PulseCard({
   if (pulseData.hasConnection && pulseData.eligibilityScore === null) {
     return (
       <>
-        <div className='h-full w-full rounded-xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 border border-slate-700/50 overflow-hidden flex flex-col'>
+        <div className='h-full w-full rounded-xl bg-gradient-to-br from-slate-900 via-purple-950 to-blue-900 border border-purple-800/30 overflow-hidden flex flex-col'>
           <div className='px-5 pt-5 pb-4 flex items-center gap-3'>
             <div className='w-10 h-10 bg-white/10 backdrop-blur rounded-xl flex items-center justify-center ring-1 ring-white/20'>
               <SparklesIcon className='w-5 h-5 text-white' />
@@ -269,7 +271,7 @@ export default function PulseCard({
               <h3 className='text-base font-bold text-white tracking-wide'>
                 PULSE³
               </h3>
-              <p className='text-xs text-blue-300/80'>Ready to calculate</p>
+              <p className='text-xs text-purple-300/80'>Ready to calculate</p>
             </div>
           </div>
 
@@ -284,12 +286,14 @@ export default function PulseCard({
                   <div className='w-12 h-12 rounded-full border-4 border-dashed border-white/20 flex items-center justify-center'>
                     <span className='text-white/30 text-xs font-bold'>—</span>
                   </div>
-                  <span className='text-[11px] text-blue-300/60'>{label}</span>
+                  <span className='text-[11px] text-purple-300/60'>
+                    {label}
+                  </span>
                 </div>
               ))}
             </div>
 
-            <p className='text-xs text-blue-200/60 mb-4 leading-relaxed'>
+            <p className='text-xs text-purple-200/60 mb-4 leading-relaxed'>
               Your connections are linked. Calculate your scores to see your
               eligibility rating and momentum ranking.
             </p>
@@ -338,7 +342,7 @@ export default function PulseCard({
 
   return (
     <>
-      <div className='h-full w-full rounded-xl bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 border border-slate-700/50 overflow-hidden flex flex-col'>
+      <div className='h-full w-full rounded-xl bg-gradient-to-br from-slate-900 via-purple-950 to-blue-900 border border-purple-800/30 overflow-hidden flex flex-col'>
         {/* Header */}
         <div className='px-5 pt-4 pb-3 flex items-center justify-between flex-shrink-0'>
           <div className='flex items-center gap-3'>
@@ -382,12 +386,12 @@ export default function PulseCard({
           {/* Eligibility */}
           <div className='bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col items-center gap-2'>
             <div className='flex items-center gap-1.5 self-stretch justify-between mb-1'>
-              <span className='text-[11px] font-medium text-blue-200/70'>
+              <span className='text-[11px] font-medium text-purple-200/70'>
                 Eligibility
               </span>
               <button
                 onClick={() => setShowCalculateModal(true)}
-                className='text-[10px] text-blue-400/70 hover:text-blue-300 transition-colors'
+                className='text-[10px] text-purple-400/70 hover:text-purple-300 transition-colors'
               >
                 Recalc
               </button>
@@ -407,7 +411,7 @@ export default function PulseCard({
           {isMonitored && momentumScore !== null ? (
             <div className='bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col items-center gap-2'>
               <div className='flex items-center gap-1.5 self-stretch justify-between mb-1'>
-                <span className='text-[11px] font-medium text-blue-200/70'>
+                <span className='text-[11px] font-medium text-purple-200/70'>
                   Momentum
                 </span>
                 <ChartBarIcon className='w-3.5 h-3.5 text-emerald-400/70' />
@@ -432,7 +436,7 @@ export default function PulseCard({
               </p>
               <button
                 onClick={() => setShowNotTrackedModal(true)}
-                className='text-[10px] text-blue-400/70 hover:text-blue-300 underline transition-colors'
+                className='text-[10px] text-purple-400/70 hover:text-purple-300 underline transition-colors'
               >
                 Why not monitored?
               </button>
@@ -442,14 +446,14 @@ export default function PulseCard({
 
         {/* Chart position */}
         {position && (
-          <div className='mx-5 mb-3 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/20 rounded-xl px-4 py-2.5 flex items-center justify-between flex-shrink-0'>
+          <div className='mx-5 mb-3 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/20 rounded-xl px-4 py-2.5 flex items-center justify-between flex-shrink-0'>
             <div className='flex items-center gap-2'>
               <TrophyIcon className='w-4 h-4 text-amber-400' />
-              <span className='text-xs text-blue-200/80'>Chart position</span>
+              <span className='text-xs text-purple-200/80'>Chart position</span>
             </div>
             <span className='text-lg font-bold text-white'>
               #{position}
-              <span className='text-xs text-blue-300/60 font-normal ml-1'>
+              <span className='text-xs text-purple-300/60 font-normal ml-1'>
                 / 100
               </span>
             </span>
