@@ -19,6 +19,8 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const followerId = session.user.id;
+
     const artistProfile = await prisma.artistProfile.findFirst({
       where: {
         OR: [{ slug }, { id: slug }],
@@ -39,8 +41,17 @@ export async function POST(
       );
     }
 
+    if (!artistProfile.userId) {
+      return NextResponse.json(
+        { error: 'Artist profile has no associated user' },
+        { status: 400 }
+      );
+    }
+
+    const followingId = artistProfile.userId;
+
     // Prevent artists from following themselves
-    if (artistProfile.userId === session.user.id) {
+    if (followingId === followerId) {
       return NextResponse.json(
         { error: 'You cannot follow your own profile' },
         { status: 400 }
@@ -52,8 +63,8 @@ export async function POST(
     const existingFollow = await prisma.timelineFollow.findUnique({
       where: {
         followerId_followingId: {
-          followerId: session.user.id,
-          followingId: artistProfile.userId,
+          followerId,
+          followingId,
         },
       },
     });
@@ -67,8 +78,8 @@ export async function POST(
         await tx.timelineFollow.delete({
           where: {
             followerId_followingId: {
-              followerId: session.user.id,
-              followingId: artistProfile.userId,
+              followerId,
+              followingId,
             },
           },
         });
@@ -84,8 +95,8 @@ export async function POST(
       await prisma.$transaction(async tx => {
         await tx.timelineFollow.create({
           data: {
-            followerId: session.user.id,
-            followingId: artistProfile.userId,
+            followerId,
+            followingId,
           },
         });
         await tx.artistProfile.update({
@@ -120,6 +131,8 @@ export async function GET(
       return NextResponse.json({ following: false, followerCount: 0 });
     }
 
+    const followerId = session.user.id;
+
     const artistProfile = await prisma.artistProfile.findFirst({
       where: {
         OR: [{ slug }, { id: slug }],
@@ -140,11 +153,17 @@ export async function GET(
       );
     }
 
+    if (!artistProfile.userId) {
+      return NextResponse.json({ following: false, followerCount: 0 });
+    }
+
+    const followingId = artistProfile.userId;
+
     const existingFollow = await prisma.timelineFollow.findUnique({
       where: {
         followerId_followingId: {
-          followerId: session.user.id,
-          followingId: artistProfile.userId,
+          followerId,
+          followingId,
         },
       },
     });
