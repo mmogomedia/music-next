@@ -35,7 +35,11 @@ export default function RecentTracks({
   };
 
   return (
-    <FCard variant='default' padding='md'>
+    <FCard
+      variant='default'
+      padding='md'
+      className='rounded-2xl shadow-sm border-0'
+    >
       <div className='flex items-center justify-between mb-4'>
         <h3 className='text-lg font-medium text-gray-900 dark:text-white'>
           Recent Tracks
@@ -57,7 +61,7 @@ export default function RecentTracks({
           {tracks.slice(0, 5).map(track => (
             <div
               key={track.id}
-              className='flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors'
+              className='flex items-center justify-between p-3 bg-gray-50/80 dark:bg-slate-900/40 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-colors'
             >
               <div className='flex items-center gap-3 flex-1 min-w-0'>
                 <TrackArtwork

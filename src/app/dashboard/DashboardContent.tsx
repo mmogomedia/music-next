@@ -59,6 +59,7 @@ import FanDashboardContent from '@/components/dashboard/fan/FanDashboardContent'
 import QuickLinksManager from '@/components/dashboard/quick-links/QuickLinksManager';
 import PulseCard from '@/components/dashboard/pulse/PulseCard';
 import { usePulseData } from '@/hooks/usePulseData';
+import WelcomeStrip from '@/components/dashboard/overview/WelcomeStrip';
 
 interface DashboardContentProps {
   hasArtistProfile?: boolean;
@@ -363,107 +364,77 @@ export default function DashboardContent({
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className='space-y-4'>
-              {/* Compact Header with Time Range */}
-              <div className='flex items-center justify-between'>
-                <h2 className='text-xl font-bold text-gray-900 dark:text-white'>
-                  Overview
-                </h2>
-                <Dropdown>
-                  <DropdownTrigger>
-                    <Button variant='bordered' size='sm' className='h-8'>
-                      {timeRange === '24h'
-                        ? '24h'
-                        : timeRange === '7d'
-                          ? '7d'
-                          : timeRange === '30d'
-                            ? '30d'
-                            : timeRange === '90d'
-                              ? '90d'
-                              : timeRange === '1y'
-                                ? '1y'
-                                : 'All'}
-                    </Button>
-                  </DropdownTrigger>
-                  <DropdownMenu
-                    selectedKeys={[timeRange]}
-                    onSelectionChange={keys =>
-                      setTimeRange(Array.from(keys)[0] as string)
-                    }
-                  >
-                    <DropdownItem key='24h'>Last 24 Hours</DropdownItem>
-                    <DropdownItem key='7d'>Last 7 Days</DropdownItem>
-                    <DropdownItem key='30d'>Last 30 Days</DropdownItem>
-                    <DropdownItem key='90d'>Last 90 Days</DropdownItem>
-                    <DropdownItem key='1y'>Last Year</DropdownItem>
-                    <DropdownItem key='all'>All Time</DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
-              </div>
+              {/* Welcome strip with greeting + time range selector */}
+              <WelcomeStrip
+                artistName={
+                  profile?.artistName ??
+                  (stats?.artistProfile as { artistName?: string } | undefined)
+                    ?.artistName ??
+                  'Artist'
+                }
+                profileImage={profile?.profileImage}
+                totalTracks={displayStats.totalTracks}
+                totalPlays={displayStats.totalPlays}
+                timeRange={timeRange}
+                onTimeRangeChange={setTimeRange}
+                loading={statsLoading}
+              />
 
-              {statsLoading ? (
-                <div className='flex justify-center items-center h-24'>
-                  <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600'></div>
-                </div>
-              ) : statsError ? (
-                <div className='text-center text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 text-sm'>
+              {/* Stats row */}
+              {statsError ? (
+                <div className='text-center text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-200 dark:border-red-800 text-sm'>
                   Error loading stats: {statsError}
                 </div>
               ) : (
-                <div className='space-y-4'>
-                  {/* Stats on Left, PULSE³ on Right */}
-                  <div className='flex flex-col lg:flex-row gap-4 items-stretch'>
-                    {/* Stats - Takes 2 columns on desktop */}
-                    <div className='flex-1 lg:flex-[2] flex'>
-                      <div className='bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-3 w-full flex flex-col'>
-                        <h3 className='text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2'>
-                          Statistics
-                        </h3>
-                        <StatsGrid
-                          stats={{
-                            totalTracks: displayStats.totalTracks,
-                            totalPlays: displayStats.totalPlays,
-                            totalLikes: displayStats.totalLikes,
-                            totalDownloads: displayStats.totalDownloads,
-                            uniqueListeners: displayStats.uniqueListeners,
-                          }}
-                          growth={stats?.growthMetrics}
-                        />
-                      </div>
-                    </div>
+                <StatsGrid
+                  stats={{
+                    totalTracks: displayStats.totalTracks,
+                    totalPlays: displayStats.totalPlays,
+                    totalLikes: displayStats.totalLikes,
+                    totalDownloads: displayStats.totalDownloads,
+                    uniqueListeners: displayStats.uniqueListeners,
+                  }}
+                  growth={
+                    stats?.growthMetrics as
+                      | {
+                          playsGrowth?: number;
+                          likesGrowth?: number;
+                          sharesGrowth?: number;
+                        }
+                      | undefined
+                  }
+                  loading={statsLoading}
+                />
+              )}
 
-                    {/* PULSE³ Card - Takes 1 column on desktop */}
-                    <div className='flex-1 flex'>
-                      <div className='w-full flex'>
-                        <PulseCard
-                          pulseData={pulseData}
-                          loading={pulseLoading}
-                          onRefresh={refreshPulseData}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Top Tracks and Recent Activity in grid */}
-                  <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
-                    {stats?.topTracks && stats.topTracks.length > 0 && (
-                      <TopPerformingTracks
-                        topTracks={stats.topTracks}
-                        onViewAll={() => navigateToTab('library')}
-                      />
-                    )}
-
-                    <RecentActivity
-                      activity={stats?.recentActivity}
-                      useSSE={true}
+              {/* Top Tracks (3/5) + PULSE³ (2/5) */}
+              {!statsLoading && !statsError && (
+                <div className='grid grid-cols-1 lg:grid-cols-5 gap-4'>
+                  <div className='lg:col-span-3'>
+                    <TopPerformingTracks
+                      topTracks={stats?.topTracks ?? []}
+                      onViewAll={() => navigateToTab('library')}
                     />
                   </div>
+                  <div className='lg:col-span-2'>
+                    <PulseCard
+                      pulseData={pulseData}
+                      loading={pulseLoading}
+                      onRefresh={refreshPulseData}
+                    />
+                  </div>
+                </div>
+              )}
 
-                  {/* Recent Tracks */}
+              {/* Recent Uploads (1/2) + Live Activity (1/2) */}
+              {!statsLoading && !statsError && (
+                <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
                   <RecentTracks
                     tracks={recentTracks}
                     onViewAll={() => navigateToTab('library')}
-                    onPlay={playTrack}
+                    onPlay={track => playTrack(track, 'direct')}
                   />
+                  <RecentActivity activity={stats?.recentActivity} />
                 </div>
               )}
             </div>

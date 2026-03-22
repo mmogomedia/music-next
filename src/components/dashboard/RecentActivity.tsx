@@ -362,7 +362,7 @@ export default function RecentActivity({
           displayActivities.map(item => (
             <div
               key={item.id}
-              className='flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors'
+              className='flex items-center gap-3 p-3 rounded-lg bg-gray-50/80 dark:bg-slate-900/40 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-colors'
             >
               <div className='flex-shrink-0'>
                 {getActivityIcon(item.activityType)}
@@ -414,7 +414,7 @@ export default function RecentActivity({
   }
 
   return (
-    <Card className='border border-gray-200 dark:border-slate-700'>
+    <Card className='rounded-2xl shadow-sm border-0'>
       <CardBody className='p-6'>{content}</CardBody>
     </Card>
   );

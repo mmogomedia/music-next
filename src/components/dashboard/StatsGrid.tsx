@@ -1,12 +1,6 @@
 'use client';
 
-import {
-  MusicalNoteIcon,
-  PlayIcon,
-  HeartIcon,
-  ArrowDownTrayIcon,
-  UserGroupIcon,
-} from '@heroicons/react/24/outline';
+import React from 'react';
 
 interface StatsGridProps {
   stats: {
@@ -17,99 +11,99 @@ interface StatsGridProps {
     uniqueListeners: number;
   };
   growth?: {
-    playsGrowth: number;
-    likesGrowth: number;
+    playsGrowth?: number;
+    likesGrowth?: number;
+    sharesGrowth?: number;
   };
+  loading?: boolean;
 }
 
-export default function StatsGrid({ stats, growth }: StatsGridProps) {
-  const formatGrowth = (growth: number) => {
-    const isPositive = growth >= 0;
-    return (
-      <span
-        className={`text-xs font-medium ${
-          isPositive
-            ? 'text-emerald-600 dark:text-emerald-400'
-            : 'text-rose-600 dark:text-rose-400'
-        }`}
-      >
-        {isPositive ? '↑' : '↓'} {Math.abs(growth).toFixed(1)}%
-      </span>
-    );
-  };
+interface StatCardProps {
+  label: string;
+  value: number;
+  borderColor: string;
+  growthValue?: number;
+}
 
-  const statItems = [
-    {
-      label: 'Tracks',
-      value: stats.totalTracks,
-      icon: MusicalNoteIcon,
-      color: 'text-indigo-600 dark:text-indigo-400',
-      bgColor: 'bg-indigo-50 dark:bg-indigo-950/20',
-    },
-    {
-      label: 'Plays',
-      value: stats.totalPlays,
-      icon: PlayIcon,
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
-      growth: growth?.playsGrowth,
-    },
-    {
-      label: 'Likes',
-      value: stats.totalLikes,
-      icon: HeartIcon,
-      color: 'text-rose-600 dark:text-rose-400',
-      bgColor: 'bg-rose-50 dark:bg-rose-950/20',
-      growth: growth?.likesGrowth,
-    },
-    {
-      label: 'Downloads',
-      value: stats.totalDownloads,
-      icon: ArrowDownTrayIcon,
-      color: 'text-violet-600 dark:text-violet-400',
-      bgColor: 'bg-violet-50 dark:bg-violet-950/20',
-    },
-    {
-      label: 'Listeners',
-      value: stats.uniqueListeners,
-      icon: UserGroupIcon,
-      color: 'text-primary-600 dark:text-primary-400',
-      bgColor: 'bg-primary-50 dark:bg-primary-950/20',
-    },
-  ];
+function StatCard({ label, value, borderColor, growthValue }: StatCardProps) {
+  const isPositive = growthValue !== undefined && growthValue >= 0;
 
   return (
-    <div className='grid grid-cols-2 gap-2'>
-      {statItems.map(item => {
-        const Icon = item.icon;
-        return (
-          <div
-            key={item.label}
-            className={`group flex items-center gap-2 p-2 rounded-lg ${item.bgColor} hover:bg-opacity-80 dark:hover:bg-opacity-30 transition-all border border-transparent hover:border-gray-200 dark:hover:border-slate-700`}
+    <div
+      className={`bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm p-5 border-l-4 ${borderColor}`}
+    >
+      <p className='text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1'>
+        {label}
+      </p>
+      <p className='text-3xl font-bold text-gray-900 dark:text-white leading-none'>
+        {value.toLocaleString()}
+      </p>
+      {/* growth row — always render to keep height consistent */}
+      <div className='mt-2 h-5 flex items-center'>
+        {growthValue !== undefined ? (
+          <span
+            className={`text-xs font-medium ${isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}
           >
-            <div
-              className={`w-7 h-7 rounded-lg ${item.bgColor} flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}
-            >
-              <Icon className={`w-3.5 h-3.5 ${item.color}`} />
-            </div>
-            <div className='flex-1 min-w-0'>
-              <div className='text-xs font-medium text-gray-500 dark:text-gray-400'>
-                {item.label}
-              </div>
-              <div className='flex items-baseline gap-1'>
-                <span className='text-base font-bold text-gray-900 dark:text-white'>
-                  {item.value.toLocaleString()}
-                </span>
-                {item.growth !== undefined && (
-                  <div className='flex-shrink-0 text-[10px]'>
-                    {formatGrowth(item.growth)}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
+            {isPositive ? '↑' : '↓'} {Math.abs(growthValue).toFixed(1)}%{' '}
+            <span className='text-gray-400 dark:text-gray-500 font-normal'>
+              vs prev period
+            </span>
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm p-5 border-l-4 border-l-gray-200 dark:border-l-slate-700 animate-pulse'>
+      <div className='h-3 w-16 bg-gray-200 dark:bg-slate-700 rounded mb-2' />
+      <div className='h-8 w-24 bg-gray-200 dark:bg-slate-700 rounded mb-3' />
+      <div className='h-3 w-20 bg-gray-200 dark:bg-slate-700 rounded' />
+    </div>
+  );
+}
+
+export default function StatsGrid({
+  stats,
+  growth,
+  loading = false,
+}: StatsGridProps) {
+  if (loading) {
+    return (
+      <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonCard key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+      <StatCard
+        label='Plays'
+        value={stats.totalPlays}
+        borderColor='border-l-emerald-500'
+        growthValue={growth?.playsGrowth}
+      />
+      <StatCard
+        label='Likes'
+        value={stats.totalLikes}
+        borderColor='border-l-rose-500'
+        growthValue={growth?.likesGrowth}
+      />
+      <StatCard
+        label='Listeners'
+        value={stats.uniqueListeners}
+        borderColor='border-l-primary-500'
+      />
+      <StatCard
+        label='Downloads'
+        value={stats.totalDownloads}
+        borderColor='border-l-violet-500'
+      />
     </div>
   );
 }
