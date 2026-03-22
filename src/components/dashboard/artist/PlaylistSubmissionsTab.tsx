@@ -17,7 +17,14 @@ import {
 } from '@/types/playlist';
 import { Track } from '@/types/track';
 import { api } from '@/lib/api-client';
-import { FCard, FButton, FChip, FEmptyState, FImage } from '@/components/ui';
+import {
+  FCard,
+  FButton,
+  FChip,
+  FEmptyState,
+  FImage,
+  FStat,
+} from '@/components/ui';
 
 interface PlaylistSubmissionsTabProps {
   onQuickSubmit?: (_track: Track | null, _playlist?: Playlist) => void;
@@ -41,16 +48,10 @@ export default function PlaylistSubmissionsTab({
   const fetchData = async () => {
     try {
       setLoading(true);
-
-      // Fetch available playlists (ACTIVE + OPEN for submissions)
       const playlistsResponse = await api.playlists.getAvailable();
       setAvailablePlaylists(playlistsResponse.data.playlists || []);
-
-      // Fetch user's submissions
       const submissionsResponse = await api.playlists.getSubmissions();
       setMySubmissions(submissionsResponse.data.submissions || []);
-
-      // Fetch user's tracks
       const tracksResponse = await api.tracks.getAll();
       setMyTracks(tracksResponse.data.tracks || []);
     } catch {
@@ -88,28 +89,27 @@ export default function PlaylistSubmissionsTab({
     }
   };
 
-  const getSubmissionCount = (playlistId: string) => {
-    return mySubmissions.filter(s => s.playlistId === playlistId).length;
-  };
+  const getSubmissionCount = (playlistId: string) =>
+    mySubmissions.filter(s => s.playlistId === playlistId).length;
 
-  const getPendingSubmissions = (playlistId: string) => {
-    return mySubmissions.filter(
+  const getPendingSubmissions = (playlistId: string) =>
+    mySubmissions.filter(
       s => s.playlistId === playlistId && s.status === 'PENDING'
     ).length;
-  };
 
   const getSubmissionStatus = (playlist: Playlist) => {
     const pendingCount = getPendingSubmissions(playlist.id);
     const totalCount = getSubmissionCount(playlist.id);
-
-    if (pendingCount >= playlist.maxSubmissionsPerArtist) {
-      return 'max-reached';
-    }
-    if (totalCount > 0) {
-      return 'has-submissions';
-    }
+    if (pendingCount >= playlist.maxSubmissionsPerArtist) return 'max-reached';
+    if (totalCount > 0) return 'has-submissions';
     return 'can-submit';
   };
+
+  // Derived stats
+  const pendingCount = mySubmissions.filter(s => s.status === 'PENDING').length;
+  const approvedCount = mySubmissions.filter(
+    s => s.status === 'APPROVED'
+  ).length;
 
   if (loading) {
     return (
@@ -124,132 +124,170 @@ export default function PlaylistSubmissionsTab({
 
   return (
     <div className='space-y-4'>
-      {/* Header */}
-      <div className='flex items-center justify-between'>
-        <div>
-          <h3 className='text-lg font-semibold text-gray-800 dark:text-gray-100'>
-            Playlist Submissions
-          </h3>
-          <p className='text-sm text-gray-500 dark:text-gray-400 mt-0.5'>
-            Submit your tracks to curated playlists
-          </p>
-        </div>
+      {/* Stats row — mirrors LibraryTab */}
+      <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+        <FCard padding='sm'>
+          <FStat
+            label='Playlists'
+            value={availablePlaylists.length}
+            icon={QueueListIcon}
+            color='purple'
+          />
+        </FCard>
+        <FCard padding='sm'>
+          <FStat
+            label='Submissions'
+            value={mySubmissions.length}
+            icon={MusicalNoteIcon}
+            color='blue'
+          />
+        </FCard>
+        <FCard padding='sm'>
+          <FStat
+            label='Pending'
+            value={pendingCount}
+            icon={ClockIcon}
+            color='amber'
+          />
+        </FCard>
+        <FCard padding='sm'>
+          <FStat
+            label='Approved'
+            value={approvedCount}
+            icon={CheckCircleIcon}
+            color='emerald'
+          />
+        </FCard>
       </div>
 
-      {/* Tab Navigation */}
-      <div className='border-b border-gray-100 dark:border-slate-700 flex gap-0'>
-        {[
-          {
-            key: 'available',
-            label: 'Available Playlists',
-            icon: <QueueListIcon className='w-4 h-4' />,
-          },
-          {
-            key: 'my-submissions',
-            label: `My Submissions (${mySubmissions.length})`,
-            icon: <ClockIcon className='w-4 h-4' />,
-          },
-        ].map(tab => (
-          <button
-            key={tab.key}
-            type='button'
-            onClick={() => setActiveTab(tab.key as typeof activeTab)}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
-              activeTab === tab.key
-                ? 'border-primary-500 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-            }`}
+      {/* Main card — mirrors the tracks FCard in LibraryTab */}
+      <FCard
+        padding='none'
+        title='Playlist Submissions'
+        action={
+          <FButton
+            variant='primary'
+            size='sm'
+            startContent={<PlusIcon className='w-4 h-4' />}
+            onPress={() => onQuickSubmit?.(null)}
           >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
-      </div>
+            Submit Track
+          </FButton>
+        }
+      >
+        {/* Tab switcher — mirrors the controls bar in LibraryTab */}
+        <div className='px-5 border-b border-gray-100 dark:border-slate-700 flex gap-0'>
+          {[
+            {
+              key: 'available' as const,
+              label: 'Available Playlists',
+              icon: QueueListIcon,
+            },
+            {
+              key: 'my-submissions' as const,
+              label: `My Submissions${mySubmissions.length > 0 ? ` (${mySubmissions.length})` : ''}`,
+              icon: ClockIcon,
+            },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              type='button'
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex items-center gap-2 py-3 text-sm font-medium border-b-2 -mb-px mr-4 transition-colors whitespace-nowrap ${
+                activeTab === tab.key
+                  ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+              }`}
+            >
+              <tab.icon className='w-4 h-4' />
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-      {/* Available Playlists Tab */}
-      {activeTab === 'available' && (
-        <div className='space-y-3'>
-          {availablePlaylists.length === 0 ? (
-            <FCard padding='lg'>
-              <FEmptyState
-                icon={QueueListIcon}
-                title='No playlists available'
-                description='There are currently no playlists accepting submissions. Check back soon.'
-              />
-            </FCard>
-          ) : (
-            availablePlaylists.map(playlist => {
-              const status = getSubmissionStatus(playlist);
-              const pendingCount = getPendingSubmissions(playlist.id);
+        {/* ── Available Playlists ───────────────────────────────── */}
+        {activeTab === 'available' && (
+          <>
+            {availablePlaylists.length === 0 ? (
+              <div className='px-5 py-8'>
+                <FEmptyState
+                  icon={QueueListIcon}
+                  title='No playlists available'
+                  description='There are currently no playlists accepting submissions. Check back soon.'
+                  size='sm'
+                />
+              </div>
+            ) : (
+              <div className='divide-y divide-gray-50 dark:divide-slate-700/50'>
+                {availablePlaylists.map(playlist => {
+                  const status = getSubmissionStatus(playlist);
+                  const pendingForPlaylist = getPendingSubmissions(playlist.id);
 
-              return (
-                <FCard
-                  key={playlist.id}
-                  padding='none'
-                  className='overflow-hidden'
-                >
-                  <div className='p-4 flex items-center gap-4'>
-                    <FImage
-                      src={playlist.coverImage}
-                      alt={playlist.name}
-                      className='w-16 h-16 flex-shrink-0'
-                      rounded='lg'
-                      fallback='music'
-                    />
-                    <div className='flex-1 min-w-0'>
-                      <div className='flex items-start justify-between gap-2'>
-                        <div className='min-w-0'>
-                          <p className='font-semibold text-gray-800 dark:text-gray-100 truncate'>
-                            {playlist.name}
-                          </p>
-                          <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1'>
-                            {playlist.description}
-                          </p>
-                        </div>
-                        <div className='flex items-center gap-1.5 flex-shrink-0'>
-                          <FChip
-                            size='xs'
-                            color={
-                              playlist.submissionStatus === 'OPEN'
-                                ? 'success'
-                                : 'danger'
-                            }
-                            variant='dot'
-                          >
-                            {playlist.submissionStatus === 'OPEN'
-                              ? 'Open'
-                              : 'Closed'}
-                          </FChip>
-                          {playlist.playlistType?.name && (
-                            <FChip size='xs' color='primary' variant='flat'>
-                              {playlist.playlistType.name}
+                  return (
+                    <div
+                      key={playlist.id}
+                      className='px-5 py-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors'
+                    >
+                      <FImage
+                        src={playlist.coverImage}
+                        alt={playlist.name}
+                        className='w-12 h-12 flex-shrink-0'
+                        rounded='lg'
+                        fallback='music'
+                      />
+                      <div className='flex-1 min-w-0'>
+                        <div className='flex items-start justify-between gap-3'>
+                          <div className='min-w-0'>
+                            <p className='text-sm font-semibold text-gray-800 dark:text-gray-100 truncate'>
+                              {playlist.name}
+                            </p>
+                            <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1'>
+                              {playlist.description}
+                            </p>
+                          </div>
+                          <div className='flex items-center gap-1.5 flex-shrink-0'>
+                            <FChip
+                              size='xs'
+                              color={
+                                playlist.submissionStatus === 'OPEN'
+                                  ? 'success'
+                                  : 'danger'
+                              }
+                              variant='dot'
+                            >
+                              {playlist.submissionStatus === 'OPEN'
+                                ? 'Open'
+                                : 'Closed'}
                             </FChip>
-                          )}
+                            {playlist.playlistType?.name && (
+                              <FChip size='xs' color='primary' variant='flat'>
+                                {playlist.playlistType.name}
+                              </FChip>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className='flex items-center justify-between mt-3'>
-                        <div className='flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500'>
-                          <span className='flex items-center gap-1'>
-                            <MusicalNoteIcon className='w-3.5 h-3.5' />
-                            {playlist.currentTracks}/{playlist.maxTracks}
-                          </span>
-                          <span>
-                            Max {playlist.maxSubmissionsPerArtist} per artist
-                          </span>
-                          {pendingCount > 0 && (
-                            <span className='text-amber-600 dark:text-amber-400'>
-                              {pendingCount} pending
+                        <div className='flex items-center justify-between mt-2'>
+                          <div className='flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500'>
+                            <span className='flex items-center gap-1'>
+                              <MusicalNoteIcon className='w-3.5 h-3.5' />
+                              {playlist.currentTracks}/{playlist.maxTracks}
                             </span>
-                          )}
-                        </div>
-                        <div>
+                            <span>
+                              Max {playlist.maxSubmissionsPerArtist} per artist
+                            </span>
+                            {pendingForPlaylist > 0 && (
+                              <span className='text-amber-600 dark:text-amber-400'>
+                                {pendingForPlaylist} pending
+                              </span>
+                            )}
+                          </div>
                           {status === 'max-reached' ? (
                             <FChip size='xs' color='warning' variant='flat'>
                               Limit reached
                             </FChip>
                           ) : status === 'has-submissions' ? (
                             <FChip size='xs' color='primary' variant='dot'>
-                              {pendingCount} pending
+                              {pendingForPlaylist} pending
                             </FChip>
                           ) : (
                             <FButton
@@ -266,106 +304,108 @@ export default function PlaylistSubmissionsTab({
                         </div>
                       </div>
                     </div>
-                  </div>
-                </FCard>
-              );
-            })
-          )}
-        </div>
-      )}
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
 
-      {/* My Submissions Tab */}
-      {activeTab === 'my-submissions' && (
-        <div className='space-y-3'>
-          {mySubmissions.length === 0 ? (
-            <FCard padding='lg'>
-              <FEmptyState
-                icon={ClockIcon}
-                title='No submissions yet'
-                description="You haven't submitted any tracks to playlists yet."
-                action={{
-                  label: 'Browse Playlists',
-                  onPress: () => setActiveTab('available'),
-                  variant: 'primary',
-                }}
-              />
-            </FCard>
-          ) : (
-            mySubmissions.map(submission => {
-              const StatusIcon = getStatusIcon(submission.status);
-              const track = myTracks.find(t => t.id === submission.trackId);
-              const playlist = availablePlaylists.find(
-                p => p.id === submission.playlistId
-              );
+        {/* ── My Submissions ───────────────────────────────────── */}
+        {activeTab === 'my-submissions' && (
+          <>
+            {mySubmissions.length === 0 ? (
+              <div className='px-5 py-8'>
+                <FEmptyState
+                  icon={ClockIcon}
+                  title='No submissions yet'
+                  description="You haven't submitted any tracks to playlists yet."
+                  size='sm'
+                  action={{
+                    label: 'Browse Playlists',
+                    onPress: () => setActiveTab('available'),
+                    variant: 'primary',
+                  }}
+                />
+              </div>
+            ) : (
+              <div className='divide-y divide-gray-50 dark:divide-slate-700/50'>
+                {mySubmissions.map(submission => {
+                  const StatusIcon = getStatusIcon(submission.status);
+                  const track = myTracks.find(t => t.id === submission.trackId);
+                  const playlist = availablePlaylists.find(
+                    p => p.id === submission.playlistId
+                  );
 
-              return (
-                <FCard key={submission.id} padding='none'>
-                  <div className='p-4 flex items-center gap-3'>
-                    <FImage
-                      src={track?.albumArtwork || track?.coverImageUrl || ''}
-                      alt={track?.title || 'Track'}
-                      className='w-12 h-12 flex-shrink-0'
-                      rounded='lg'
-                      fallback='music'
-                    />
-                    <div className='flex-1 min-w-0'>
-                      <div className='flex items-start justify-between gap-2'>
-                        <div className='min-w-0'>
-                          <p className='font-medium text-gray-800 dark:text-gray-100 truncate text-sm'>
-                            {track?.title || 'Unknown Track'}
-                          </p>
-                          <p className='text-xs text-gray-500 dark:text-gray-400 truncate'>
-                            → {playlist?.name || 'Unknown Playlist'}
-                          </p>
+                  return (
+                    <div
+                      key={submission.id}
+                      className='px-5 py-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors'
+                    >
+                      <FImage
+                        src={track?.albumArtwork || track?.coverImageUrl || ''}
+                        alt={track?.title || 'Track'}
+                        className='w-10 h-10 flex-shrink-0'
+                        rounded='lg'
+                        fallback='music'
+                      />
+                      <div className='flex-1 min-w-0'>
+                        <div className='flex items-start justify-between gap-3'>
+                          <div className='min-w-0'>
+                            <p className='text-sm font-semibold text-gray-800 dark:text-gray-100 truncate'>
+                              {track?.title || 'Unknown Track'}
+                            </p>
+                            <p className='text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5'>
+                              → {playlist?.name || 'Unknown Playlist'}
+                            </p>
+                          </div>
+                          <FChip
+                            size='xs'
+                            color={getStatusColor(submission.status)}
+                            variant='flat'
+                            startContent={<StatusIcon className='w-3 h-3' />}
+                          >
+                            {submission.status.charAt(0) +
+                              submission.status.slice(1).toLowerCase()}
+                          </FChip>
                         </div>
-                        <FChip
-                          size='xs'
-                          color={getStatusColor(submission.status)}
-                          variant='flat'
-                          startContent={<StatusIcon className='w-3 h-3' />}
-                        >
-                          {submission.status.charAt(0) +
-                            submission.status.slice(1).toLowerCase()}
-                        </FChip>
-                      </div>
-                      <div className='flex items-center gap-3 mt-1.5 text-xs text-gray-400 dark:text-gray-500'>
-                        <span>
-                          Submitted{' '}
-                          {new Date(
-                            submission.submittedAt
-                          ).toLocaleDateString()}
-                        </span>
-                        {submission.reviewedAt && (
+                        <div className='flex items-center gap-3 mt-1 text-xs text-gray-400 dark:text-gray-500'>
                           <span>
-                            Reviewed{' '}
+                            Submitted{' '}
                             {new Date(
-                              submission.reviewedAt
+                              submission.submittedAt
                             ).toLocaleDateString()}
                           </span>
+                          {submission.reviewedAt && (
+                            <span>
+                              Reviewed{' '}
+                              {new Date(
+                                submission.reviewedAt
+                              ).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                        {submission.artistComment && (
+                          <div className='mt-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-800/60 text-xs text-gray-600 dark:text-gray-400'>
+                            <span className='font-medium'>Your comment:</span>{' '}
+                            {submission.artistComment}
+                          </div>
+                        )}
+                        {submission.adminComment && (
+                          <div className='mt-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-800/60 text-xs text-gray-600 dark:text-gray-400'>
+                            <span className='font-medium'>Feedback:</span>{' '}
+                            {submission.adminComment}
+                          </div>
                         )}
                       </div>
-                      {/* Artist Comment */}
-                      {submission.artistComment && (
-                        <div className='mt-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-800/60 text-xs text-gray-600 dark:text-gray-400'>
-                          <span className='font-medium'>Your comment:</span>{' '}
-                          {submission.artistComment}
-                        </div>
-                      )}
-                      {/* Admin Comment */}
-                      {submission.adminComment && (
-                        <div className='mt-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-800/60 text-xs text-gray-600 dark:text-gray-400'>
-                          <span className='font-medium'>Feedback:</span>{' '}
-                          {submission.adminComment}
-                        </div>
-                      )}
                     </div>
-                  </div>
-                </FCard>
-              );
-            })
-          )}
-        </div>
-      )}
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+      </FCard>
     </div>
   );
 }
