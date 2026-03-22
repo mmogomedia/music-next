@@ -928,6 +928,8 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                 {tab.label}
               </button>
             ))}
+            {/* trailing spacer so last tab isn't flush against the edge */}
+            <div className='w-4 flex-shrink-0' aria-hidden='true' />
           </div>
         </div>
 
