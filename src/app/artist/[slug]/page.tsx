@@ -14,7 +14,7 @@ import {
   CheckIcon,
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
-import { StatCard } from '@/components/ui/StatCard';
+import StatCard from '@/components/ui/StatCard';
 import ArtistProfileCard from '@/components/artist/ArtistProfileCard';
 import { ArtistProfile } from '@/types/artist-profile';
 import Image from 'next/image';

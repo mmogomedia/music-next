@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardBody, Chip } from '@heroui/react';
-import { StatCard } from '@/components/ui/StatCard';
+import StatCard from '@/components/ui/StatCard';
 import ArtistDisplay from '@/components/track/ArtistDisplay';
 import CompletionBadge from '@/components/track/CompletionBadge';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
+import StatCard, { StatCardSkeleton } from '@/components/ui/StatCard';
 
 interface StatsGridProps {
   stats: {

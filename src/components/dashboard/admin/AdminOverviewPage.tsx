@@ -6,7 +6,7 @@ import {
   PlusIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
-import { StatCard } from '@/components/ui/StatCard';
+import StatCard from '@/components/ui/StatCard';
 import AdminNavigation from './AdminNavigation';
 import UnifiedLayout from '@/components/layout/UnifiedLayout';
 import { useAdminDashboardStats } from '@/hooks/useAdminDashboardStats';
