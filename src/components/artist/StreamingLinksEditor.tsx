@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button, Input, Card, CardBody, CardHeader } from '@heroui/react';
 import {
   MusicalNoteIcon,
   TrashIcon,
@@ -9,6 +8,7 @@ import {
   CheckIcon,
 } from '@heroicons/react/24/outline';
 import { StreamingLinks } from '@/types/artist-profile';
+import { FCard, FButton, FInput, FEmptyState } from '@/components/ui';
 
 interface StreamingLinksEditorProps {
   streamingLinks?: StreamingLinks;
@@ -82,26 +82,16 @@ export default function StreamingLinksEditor({
   ) => {
     setLinks(prev => ({
       ...prev,
-      [platform]: {
-        ...prev[platform as keyof StreamingLinks],
-        [field]: value,
-      },
+      [platform]: { ...prev[platform as keyof StreamingLinks], [field]: value },
     }));
-
-    // Clear error when user starts typing
     const errorKey = `${platform}-${field}`;
     if (errors[errorKey]) {
-      setErrors(prev => ({
-        ...prev,
-        [errorKey]: '',
-      }));
+      setErrors(prev => ({ ...prev, [errorKey]: '' }));
     }
   };
 
   const handleUrlChange = (platform: string, url: string) => {
-    // Auto-extract ID from URL for some platforms
     let artistId = '';
-
     if (platform === 'spotify' && url.includes('open.spotify.com/artist/')) {
       artistId = url.split('open.spotify.com/artist/')[1]?.split('?')[0] || '';
     } else if (
@@ -132,7 +122,7 @@ export default function StreamingLinksEditor({
   };
 
   const validateUrl = (url: string) => {
-    if (!url) return true; // Optional field
+    if (!url) return true;
     try {
       new URL(url);
       return true;
@@ -143,21 +133,14 @@ export default function StreamingLinksEditor({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     const newErrors: Record<string, string> = {};
-
-    // Validate URLs
     Object.entries(links).forEach(([platform, data]) => {
       if (data?.url && !validateUrl(data.url)) {
         newErrors[`${platform}-url`] = 'Please enter a valid URL';
       }
     });
-
     setErrors(newErrors);
-
-    if (Object.keys(newErrors).length === 0) {
-      onSave(links);
-    }
+    if (Object.keys(newErrors).length === 0) onSave(links);
   };
 
   const removeLink = (platform: string) => {
@@ -172,215 +155,181 @@ export default function StreamingLinksEditor({
   );
 
   return (
-    <Card className='w-full max-w-2xl mx-auto'>
-      <CardHeader className='pb-4'>
-        <div className='flex items-center gap-3'>
-          <div className='w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center'>
-            <MusicalNoteIcon className='w-6 h-6 text-white' />
-          </div>
-          <div>
-            <h2 className='text-xl font-bold text-gray-900 dark:text-white'>
-              Streaming Platform Links
-            </h2>
-            <p className='text-sm text-gray-500 dark:text-gray-400'>
-              Connect your music on streaming platforms
-            </p>
-          </div>
+    <FCard variant='default' padding='md' className='w-full max-w-2xl mx-auto'>
+      <div className='flex items-center gap-3 mb-6'>
+        <MusicalNoteIcon className='w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0' />
+        <div>
+          <h2 className='text-xl font-bold text-gray-900 dark:text-white'>
+            Streaming Platform Links
+          </h2>
+          <p className='text-sm text-gray-500 dark:text-gray-400'>
+            Connect your music on streaming platforms
+          </p>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardBody className='pt-0'>
-        <form onSubmit={handleSubmit} className='space-y-6'>
-          {STREAMING_PLATFORMS.map(platform => {
-            const linkData = links[platform.key as keyof StreamingLinks];
-            const isActive =
-              linkData &&
-              (linkData.url ||
-                (linkData as any).artistId ||
-                (linkData as any).channelId);
+      <form onSubmit={handleSubmit} className='space-y-6'>
+        {STREAMING_PLATFORMS.map(platform => {
+          const linkData = links[platform.key as keyof StreamingLinks];
+          const isActive =
+            linkData &&
+            (linkData.url ||
+              (linkData as any).artistId ||
+              (linkData as any).channelId);
 
-            return (
-              <div key={platform.key} className='space-y-3'>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center gap-3'>
-                    <span className='text-2xl'>{platform.icon}</span>
-                    <span className='font-medium text-gray-900 dark:text-white'>
-                      {platform.label}
-                    </span>
-                  </div>
-                  {isActive && (
-                    <Button
-                      type='button'
-                      size='sm'
-                      variant='light'
-                      color='danger'
-                      onClick={() => removeLink(platform.key)}
-                      startContent={<TrashIcon className='w-4 h-4' />}
-                    >
-                      Remove
-                    </Button>
-                  )}
+          return (
+            <div key={platform.key} className='space-y-3'>
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center gap-3'>
+                  <span className='text-2xl'>{platform.icon}</span>
+                  <span className='font-medium text-gray-900 dark:text-white'>
+                    {platform.label}
+                  </span>
                 </div>
-
                 {isActive && (
-                  <div className='space-y-3 pl-8'>
-                    <div>
-                      <label
-                        htmlFor={`${platform.key}-id`}
-                        className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
-                      >
-                        Artist/Channel ID
-                      </label>
-                      <Input
-                        id={`${platform.key}-id`}
-                        value={
-                          (linkData as any)?.artistId ||
-                          (linkData as any)?.channelId ||
-                          ''
-                        }
-                        onChange={e =>
-                          handleLinkChange(
-                            platform.key,
-                            'artistId',
-                            e.target.value
-                          )
-                        }
-                        placeholder={platform.placeholder}
-                        className='w-full'
-                      />
-                    </div>
+                  <FButton
+                    type='button'
+                    size='sm'
+                    variant='danger-ghost'
+                    onPress={() => removeLink(platform.key)}
+                    startContent={<TrashIcon className='w-4 h-4' />}
+                  >
+                    Remove
+                  </FButton>
+                )}
+              </div>
 
-                    <div>
-                      <label
-                        htmlFor={`${platform.key}-url`}
-                        className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
-                      >
-                        Profile URL
-                      </label>
-                      <Input
-                        id={`${platform.key}-url`}
-                        value={linkData?.url || ''}
-                        onChange={e =>
-                          handleUrlChange(platform.key, e.target.value)
-                        }
-                        placeholder={platform.urlPrefix}
-                        isInvalid={!!errors[`${platform.key}-url`]}
-                        errorMessage={errors[`${platform.key}-url`]}
-                        className='w-full'
-                      />
-                    </div>
+              {isActive && (
+                <div className='space-y-3 pl-8'>
+                  <FInput
+                    id={`${platform.key}-id`}
+                    label='Artist/Channel ID'
+                    value={
+                      (linkData as any)?.artistId ||
+                      (linkData as any)?.channelId ||
+                      ''
+                    }
+                    onChange={e =>
+                      handleLinkChange(platform.key, 'artistId', e.target.value)
+                    }
+                    placeholder={platform.placeholder}
+                  />
 
-                    <div className='grid grid-cols-2 gap-3'>
-                      <div>
-                        <label
-                          htmlFor={`${platform.key}-listeners`}
-                          className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
-                        >
-                          Monthly Listeners
-                        </label>
-                        <Input
-                          id={`${platform.key}-listeners`}
-                          type='number'
-                          value={
-                            (linkData as any)?.monthlyListeners ||
-                            (linkData as any)?.subscribers ||
-                            ''
-                          }
+                  <FInput
+                    id={`${platform.key}-url`}
+                    label='Profile URL'
+                    value={linkData?.url || ''}
+                    onChange={e =>
+                      handleUrlChange(platform.key, e.target.value)
+                    }
+                    placeholder={platform.urlPrefix}
+                    isInvalid={!!errors[`${platform.key}-url`]}
+                    errorMessage={errors[`${platform.key}-url`]}
+                  />
+
+                  <div className='grid grid-cols-2 gap-3'>
+                    <FInput
+                      id={`${platform.key}-listeners`}
+                      label='Monthly Listeners'
+                      type='number'
+                      value={
+                        (linkData as any)?.monthlyListeners ||
+                        (linkData as any)?.subscribers ||
+                        ''
+                      }
+                      onChange={e =>
+                        handleLinkChange(
+                          platform.key,
+                          platform.key === 'youtubeMusic'
+                            ? 'subscribers'
+                            : 'monthlyListeners',
+                          e.target.value
+                        )
+                      }
+                      placeholder='0'
+                    />
+
+                    <div className='flex items-end pb-2'>
+                      <label
+                        htmlFor={`${platform.key}-verified`}
+                        className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300'
+                      >
+                        <input
+                          id={`${platform.key}-verified`}
+                          type='checkbox'
+                          checked={linkData?.verified || false}
                           onChange={e =>
                             handleLinkChange(
                               platform.key,
-                              platform.key === 'youtubeMusic'
-                                ? 'subscribers'
-                                : 'monthlyListeners',
-                              e.target.value
+                              'verified',
+                              e.target.checked.toString()
                             )
                           }
-                          placeholder='0'
-                          className='w-full'
+                          className='rounded border-gray-300'
                         />
-                      </div>
-
-                      <div className='flex items-center'>
-                        <label
-                          htmlFor={`${platform.key}-verified`}
-                          className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300'
-                        >
-                          <input
-                            id={`${platform.key}-verified`}
-                            type='checkbox'
-                            checked={linkData?.verified || false}
-                            onChange={e =>
-                              handleLinkChange(
-                                platform.key,
-                                'verified',
-                                e.target.checked.toString()
-                              )
-                            }
-                            className='rounded border-gray-300'
-                          />
-                          Verified
-                        </label>
-                      </div>
+                        Verified
+                      </label>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                {!isActive && (
-                  <Button
-                    type='button'
-                    variant='bordered'
-                    onClick={() =>
-                      setLinks(prev => ({
-                        ...prev,
-                        [platform.key]: {
-                          artistId: '',
-                          url: '',
-                          monthlyListeners: 0,
-                          verified: false,
-                        },
-                      }))
-                    }
-                    startContent={<PlusIcon className='w-4 h-4' />}
-                    className='ml-8'
-                  >
-                    Add {platform.label}
-                  </Button>
-                )}
-              </div>
-            );
-          })}
-
-          {!hasAnyLinks && (
-            <div className='text-center py-8 text-gray-500 dark:text-gray-400'>
-              <MusicalNoteIcon className='w-12 h-12 mx-auto mb-3 opacity-50' />
-              <p>No streaming platform links added yet</p>
-              <p className='text-sm'>
-                Click &quot;Add&quot; next to any platform to get started
-              </p>
+              {!isActive && (
+                <FButton
+                  type='button'
+                  variant='outline'
+                  onPress={() =>
+                    setLinks(prev => ({
+                      ...prev,
+                      [platform.key]: {
+                        artistId: '',
+                        url: '',
+                        monthlyListeners: 0,
+                        verified: false,
+                      },
+                    }))
+                  }
+                  startContent={<PlusIcon className='w-4 h-4' />}
+                  className='ml-8'
+                >
+                  Add {platform.label}
+                </FButton>
+              )}
             </div>
-          )}
+          );
+        })}
 
-          {/* Action Buttons */}
-          <div className='flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700'>
-            <Button
-              type='button'
-              variant='bordered'
-              onClick={onCancel}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type='submit'
-              color='primary'
-              isLoading={isLoading}
-              startContent={!isLoading && <CheckIcon className='w-4 h-4' />}
-            >
-              Save Links
-            </Button>
-          </div>
-        </form>
-      </CardBody>
-    </Card>
+        {!hasAnyLinks && (
+          <FEmptyState
+            icon={MusicalNoteIcon}
+            title='No streaming platform links added yet'
+            description='Click "Add" next to any platform to get started'
+            size='sm'
+          />
+        )}
+
+        {/* Action Buttons */}
+        <div className='flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700'>
+          <FButton
+            type='button'
+            variant='ghost'
+            onPress={onCancel}
+            isDisabled={isLoading}
+          >
+            Cancel
+          </FButton>
+          <FButton
+            type='submit'
+            variant='primary'
+            isLoading={isLoading}
+            startContent={
+              !isLoading ? <CheckIcon className='w-4 h-4' /> : undefined
+            }
+          >
+            Save Links
+          </FButton>
+        </div>
+      </form>
+    </FCard>
   );
 }

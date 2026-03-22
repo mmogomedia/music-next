@@ -300,26 +300,26 @@ export default function RecentActivity({
     switch (activityType) {
       case 'play':
         return (
-          <div className='w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center'>
-            <PlayIcon className='w-4 h-4 text-green-600 dark:text-green-400' />
+          <div className='w-8 h-8 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center'>
+            <PlayIcon className='w-4 h-4 text-emerald-600 dark:text-emerald-400' />
           </div>
         );
       case 'like':
         return (
-          <div className='w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center'>
-            <HeartIcon className='w-4 h-4 text-red-600 dark:text-red-400' />
+          <div className='w-8 h-8 bg-rose-100 dark:bg-rose-900/20 rounded-full flex items-center justify-center'>
+            <HeartIcon className='w-4 h-4 text-rose-600 dark:text-rose-400' />
           </div>
         );
       case 'download':
         return (
-          <div className='w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center'>
-            <ArrowDownTrayIcon className='w-4 h-4 text-orange-600 dark:text-orange-400' />
+          <div className='w-8 h-8 bg-violet-100 dark:bg-violet-900/20 rounded-full flex items-center justify-center'>
+            <ArrowDownTrayIcon className='w-4 h-4 text-violet-600 dark:text-violet-400' />
           </div>
         );
       case 'page_visit':
         return (
-          <div className='w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center'>
-            <EyeIcon className='w-4 h-4 text-blue-600 dark:text-blue-400' />
+          <div className='w-8 h-8 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center'>
+            <EyeIcon className='w-4 h-4 text-purple-600 dark:text-purple-400' />
           </div>
         );
       default:
@@ -401,7 +401,7 @@ export default function RecentActivity({
 
       {activities.length > 6 && (
         <div className='mt-4 text-center'>
-          <button className='text-sm text-blue-600 dark:text-blue-400 hover:underline'>
+          <button className='text-sm text-purple-600 dark:text-purple-400 hover:underline'>
             View all activity
           </button>
         </div>

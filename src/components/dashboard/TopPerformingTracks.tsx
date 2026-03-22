@@ -84,11 +84,11 @@ export default function TopPerformingTracks({
                   <span
                     className={`text-sm font-bold ${
                       rank === 1
-                        ? 'text-yellow-600 dark:text-yellow-400'
+                        ? 'text-amber-500 dark:text-amber-400'
                         : rank === 2
                           ? 'text-gray-600 dark:text-gray-400'
                           : rank === 3
-                            ? 'text-orange-600 dark:text-orange-400'
+                            ? 'text-slate-400 dark:text-slate-500'
                             : 'text-gray-500 dark:text-gray-500'
                     }`}
                   >
@@ -157,12 +157,12 @@ export default function TopPerformingTracks({
                     }}
                     className={
                       isCurrentlyPlaying
-                        ? 'text-blue-600 dark:text-blue-400'
+                        ? 'text-purple-600 dark:text-purple-400'
                         : ''
                     }
                   >
                     {isCurrentlyPlaying ? (
-                      <div className='w-4 h-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin'></div>
+                      <div className='w-4 h-4 border-2 border-purple-600 dark:border-purple-400 border-t-transparent rounded-full animate-spin'></div>
                     ) : (
                       <PlayIcon className='w-4 h-4' />
                     )}

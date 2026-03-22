@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button, Chip } from '@heroui/react';
+import { FButton, FBadge } from '@/components/ui';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 import UnifiedLayout from '@/components/layout/UnifiedLayout';
@@ -80,13 +80,13 @@ export default function TrackEditPageClient({
     <header className='bg-gradient-to-b from-white via-white to-white/70 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900/60 border-b border-transparent'>
       <div className='py-4 px-4 sm:px-6 lg:px-8 flex items-center justify-between flex-wrap gap-4'>
         <div className='flex items-center gap-4'>
-          <Button
-            variant='light'
+          <FButton
+            variant='ghost'
             startContent={<ArrowLeftIcon className='w-4 h-4' />}
             onPress={handleBack}
           >
             Back
-          </Button>
+          </FButton>
           <div>
             <p className='text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400'>
               Editing track
@@ -96,13 +96,13 @@ export default function TrackEditPageClient({
             </h1>
           </div>
         </div>
-        <Chip
+        <FBadge
+          variant='label'
           color={readyToSave ? 'success' : 'warning'}
-          variant='flat'
           className='text-sm'
         >
           {readyToSave ? 'Ready to save' : 'Complete required details'}
-        </Chip>
+        </FBadge>
       </div>
     </header>
   );
@@ -129,18 +129,17 @@ export default function TrackEditPageClient({
                   </h2>
                 </div>
                 <div className='hidden md:flex flex-wrap gap-3'>
-                  <Button variant='light' onPress={handleBack}>
+                  <FButton variant='ghost' onPress={handleBack}>
                     Back to library
-                  </Button>
-                  <Button
-                    color='primary'
-                    variant='solid'
+                  </FButton>
+                  <FButton
+                    variant='primary'
                     onPress={handleQuickSave}
                     isDisabled={!editorState.canSubmit || isSaving}
                     isLoading={isSaving}
                   >
                     {isSaving ? 'Saving...' : 'Save changes'}
-                  </Button>
+                  </FButton>
                 </div>
               </div>
               <div className='flex flex-col sm:flex-row sm:items-center gap-3 text-sm text-gray-600 dark:text-gray-300'>
@@ -166,7 +165,7 @@ export default function TrackEditPageClient({
             </section>
 
             {errorMessage && (
-              <div className='rounded-2xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-700 dark:text-red-200'>
+              <div className='rounded-2xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-900/20 p-4 text-sm text-rose-700 dark:text-rose-200'>
                 {errorMessage}
               </div>
             )}
@@ -197,24 +196,23 @@ export default function TrackEditPageClient({
                       Designed for mobile, always available on desktop.
                     </p>
                   </div>
-                  <Button
-                    color='primary'
-                    variant='solid'
+                  <FButton
+                    variant='primary'
                     className='w-full'
                     onPress={handleQuickSave}
                     isDisabled={!editorState.canSubmit || isSaving}
                     isLoading={isSaving}
                   >
                     {isSaving ? 'Saving...' : 'Save changes'}
-                  </Button>
-                  <Button
-                    variant='bordered'
+                  </FButton>
+                  <FButton
+                    variant='outline'
                     className='w-full'
                     onPress={handleBack}
-                    disabled={isSaving}
+                    isDisabled={isSaving}
                   >
                     Back to library
-                  </Button>
+                  </FButton>
                 </div>
 
                 <div className='rounded-2xl border border-dashed border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/40 p-5 space-y-3 shadow-sm'>
@@ -247,18 +245,21 @@ export default function TrackEditPageClient({
               </span>
             </div>
             <div className='flex flex-col sm:flex-row gap-2'>
-              <Button variant='flat' onPress={handleBack} disabled={isSaving}>
+              <FButton
+                variant='ghost'
+                onPress={handleBack}
+                isDisabled={isSaving}
+              >
                 Cancel
-              </Button>
-              <Button
-                color='primary'
-                variant='solid'
+              </FButton>
+              <FButton
+                variant='primary'
                 onPress={handleQuickSave}
                 isDisabled={!editorState.canSubmit || isSaving}
                 isLoading={isSaving}
               >
                 {isSaving ? 'Saving...' : 'Save'}
-              </Button>
+              </FButton>
             </div>
           </div>
         </div>

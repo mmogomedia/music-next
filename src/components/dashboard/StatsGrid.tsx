@@ -29,8 +29,8 @@ export default function StatsGrid({ stats, growth }: StatsGridProps) {
       <span
         className={`text-xs font-medium ${
           isPositive
-            ? 'text-green-600 dark:text-green-400'
-            : 'text-red-600 dark:text-red-400'
+            ? 'text-emerald-600 dark:text-emerald-400'
+            : 'text-rose-600 dark:text-rose-400'
         }`}
       >
         {isPositive ? '↑' : '↓'} {Math.abs(growth).toFixed(1)}%
@@ -43,38 +43,38 @@ export default function StatsGrid({ stats, growth }: StatsGridProps) {
       label: 'Tracks',
       value: stats.totalTracks,
       icon: MusicalNoteIcon,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-950/20',
+      color: 'text-indigo-600 dark:text-indigo-400',
+      bgColor: 'bg-indigo-50 dark:bg-indigo-950/20',
     },
     {
       label: 'Plays',
       value: stats.totalPlays,
       icon: PlayIcon,
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-950/20',
+      color: 'text-emerald-600 dark:text-emerald-400',
+      bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
       growth: growth?.playsGrowth,
     },
     {
       label: 'Likes',
       value: stats.totalLikes,
       icon: HeartIcon,
-      color: 'text-red-600 dark:text-red-400',
-      bgColor: 'bg-red-50 dark:bg-red-950/20',
+      color: 'text-rose-600 dark:text-rose-400',
+      bgColor: 'bg-rose-50 dark:bg-rose-950/20',
       growth: growth?.likesGrowth,
     },
     {
       label: 'Downloads',
       value: stats.totalDownloads,
       icon: ArrowDownTrayIcon,
-      color: 'text-orange-600 dark:text-orange-400',
-      bgColor: 'bg-orange-50 dark:bg-orange-950/20',
+      color: 'text-violet-600 dark:text-violet-400',
+      bgColor: 'bg-violet-50 dark:bg-violet-950/20',
     },
     {
       label: 'Listeners',
       value: stats.uniqueListeners,
       icon: UserGroupIcon,
-      color: 'text-teal-600 dark:text-teal-400',
-      bgColor: 'bg-teal-50 dark:bg-teal-950/20',
+      color: 'text-purple-600 dark:text-purple-400',
+      bgColor: 'bg-purple-50 dark:bg-purple-950/20',
     },
   ];
 
