@@ -318,8 +318,8 @@ export default function RecentActivity({
         );
       case 'page_visit':
         return (
-          <div className='w-8 h-8 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center'>
-            <EyeIcon className='w-4 h-4 text-purple-600 dark:text-purple-400' />
+          <div className='w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center'>
+            <EyeIcon className='w-4 h-4 text-blue-600 dark:text-blue-400' />
           </div>
         );
       default:
@@ -401,7 +401,7 @@ export default function RecentActivity({
 
       {activities.length > 6 && (
         <div className='mt-4 text-center'>
-          <button className='text-sm text-purple-600 dark:text-purple-400 hover:underline'>
+          <button className='text-sm text-blue-600 dark:text-blue-400 hover:underline'>
             View all activity
           </button>
         </div>
