@@ -77,6 +77,22 @@ export function constructFileUrl(filePath?: string | null): string {
 }
 
 /**
+ * Returns the first candidate that is a valid absolute http(s) URL.
+ * Raw DB file paths (e.g. "image/userId/file.jpg") and empty strings
+ * are skipped so they are never passed to Next/Image.
+ */
+export function toAbsoluteUrl(
+  ...candidates: (string | null | undefined)[]
+): string | null {
+  for (const url of candidates) {
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+      return url;
+    }
+  }
+  return null;
+}
+
+/**
  * Extract file path from a full URL
  * @param fullUrl - The complete URL
  * @returns The file path that should be stored in the database

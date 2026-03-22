@@ -23,18 +23,7 @@ import Image from 'next/image';
 import TrackArtwork from '@/components/music/TrackArtwork';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { Track } from '@/types/track';
-
-/** Only return a URL if it's a valid absolute http(s) URL — never pass raw file paths to Next/Image */
-function toAbsoluteUrl(
-  ...candidates: (string | null | undefined)[]
-): string | null {
-  for (const url of candidates) {
-    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
-      return url;
-    }
-  }
-  return null;
-}
+import { toAbsoluteUrl } from '@/lib/url-utils';
 
 export default function PublicArtistProfilePage() {
   const params = useParams();

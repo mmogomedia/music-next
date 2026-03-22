@@ -4,6 +4,7 @@ import type { ArtistResponse, ArtistItem, Action } from '@/types/ai-responses';
 import { Button } from '@heroui/react';
 import Image from 'next/image';
 import { SuggestedActions } from './suggested-actions';
+import { toAbsoluteUrl } from '@/lib/url-utils';
 
 interface ArtistRendererProps {
   response: ArtistResponse;
@@ -81,9 +82,9 @@ export function ArtistRenderer({
       <div className='flex items-start gap-4'>
         {/* Profile Image */}
         <div className='w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-slate-700 flex-shrink-0'>
-          {artist?.profileImageUrl ? (
+          {toAbsoluteUrl(artist?.profileImageUrl) ? (
             <Image
-              src={artist.profileImageUrl}
+              src={toAbsoluteUrl(artist?.profileImageUrl)!}
               alt={displayName}
               width={96}
               height={96}

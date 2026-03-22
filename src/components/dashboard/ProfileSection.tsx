@@ -3,11 +3,13 @@
 import { UserIcon } from '@heroicons/react/24/outline';
 import FButton from '@/components/ui/FButton';
 import FAvatar from '@/components/ui/FAvatar';
+import { toAbsoluteUrl } from '@/lib/url-utils';
 
 interface ProfileSectionProps {
   profile: {
     artistName: string;
     profileImage?: string;
+    profileImageUrl?: string | null;
     genre?: string;
   } | null;
   onCreateProfile: () => void;
@@ -37,7 +39,10 @@ export default function ProfileSection({
         <div className='text-center'>
           <div className='relative mx-auto mb-3 w-fit'>
             <FAvatar
-              src={profile.profileImage}
+              src={
+                toAbsoluteUrl(profile.profileImageUrl, profile.profileImage) ??
+                undefined
+              }
               name={profile.artistName}
               size='md'
             />

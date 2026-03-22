@@ -16,18 +16,7 @@ import {
 import { ArtistProfile } from '@/types/artist-profile';
 import Image from 'next/image';
 import { FCard, FButton, FBadge } from '@/components/ui';
-
-/** Only returns a URL if it's a valid absolute http(s) URL */
-function toAbsoluteUrl(
-  ...candidates: (string | null | undefined)[]
-): string | null {
-  for (const url of candidates) {
-    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
-      return url;
-    }
-  }
-  return null;
-}
+import { toAbsoluteUrl } from '@/lib/url-utils';
 
 interface ArtistProfileCardProps {
   profile: ArtistProfile;
