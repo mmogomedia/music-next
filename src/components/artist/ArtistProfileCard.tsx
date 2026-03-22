@@ -17,6 +17,18 @@ import { ArtistProfile } from '@/types/artist-profile';
 import Image from 'next/image';
 import { FCard, FButton, FBadge } from '@/components/ui';
 
+/** Only returns a URL if it's a valid absolute http(s) URL */
+function toAbsoluteUrl(
+  ...candidates: (string | null | undefined)[]
+): string | null {
+  for (const url of candidates) {
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+      return url;
+    }
+  }
+  return null;
+}
+
 interface ArtistProfileCardProps {
   profile: ArtistProfile;
   onPlay?: (_profile: ArtistProfile) => void;
@@ -70,10 +82,12 @@ export default function ArtistProfileCard({
       <FCard variant='default' padding='sm'>
         <div className='flex items-center gap-4'>
           {/* Profile Image */}
-          <div className='w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0'>
-            {profile.profileImage ? (
+          <div className='w-16 h-16 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center flex-shrink-0'>
+            {toAbsoluteUrl(profile.profileImageUrl, profile.profileImage) ? (
               <Image
-                src={profile.profileImage}
+                src={
+                  toAbsoluteUrl(profile.profileImageUrl, profile.profileImage)!
+                }
                 alt={profile.artistName}
                 width={64}
                 height={64}
@@ -140,10 +154,10 @@ export default function ArtistProfileCard({
   return (
     <FCard variant='default' padding='none'>
       {/* Cover Image */}
-      {profile.coverImage && (
+      {toAbsoluteUrl(profile.coverImageUrl, profile.coverImage) && (
         <div className='relative h-48 w-full'>
           <Image
-            src={profile.coverImage}
+            src={toAbsoluteUrl(profile.coverImageUrl, profile.coverImage)!}
             alt={`${profile.artistName} cover`}
             fill
             className='object-cover rounded-t-lg'
@@ -157,10 +171,12 @@ export default function ArtistProfileCard({
         {/* Profile Header */}
         <div className='flex items-start gap-4 mb-6'>
           {/* Profile Image */}
-          <div className='w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center flex-shrink-0 -mt-10 border-4 border-white dark:border-gray-900'>
-            {profile.profileImage ? (
+          <div className='w-20 h-20 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center flex-shrink-0 -mt-10 border-4 border-white dark:border-gray-900'>
+            {toAbsoluteUrl(profile.profileImageUrl, profile.profileImage) ? (
               <Image
-                src={profile.profileImage}
+                src={
+                  toAbsoluteUrl(profile.profileImageUrl, profile.profileImage)!
+                }
                 alt={profile.artistName}
                 width={80}
                 height={80}
