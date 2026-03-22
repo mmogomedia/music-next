@@ -10,6 +10,9 @@ import {
 import { SocialLinks } from '@/types/artist-profile';
 import { FCard, FButton, FInput, FEmptyState } from '@/components/ui';
 
+// Discriminated union of all possible social link value shapes
+type SocialLinkValue = NonNullable<SocialLinks[keyof SocialLinks]>;
+
 interface SocialLinksEditorProps {
   socialLinks?: SocialLinks;
   onSave: (_socialLinks: SocialLinks) => void;
@@ -18,14 +21,25 @@ interface SocialLinksEditorProps {
 }
 
 // Helper function to get the correct name field from any social link
-const getSocialName = (linkData: any): string => {
-  return (
-    linkData?.username ||
-    linkData?.channelName ||
-    linkData?.pageName ||
-    linkData?.artistName ||
-    ''
-  );
+const getSocialName = (linkData: SocialLinkValue): string => {
+  if ('username' in linkData) return linkData.username ?? '';
+  if ('channelName' in linkData) return linkData.channelName ?? '';
+  if ('pageName' in linkData) return linkData.pageName ?? '';
+  if ('artistName' in linkData) return linkData.artistName ?? '';
+  return '';
+};
+
+// Helper to get the count metric (followers or subscribers) from a link
+const getSocialCount = (linkData: SocialLinkValue): number | string => {
+  if ('subscribers' in linkData) return linkData.subscribers ?? '';
+  if ('followers' in linkData) return linkData.followers ?? '';
+  return '';
+};
+
+// Helper to get verified flag from a link
+const getSocialVerified = (linkData: SocialLinkValue): boolean => {
+  if ('verified' in linkData) return linkData.verified ?? false;
+  return false;
 };
 
 const SOCIAL_PLATFORMS = [
@@ -95,7 +109,10 @@ export default function SocialLinksEditor({
         ...prev[platform as keyof SocialLinks],
         url,
         username:
-          username || getSocialName(prev[platform as keyof SocialLinks]),
+          username ||
+          (prev[platform as keyof SocialLinks]
+            ? getSocialName(prev[platform as keyof SocialLinks]!)
+            : ''),
       },
     }));
   };
@@ -129,7 +146,7 @@ export default function SocialLinksEditor({
   };
 
   const hasAnyLinks = Object.values(links).some(
-    link => link && (link.url || getSocialName(link))
+    link => link && (link.url || getSocialName(link as SocialLinkValue))
   );
 
   return (
@@ -150,7 +167,8 @@ export default function SocialLinksEditor({
         {SOCIAL_PLATFORMS.map(platform => {
           const linkData = links[platform.key as keyof SocialLinks];
           const isActive =
-            linkData && (linkData.url || getSocialName(linkData));
+            linkData &&
+            (linkData.url || getSocialName(linkData as SocialLinkValue));
 
           return (
             <div key={platform.key} className='space-y-3'>
@@ -179,7 +197,7 @@ export default function SocialLinksEditor({
                   <FInput
                     id={`${platform.key}-username`}
                     label='Username/Name'
-                    value={getSocialName(linkData)}
+                    value={getSocialName(linkData as SocialLinkValue)}
                     onChange={e =>
                       handleLinkChange(platform.key, 'username', e.target.value)
                     }
@@ -203,11 +221,7 @@ export default function SocialLinksEditor({
                       id={`${platform.key}-followers`}
                       label='Followers'
                       type='number'
-                      value={
-                        (linkData as any)?.followers ||
-                        (linkData as any)?.subscribers ||
-                        ''
-                      }
+                      value={linkData ? getSocialCount(linkData) : ''}
                       onChange={e =>
                         handleLinkChange(
                           platform.key,
@@ -222,7 +236,9 @@ export default function SocialLinksEditor({
                       <label className='flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300'>
                         <input
                           type='checkbox'
-                          checked={(linkData as any)?.verified || false}
+                          checked={
+                            linkData ? getSocialVerified(linkData) : false
+                          }
                           onChange={e =>
                             handleLinkChange(
                               platform.key,

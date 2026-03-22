@@ -1,6 +1,6 @@
 'use client';
 
-import type { ArtistResponse } from '@/types/ai-responses';
+import type { ArtistResponse, ArtistItem, Action } from '@/types/ai-responses';
 import { Button } from '@heroui/react';
 import Image from 'next/image';
 import { SuggestedActions } from './suggested-actions';
@@ -8,7 +8,19 @@ import { SuggestedActions } from './suggested-actions';
 interface ArtistRendererProps {
   response: ArtistResponse;
   onViewArtist?: (_artistId: string) => void;
-  onAction?: (_action: any) => void;
+  onAction?: (_action: Action) => void;
+}
+
+function resolveArtist(data: ArtistItem): ArtistItem {
+  const maybeWrapped = data as unknown as { artist?: ArtistItem };
+  if (
+    maybeWrapped &&
+    maybeWrapped.artist &&
+    typeof maybeWrapped.artist === 'object'
+  ) {
+    return maybeWrapped.artist;
+  }
+  return data;
 }
 
 /**
@@ -19,12 +31,8 @@ export function ArtistRenderer({
   onViewArtist,
   onAction,
 }: ArtistRendererProps) {
-  // Support both shapes: { data: Artist } and { data: { artist: Artist } }
-  const payload = response.data as unknown as { artist?: any } & Record<
-    string,
-    any
-  >;
-  const artist = payload && payload.artist ? payload.artist : (payload as any);
+  // Support both shapes: { data: ArtistItem } and { data: { artist: ArtistItem } }
+  const artist: ArtistItem = resolveArtist(response.data);
   const displayName: string =
     typeof artist?.artistName === 'string' && artist.artistName.length > 0
       ? artist.artistName
@@ -42,7 +50,7 @@ export function ArtistRenderer({
     }
   };
 
-  const handleAction = (action: any) => {
+  const handleAction = (action: Action) => {
     switch (action.type) {
       case 'view_artist':
         if (onViewArtist) {
@@ -149,33 +157,61 @@ export function ArtistRenderer({
       {(artist.socialLinks || artist.streamingLinks) && (
         <div className='flex gap-2 flex-wrap'>
           {artist.socialLinks &&
-            Object.entries(artist.socialLinks).map(([platform, url]) => (
-              <Button
-                key={platform}
-                size='sm'
-                variant='bordered'
-                as='a'
-                href={url as string}
-                target='_blank'
-                rel='noopener noreferrer'
-              >
-                {platform}
-              </Button>
-            ))}
+            typeof artist.socialLinks === 'object' &&
+            Object.entries(artist.socialLinks as Record<string, unknown>).map(
+              ([platform, linkData]) => {
+                const href =
+                  typeof linkData === 'string'
+                    ? linkData
+                    : typeof linkData === 'object' &&
+                        linkData !== null &&
+                        'url' in linkData
+                      ? String((linkData as Record<string, unknown>).url ?? '')
+                      : '';
+                if (!href) return null;
+                return (
+                  <Button
+                    key={platform}
+                    size='sm'
+                    variant='bordered'
+                    as='a'
+                    href={href}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                  >
+                    {platform}
+                  </Button>
+                );
+              }
+            )}
           {artist.streamingLinks &&
-            Object.entries(artist.streamingLinks).map(([platform, url]) => (
-              <Button
-                key={platform}
-                size='sm'
-                variant='bordered'
-                as='a'
-                href={url as string}
-                target='_blank'
-                rel='noopener noreferrer'
-              >
-                {platform}
-              </Button>
-            ))}
+            typeof artist.streamingLinks === 'object' &&
+            Object.entries(
+              artist.streamingLinks as Record<string, unknown>
+            ).map(([platform, linkData]) => {
+              const href =
+                typeof linkData === 'string'
+                  ? linkData
+                  : typeof linkData === 'object' &&
+                      linkData !== null &&
+                      'url' in linkData
+                    ? String((linkData as Record<string, unknown>).url ?? '')
+                    : '';
+              if (!href) return null;
+              return (
+                <Button
+                  key={platform}
+                  size='sm'
+                  variant='bordered'
+                  as='a'
+                  href={href}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  {platform}
+                </Button>
+              );
+            })}
         </div>
       )}
 

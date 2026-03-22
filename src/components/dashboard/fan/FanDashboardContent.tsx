@@ -336,12 +336,10 @@ export default function FanDashboardContent(_props: FanDashboardContentProps) {
   }
 
   const header = (
-    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
-      <div className='py-3 px-4 sm:px-5 lg:px-6'>
-        <h1 className='text-lg font-bold text-gray-900 dark:text-white'>
-          {tabNames[activeTab]}
-        </h1>
-      </div>
+    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 h-16 flex items-center px-4 sm:px-5 lg:px-6'>
+      <h1 className='text-lg font-bold text-gray-900 dark:text-white'>
+        {tabNames[activeTab]}
+      </h1>
     </header>
   );
 

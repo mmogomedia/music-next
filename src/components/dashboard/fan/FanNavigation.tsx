@@ -180,7 +180,7 @@ export default function FanNavigation({
   const sidebarBody = (onLinkClick?: () => void) => (
     <>
       {/* Logo */}
-      <div className='px-5 py-5 border-b border-gray-100 dark:border-slate-800 flex-shrink-0'>
+      <div className='px-5 h-16 border-b border-gray-100 dark:border-slate-800 flex-shrink-0 flex items-center'>
         <Link
           href='/'
           className='flex items-center gap-2 group'

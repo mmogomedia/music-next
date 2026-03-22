@@ -11,6 +11,7 @@ import {
   MapPinIcon,
   GlobeAltIcon,
   MusicalNoteIcon,
+  CheckIcon,
 } from '@heroicons/react/24/outline';
 import {
   PlayIcon as PlaySolidIcon,
@@ -20,12 +21,20 @@ import ArtistProfileCard from '@/components/artist/ArtistProfileCard';
 import { ArtistProfile } from '@/types/artist-profile';
 import Image from 'next/image';
 import TrackArtwork from '@/components/music/TrackArtwork';
+import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import { Track } from '@/types/track';
 
 export default function PublicArtistProfilePage() {
   const params = useParams();
   const [profile, setProfile] = useState<ArtistProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [following, setFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const { setQueue, playTrack } = useMusicPlayer();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -38,14 +47,15 @@ export default function PublicArtistProfilePage() {
         if (response.ok) {
           const data = await response.json();
           setProfile(data.artistProfile);
+          setFollowerCount(data.artistProfile?.totalFollowers ?? 0);
         } else if (response.status === 404) {
           setError('Artist profile not found');
         } else {
           const errorData = await response.json();
           setError(errorData.error || 'Failed to load profile');
         }
-      } catch (error) {
-        console.error('Error fetching profile:', error);
+      } catch (err) {
+        console.error('Error fetching profile:', err);
         setError('Failed to load profile');
       } finally {
         setLoading(false);
@@ -57,12 +67,68 @@ export default function PublicArtistProfilePage() {
     }
   }, [params.slug]);
 
+  // Check follow status after profile loads
+  useEffect(() => {
+    if (!params.slug) return;
+
+    const checkFollowStatus = async () => {
+      try {
+        const response = await fetch(
+          `/api/artist-profile/${params.slug}/follow`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setFollowing(data.following);
+          setFollowerCount(data.followerCount);
+        }
+      } catch (err) {
+        console.error('Error checking follow status:', err);
+      }
+    };
+
+    checkFollowStatus();
+  }, [params.slug]);
+
   const handlePlayAll = () => {
-    // TODO: Implement play all functionality
+    if (!profile?.tracks || profile.tracks.length === 0) return;
+
+    const tracks = profile.tracks as Track[];
+    setQueue(tracks, 0, 'direct');
+    playTrack(tracks[0], 'direct');
   };
 
-  const handleFollow = () => {
-    // TODO: Implement follow functionality
+  const handleFollow = async () => {
+    if (followLoading) return;
+
+    // Optimistic update
+    const wasFollowing = following;
+    setFollowing(!wasFollowing);
+    setFollowerCount(prev => (wasFollowing ? prev - 1 : prev + 1));
+    setFollowLoading(true);
+
+    try {
+      const response = await fetch(
+        `/api/artist-profile/${params.slug}/follow`,
+        { method: 'POST' }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setFollowing(data.following);
+        setFollowerCount(data.followerCount);
+      } else {
+        // Revert optimistic update on failure
+        setFollowing(wasFollowing);
+        setFollowerCount(prev => (wasFollowing ? prev + 1 : prev - 1));
+      }
+    } catch (err) {
+      console.error('Error toggling follow:', err);
+      // Revert optimistic update on error
+      setFollowing(wasFollowing);
+      setFollowerCount(prev => (wasFollowing ? prev + 1 : prev - 1));
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   const handleShare = () => {
@@ -73,9 +139,10 @@ export default function PublicArtistProfilePage() {
         url: window.location.href,
       });
     } else {
-      // Fallback to copying URL
-      navigator.clipboard.writeText(window.location.href);
-      // TODO: Show toast notification
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
     }
   };
 
@@ -150,18 +217,31 @@ export default function PublicArtistProfilePage() {
                 color='primary'
                 startContent={<PlayIcon className='w-4 h-4' />}
                 onClick={handlePlayAll}
+                isDisabled={!profile.tracks || profile.tracks.length === 0}
               >
                 Play All
               </Button>
               <Button
                 variant='bordered'
-                startContent={<HeartIcon className='w-4 h-4' />}
+                color={following ? 'primary' : 'default'}
+                startContent={
+                  following ? (
+                    <HeartSolidIcon className='w-4 h-4' />
+                  ) : (
+                    <HeartIcon className='w-4 h-4' />
+                  )
+                }
                 onClick={handleFollow}
+                isLoading={followLoading}
               >
-                Follow
+                {following ? 'Following' : 'Follow'}
               </Button>
               <Button isIconOnly variant='light' onClick={handleShare}>
-                <ShareIcon className='w-4 h-4' />
+                {copied ? (
+                  <CheckIcon className='w-4 h-4 text-green-500' />
+                ) : (
+                  <ShareIcon className='w-4 h-4' />
+                )}
               </Button>
             </div>
           </div>
@@ -218,7 +298,7 @@ export default function PublicArtistProfilePage() {
                       </span>
                     </div>
                     <span className='font-semibold text-gray-900 dark:text-white'>
-                      {profile.totalFollowers.toLocaleString()}
+                      {followerCount.toLocaleString()}
                     </span>
                   </div>
                   <div className='flex justify-between items-center'>

@@ -7,8 +7,39 @@ import {
   PlusIcon,
   CheckIcon,
 } from '@heroicons/react/24/outline';
-import { StreamingLinks } from '@/types/artist-profile';
+import {
+  StreamingLinks,
+  ArtistStreamingLink,
+  ChannelStreamingLink,
+  StreamingPlatformLink,
+  isArtistLink,
+  isChannelLink,
+} from '@/types/artist-profile';
 import { FCard, FButton, FInput, FEmptyState } from '@/components/ui';
+
+type StreamingLinkValue = NonNullable<StreamingLinks[keyof StreamingLinks]>;
+
+// Helper to get artistId or channelId from any streaming link
+const getStreamingId = (linkData: StreamingLinkValue): string => {
+  if (isArtistLink(linkData as StreamingPlatformLink)) {
+    return (linkData as ArtistStreamingLink).artistId ?? '';
+  }
+  if (isChannelLink(linkData as StreamingPlatformLink)) {
+    return (linkData as ChannelStreamingLink).channelId ?? '';
+  }
+  return '';
+};
+
+// Helper to get monthlyListeners or subscribers from any streaming link
+const getStreamingCount = (linkData: StreamingLinkValue): number | string => {
+  if (isChannelLink(linkData as StreamingPlatformLink)) {
+    return (linkData as ChannelStreamingLink).subscribers ?? '';
+  }
+  if (isArtistLink(linkData as StreamingPlatformLink)) {
+    return (linkData as ArtistStreamingLink).monthlyListeners ?? '';
+  }
+  return '';
+};
 
 interface StreamingLinksEditorProps {
   streamingLinks?: StreamingLinks;
@@ -107,18 +138,20 @@ export default function StreamingLinksEditor({
         url.split('music.youtube.com/channel/')[1]?.split('?')[0] || '';
     }
 
-    setLinks(prev => ({
-      ...prev,
-      [platform]: {
-        ...prev[platform as keyof StreamingLinks],
-        url,
-        artistId:
-          artistId ||
-          (prev[platform as keyof StreamingLinks] as any)?.artistId ||
-          (prev[platform as keyof StreamingLinks] as any)?.channelId ||
-          '',
-      },
-    }));
+    setLinks(prev => {
+      const existing = prev[platform as keyof StreamingLinks];
+      const existingId = existing
+        ? getStreamingId(existing as StreamingLinkValue)
+        : '';
+      return {
+        ...prev,
+        [platform]: {
+          ...existing,
+          url,
+          artistId: artistId || existingId,
+        },
+      };
+    });
   };
 
   const validateUrl = (url: string) => {
@@ -150,8 +183,7 @@ export default function StreamingLinksEditor({
   };
 
   const hasAnyLinks = Object.values(links).some(
-    link =>
-      link && (link.url || (link as any).artistId || (link as any).channelId)
+    link => link && (link.url || getStreamingId(link as StreamingLinkValue))
   );
 
   return (
@@ -173,9 +205,7 @@ export default function StreamingLinksEditor({
           const linkData = links[platform.key as keyof StreamingLinks];
           const isActive =
             linkData &&
-            (linkData.url ||
-              (linkData as any).artistId ||
-              (linkData as any).channelId);
+            (linkData.url || getStreamingId(linkData as StreamingLinkValue));
 
           return (
             <div key={platform.key} className='space-y-3'>
@@ -205,9 +235,9 @@ export default function StreamingLinksEditor({
                     id={`${platform.key}-id`}
                     label='Artist/Channel ID'
                     value={
-                      (linkData as any)?.artistId ||
-                      (linkData as any)?.channelId ||
-                      ''
+                      linkData
+                        ? getStreamingId(linkData as StreamingLinkValue)
+                        : ''
                     }
                     onChange={e =>
                       handleLinkChange(platform.key, 'artistId', e.target.value)
@@ -230,12 +260,16 @@ export default function StreamingLinksEditor({
                   <div className='grid grid-cols-2 gap-3'>
                     <FInput
                       id={`${platform.key}-listeners`}
-                      label='Monthly Listeners'
+                      label={
+                        platform.key === 'youtubeMusic'
+                          ? 'Subscribers'
+                          : 'Monthly Listeners'
+                      }
                       type='number'
                       value={
-                        (linkData as any)?.monthlyListeners ||
-                        (linkData as any)?.subscribers ||
-                        ''
+                        linkData
+                          ? getStreamingCount(linkData as StreamingLinkValue)
+                          : ''
                       }
                       onChange={e =>
                         handleLinkChange(

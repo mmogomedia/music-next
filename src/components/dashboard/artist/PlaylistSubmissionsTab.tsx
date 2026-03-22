@@ -271,7 +271,7 @@ export default function PlaylistSubmissionsTab({
                                 // This will be handled by the quick submit modal
                                 // We'll pass the playlist info to the parent
                                 if (onQuickSubmit) {
-                                  onQuickSubmit(null as any, playlist);
+                                  onQuickSubmit(null, playlist);
                                 }
                               }}
                             >

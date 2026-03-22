@@ -277,8 +277,8 @@ export default function DashboardContent({
   };
 
   const header = (
-    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
-      <div className='py-3 px-4 sm:px-5 lg:px-6'>
+    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 h-16 flex items-center'>
+      <div className='flex items-center justify-between w-full px-4 sm:px-5 lg:px-6'>
         <div className='flex items-center justify-between'>
           <div>
             <h1 className='text-lg font-bold text-gray-900 dark:text-white'>

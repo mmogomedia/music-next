@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import {
   UserIcon,
   LinkIcon,
@@ -30,6 +31,7 @@ import {
 
 export default function ArtistProfilePage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [profile, setProfile] = useState<ArtistProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -273,7 +275,7 @@ export default function ArtistProfilePage() {
                     fullWidth
                     startContent={<ChartBarIcon className='w-4 h-4' />}
                     onPress={() => {
-                      alert('Analytics coming soon!');
+                      router.push('/dashboard?tab=analytics');
                     }}
                   >
                     View Analytics
