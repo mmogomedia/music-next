@@ -49,7 +49,7 @@ export default function PulseCard({
   if (!pulseData?.hasConnection) {
     return (
       <>
-        <Card className='border border-gray-200 dark:border-slate-700 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 hover:shadow-md transition-shadow shadow-none'>
+        <Card className='border border-gray-200 dark:border-slate-700 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 hover:shadow-md transition-shadow shadow-none h-full'>
           <CardBody className='p-4'>
             <div className='flex items-start gap-3'>
               <div className='w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0'>
@@ -115,7 +115,7 @@ export default function PulseCard({
   // Loading state
   if (loading || !pulseData) {
     return (
-      <Card className='border border-gray-200 dark:border-slate-700 shadow-none'>
+      <Card className='border border-gray-200 dark:border-slate-700 shadow-none h-full'>
         <CardBody className='p-4'>
           <div className='flex items-center gap-3'>
             <div className='w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-lg animate-pulse' />
@@ -133,7 +133,7 @@ export default function PulseCard({
   if (pulseData.hasConnection && pulseData.eligibilityScore === null) {
     return (
       <>
-        <Card className='border border-gray-200 dark:border-slate-700 shadow-none'>
+        <Card className='border border-gray-200 dark:border-slate-700 shadow-none h-full'>
           <CardBody className='p-4'>
             <div className='flex items-start gap-3'>
               <div className='w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0'>
