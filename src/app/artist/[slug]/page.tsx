@@ -24,6 +24,18 @@ import TrackArtwork from '@/components/music/TrackArtwork';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { Track } from '@/types/track';
 
+/** Only return a URL if it's a valid absolute http(s) URL — never pass raw file paths to Next/Image */
+function toAbsoluteUrl(
+  ...candidates: (string | null | undefined)[]
+): string | null {
+  for (const url of candidates) {
+    if (url && (url.startsWith('http://') || url.startsWith('https://'))) {
+      return url;
+    }
+  }
+  return null;
+}
+
 export default function PublicArtistProfilePage() {
   const params = useParams();
   const [profile, setProfile] = useState<ArtistProfile | null>(null);
@@ -190,9 +202,17 @@ export default function PublicArtistProfilePage() {
           <div className='flex items-center justify-between'>
             <div className='flex items-center gap-4'>
               <div className='w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center flex-shrink-0'>
-                {profile.profileImageUrl || profile.profileImage ? (
+                {toAbsoluteUrl(
+                  profile.profileImageUrl,
+                  profile.profileImage
+                ) ? (
                   <Image
-                    src={profile.profileImageUrl || profile.profileImage!}
+                    src={
+                      toAbsoluteUrl(
+                        profile.profileImageUrl,
+                        profile.profileImage
+                      )!
+                    }
                     alt={profile.artistName}
                     width={64}
                     height={64}
