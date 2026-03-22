@@ -9,9 +9,10 @@ export const dynamic = 'force-dynamic';
 // POST /api/artist-profile/[slug]/follow - Toggle follow for an artist profile
 export async function POST(
   _request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -20,7 +21,7 @@ export async function POST(
 
     const artistProfile = await prisma.artistProfile.findFirst({
       where: {
-        OR: [{ slug: params.slug }, { id: params.slug }],
+        OR: [{ slug }, { id: slug }],
         isPublic: true,
         isActive: true,
       },
@@ -109,9 +110,10 @@ export async function POST(
 // GET /api/artist-profile/[slug]/follow - Check if current user follows this artist
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -120,7 +122,7 @@ export async function GET(
 
     const artistProfile = await prisma.artistProfile.findFirst({
       where: {
-        OR: [{ slug: params.slug }, { id: params.slug }],
+        OR: [{ slug }, { id: slug }],
         isPublic: true,
         isActive: true,
       },
