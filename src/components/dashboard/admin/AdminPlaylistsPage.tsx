@@ -8,6 +8,7 @@ import UnifiedPlaylistManagement from './UnifiedPlaylistManagement';
 export default function AdminPlaylistsPage() {
   const { stats } = useAdminDashboardStats();
   const systemHealth = stats?.systemMetrics?.platformHealth || 'healthy';
+  const systemHealthReasons = stats?.systemMetrics?.platformHealthReasons;
 
   const header = (
     <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
@@ -30,9 +31,8 @@ export default function AdminPlaylistsPage() {
     <UnifiedLayout
       sidebar={
         <AdminNavigation
-          activeTab='playlists'
-          onTabChange={() => {}}
           systemHealth={systemHealth}
+          systemHealthReasons={systemHealthReasons}
         />
       }
       header={header}

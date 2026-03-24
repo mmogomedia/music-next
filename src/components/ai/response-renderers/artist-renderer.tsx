@@ -1,14 +1,27 @@
 'use client';
 
-import type { ArtistResponse } from '@/types/ai-responses';
+import type { ArtistResponse, ArtistItem, Action } from '@/types/ai-responses';
 import { Button } from '@heroui/react';
 import Image from 'next/image';
 import { SuggestedActions } from './suggested-actions';
+import { toAbsoluteUrl } from '@/lib/url-utils';
 
 interface ArtistRendererProps {
   response: ArtistResponse;
   onViewArtist?: (_artistId: string) => void;
-  onAction?: (_action: any) => void;
+  onAction?: (_action: Action) => void;
+}
+
+function resolveArtist(data: ArtistItem): ArtistItem {
+  const maybeWrapped = data as unknown as { artist?: ArtistItem };
+  if (
+    maybeWrapped &&
+    maybeWrapped.artist &&
+    typeof maybeWrapped.artist === 'object'
+  ) {
+    return maybeWrapped.artist;
+  }
+  return data;
 }
 
 /**
@@ -19,12 +32,8 @@ export function ArtistRenderer({
   onViewArtist,
   onAction,
 }: ArtistRendererProps) {
-  // Support both shapes: { data: Artist } and { data: { artist: Artist } }
-  const payload = response.data as unknown as { artist?: any } & Record<
-    string,
-    any
-  >;
-  const artist = payload && payload.artist ? payload.artist : (payload as any);
+  // Support both shapes: { data: ArtistItem } and { data: { artist: ArtistItem } }
+  const artist: ArtistItem = resolveArtist(response.data);
   const displayName: string =
     typeof artist?.artistName === 'string' && artist.artistName.length > 0
       ? artist.artistName
@@ -37,12 +46,13 @@ export function ArtistRenderer({
       // Fallback: send a message to show tracks by this artist
       onAction({
         type: 'send_message',
+        label: `Show tracks by ${displayName}`,
         data: { message: `Show me tracks by ${displayName}` },
       });
     }
   };
 
-  const handleAction = (action: any) => {
+  const handleAction = (action: Action) => {
     switch (action.type) {
       case 'view_artist':
         if (onViewArtist) {
@@ -73,9 +83,9 @@ export function ArtistRenderer({
       <div className='flex items-start gap-4'>
         {/* Profile Image */}
         <div className='w-24 h-24 rounded-full overflow-hidden bg-gray-200 dark:bg-slate-700 flex-shrink-0'>
-          {artist?.profileImageUrl ? (
+          {toAbsoluteUrl(artist?.profileImageUrl) ? (
             <Image
-              src={artist.profileImageUrl}
+              src={toAbsoluteUrl(artist?.profileImageUrl)!}
               alt={displayName}
               width={96}
               height={96}
@@ -109,7 +119,7 @@ export function ArtistRenderer({
       </div>
 
       {/* Bio */}
-      {artist?.bio && (
+      {typeof artist?.bio === 'string' && artist.bio && (
         <div className='rounded-lg bg-gray-50 dark:bg-slate-800 p-4'>
           <p className='text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap'>
             {artist.bio}
@@ -119,26 +129,26 @@ export function ArtistRenderer({
 
       {/* Stats */}
       <div className='flex gap-4'>
-        {artist?.totalPlays > 0 && (
+        {(artist?.totalPlays ?? 0) > 0 && (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-              {artist.totalPlays.toLocaleString()}
+              {(artist.totalPlays ?? 0).toLocaleString()}
             </p>
             <p className='text-xs text-gray-600 dark:text-gray-400'>Plays</p>
           </div>
         )}
-        {artist?.totalLikes > 0 && (
+        {(artist?.totalLikes ?? 0) > 0 && (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-              {artist.totalLikes.toLocaleString()}
+              {(artist.totalLikes ?? 0).toLocaleString()}
             </p>
             <p className='text-xs text-gray-600 dark:text-gray-400'>Likes</p>
           </div>
         )}
-        {artist?.profileViews > 0 && (
+        {(artist?.profileViews ?? 0) > 0 && (
           <div className='text-center'>
             <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-              {artist.profileViews.toLocaleString()}
+              {(artist.profileViews ?? 0).toLocaleString()}
             </p>
             <p className='text-xs text-gray-600 dark:text-gray-400'>Views</p>
           </div>
@@ -146,36 +156,64 @@ export function ArtistRenderer({
       </div>
 
       {/* Social Links */}
-      {(artist.socialLinks || artist.streamingLinks) && (
+      {(Boolean(artist.socialLinks) || Boolean(artist.streamingLinks)) && (
         <div className='flex gap-2 flex-wrap'>
-          {artist.socialLinks &&
-            Object.entries(artist.socialLinks).map(([platform, url]) => (
-              <Button
-                key={platform}
-                size='sm'
-                variant='bordered'
-                as='a'
-                href={url as string}
-                target='_blank'
-                rel='noopener noreferrer'
-              >
-                {platform}
-              </Button>
-            ))}
-          {artist.streamingLinks &&
-            Object.entries(artist.streamingLinks).map(([platform, url]) => (
-              <Button
-                key={platform}
-                size='sm'
-                variant='bordered'
-                as='a'
-                href={url as string}
-                target='_blank'
-                rel='noopener noreferrer'
-              >
-                {platform}
-              </Button>
-            ))}
+          {Boolean(artist.socialLinks) &&
+            typeof artist.socialLinks === 'object' &&
+            Object.entries(artist.socialLinks as Record<string, unknown>).map(
+              ([platform, linkData]) => {
+                const href =
+                  typeof linkData === 'string'
+                    ? linkData
+                    : typeof linkData === 'object' &&
+                        linkData !== null &&
+                        'url' in linkData
+                      ? String((linkData as Record<string, unknown>).url ?? '')
+                      : '';
+                if (!href) return null;
+                return (
+                  <Button
+                    key={platform}
+                    size='sm'
+                    variant='bordered'
+                    as='a'
+                    href={href}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                  >
+                    {platform}
+                  </Button>
+                );
+              }
+            )}
+          {Boolean(artist.streamingLinks) &&
+            typeof artist.streamingLinks === 'object' &&
+            Object.entries(
+              artist.streamingLinks as Record<string, unknown>
+            ).map(([platform, linkData]) => {
+              const href =
+                typeof linkData === 'string'
+                  ? linkData
+                  : typeof linkData === 'object' &&
+                      linkData !== null &&
+                      'url' in linkData
+                    ? String((linkData as Record<string, unknown>).url ?? '')
+                    : '';
+              if (!href) return null;
+              return (
+                <Button
+                  key={platform}
+                  size='sm'
+                  variant='bordered'
+                  as='a'
+                  href={href}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                >
+                  {platform}
+                </Button>
+              );
+            })}
         </div>
       )}
 

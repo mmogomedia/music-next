@@ -196,6 +196,7 @@ model Track {
   completionPercentage Int                  @default(0) // 0-100, calculated based on field completion
   strength             Int                  @default(0) // 0-100 quality/completeness score
   language             String? // ISO 639-1 code (e.g., "en", "zu", "xh", "fr", "pt", "sn", "nd", "other")
+  streamingLinks       Json? // Array of { platform: string; url: string }
   embedding            Unsupported("vector(1536)")? // pgvector — added via raw SQL in migration
   embeddingUpdatedAt   DateTime? // when the embedding was last generated
   playEvents           PlayEvent[]          @relation("TrackPlays")

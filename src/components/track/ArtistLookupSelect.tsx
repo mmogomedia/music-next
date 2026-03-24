@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Input, Button, Chip, Avatar, Spinner } from '@heroui/react';
+import { toAbsoluteUrl } from '@/lib/url-utils';
 import {
   MagnifyingGlassIcon,
   PlusIcon,
@@ -261,7 +262,7 @@ export default function ArtistLookupSelect({
                       className='flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-slate-700 cursor-pointer transition-colors'
                     >
                       <Avatar
-                        src={artist.profileImage || undefined}
+                        src={toAbsoluteUrl(artist.profileImage) ?? undefined}
                         size='md'
                         fallback={
                           <MusicalNoteIcon className='w-6 h-6 text-gray-400' />
@@ -363,9 +364,9 @@ export default function ArtistLookupSelect({
                     <span className='text-xs font-semibold mr-1 text-blue-700 dark:text-blue-300'>
                       {index + 1}.
                     </span>
-                  ) : artist.profileImage ? (
+                  ) : toAbsoluteUrl(artist.profileImage) ? (
                     <Avatar
-                      src={artist.profileImage}
+                      src={toAbsoluteUrl(artist.profileImage)!}
                       size='sm'
                       className='w-5 h-5'
                     />

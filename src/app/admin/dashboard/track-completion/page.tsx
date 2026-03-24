@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Button,
   Input,
@@ -49,7 +48,6 @@ const CATEGORY_COLORS = {
 } as const;
 
 export default function TrackCompletionPage() {
-  const router = useRouter();
   const [rules, setRules] = useState<TrackCompletionRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -66,15 +64,6 @@ export default function TrackCompletionPage() {
   const [totalWeight, setTotalWeight] = useState(0);
   const { stats } = useAdminDashboardStats();
   const systemHealth = stats?.systemMetrics?.platformHealth || 'healthy';
-
-  const handleTabChange = (tabId: string) => {
-    // Navigate to main admin dashboard with the selected tab
-    if (tabId === 'settings') {
-      // Stay on current page if settings is clicked
-      return;
-    }
-    router.push('/admin/dashboard');
-  };
 
   const fetchRules = async () => {
     try {
@@ -222,13 +211,7 @@ export default function TrackCompletionPage() {
 
   return (
     <UnifiedLayout
-      sidebar={
-        <AdminNavigation
-          activeTab='settings'
-          onTabChange={handleTabChange}
-          systemHealth={systemHealth}
-        />
-      }
+      sidebar={<AdminNavigation systemHealth={systemHealth} />}
       header={header}
     >
       <div className='w-full py-8 px-4 sm:px-6'>

@@ -60,7 +60,6 @@ export const searchTracksTool = new DynamicStructuredTool({
     orderBy: z
       .enum(['recent', 'popular', 'alphabetical'])
       .optional()
-      .default('recent')
       .describe(
         'Sort order: recent (newest first), popular (most plays), or alphabetical'
       ),
@@ -374,7 +373,6 @@ export const getTopChartsTool = new DynamicStructuredTool({
     limit: z
       .number()
       .optional()
-      .default(10)
       .describe(
         'Number of playlists to return (1-20). Use 1 to get the top ten playlist.'
       ),
@@ -427,7 +425,6 @@ export const getFeaturedPlaylistsTool = new DynamicStructuredTool({
     limit: z
       .number()
       .optional()
-      .default(10)
       .describe('Number of playlists to return (1-20)'),
   }),
   func: async ({ limit = 10 }) => {
@@ -478,11 +475,7 @@ export const getTrendingTracksTool = new DynamicStructuredTool({
   description:
     'Get currently trending tracks based on play count and engagement.',
   schema: z.object({
-    limit: z
-      .number()
-      .optional()
-      .default(20)
-      .describe('Number of tracks to return (1-50)'),
+    limit: z.number().optional().describe('Number of tracks to return (1-50)'),
   }),
   func: async ({ limit = 20 }) => {
     // eslint-disable-next-line no-console
@@ -599,7 +592,6 @@ export const getPlaylistsByGenreTool = new DynamicStructuredTool({
     limit: z
       .number()
       .optional()
-      .default(20)
       .describe('Number of playlists to return (1-20)'),
   }),
   func: async ({ genre, limit = 20 }) => {
@@ -659,7 +651,6 @@ export const getPlaylistsByProvinceTool = new DynamicStructuredTool({
     limit: z
       .number()
       .optional()
-      .default(20)
       .describe('Number of playlists to return (1-20)'),
   }),
   func: async ({ province, limit = 20 }) => {
@@ -718,11 +709,7 @@ export const getTracksByGenreTool = new DynamicStructuredTool({
       .describe(
         'Genre name, slug, or alias to filter by (e.g., "3 Step", "Afro Pop", "Amapiano", "amapiano")'
       ),
-    limit: z
-      .number()
-      .optional()
-      .default(20)
-      .describe('Number of tracks to return (1-50)'),
+    limit: z.number().optional().describe('Number of tracks to return (1-50)'),
   }),
   func: async ({ genre, limit = 20 }) => {
     try {
@@ -846,11 +833,7 @@ export const searchTracksByThemeTool = new DynamicStructuredTool({
       .string()
       .optional()
       .describe('Optional province filter (e.g., Gauteng, Western Cape)'),
-    limit: z
-      .number()
-      .optional()
-      .default(20)
-      .describe('Number of tracks to return (1-30)'),
+    limit: z.number().optional().describe('Number of tracks to return (1-30)'),
   }),
   func: async ({
     moods = [],
@@ -968,12 +951,10 @@ export const getGenresTool = new DynamicStructuredTool({
     limit: z
       .number()
       .optional()
-      .default(50)
       .describe('Maximum number of genres to return (1-100)'),
     includeInactive: z
       .boolean()
       .optional()
-      .default(false)
       .describe('Include inactive genres in results'),
   }),
   func: async ({ limit = 50, includeInactive = false }) => {
@@ -1043,7 +1024,7 @@ export const searchTracksSemanticTool = new DynamicStructuredTool({
       .string()
       .optional()
       .describe('Optional genre filter (e.g., Amapiano, Afrobeat)'),
-    limit: z.number().optional().default(10).describe('Number of results'),
+    limit: z.number().optional().describe('Number of results'),
   }),
   func: async ({ query, genre, limit = 10 }) => {
     try {

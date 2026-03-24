@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
 import { getToolBySlug, getAllTools } from '@/lib/tools/registry';
 import { ToolRenderer } from '@/components/tools/ToolRenderer';
 import LearnHeader from '@/components/layout/LearnHeader';
+import PublicFooter from '@/components/layout/PublicFooter';
 import { getLinksTo } from '@/lib/services/graph-service';
 import { prisma } from '@/lib/db';
 import { absoluteUrl, SITE_URL } from '@/lib/utils/site-url';
@@ -285,36 +285,7 @@ export default async function ToolPage({ params }: ToolPageProps) {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className='border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 mt-10'>
-        <div className='max-w-3xl mx-auto px-6 py-8'>
-          <div className='flex flex-col sm:flex-row items-center justify-between gap-4'>
-            <Link href='/'>
-              <Image
-                src='/main_logo.png'
-                alt='Flemoji'
-                width={120}
-                height={32}
-                className='h-8 w-auto dark:brightness-0 dark:invert'
-              />
-            </Link>
-            <div className='flex items-center gap-4 text-xs text-gray-400 dark:text-gray-500'>
-              <Link
-                href='/learn'
-                className='hover:text-purple-600 dark:hover:text-purple-400 transition-colors'
-              >
-                Learn
-              </Link>
-              <Link
-                href='/tools'
-                className='hover:text-purple-600 dark:hover:text-purple-400 transition-colors'
-              >
-                Tools
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

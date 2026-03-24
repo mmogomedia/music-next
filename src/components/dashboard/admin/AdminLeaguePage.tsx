@@ -8,6 +8,7 @@ import LeagueTierManagement from './LeagueTierManagement';
 export default function AdminLeaguePage() {
   const { stats } = useAdminDashboardStats();
   const systemHealth = stats?.systemMetrics?.platformHealth || 'healthy';
+  const systemHealthReasons = stats?.systemMetrics?.platformHealthReasons;
 
   const header = (
     <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
@@ -30,9 +31,8 @@ export default function AdminLeaguePage() {
     <UnifiedLayout
       sidebar={
         <AdminNavigation
-          activeTab='league'
-          onTabChange={() => {}}
           systemHealth={systemHealth}
+          systemHealthReasons={systemHealthReasons}
         />
       }
       header={header}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { Input, Button } from '@heroui/react';
+import { toAbsoluteUrl } from '@/lib/url-utils';
 import {
   MagnifyingGlassIcon,
   UserIcon,
@@ -200,9 +201,9 @@ export default function ClaimProfileStep({
                       <div className='p-4'>
                         <div className='flex items-start gap-3'>
                           {/* Profile Image */}
-                          {profile.profileImage ? (
+                          {toAbsoluteUrl(profile.profileImage) ? (
                             <Image
-                              src={profile.profileImage}
+                              src={toAbsoluteUrl(profile.profileImage)!}
                               alt={profile.name}
                               width={48}
                               height={48}

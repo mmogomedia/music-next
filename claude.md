@@ -641,6 +641,33 @@ yarn test:coverage
 
 ## Styling & UI
 
+> **⚠️ REQUIRED: Read [`docs/design-system.md`](./docs/design-system.md) before doing any UI work.**
+> It is the single source of truth for all colors, components, and design decisions.
+> **Always update `docs/design-system.md` when any UI/UX decision changes.**
+
+### Design System Summary
+
+Flemoji uses a **purple-first design system** with a thin HeroUI wrapper library in `src/components/ui/`.
+
+**Key rules:**
+
+- Import UI primitives from `@/components/ui` — never use raw HeroUI `Button`, `Card`, `Input` in Dashboard/Artist pages
+- Primary color is **purple** (`#9333ea`) — never use blue, orange, or teal as accent colors
+- Use `FButton`, `FCard`, `FBadge`, `FStat`, `FEmptyState`, `FPageHeader`, `FSection` etc. for all new UI
+- Icon backgrounds: always `bg-purple-600`
+- `disabled` prop → always `isDisabled` on HeroUI/F-wrapper components
+
+**Permitted accent colors** (beyond purple):
+| Color | Use |
+|-------|-----|
+| Indigo | Tracks, content counts |
+| Violet | Downloads, download icons |
+| Emerald | Plays, growth, online status, positive trends |
+| Rose | Likes, hearts, errors, negative trends |
+| Amber | Rank #1 gold badge only |
+
+See `docs/design-system.md` for the full component API reference, color rules, and revamp scope.
+
 ### TailwindCSS Usage
 
 **Use utility classes:**
@@ -659,7 +686,7 @@ import clsx from 'clsx';
 <button
   className={clsx(
     'px-4 py-2 rounded-lg transition-colors',
-    isActive ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700',
+    isActive ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700',
     disabled && 'opacity-50 cursor-not-allowed'
   )}
 >
@@ -667,15 +694,15 @@ import clsx from 'clsx';
 </button>
 ```
 
-**Use HeroUI components:**
+**Use Flemoji UI wrappers (not raw HeroUI) in Dashboard/Artist pages:**
 
 ```typescript
-import { Button, Card, Input } from '@heroui/react';
+import { FButton, FCard, FInput } from '@/components/ui';
 
-<Card>
-  <Input label="Email" type="email" />
-  <Button color="primary">Submit</Button>
-</Card>
+<FCard variant='default' padding='md'>
+  <FInput label="Email" type="email" />
+  <FButton variant='primary'>Submit</FButton>
+</FCard>
 ```
 
 ### Responsive Design

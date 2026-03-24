@@ -4,11 +4,13 @@ import { useMemo } from 'react';
 import { Avatar } from '@heroui/react';
 import { MusicalNoteIcon } from '@heroicons/react/24/outline';
 import { Track } from '@/types/track';
+import { toAbsoluteUrl } from '@/lib/url-utils';
 
 export interface ArtistDisplayData {
   id: string;
   name: string;
   profileImage?: string | null;
+  profileImageUrl?: string | null;
   isUnclaimed?: boolean;
 }
 
@@ -35,6 +37,7 @@ export function extractArtistsFromTrack(track: Track): {
       id: a.id,
       name: a.artistName || a.name,
       profileImage: a.profileImage,
+      profileImageUrl: a.profileImageUrl,
       isUnclaimed: a.isUnclaimed,
     })) || [];
 
@@ -43,6 +46,7 @@ export function extractArtistsFromTrack(track: Track): {
       id: a.id,
       name: a.artistName || a.name,
       profileImage: a.profileImage,
+      profileImageUrl: a.profileImageUrl,
       isUnclaimed: a.isUnclaimed,
     })) || [];
 
@@ -101,7 +105,10 @@ export default function ArtistDisplay({
           {artistData.primaryArtists.slice(0, 3).map(artist => (
             <Avatar
               key={artist.id}
-              src={artist.profileImage || undefined}
+              src={
+                toAbsoluteUrl(artist.profileImageUrl, artist.profileImage) ??
+                undefined
+              }
               size='sm'
               fallback={<MusicalNoteIcon className='w-4 h-4 text-gray-400' />}
               className='border-2 border-white dark:border-slate-800'
