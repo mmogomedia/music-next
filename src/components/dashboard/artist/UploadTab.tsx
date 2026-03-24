@@ -67,7 +67,11 @@ export default function UploadTab({
       </div>
 
       {/* Upload card — mirrors the tracks FCard in LibraryTab */}
-      <FCard padding='none' title='Upload a Track'>
+      <FCard
+        padding='none'
+        title='Upload a Track'
+        titleIcon={<CloudArrowUpIcon className='w-4 h-4' />}
+      >
         <div className='p-5 sm:p-6'>
           <FileUpload
             onUploadComplete={onUploadComplete}

@@ -80,23 +80,28 @@ function checkActive(
 function NavItem({
   item,
   isActive,
+  isPending,
   isCollapsed,
   scrollFalse,
   onClick,
 }: {
   item: FSideNavItem;
   isActive: boolean;
+  isPending: boolean;
   isCollapsed: boolean;
   scrollFalse: boolean;
-  onClick?: () => void;
+  onClick?: (_href: string) => void;
 }) {
-  const Icon = isActive ? (item.activeIcon ?? item.icon) : item.icon;
+  const highlighted = isActive || isPending;
+  const Icon = highlighted ? (item.activeIcon ?? item.icon) : item.icon;
 
   return (
     <Link
       href={item.disabled ? '#' : item.href}
       scroll={scrollFalse ? false : undefined}
-      onClick={item.disabled ? e => e.preventDefault() : onClick}
+      onClick={
+        item.disabled ? e => e.preventDefault() : () => onClick?.(item.href)
+      }
       aria-current={isActive ? 'page' : undefined}
       title={isCollapsed ? item.label : undefined}
       className={`w-full flex items-center gap-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
@@ -104,12 +109,18 @@ function NavItem({
       } ${
         item.disabled
           ? 'opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600'
-          : isActive
+          : highlighted
             ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200'
       }`}
     >
-      <Icon className='w-[18px] h-[18px] flex-shrink-0' />
+      {isPending && !isActive ? (
+        <span className='w-[18px] h-[18px] flex-shrink-0 flex items-center justify-center'>
+          <span className='w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin' />
+        </span>
+      ) : (
+        <Icon className='w-[18px] h-[18px] flex-shrink-0' />
+      )}
       {!isCollapsed && (
         <>
           <span className='flex-1'>{item.label}</span>
@@ -138,6 +149,7 @@ function NavGroup({
   mode,
   activeTab,
   pathname,
+  pendingHref,
   isCollapsed,
   scrollFalse,
   onItemClick,
@@ -146,9 +158,10 @@ function NavGroup({
   mode: 'tab' | 'href';
   activeTab: string | undefined;
   pathname: string;
+  pendingHref: string | null;
   isCollapsed: boolean;
   scrollFalse: boolean;
-  onItemClick?: () => void;
+  onItemClick?: (_href: string) => void;
 }) {
   return (
     <div>
@@ -165,6 +178,10 @@ function NavGroup({
             key={item.id}
             item={item}
             isActive={checkActive(item, mode, activeTab, pathname)}
+            isPending={
+              pendingHref === item.href &&
+              !checkActive(item, mode, activeTab, pathname)
+            }
             isCollapsed={isCollapsed}
             scrollFalse={scrollFalse}
             onClick={onItemClick}
@@ -182,6 +199,7 @@ function SidebarBody({
   mode,
   activeTab,
   pathname,
+  pendingHref,
   isCollapsed,
   scrollFalse,
   footer,
@@ -192,11 +210,12 @@ function SidebarBody({
   mode: 'tab' | 'href';
   activeTab: string | undefined;
   pathname: string;
+  pendingHref: string | null;
   isCollapsed: boolean;
   scrollFalse: boolean;
   footer?: ReactNode;
   ariaLabel?: string;
-  onItemClick?: () => void;
+  onItemClick?: (_href: string) => void;
 }) {
   return (
     <>
@@ -213,6 +232,7 @@ function SidebarBody({
             mode={mode}
             activeTab={activeTab}
             pathname={pathname}
+            pendingHref={pendingHref}
             isCollapsed={isCollapsed}
             scrollFalse={scrollFalse}
             onItemClick={onItemClick}
@@ -245,6 +265,7 @@ export default function FSideNav({
   const [isMobile, setIsMobile] = useState<boolean | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
   // Determine mobile/desktop
   useEffect(() => {
@@ -264,6 +285,11 @@ export default function FSideNav({
       // ignore storage errors
     }
   }, [storageKey]);
+
+  // Clear pending state once the navigation resolves
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
 
   // Close drawer on Escape
   useEffect(() => {
@@ -290,6 +316,11 @@ export default function FSideNav({
   };
 
   const closeDrawer = () => setIsOpen(false);
+
+  const handleNavClick = (href: string) => {
+    setPendingHref(href);
+    closeDrawer();
+  };
 
   // Prevent hydration mismatch
   if (isMobile === null) return null;
@@ -351,10 +382,12 @@ export default function FSideNav({
           mode={mode}
           activeTab={activeTab}
           pathname={pathname}
+          pendingHref={pendingHref}
           isCollapsed={isCollapsed}
           scrollFalse={scrollFalse}
           footer={footer}
           ariaLabel={ariaLabel}
+          onItemClick={handleNavClick}
         />
       </aside>
     );
@@ -428,11 +461,12 @@ export default function FSideNav({
           mode={mode}
           activeTab={activeTab}
           pathname={pathname}
+          pendingHref={pendingHref}
           isCollapsed={false}
           scrollFalse={scrollFalse}
           footer={footer}
           ariaLabel={ariaLabel}
-          onItemClick={closeDrawer}
+          onItemClick={handleNavClick}
         />
       </div>
     </>

@@ -22,6 +22,7 @@ interface AdminDashboardStats {
     totalPageViews?: number;
     totalRevenue: number;
     platformHealth: 'healthy' | 'warning' | 'critical';
+    platformHealthReasons: string[];
   };
   recentActivity: {
     plays: AdminActivityItem[];

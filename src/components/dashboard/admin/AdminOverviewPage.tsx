@@ -99,6 +99,7 @@ export default function AdminOverviewPage() {
     totalPageViews: 0,
     totalRevenue: 0,
     platformHealth: 'healthy' as HealthStatus,
+    platformHealthReasons: [] as string[],
   };
 
   const pendingActions = stats?.pendingActions ?? [];
@@ -155,9 +156,9 @@ export default function AdminOverviewPage() {
   const totalSubmissions = stats?.totalSubmissions ?? 0;
   const reviewedCount = Math.max(0, totalSubmissions - pendingCount);
 
-  // Content health: high/medium priority pending actions as flags
+  // Content health: high/medium priority pending actions with a real count
   const healthFlags = pendingActions.filter(
-    a => a.priority === 'high' || a.priority === 'medium'
+    a => (a.priority === 'high' || a.priority === 'medium') && a.count > 0
   );
 
   // ── Page header ───────────────────────────────────────────────────────
@@ -193,7 +194,7 @@ export default function AdminOverviewPage() {
             onClick={() =>
               router.push('/admin/dashboard/timeline-posts/create')
             }
-            className='flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors'
+            className='flex items-center gap-1.5 px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium text-sm transition-colors'
           >
             <PlusIcon className='w-3.5 h-3.5' />
             <span className='hidden sm:inline'>New Post</span>
@@ -205,7 +206,12 @@ export default function AdminOverviewPage() {
 
   return (
     <UnifiedLayout
-      sidebar={<AdminNavigation systemHealth={systemMetrics.platformHealth} />}
+      sidebar={
+        <AdminNavigation
+          systemHealth={systemMetrics.platformHealth}
+          systemHealthReasons={systemMetrics.platformHealthReasons}
+        />
+      }
       header={header}
     >
       <div className='min-h-full bg-gray-50 dark:bg-slate-950/50 p-4 sm:p-5 space-y-4'>
@@ -302,7 +308,7 @@ export default function AdminOverviewPage() {
 
           {/* Top tracks */}
           <FCard
-            title='Top Tracks This Week'
+            title='Most Played (Recent)'
             action={
               <Link
                 href='/admin/dashboard/analytics'
@@ -326,7 +332,7 @@ export default function AdminOverviewPage() {
                     className='flex items-center gap-3 py-2.5 first:pt-0 last:pb-0'
                   >
                     <span
-                      className={`text-xs font-bold w-4 flex-shrink-0 tabular-nums ${i === 0 ? 'text-primary-500 dark:text-primary-400' : 'text-gray-300 dark:text-gray-600'}`}
+                      className={`text-xs font-bold w-4 flex-shrink-0 tabular-nums ${i === 0 ? 'text-amber-500 dark:text-amber-400' : 'text-gray-300 dark:text-gray-600'}`}
                     >
                       {i + 1}
                     </span>
@@ -352,7 +358,7 @@ export default function AdminOverviewPage() {
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
           {/* New users / activity sparkline */}
           <FCard
-            title='New Users'
+            title='Platform Activity'
             action={
               <Link
                 href='/admin/dashboard/users'
@@ -386,7 +392,7 @@ export default function AdminOverviewPage() {
                       return (
                         <div
                           key={i}
-                          className={`flex-1 rounded-sm ${isMax ? 'bg-blue-500 dark:bg-blue-400' : 'bg-blue-200 dark:bg-blue-900/60'}`}
+                          className={`flex-1 rounded-sm ${isMax ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-emerald-200 dark:bg-emerald-900/60'}`}
                           style={{ height: `${heightPx}px` }}
                         />
                       );
@@ -419,7 +425,7 @@ export default function AdminOverviewPage() {
                   </div>
                   <div className='h-1.5 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden'>
                     <div
-                      className='h-full bg-blue-500 dark:bg-blue-400 rounded-full transition-all'
+                      className='h-full bg-indigo-500 dark:bg-indigo-400 rounded-full transition-all'
                       style={{
                         width: `${
                           systemMetrics.totalUsers > 0

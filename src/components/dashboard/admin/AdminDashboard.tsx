@@ -59,6 +59,7 @@ export default function AdminDashboard() {
     totalPageViews: 0,
     totalRevenue: 0,
     platformHealth: 'healthy' as 'healthy' | 'warning' | 'critical',
+    platformHealthReasons: [] as string[],
   };
 
   const pendingActions = stats?.pendingActions || [];
@@ -112,7 +113,12 @@ export default function AdminDashboard() {
 
   return (
     <UnifiedLayout
-      sidebar={<AdminNavigation systemHealth={systemMetrics.platformHealth} />}
+      sidebar={
+        <AdminNavigation
+          systemHealth={systemMetrics.platformHealth}
+          systemHealthReasons={systemMetrics.platformHealthReasons}
+        />
+      }
       header={header}
     >
       <div className='w-full py-8 px-4 sm:px-6'>

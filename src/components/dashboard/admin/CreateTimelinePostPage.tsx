@@ -71,6 +71,7 @@ export default function CreateTimelinePostPage() {
   const searchParams = useSearchParams();
   const { stats } = useAdminDashboardStats();
   const systemHealth = stats?.systemMetrics?.platformHealth || 'healthy';
+  const systemHealthReasons = stats?.systemMetrics?.platformHealthReasons;
 
   const postTypeParam = searchParams.get('type') as PostType | null;
   const [selectedPostType, setSelectedPostType] = useState<PostType | null>(
@@ -111,7 +112,12 @@ export default function CreateTimelinePostPage() {
 
   return (
     <UnifiedLayout
-      sidebar={<AdminNavigation systemHealth={systemHealth} />}
+      sidebar={
+        <AdminNavigation
+          systemHealth={systemHealth}
+          systemHealthReasons={systemHealthReasons}
+        />
+      }
       header={header}
     >
       <div className='w-full py-4 px-4 sm:px-6'>

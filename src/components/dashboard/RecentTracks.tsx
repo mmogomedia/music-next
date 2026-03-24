@@ -37,6 +37,7 @@ export default function RecentTracks({
   return (
     <FCard
       title='Recent Uploads'
+      titleIcon={<MusicalNoteIcon className='w-4 h-4' />}
       action={
         <FButton size='sm' variant='ghost' onPress={onViewAll}>
           View All

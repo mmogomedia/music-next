@@ -67,7 +67,7 @@ export default function TopPerformingTracks({
       <div className='space-y-3'>
         {(() => {
           const maxPlays = topTracks[0]?._count?.id ?? 1;
-          return topTracks.map((item, index) => {
+          return topTracks.slice(0, 2).map((item, index) => {
             if (!item.track) return null;
 
             const rank = index + 1;

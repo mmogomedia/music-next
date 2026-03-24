@@ -12,6 +12,7 @@ import {
   DropdownItem,
   Button,
   Avatar,
+  Tooltip,
 } from '@heroui/react';
 import {
   EllipsisVerticalIcon,
@@ -23,12 +24,14 @@ import SignInModal from '@/components/auth/SignInModal';
 interface UserDetailsFooterProps {
   showSystemHealth?: boolean;
   systemHealth?: 'healthy' | 'warning' | 'critical';
+  systemHealthReasons?: string[];
   onMobileMenuClose?: () => void;
 }
 
 export default function UserDetailsFooter({
   showSystemHealth = false,
   systemHealth = 'healthy',
+  systemHealthReasons,
   onMobileMenuClose,
 }: UserDetailsFooterProps) {
   const { data: session, status } = useSession();
@@ -54,13 +57,38 @@ export default function UserDetailsFooter({
     <div className='space-y-3'>
       {/* System Health Status - Only shown if enabled */}
       {showSystemHealth && (
-        <div
-          className={`px-3 py-2 rounded-lg text-xs font-medium text-center ${getHealthColor(systemHealth)}`}
+        <Tooltip
+          content={
+            <div className='max-w-[200px] space-y-1 py-0.5'>
+              <p className='text-xs font-semibold capitalize'>
+                {systemHealth === 'healthy'
+                  ? 'All systems normal'
+                  : systemHealth === 'warning'
+                    ? 'Attention needed'
+                    : 'Action required'}
+              </p>
+              {systemHealthReasons && systemHealthReasons.length > 0 && (
+                <ul className='space-y-0.5'>
+                  {systemHealthReasons.map((reason, i) => (
+                    <li key={i} className='text-[11px] opacity-80 leading-snug'>
+                      · {reason}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          }
+          placement='top'
+          delay={300}
         >
-          {systemHealth === 'healthy' && 'System Healthy'}
-          {systemHealth === 'warning' && 'System Warning'}
-          {systemHealth === 'critical' && 'System Critical'}
-        </div>
+          <div
+            className={`px-3 py-2 rounded-lg text-xs font-medium text-center cursor-default ${getHealthColor(systemHealth)}`}
+          >
+            {systemHealth === 'healthy' && 'System Healthy'}
+            {systemHealth === 'warning' && 'System Warning'}
+            {systemHealth === 'critical' && 'System Critical'}
+          </div>
+        </Tooltip>
       )}
 
       {/* Auth Status */}

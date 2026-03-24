@@ -164,6 +164,7 @@ export default function PlaylistSubmissionsTab({
       <FCard
         padding='none'
         title='Playlist Submissions'
+        titleIcon={<QueueListIcon className='w-4 h-4' />}
         action={
           <FButton
             variant='primary'

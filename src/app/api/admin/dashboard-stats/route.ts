@@ -139,23 +139,50 @@ export async function GET(_request: NextRequest) {
       }),
     ]);
 
-    // Calculate platform health based on recent activity
+    // Calculate platform health from multiple signals
     const last24Hours = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const recentActivity = await prisma.user.count({
-      where: {
-        createdAt: {
-          gte: last24Hours,
-        },
-      },
-    });
+
+    const [recentPlays24h, recentSignups24h, pendingSubmissions] =
+      await Promise.all([
+        prisma.playEvent.count({ where: { timestamp: { gte: last24Hours } } }),
+        prisma.user.count({ where: { createdAt: { gte: last24Hours } } }),
+        prisma.playlistSubmission.count({ where: { status: 'PENDING' } }),
+      ]);
+
+    const criticalReasons: string[] = [];
+    const warningReasons: string[] = [];
+
+    // 1. Submission backlog — admins need to act
+    if (pendingSubmissions > 25) {
+      criticalReasons.push(`${pendingSubmissions} submissions pending review`);
+    } else if (pendingSubmissions > 10) {
+      warningReasons.push(`${pendingSubmissions} submissions pending review`);
+    }
+
+    // 2. Engagement — no plays in 24h on a live platform
+    if (totalUsers > 20 && recentPlays24h === 0) {
+      criticalReasons.push('No plays recorded in the last 24 hours');
+    } else if (totalUsers > 5 && recentPlays24h < 3) {
+      warningReasons.push(
+        `Only ${recentPlays24h} play${recentPlays24h === 1 ? '' : 's'} in the last 24 hours`
+      );
+    }
+
+    // 3. Growth — no new signups in 24h on a platform with an existing audience
+    if (totalUsers > 50 && recentSignups24h === 0) {
+      warningReasons.push('No new signups in the last 24 hours');
+    }
 
     let platformHealth: 'healthy' | 'warning' | 'critical' = 'healthy';
-    if (recentActivity < 1) {
-      platformHealth = 'warning';
-    }
-    if (recentActivity < 0) {
-      platformHealth = 'critical';
-    }
+    if (criticalReasons.length > 0) platformHealth = 'critical';
+    else if (warningReasons.length > 0) platformHealth = 'warning';
+
+    const platformHealthReasons =
+      platformHealth === 'critical'
+        ? criticalReasons
+        : platformHealth === 'warning'
+          ? warningReasons
+          : ['All systems operating normally'];
 
     const recentActivityStructured = {
       plays: recentPlayEvents
@@ -259,17 +286,13 @@ export async function GET(_request: NextRequest) {
       ),
     ].slice(0, 20);
 
-    // Calculate pending actions
-    const pendingSubmissions = await prisma.playlistSubmission.count({
-      where: { status: 'PENDING' },
-    });
-
+    // Calculate pending actions — only include items with real counts
     const pendingActions = [
-      {
+      pendingSubmissions > 0 && {
         id: '1',
         type: 'submission_review',
         title: 'Submission Review',
-        description: `${pendingSubmissions} tracks pending review`,
+        description: `${pendingSubmissions} track${pendingSubmissions === 1 ? '' : 's'} pending review`,
         priority:
           pendingSubmissions > 10
             ? 'high'
@@ -278,23 +301,14 @@ export async function GET(_request: NextRequest) {
               : 'low',
         count: pendingSubmissions,
       },
-      {
-        id: '2',
-        type: 'content_review',
-        title: 'Content Review',
-        description: 'Review uploaded content',
-        priority: 'medium',
-        count: 0,
-      },
-      {
-        id: '3',
-        type: 'user_management',
-        title: 'User Management',
-        description: 'Manage user accounts',
-        priority: 'low',
-        count: 0,
-      },
-    ];
+    ].filter(Boolean) as Array<{
+      id: string;
+      type: string;
+      title: string;
+      description: string;
+      priority: 'high' | 'medium' | 'low';
+      count: number;
+    }>;
 
     const totalPageViews = quickLinks._sum.totalVisits ?? 0;
 
@@ -307,6 +321,7 @@ export async function GET(_request: NextRequest) {
       totalPageViews,
       totalRevenue: 0, // TODO: Implement revenue tracking
       platformHealth,
+      platformHealthReasons,
     };
 
     return NextResponse.json({

@@ -8,7 +8,6 @@ import {
   ClockIcon,
   TagIcon,
   SparklesIcon,
-  TrophyIcon,
   DocumentTextIcon,
   BoltIcon,
   AdjustmentsHorizontalIcon,
@@ -21,7 +20,6 @@ import {
   ClockIcon as ClockSolidIcon,
   Cog6ToothIcon as Cog6ToothSolidIcon,
   SparklesIcon as SparklesSolidIcon,
-  TrophyIcon as TrophySolidIcon,
   DocumentTextIcon as DocumentTextSolidIcon,
   BoltIcon as BoltSolidIcon,
   AdjustmentsHorizontalIcon as AdjustmentsHorizontalSolidIcon,
@@ -31,6 +29,7 @@ import FSideNav, { FSideNavGroup } from '@/components/ui/FSideNav';
 
 interface AdminNavigationProps {
   systemHealth: 'healthy' | 'warning' | 'critical';
+  systemHealthReasons?: string[];
 }
 
 const GROUPS: FSideNavGroup[] = [
@@ -98,13 +97,6 @@ const GROUPS: FSideNavGroup[] = [
         icon: ClockIcon,
         activeIcon: ClockSolidIcon,
       },
-      {
-        id: 'league',
-        label: 'League',
-        href: '/admin/dashboard/league',
-        icon: TrophyIcon,
-        activeIcon: TrophySolidIcon,
-      },
     ],
   },
   {
@@ -150,6 +142,7 @@ const GROUPS: FSideNavGroup[] = [
 
 export default function AdminNavigation({
   systemHealth,
+  systemHealthReasons,
 }: AdminNavigationProps) {
   return (
     <FSideNav
@@ -162,6 +155,7 @@ export default function AdminNavigation({
         <UserDetailsFooter
           showSystemHealth={true}
           systemHealth={systemHealth}
+          systemHealthReasons={systemHealthReasons}
         />
       }
     />

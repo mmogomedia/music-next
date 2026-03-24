@@ -76,7 +76,11 @@ export default function ToolsTab() {
       </div>
 
       {/* Tools grid — mirrors the tracks FCard in LibraryTab */}
-      <FCard padding='none' title='Artist Tools'>
+      <FCard
+        padding='none'
+        title='Artist Tools'
+        titleIcon={<WrenchScrewdriverIcon className='w-4 h-4' />}
+      >
         <div className='p-5 sm:p-6'>
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
             {/* Public tools from registry — link to /tools/[slug] */}

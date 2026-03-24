@@ -172,6 +172,7 @@ export default function LibraryTab({
       <FCard
         padding='none'
         title='My Tracks'
+        titleIcon={<MusicalNoteIcon className='w-4 h-4' />}
         action={
           <FButton
             variant='primary'
