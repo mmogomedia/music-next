@@ -17,13 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user is admin
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { role: true },
-    });
-
-    if (user?.role !== 'ADMIN') {
+    if (session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -31,7 +25,9 @@ export async function GET(request: NextRequest) {
     const searchQuery = searchParams.get('searchQuery') || undefined;
     const status = searchParams.get('status') || undefined;
     const postType = searchParams.get('postType') || undefined;
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
+    const page = Math.max(parseInt(searchParams.get('page') || '1', 10), 1);
+    const skip = (page - 1) * limit;
 
     // Build where clause
     const where: any = {};
@@ -67,26 +63,33 @@ export async function GET(request: NextRequest) {
     }
 
     // Order by publishedAt (latest first), fallback to createdAt
-    const posts = await prisma.timelinePost.findMany({
-      where,
-      take: Math.min(limit, 100),
-      orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
+    const [posts, total] = await prisma.$transaction([
+      prisma.timelinePost.findMany({
+        where,
+        take: limit,
+        skip,
+        orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+        include: {
+          author: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+            },
           },
         },
-      },
-    });
+      }),
+      prisma.timelinePost.count({ where }),
+    ]);
 
     return NextResponse.json({
       success: true,
       posts,
-      total: posts.length,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error('Error fetching timeline posts:', error);

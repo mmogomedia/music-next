@@ -1,22 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Button,
-  Card,
-  CardBody,
-  Chip,
-  Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  Select,
-  SelectItem,
-  Switch,
-  Textarea,
-} from '@heroui/react';
+import { Switch, SelectItem } from '@heroui/react';
 import {
   BoltIcon,
   CheckCircleIcon,
@@ -24,15 +9,32 @@ import {
   EyeIcon,
   LinkIcon,
   PencilSquareIcon,
+  PlayIcon,
   PlusIcon,
   PowerIcon,
   TagIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import { useToast } from '@/components/ui/Toast';
+import {
+  FCard,
+  FButton,
+  FChip,
+  FEmptyState,
+  FStat,
+  FInput,
+  FTextarea,
+  FSelect,
+  FModal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  FSpinner,
+} from '@/components/ui';
+import ArtistDisplay from '@/components/track/ArtistDisplay';
 import type { Track } from '@/types/track';
 import type { ArtistProfile } from '@/types/artist-profile';
-import ArtistDisplay from '@/components/track/ArtistDisplay';
 
 const QUICK_LINK_TYPE_LABELS: Record<QuickLinkTypeValue, string> = {
   TRACK: 'Track',
@@ -119,6 +121,13 @@ const slugify = (value: string) =>
     .replace(/^-|-$/g, '')
     .slice(0, 90);
 
+function formatCount(n?: number): string {
+  if (!n) return '0';
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString();
+}
+
 export default function QuickLinksManager({
   tracks,
   profile,
@@ -126,7 +135,6 @@ export default function QuickLinksManager({
   const { showToast } = useToast();
   const [quickLinks, setQuickLinks] = useState<QuickLinkResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isTitleDirty, setIsTitleDirty] = useState(false);
@@ -173,7 +181,6 @@ export default function QuickLinksManager({
   useEffect(() => {
     const fetchQuickLinks = async () => {
       setLoading(true);
-      setError(null);
       try {
         const res = await fetch('/api/dashboard/quick-links');
         if (!res.ok) {
@@ -183,9 +190,9 @@ export default function QuickLinksManager({
         const body = await res.json();
         setQuickLinks(body.data || []);
       } catch (err) {
-        console.error(err);
-        setError(
-          err instanceof Error ? err.message : 'Failed to load quick links'
+        showToast(
+          err instanceof Error ? err.message : 'Failed to load quick links',
+          'error'
         );
       } finally {
         setLoading(false);
@@ -193,7 +200,7 @@ export default function QuickLinksManager({
     };
 
     fetchQuickLinks();
-  }, []);
+  }, [showToast]);
 
   const resetForm = (type: QuickLinkTypeValue = 'TRACK') => {
     setEditingId(null);
@@ -298,8 +305,10 @@ export default function QuickLinksManager({
       const body = await res.json();
       setQuickLinks(body.data || []);
     } catch (err) {
-      console.error(err);
-      showToast('Failed to refresh quick links', 'error');
+      showToast(
+        err instanceof Error ? err.message : 'Failed to refresh quick links',
+        'error'
+      );
     }
   };
 
@@ -379,7 +388,6 @@ export default function QuickLinksManager({
       setIsModalOpen(false);
       await refreshQuickLinks();
     } catch (err) {
-      console.error(err);
       showToast(
         err instanceof Error ? err.message : 'Failed to save quick link',
         'error'
@@ -408,7 +416,6 @@ export default function QuickLinksManager({
         'info'
       );
     } catch (err) {
-      console.error(err);
       showToast(
         err instanceof Error ? err.message : 'Failed to update link status',
         'error'
@@ -434,7 +441,6 @@ export default function QuickLinksManager({
       await refreshQuickLinks();
       showToast('Quick link deleted');
     } catch (err) {
-      console.error(err);
       showToast(
         err instanceof Error ? err.message : 'Failed to delete link',
         'error'
@@ -448,8 +454,10 @@ export default function QuickLinksManager({
       await navigator.clipboard.writeText(url);
       showToast('Link copied to clipboard', 'info');
     } catch (err) {
-      console.error(err);
-      showToast('Failed to copy link', 'error');
+      showToast(
+        err instanceof Error ? err.message : 'Failed to copy link',
+        'error'
+      );
     }
   };
 
@@ -481,235 +489,236 @@ export default function QuickLinksManager({
     return `${link.albumArtist?.artistName ?? profile?.artistName ?? 'Artist'} – ${link.albumName ?? ''}`.trim();
   };
 
+  const totalVisits = quickLinks.reduce((s, l) => s + l.totalVisits, 0);
+  const totalPlays = quickLinks.reduce((s, l) => s + l.playCount, 0);
+  const activeCount = quickLinks.filter(l => l.isActive).length;
+
   return (
-    <Card>
-      <CardBody className='p-6 space-y-6'>
-        <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4'>
-          <div>
-            <h3 className='text-2xl font-bold text-gray-900 dark:text-white'>
-              Quick Links
-            </h3>
-            <p className='text-gray-500 dark:text-gray-400 max-w-2xl'>
-              Generate shareable URLs that deep-link fans directly to your
-              tracks, profile, or albums. Track visits and engagement for every
-              link.
-            </p>
-          </div>
-          <div className='flex flex-wrap gap-2'>
-            <Button
-              color='primary'
-              startContent={<PlusIcon className='w-4 h-4' />}
-              onPress={() => openCreateModal('TRACK')}
-            >
-              Create Quick Link
-            </Button>
-          </div>
-        </div>
+    <div className='space-y-4'>
+      {/* Stats row */}
+      <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+        <FCard padding='sm'>
+          <FStat
+            label='Total Links'
+            value={quickLinks.length}
+            icon={LinkIcon}
+            color='purple'
+          />
+        </FCard>
+        <FCard padding='sm'>
+          <FStat
+            label='Active Links'
+            value={activeCount}
+            icon={CheckCircleIcon}
+            color='emerald'
+          />
+        </FCard>
+        <FCard padding='sm'>
+          <FStat
+            label='Total Visits'
+            value={formatCount(totalVisits)}
+            icon={EyeIcon}
+            color='blue'
+          />
+        </FCard>
+        <FCard padding='sm'>
+          <FStat
+            label='Total Plays'
+            value={formatCount(totalPlays)}
+            icon={PlayIcon}
+            color='amber'
+          />
+        </FCard>
+      </div>
 
-        {error && (
-          <div className='p-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 text-sm'>
-            {error}
-          </div>
-        )}
-
+      {/* Main card */}
+      <FCard
+        padding='none'
+        title='Quick Links'
+        action={
+          <FButton
+            variant='primary'
+            size='sm'
+            startContent={<PlusIcon className='w-4 h-4' />}
+            onPress={() => openCreateModal('TRACK')}
+          >
+            Create Link
+          </FButton>
+        }
+      >
         {loading ? (
           <div className='flex justify-center py-12'>
-            <div className='animate-spin rounded-full h-10 w-10 border-2 border-blue-500 border-t-transparent'></div>
+            <FSpinner size='lg' />
           </div>
         ) : quickLinks.length === 0 ? (
-          <div className='border border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-12 text-center bg-gray-50/50 dark:bg-slate-800/30'>
-            <div className='mx-auto mb-4 w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center'>
-              <LinkIcon className='w-8 h-8 text-blue-600 dark:text-blue-400' />
-            </div>
-            <h4 className='text-xl font-semibold text-gray-900 dark:text-white mb-2'>
-              No quick links yet
-            </h4>
-            <p className='text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto'>
-              Create your first quick link to share a track, album, or your
-              artist profile directly with listeners.
-            </p>
-            <Button
-              color='primary'
-              startContent={<PlusIcon className='w-4 h-4' />}
-              onPress={() => openCreateModal('TRACK')}
-            >
-              Create Quick Link
-            </Button>
+          <div className='px-5 py-8'>
+            <FEmptyState
+              icon={LinkIcon}
+              title='No quick links yet'
+              description='Create your first quick link to share a track, album, or your artist profile directly with listeners.'
+              action={{
+                label: 'Create Link',
+                onPress: () => openCreateModal('TRACK'),
+              }}
+            />
           </div>
         ) : (
-          <div className='overflow-x-auto'>
-            <table className='min-w-full divide-y divide-gray-200 dark:divide-slate-700'>
-              <thead className='bg-gray-50 dark:bg-slate-800/50'>
-                <tr>
-                  <th className='px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
-                    Title
-                  </th>
-                  <th className='px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
-                    Type
-                  </th>
-                  <th className='px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
-                    Target
-                  </th>
-                  <th className='px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
-                    Analytics
-                  </th>
-                  <th className='px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
-                    Status
-                  </th>
-                  <th className='px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider'>
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className='divide-y divide-gray-200 dark:divide-slate-700'>
-                {quickLinks.map(link => (
-                  <tr
-                    key={link.id}
-                    className='hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors'
+          <div className='divide-y divide-gray-50 dark:divide-slate-700/50'>
+            {quickLinks.map(link => (
+              <div
+                key={link.id}
+                className='group px-5 py-4 flex items-start gap-4 hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors'
+              >
+                {/* Left icon slot */}
+                <div className='flex-shrink-0 w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center'>
+                  <LinkIcon className='w-4 h-4 text-blue-500' />
+                </div>
+
+                {/* Main content */}
+                <div className='flex-1 min-w-0 space-y-0.5'>
+                  {/* Row 1: title + type chip + prerelease chip */}
+                  <div className='flex items-center gap-2 flex-wrap'>
+                    <span className='text-sm font-semibold text-gray-900 dark:text-white truncate'>
+                      {link.title}
+                    </span>
+                    <FChip size='xs' color='primary' variant='flat'>
+                      {QUICK_LINK_TYPE_LABELS[link.type]}
+                    </FChip>
+                    {link.isPrerelease && (
+                      <FChip size='xs' color='warning' variant='flat'>
+                        Pre-release
+                      </FChip>
+                    )}
+                  </div>
+
+                  {/* Row 2: slug + target */}
+                  <div className='flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400'>
+                    <TagIcon className='w-3 h-3 flex-shrink-0' />
+                    <span>{link.slug}</span>
+                    <span className='mx-1'>·</span>
+                    <span className='truncate'>{renderTarget(link)}</span>
+                  </div>
+
+                  {/* Row 3: stats */}
+                  <div className='flex items-center gap-3 mt-1 text-xs text-gray-400 dark:text-gray-500'>
+                    <span className='flex items-center gap-1'>
+                      <EyeIcon className='w-3 h-3' />
+                      {link.totalVisits.toLocaleString()} visits
+                    </span>
+                    <span className='flex items-center gap-1'>
+                      <PlayIcon className='w-3 h-3' />
+                      {link.playCount.toLocaleString()} plays
+                    </span>
+                    <span className='flex items-center gap-1'>
+                      <BoltIcon className='w-3 h-3' />
+                      {link.downloadCount.toLocaleString()} dl
+                    </span>
+                    <span className='flex items-center gap-1'>
+                      <BoltIcon className='w-3 h-3' />
+                      {link.shareCount.toLocaleString()} shares
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className='flex-shrink-0 flex items-center gap-1'>
+                  <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
+                    <FButton
+                      isIconOnly
+                      size='sm'
+                      variant='ghost'
+                      onPress={() =>
+                        window.open(`/quick/${link.slug}`, '_blank')
+                      }
+                      aria-label='Preview'
+                    >
+                      <EyeIcon className='w-4 h-4' />
+                    </FButton>
+                    <FButton
+                      isIconOnly
+                      size='sm'
+                      variant='ghost'
+                      onPress={() => copyLink(link.slug)}
+                      aria-label='Copy link'
+                    >
+                      <ClipboardDocumentIcon className='w-4 h-4' />
+                    </FButton>
+                    <FButton
+                      isIconOnly
+                      size='sm'
+                      variant='ghost'
+                      onPress={() => openEditModal(link)}
+                      aria-label='Edit'
+                    >
+                      <PencilSquareIcon className='w-4 h-4' />
+                    </FButton>
+                    <FButton
+                      isIconOnly
+                      size='sm'
+                      variant={link.isActive ? 'ghost' : 'primary-ghost'}
+                      onPress={() => toggleActive(link)}
+                      aria-label='Toggle status'
+                    >
+                      <PowerIcon className='w-4 h-4' />
+                    </FButton>
+                    <FButton
+                      isIconOnly
+                      size='sm'
+                      variant='danger-ghost'
+                      onPress={() => deleteLink(link)}
+                      aria-label='Delete'
+                    >
+                      <TrashIcon className='w-4 h-4' />
+                    </FButton>
+                  </div>
+                  <FChip
+                    size='xs'
+                    color={link.isActive ? 'success' : 'default'}
+                    variant='dot'
                   >
-                    <td className='px-4 py-4 align-top'>
-                      <div className='space-y-1'>
-                        <div className='text-sm font-semibold text-gray-900 dark:text-white'>
-                          {link.title}
-                        </div>
-                        <div className='text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1'>
-                          <TagIcon className='w-3 h-3' />
-                          {link.slug}
-                        </div>
-                        {link.isPrerelease && (
-                          <Chip size='sm' color='warning' variant='flat'>
-                            Pre-release
-                          </Chip>
-                        )}
-                      </div>
-                    </td>
-                    <td className='px-4 py-4 align-top'>
-                      <Chip size='sm' color='primary' variant='flat'>
-                        {QUICK_LINK_TYPE_LABELS[link.type]}
-                      </Chip>
-                    </td>
-                    <td className='px-4 py-4 align-top text-sm text-gray-700 dark:text-gray-200'>
-                      {renderTarget(link)}
-                    </td>
-                    <td className='px-4 py-4 align-top text-sm text-gray-700 dark:text-gray-200'>
-                      <div className='flex flex-wrap gap-2'>
-                        <AnalyticsBadge
-                          label='Visits'
-                          value={link.totalVisits}
-                        />
-                        <AnalyticsBadge label='Plays' value={link.playCount} />
-                        <AnalyticsBadge
-                          label='Downloads'
-                          value={link.downloadCount}
-                        />
-                        <AnalyticsBadge
-                          label='Shares'
-                          value={link.shareCount}
-                        />
-                        <AnalyticsBadge label='Likes' value={link.likeCount} />
-                      </div>
-                    </td>
-                    <td className='px-4 py-4 align-top'>
-                      <Chip
-                        size='sm'
-                        color={link.isActive ? 'success' : 'default'}
-                        variant={link.isActive ? 'flat' : 'bordered'}
-                      >
-                        {link.isActive ? 'Active' : 'Disabled'}
-                      </Chip>
-                    </td>
-                    <td className='px-4 py-4 align-top'>
-                      <div className='flex justify-end gap-2'>
-                        <Button
-                          isIconOnly
-                          size='sm'
-                          variant='light'
-                          onPress={() =>
-                            window.open(`/quick/${link.slug}`, '_blank')
-                          }
-                          aria-label='Preview'
-                        >
-                          <EyeIcon className='w-4 h-4' />
-                        </Button>
-                        <Button
-                          isIconOnly
-                          size='sm'
-                          variant='light'
-                          onPress={() => copyLink(link.slug)}
-                          aria-label='Copy link'
-                        >
-                          <ClipboardDocumentIcon className='w-4 h-4' />
-                        </Button>
-                        <Button
-                          isIconOnly
-                          size='sm'
-                          variant='light'
-                          onPress={() => openEditModal(link)}
-                          aria-label='Edit'
-                        >
-                          <PencilSquareIcon className='w-4 h-4' />
-                        </Button>
-                        <Button
-                          isIconOnly
-                          size='sm'
-                          variant='light'
-                          onPress={() => toggleActive(link)}
-                          aria-label='Toggle status'
-                        >
-                          <PowerIcon className='w-4 h-4' />
-                        </Button>
-                        <Button
-                          isIconOnly
-                          size='sm'
-                          variant='light'
-                          className='text-red-500'
-                          onPress={() => deleteLink(link)}
-                          aria-label='Delete'
-                        >
-                          <TrashIcon className='w-4 h-4' />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    {link.isActive ? 'Active' : 'Off'}
+                  </FChip>
+                </div>
+              </div>
+            ))}
           </div>
         )}
+      </FCard>
 
-        <Modal
-          isOpen={isModalOpen}
-          onOpenChange={open => {
-            if (!open) {
-              setIsModalOpen(false);
-              resetForm(formState.type);
-            }
-          }}
-          size='xl'
-          backdrop='blur'
-        >
-          <ModalContent>
-            {onClose => (
-              <>
-                <ModalHeader className='flex flex-col items-start gap-1'>
-                  <span className='text-sm uppercase text-gray-400 dark:text-gray-500'>
-                    {editingId ? 'Edit Quick Link' : 'Create Quick Link'}
-                  </span>
-                  <h3 className='text-xl font-semibold text-gray-900 dark:text-white'>
-                    {editingId
-                      ? 'Update quick link details'
-                      : 'Generate a new quick link'}
-                  </h3>
-                </ModalHeader>
-                <ModalBody className='space-y-4'>
-                  <div className='space-y-2'>
-                    <p className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                      Quick Link Type
-                    </p>
-                    <div className='grid grid-cols-3 gap-2'>
-                      {(
-                        ['TRACK', 'ARTIST', 'ALBUM'] as QuickLinkTypeValue[]
-                      ).map(option => (
+      {/* Modal */}
+      <FModal
+        isOpen={isModalOpen}
+        onOpenChange={open => {
+          if (!open) {
+            setIsModalOpen(false);
+            resetForm(formState.type);
+          }
+        }}
+        size='xl'
+        backdrop='blur'
+      >
+        <ModalContent>
+          {onClose => (
+            <>
+              <ModalHeader className='flex flex-col items-start gap-1'>
+                <span className='text-sm uppercase text-gray-400 dark:text-gray-500'>
+                  {editingId ? 'Edit Quick Link' : 'Create Quick Link'}
+                </span>
+                <h3 className='text-xl font-semibold text-gray-900 dark:text-white'>
+                  {editingId
+                    ? 'Update quick link details'
+                    : 'Generate a new quick link'}
+                </h3>
+              </ModalHeader>
+              <ModalBody className='space-y-4'>
+                {/* Type picker */}
+                <div className='space-y-2'>
+                  <p className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                    Quick Link Type
+                  </p>
+                  <div className='grid grid-cols-3 gap-2'>
+                    {(['TRACK', 'ARTIST', 'ALBUM'] as QuickLinkTypeValue[]).map(
+                      option => (
                         <button
                           key={option}
                           type='button'
@@ -736,189 +745,175 @@ export default function QuickLinksManager({
                         >
                           {QUICK_LINK_TYPE_LABELS[option]}
                         </button>
-                      ))}
-                    </div>
+                      )
+                    )}
                   </div>
+                </div>
 
-                  {formState.type === 'TRACK' && (
-                    <div className='space-y-2'>
-                      <Select
-                        label='Track'
-                        placeholder='Select a track'
-                        selectedKeys={
-                          formState.trackId ? [formState.trackId] : []
-                        }
-                        onSelectionChange={keys => {
-                          const id = Array.from(keys)[0] as string | undefined;
-                          handleFormChange('trackId', id);
-                        }}
-                      >
-                        {tracks.map(track => (
-                          <SelectItem key={track.id} textValue={track.title}>
-                            <div className='flex flex-col gap-1'>
-                              <span className='font-medium text-gray-900 dark:text-white'>
-                                {track.title}
-                              </span>
-                              <span className='text-xs text-gray-500 dark:text-gray-400'>
-                                <ArtistDisplay track={track} />
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </Select>
-                    </div>
-                  )}
-
-                  {formState.type === 'ARTIST' && (
-                    <div className='space-y-1 text-sm text-gray-600 dark:text-gray-300'>
-                      <div className='flex items-center gap-2'>
-                        <CheckCircleIcon className='w-4 h-4 text-blue-500' />
-                        {profile?.artistName || 'Artist profile'} will be used.
-                      </div>
-                      <p className='text-xs text-gray-500 dark:text-gray-400'>
-                        The quick link will open your public artist profile with
-                        social links and top songs.
-                      </p>
-                    </div>
-                  )}
-
-                  {formState.type === 'ALBUM' && (
-                    <div className='space-y-2'>
-                      <Select
-                        label='Album'
-                        placeholder='Select an album'
-                        selectedKeys={
-                          formState.albumArtistId && formState.albumName
-                            ? [
-                                `${formState.albumArtistId}::${formState.albumName.toLowerCase()}`,
-                              ]
-                            : []
-                        }
-                        onSelectionChange={keys => {
-                          const key = Array.from(keys)[0] as string | undefined;
-                          if (!key) {
-                            handleFormChange('albumArtistId', undefined);
-                            handleFormChange('albumName', undefined);
-                            return;
-                          }
-                          const option = albumOptions.find(
-                            item => item.key === key
-                          );
-                          if (option) {
-                            handleFormChange(
-                              'albumArtistId',
-                              option.albumArtistId
-                            );
-                            handleFormChange('albumName', option.albumName);
-                          }
-                        }}
-                      >
-                        {albumOptions.length === 0 ? (
-                          <SelectItem key='empty' isDisabled>
-                            No albums found. Add album metadata to your tracks
-                            first.
-                          </SelectItem>
-                        ) : (
-                          albumOptions.map(option => (
-                            <SelectItem
-                              key={option.key}
-                              textValue={option.albumName}
-                            >
-                              <div className='flex flex-col gap-1'>
-                                <span className='font-medium text-gray-900 dark:text-white'>
-                                  {option.albumName}
-                                </span>
-                                <span className='text-xs text-gray-500 dark:text-gray-400'>
-                                  {option.artistName} • {option.trackCount}{' '}
-                                  tracks
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))
-                        )}
-                      </Select>
-                    </div>
-                  )}
-
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                    <Input
-                      label='Title'
-                      placeholder='Quick link title'
-                      value={formState.title}
-                      onValueChange={value => {
-                        handleFormChange('title', value);
-                        setIsTitleDirty(true);
-                      }}
-                      isRequired
-                    />
-                    <Input
-                      label='Slug'
-                      placeholder='custom-slug'
-                      value={formState.slug}
-                      onValueChange={value => {
-                        handleFormChange('slug', slugify(value));
-                        setIsSlugDirty(true);
-                      }}
-                      description='/quick/slug'
-                    />
-                  </div>
-
-                  <Textarea
-                    label='Description (optional)'
-                    placeholder='Add a short description or call to action'
-                    value={formState.description}
-                    onValueChange={value =>
-                      handleFormChange('description', value)
-                    }
-                    minRows={2}
-                    maxRows={4}
-                  />
-
-                  <div className='flex items-center justify-between rounded-lg border border-gray-200 dark:border-slate-700 px-4 py-3'>
-                    <div className='flex flex-col'>
-                      <span className='text-sm font-medium text-gray-900 dark:text-white'>
-                        Mark as pre-release
-                      </span>
-                      <span className='text-xs text-gray-500 dark:text-gray-400'>
-                        Indicate that this link leads to upcoming content.
-                      </span>
-                    </div>
-                    <Switch
-                      isSelected={formState.isPrerelease}
-                      onValueChange={value =>
-                        handleFormChange('isPrerelease', value)
-                      }
-                      aria-label='Toggle prerelease'
-                    />
-                  </div>
-                </ModalBody>
-                <ModalFooter>
-                  <Button variant='light' onPress={() => onClose()}>
-                    Cancel
-                  </Button>
-                  <Button
-                    color='primary'
-                    isLoading={isSaving}
-                    onPress={submitForm}
+                {/* Target selector */}
+                {formState.type === 'TRACK' && (
+                  <FSelect
+                    label='Track'
+                    placeholder='Select a track'
+                    selectedKeys={formState.trackId ? [formState.trackId] : []}
+                    onSelectionChange={keys => {
+                      const id = Array.from(keys)[0] as string | undefined;
+                      handleFormChange('trackId', id);
+                    }}
                   >
-                    {editingId ? 'Save Changes' : 'Create Link'}
-                  </Button>
-                </ModalFooter>
-              </>
-            )}
-          </ModalContent>
-        </Modal>
-      </CardBody>
-    </Card>
-  );
-}
+                    {tracks.map(track => (
+                      <SelectItem key={track.id} textValue={track.title}>
+                        <div className='flex flex-col gap-1'>
+                          <span className='font-medium text-gray-900 dark:text-white'>
+                            {track.title}
+                          </span>
+                          <span className='text-xs text-gray-500 dark:text-gray-400'>
+                            <ArtistDisplay track={track} />
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </FSelect>
+                )}
 
-function AnalyticsBadge({ label, value }: { label: string; value: number }) {
-  return (
-    <div className='flex items-center gap-1 rounded-full border border-gray-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/50 px-2.5 py-1 text-xs text-gray-600 dark:text-gray-300'>
-      <BoltIcon className='w-3.5 h-3.5 text-blue-500' />
-      <span className='font-medium'>{label}:</span>
-      <span>{value.toLocaleString()}</span>
+                {formState.type === 'ARTIST' && (
+                  <div className='space-y-1 text-sm text-gray-600 dark:text-gray-300'>
+                    <div className='flex items-center gap-2'>
+                      <CheckCircleIcon className='w-4 h-4 text-blue-500' />
+                      {profile?.artistName || 'Artist profile'} will be used.
+                    </div>
+                    <p className='text-xs text-gray-500 dark:text-gray-400'>
+                      The quick link will open your public artist profile with
+                      social links and top songs.
+                    </p>
+                  </div>
+                )}
+
+                {formState.type === 'ALBUM' && (
+                  <FSelect
+                    label='Album'
+                    placeholder='Select an album'
+                    selectedKeys={
+                      formState.albumArtistId && formState.albumName
+                        ? [
+                            `${formState.albumArtistId}::${formState.albumName.toLowerCase()}`,
+                          ]
+                        : []
+                    }
+                    onSelectionChange={keys => {
+                      const key = Array.from(keys)[0] as string | undefined;
+                      if (!key) {
+                        handleFormChange('albumArtistId', undefined);
+                        handleFormChange('albumName', undefined);
+                        return;
+                      }
+                      const option = albumOptions.find(
+                        item => item.key === key
+                      );
+                      if (option) {
+                        handleFormChange('albumArtistId', option.albumArtistId);
+                        handleFormChange('albumName', option.albumName);
+                      }
+                    }}
+                  >
+                    {albumOptions.length === 0 ? (
+                      <SelectItem key='empty' isDisabled>
+                        No albums found. Add album metadata to your tracks
+                        first.
+                      </SelectItem>
+                    ) : (
+                      albumOptions.map(option => (
+                        <SelectItem
+                          key={option.key}
+                          textValue={option.albumName}
+                        >
+                          <div className='flex flex-col gap-1'>
+                            <span className='font-medium text-gray-900 dark:text-white'>
+                              {option.albumName}
+                            </span>
+                            <span className='text-xs text-gray-500 dark:text-gray-400'>
+                              {option.artistName} • {option.trackCount} tracks
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </FSelect>
+                )}
+
+                {/* Title + Slug */}
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <FInput
+                    label='Title'
+                    placeholder='Quick link title'
+                    value={formState.title}
+                    onValueChange={value => {
+                      handleFormChange('title', value);
+                      setIsTitleDirty(true);
+                    }}
+                    isRequired
+                    className='flex-1'
+                  />
+                  <FInput
+                    label='Slug'
+                    placeholder='custom-slug'
+                    value={formState.slug}
+                    onValueChange={value => {
+                      handleFormChange('slug', slugify(value));
+                      setIsSlugDirty(true);
+                    }}
+                    description='/quick/slug'
+                    className='flex-1'
+                  />
+                </div>
+
+                {/* Description */}
+                <FTextarea
+                  label='Description (optional)'
+                  placeholder='Add a short description or call to action'
+                  value={formState.description}
+                  onValueChange={value =>
+                    handleFormChange('description', value)
+                  }
+                  minRows={2}
+                  maxRows={4}
+                />
+
+                {/* Pre-release toggle */}
+                <div className='flex items-center justify-between rounded-xl border border-gray-200 dark:border-slate-700 px-4 py-3'>
+                  <div className='flex flex-col'>
+                    <span className='text-sm font-medium text-gray-900 dark:text-white'>
+                      Mark as pre-release
+                    </span>
+                    <span className='text-xs text-gray-500 dark:text-gray-400'>
+                      Indicate that this link leads to upcoming content.
+                    </span>
+                  </div>
+                  <Switch
+                    isSelected={formState.isPrerelease}
+                    onValueChange={value =>
+                      handleFormChange('isPrerelease', value)
+                    }
+                    aria-label='Toggle prerelease'
+                  />
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <FButton variant='ghost' onPress={() => onClose()}>
+                  Cancel
+                </FButton>
+                <FButton
+                  variant='primary'
+                  isLoading={isSaving}
+                  onPress={submitForm}
+                >
+                  {editingId ? 'Save Changes' : 'Create Link'}
+                </FButton>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </FModal>
     </div>
   );
 }

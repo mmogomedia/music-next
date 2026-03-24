@@ -4,9 +4,9 @@
 export const designSystem = {
   // Brand Colors - Following exact specifications from rules
   brand: {
-    primary: '#22c55e', // Green - Main brand color
-    secondary: '#eab308', // Yellow - Secondary actions
-    accent: '#0ea5e9', // Blue - Additional variety
+    primary: '#9333ea', // Purple-600 - Main brand color
+    secondary: '#2563eb', // Blue-600 - Secondary actions
+    accent: '#10b981', // Emerald-500 - Success/accent
     neutral: {
       50: '#f8fafc',
       100: '#f1f5f9',
@@ -91,8 +91,8 @@ export const designSystem = {
     lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
     xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
     '2xl': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-    glow: '0 0 20px rgba(34, 197, 94, 0.3)',
-    glowSecondary: '0 0 20px rgba(234, 179, 8, 0.3)',
+    glow: '0 0 20px rgba(147, 51, 234, 0.3)',
+    glowSecondary: '0 0 20px rgba(37, 99, 235, 0.3)',
   },
 
   // Animations - Following exact specifications from rules
@@ -157,14 +157,14 @@ export const designSystem = {
 
   // Solid Colors (No Gradients)
   colors: {
-    primary: 'bg-blue-600',
-    primaryHover: 'hover:bg-blue-700',
-    primaryLight: 'bg-blue-50',
-    primaryDark: 'dark:bg-blue-900/20',
-    primaryBorder: 'border-blue-200',
-    primaryBorderDark: 'dark:border-blue-800',
-    text: 'text-blue-600',
-    textHover: 'hover:text-blue-700',
+    primary: 'bg-purple-600',
+    primaryHover: 'hover:bg-purple-700',
+    primaryLight: 'bg-purple-50',
+    primaryDark: 'dark:bg-purple-900/20',
+    primaryBorder: 'border-purple-200',
+    primaryBorderDark: 'dark:border-purple-800',
+    text: 'text-purple-600',
+    textHover: 'hover:text-purple-700',
   },
 } as const;
 

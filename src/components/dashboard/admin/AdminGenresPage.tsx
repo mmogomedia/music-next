@@ -8,6 +8,7 @@ import GenreManagement from './GenreManagement';
 export default function AdminGenresPage() {
   const { stats } = useAdminDashboardStats();
   const systemHealth = stats?.systemMetrics?.platformHealth || 'healthy';
+  const systemHealthReasons = stats?.systemMetrics?.platformHealthReasons;
 
   const header = (
     <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
@@ -30,9 +31,8 @@ export default function AdminGenresPage() {
     <UnifiedLayout
       sidebar={
         <AdminNavigation
-          activeTab='genres'
-          onTabChange={() => {}}
           systemHealth={systemHealth}
+          systemHealthReasons={systemHealthReasons}
         />
       }
       header={header}

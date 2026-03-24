@@ -13,16 +13,11 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  // Check if user has an artist profile
+  // Check if user has an artist profile (no redirect — fans get a fan dashboard)
   const profile = await prisma.artistProfile.findFirst({
     where: { userId: session.user?.id },
+    select: { id: true },
   });
 
-  // If no profile exists, redirect to profile selection BEFORE rendering
-  if (!profile) {
-    redirect('/profile/select');
-  }
-
-  // User has a profile, render the dashboard
-  return <DashboardContent />;
+  return <DashboardContent hasArtistProfile={!!profile} />;
 }

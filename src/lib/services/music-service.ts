@@ -18,7 +18,6 @@ export interface TrackWithArtist extends Track {
   artistProfile: ArtistProfile | null;
   fileUrl: string;
   coverImageUrl: string | null;
-  streamingLinks?: { platform: string; url: string }[];
 }
 
 /**

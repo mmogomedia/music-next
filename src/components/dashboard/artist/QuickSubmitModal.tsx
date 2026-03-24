@@ -250,7 +250,7 @@ export default function QuickSubmitModal({
       <ModalContent>
         <ModalHeader className='flex flex-col gap-1'>
           <div className='flex items-center gap-3'>
-            <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center'>
+            <div className='w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center'>
               <MusicalNoteIcon className='w-5 h-5 text-white' />
             </div>
             <div>
@@ -276,7 +276,7 @@ export default function QuickSubmitModal({
         <ModalBody>
           {loading ? (
             <div className='text-center py-8'>
-              <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4'>
+              <div className='w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mx-auto mb-4'>
                 <MusicalNoteIcon className='w-5 h-5 text-white' />
               </div>
               <p className='text-gray-600 dark:text-gray-400'>
@@ -317,7 +317,7 @@ export default function QuickSubmitModal({
                           key={playlist.id}
                           className={`cursor-pointer transition-all ${
                             isSelected
-                              ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                              ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/20'
                               : ''
                           } ${!canSubmit ? 'opacity-50' : ''}`}
                           isPressable={canSubmit}
@@ -464,7 +464,7 @@ export default function QuickSubmitModal({
                             key={track.id}
                             className={`cursor-pointer transition-all ${
                               isSelected
-                                ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                ? 'ring-2 ring-primary-500 bg-primary-50 dark:bg-primary-900/20'
                                 : ''
                             }`}
                             isPressable
@@ -527,14 +527,14 @@ export default function QuickSubmitModal({
 
               {/* Selection Summary */}
               {selectedPlaylists.length > 0 && (
-                <div className='p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg'>
+                <div className='p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg'>
                   <div className='flex items-center gap-2 mb-2'>
-                    <CheckCircleIcon className='w-5 h-5 text-blue-600' />
-                    <span className='font-medium text-blue-900 dark:text-blue-300'>
+                    <CheckCircleIcon className='w-5 h-5 text-primary-600' />
+                    <span className='font-medium text-primary-900 dark:text-primary-300'>
                       Ready to Submit
                     </span>
                   </div>
-                  <p className='text-sm text-blue-700 dark:text-blue-400'>
+                  <p className='text-sm text-primary-700 dark:text-primary-400'>
                     {isTrackBasedSubmission ? (
                       <>
                         {track?.title} will be submitted to{' '}

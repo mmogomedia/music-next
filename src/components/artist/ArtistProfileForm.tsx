@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button, Input, Textarea, Card, CardBody } from '@heroui/react';
 import {
   UserIcon,
   MapPinIcon,
@@ -16,6 +15,7 @@ import {
 } from '@/types/artist-profile';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { uploadImageToR2 } from '@/lib/image-upload';
+import { FCard, FButton, FInput, FTextarea } from '@/components/ui';
 
 interface ArtistProfileFormProps {
   profile?: ArtistProfile;
@@ -60,24 +60,15 @@ export default function ArtistProfileForm({
         genre: profile.genre || '',
         slug: profile.slug || '',
       });
-      // Set the preview for existing images
       setProfileImagePreview(profile.profileImage || '');
       setCoverImagePreview(profile.coverImage || '');
     }
   }, [profile]);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-
-    // Clear error when user starts typing
+    setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: '',
-      }));
+      setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
@@ -87,11 +78,9 @@ export default function ArtistProfileForm({
     if (!formData.artistName.trim()) {
       newErrors.artistName = 'Artist name is required';
     }
-
     if (formData.website && !isValidUrl(formData.website)) {
       newErrors.website = 'Please enter a valid URL';
     }
-
     if (formData.slug && !isValidSlug(formData.slug)) {
       newErrors.slug = 'Slug can only contain letters, numbers, and hyphens';
     }
@@ -102,7 +91,6 @@ export default function ArtistProfileForm({
 
   const isValidUrl = (url: string) => {
     try {
-      // If URL doesn't start with protocol, add https://
       const urlToTest =
         url.startsWith('http://') || url.startsWith('https://')
           ? url
@@ -114,26 +102,20 @@ export default function ArtistProfileForm({
     }
   };
 
-  const isValidSlug = (slug: string) => {
-    return /^[a-zA-Z0-9-]+$/.test(slug);
-  };
+  const isValidSlug = (slug: string) => /^[a-zA-Z0-9-]+$/.test(slug);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       const finalFormData = { ...formData };
 
-      // Upload profile image if a new one was selected
       if (profileImageFile) {
         setIsUploadingImage(true);
         try {
-          const imageUrl = await handleImageUpload(profileImageFile);
-          finalFormData.profileImage = imageUrl;
+          finalFormData.profileImage =
+            await handleImageUpload(profileImageFile);
         } catch (error) {
           console.error('Error uploading profile image:', error);
           setErrors(prev => ({
@@ -146,12 +128,10 @@ export default function ArtistProfileForm({
         }
       }
 
-      // Upload cover image if a new one was selected
       if (coverImageFile) {
         setIsUploadingImage(true);
         try {
-          const imageUrl = await handleImageUpload(coverImageFile);
-          finalFormData.coverImage = imageUrl;
+          finalFormData.coverImage = await handleImageUpload(coverImageFile);
         } catch (error) {
           console.error('Error uploading cover image:', error);
           setErrors(prev => ({
@@ -177,241 +157,166 @@ export default function ArtistProfileForm({
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .trim();
-
     handleInputChange('slug', slug);
   };
 
-  const handleImageUpload = async (file: File): Promise<string> => {
-    const key = await uploadImageToR2(file);
-    return key;
-  };
-
-  const handleImageChange = (file: File | null) => {
-    setProfileImageFile(file);
-  };
-
-  const handleImageError = (error: string) => {
-    setErrors(prev => ({ ...prev, profileImage: error }));
-  };
-
-  const handleCoverImageChange = (file: File | null) => {
-    setCoverImageFile(file);
-  };
-
-  const handleCoverImageError = (error: string) => {
-    setErrors(prev => ({ ...prev, coverImage: error }));
-  };
+  const handleImageUpload = async (file: File): Promise<string> =>
+    uploadImageToR2(file);
 
   return (
-    <Card className='w-full max-w-2xl mx-auto'>
-      <CardBody className='p-6'>
-        <div className='flex items-center gap-3 mb-6'>
-          <div className='w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center'>
-            <UserIcon className='w-6 h-6 text-white' />
+    <FCard variant='default' padding='md' className='w-full max-w-2xl mx-auto'>
+      <div className='flex items-center gap-3 mb-6'>
+        <UserIcon className='w-5 h-5 text-gray-400 dark:text-gray-500 flex-shrink-0' />
+        <div>
+          <h2 className='text-xl font-bold text-gray-900 dark:text-white'>
+            {profile ? 'Edit Artist Profile' : 'Create Artist Profile'}
+          </h2>
+          <p className='text-sm text-gray-500 dark:text-gray-400'>
+            {profile
+              ? 'Update your artist information'
+              : 'Set up your artist identity'}
+          </p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className='space-y-6'>
+        {/* Artist Name */}
+        <FInput
+          id='artistName'
+          label='Artist Name *'
+          value={formData.artistName}
+          onChange={e => handleInputChange('artistName', e.target.value)}
+          placeholder='Enter your artist name'
+          startContent={<MusicalNoteIcon className='w-5 h-5 text-gray-400' />}
+          isInvalid={!!errors.artistName}
+          errorMessage={errors.artistName}
+        />
+
+        {/* Bio */}
+        <FTextarea
+          id='bio'
+          label='Bio'
+          value={formData.bio}
+          onChange={e => handleInputChange('bio', e.target.value)}
+          placeholder='Tell us about your music, style, and story...'
+          minRows={3}
+          maxRows={6}
+        />
+
+        {/* Profile Image */}
+        <ImageUpload
+          label='Profile Image'
+          preview={profileImagePreview}
+          onImageChange={file => setProfileImageFile(file)}
+          onError={err => setErrors(prev => ({ ...prev, profileImage: err }))}
+          aspectRatio={1}
+          minWidth={500}
+          minHeight={500}
+          maxWidth={1000}
+          maxHeight={1000}
+          maxFileSize={5}
+          previewSize='md'
+          disabled={isLoading || isUploadingImage}
+        />
+
+        {/* Cover Image */}
+        <ImageUpload
+          label='Cover Image'
+          preview={coverImagePreview}
+          onImageChange={file => setCoverImageFile(file)}
+          onError={err => setErrors(prev => ({ ...prev, coverImage: err }))}
+          aspectRatio={16 / 9}
+          minWidth={800}
+          minHeight={450}
+          maxWidth={1920}
+          maxHeight={1080}
+          maxFileSize={5}
+          previewSize='lg'
+          disabled={isLoading || isUploadingImage}
+        />
+
+        {/* Location */}
+        <FInput
+          id='location'
+          label='Location'
+          value={formData.location}
+          onChange={e => handleInputChange('location', e.target.value)}
+          placeholder='City, Country'
+          startContent={<MapPinIcon className='w-5 h-5 text-gray-400' />}
+        />
+
+        {/* Website */}
+        <FInput
+          id='website'
+          label='Website'
+          value={formData.website}
+          onChange={e => handleInputChange('website', e.target.value)}
+          placeholder='https://yourwebsite.com'
+          startContent={<GlobeAltIcon className='w-5 h-5 text-gray-400' />}
+          isInvalid={!!errors.website}
+          errorMessage={errors.website}
+        />
+
+        {/* Genre */}
+        <FInput
+          id='genre'
+          label='Genre'
+          value={formData.genre}
+          onChange={e => handleInputChange('genre', e.target.value)}
+          placeholder='e.g., Electronic, Pop, Rock, Hip Hop'
+          startContent={<MusicalNoteIcon className='w-5 h-5 text-gray-400' />}
+        />
+
+        {/* Custom Slug */}
+        <div>
+          <div className='flex gap-2'>
+            <FInput
+              id='slug'
+              label='Custom URL Slug'
+              value={formData.slug}
+              onChange={e => handleInputChange('slug', e.target.value)}
+              placeholder='your-custom-url'
+              startContent={<LinkIcon className='w-5 h-5 text-gray-400' />}
+              isInvalid={!!errors.slug}
+              errorMessage={errors.slug}
+              className='flex-1'
+            />
+            <div className='flex items-end pb-0.5'>
+              <FButton type='button' variant='outline' onPress={generateSlug}>
+                Generate
+              </FButton>
+            </div>
           </div>
-          <div>
-            <h2 className='text-xl font-bold text-gray-900 dark:text-white'>
-              {profile ? 'Edit Artist Profile' : 'Create Artist Profile'}
-            </h2>
-            <p className='text-sm text-gray-500 dark:text-gray-400'>
-              {profile
-                ? 'Update your artist information'
-                : 'Set up your artist identity'}
-            </p>
-          </div>
+          <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
+            This will be your profile URL: flemoji.com/artist/
+            {formData.slug || 'your-custom-url'}
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className='space-y-6'>
-          {/* Artist Name */}
-          <div>
-            <label
-              htmlFor='artistName'
-              className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
-            >
-              Artist Name *
-            </label>
-            <Input
-              id='artistName'
-              value={formData.artistName}
-              onChange={e => handleInputChange('artistName', e.target.value)}
-              placeholder='Enter your artist name'
-              startContent={
-                <MusicalNoteIcon className='w-5 h-5 text-gray-400' />
-              }
-              isInvalid={!!errors.artistName}
-              errorMessage={errors.artistName}
-              className='w-full'
-            />
-          </div>
-
-          {/* Bio */}
-          <div>
-            <label
-              htmlFor='bio'
-              className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
-            >
-              Bio
-            </label>
-            <Textarea
-              id='bio'
-              value={formData.bio}
-              onChange={e => handleInputChange('bio', e.target.value)}
-              placeholder='Tell us about your music, style, and story...'
-              minRows={3}
-              maxRows={6}
-              className='w-full'
-            />
-          </div>
-
-          {/* Profile Image */}
-          <ImageUpload
-            label='Profile Image'
-            preview={profileImagePreview}
-            onImageChange={handleImageChange}
-            onError={handleImageError}
-            aspectRatio={1}
-            minWidth={500}
-            minHeight={500}
-            maxWidth={1000}
-            maxHeight={1000}
-            maxFileSize={5}
-            previewSize='md'
-            disabled={isLoading || isUploadingImage}
-          />
-
-          {/* Cover Image */}
-          <ImageUpload
-            label='Cover Image'
-            preview={coverImagePreview}
-            onImageChange={handleCoverImageChange}
-            onError={handleCoverImageError}
-            aspectRatio={16 / 9}
-            minWidth={800}
-            minHeight={450}
-            maxWidth={1920}
-            maxHeight={1080}
-            maxFileSize={5}
-            previewSize='lg'
-            disabled={isLoading || isUploadingImage}
-          />
-
-          {/* Location */}
-          <div>
-            <label
-              htmlFor='location'
-              className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
-            >
-              Location
-            </label>
-            <Input
-              id='location'
-              value={formData.location}
-              onChange={e => handleInputChange('location', e.target.value)}
-              placeholder='City, Country'
-              startContent={<MapPinIcon className='w-5 h-5 text-gray-400' />}
-              className='w-full'
-            />
-          </div>
-
-          {/* Website */}
-          <div>
-            <label
-              htmlFor='website'
-              className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
-            >
-              Website
-            </label>
-            <Input
-              id='website'
-              value={formData.website}
-              onChange={e => handleInputChange('website', e.target.value)}
-              placeholder='https://yourwebsite.com'
-              startContent={<GlobeAltIcon className='w-5 h-5 text-gray-400' />}
-              isInvalid={!!errors.website}
-              errorMessage={errors.website}
-              className='w-full'
-            />
-          </div>
-
-          {/* Genre */}
-          <div>
-            <label
-              htmlFor='genre'
-              className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
-            >
-              Genre
-            </label>
-            <Input
-              id='genre'
-              value={formData.genre}
-              onChange={e => handleInputChange('genre', e.target.value)}
-              placeholder='e.g., Electronic, Pop, Rock, Hip Hop'
-              startContent={
-                <MusicalNoteIcon className='w-5 h-5 text-gray-400' />
-              }
-              className='w-full'
-            />
-          </div>
-
-          {/* Custom Slug */}
-          <div>
-            <label
-              htmlFor='slug'
-              className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'
-            >
-              Custom URL Slug
-            </label>
-            <div className='flex gap-2'>
-              <Input
-                id='slug'
-                value={formData.slug}
-                onChange={e => handleInputChange('slug', e.target.value)}
-                placeholder='your-custom-url'
-                startContent={<LinkIcon className='w-5 h-5 text-gray-400' />}
-                isInvalid={!!errors.slug}
-                errorMessage={errors.slug}
-                className='flex-1'
-              />
-              <Button
-                type='button'
-                variant='bordered'
-                onClick={generateSlug}
-                className='px-4'
-              >
-                Generate
-              </Button>
-            </div>
-            <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-              This will be your profile URL: flemoji.com/artist/
-              {formData.slug || 'your-custom-url'}
-            </p>
-          </div>
-
-          {/* Action Buttons */}
-          <div className='flex justify-end gap-3 pt-4'>
-            <Button
-              type='button'
-              variant='bordered'
-              onClick={onCancel}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type='submit'
-              color='primary'
-              isLoading={isLoading || isUploadingImage}
-              disabled={!formData.artistName.trim()}
-            >
-              {isUploadingImage
-                ? 'Uploading Image...'
-                : profile
-                  ? 'Update Profile'
-                  : 'Create Profile'}
-            </Button>
-          </div>
-        </form>
-      </CardBody>
-    </Card>
+        {/* Action Buttons */}
+        <div className='flex justify-end gap-3 pt-4'>
+          <FButton
+            type='button'
+            variant='ghost'
+            onPress={onCancel}
+            isDisabled={isLoading}
+          >
+            Cancel
+          </FButton>
+          <FButton
+            type='submit'
+            variant='primary'
+            isLoading={isLoading || isUploadingImage}
+            isDisabled={!formData.artistName.trim()}
+          >
+            {isUploadingImage
+              ? 'Uploading Image...'
+              : profile
+                ? 'Update Profile'
+                : 'Create Profile'}
+          </FButton>
+        </div>
+      </form>
+    </FCard>
   );
 }

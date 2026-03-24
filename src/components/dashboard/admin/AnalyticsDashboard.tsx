@@ -2,14 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardBody, Chip } from '@heroui/react';
-import {
-  ChartBarIcon,
-  PlayIcon,
-  HeartIcon,
-  ShareIcon,
-  ArrowDownTrayIcon,
-  BookmarkIcon,
-} from '@heroicons/react/24/outline';
+import StatCard from '@/components/ui/StatCard';
 import ArtistDisplay from '@/components/track/ArtistDisplay';
 import CompletionBadge from '@/components/track/CompletionBadge';
 
@@ -93,15 +86,15 @@ export default function AnalyticsDashboard() {
             Analytics Dashboard
           </h2>
         </div>
-        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i} className='animate-pulse'>
-              <CardBody className='p-6'>
-                <div className='h-4 bg-gray-200 dark:bg-slate-700 rounded w-3/4 mb-2'></div>
-                <div className='h-8 bg-gray-200 dark:bg-slate-700 rounded w-1/2'></div>
-              </CardBody>
-            </Card>
-          ))}
+        <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm px-6 py-5'>
+          <div className='grid grid-cols-2 sm:grid-cols-4 gap-6 divide-x divide-gray-100 dark:divide-slate-700'>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className='animate-pulse space-y-2'>
+                <div className='h-7 bg-gray-200 dark:bg-slate-700 rounded w-14' />
+                <div className='h-3 bg-gray-200 dark:bg-slate-700 rounded w-10' />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -141,166 +134,61 @@ export default function AnalyticsDashboard() {
       </div>
 
       {/* Metrics Cards */}
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-        {metric === 'plays' && (
-          <>
-            <Card>
-              <CardBody className='p-6'>
-                <div className='flex items-center gap-3'>
-                  <div className='w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center'>
-                    <PlayIcon className='w-5 h-5 text-blue-600 dark:text-blue-400' />
-                  </div>
-                  <div>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      Total Plays
-                    </p>
-                    <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                      {formatNumber(analytics.totalPlays || 0)}
-                    </p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody className='p-6'>
-                <div className='flex items-center gap-3'>
-                  <div className='w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center'>
-                    <ChartBarIcon className='w-5 h-5 text-green-600 dark:text-green-400' />
-                  </div>
-                  <div>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      Unique Listeners
-                    </p>
-                    <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                      {formatNumber(analytics.uniquePlays || 0)}
-                    </p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody className='p-6'>
-                <div className='flex items-center gap-3'>
-                  <div className='w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center'>
-                    <PlayIcon className='w-5 h-5 text-purple-600 dark:text-purple-400' />
-                  </div>
-                  <div>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      Avg Duration
-                    </p>
-                    <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                      {analytics.avgDuration
-                        ? formatDuration(analytics.avgDuration)
-                        : '0:00'}
-                    </p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardBody className='p-6'>
-                <div className='flex items-center gap-3'>
-                  <div className='w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center'>
-                    <ChartBarIcon className='w-5 h-5 text-orange-600 dark:text-orange-400' />
-                  </div>
-                  <div>
-                    <p className='text-sm text-gray-500 dark:text-gray-400'>
-                      Completion Rate
-                    </p>
-                    <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                      {analytics.avgCompletionRate
-                        ? `${analytics.avgCompletionRate.toFixed(1)}%`
-                        : '0%'}
-                    </p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          </>
-        )}
-
-        {metric === 'likes' && (
-          <Card>
-            <CardBody className='p-6'>
-              <div className='flex items-center gap-3'>
-                <div className='w-10 h-10 bg-red-100 dark:bg-red-900/20 rounded-lg flex items-center justify-center'>
-                  <HeartIcon className='w-5 h-5 text-red-600 dark:text-red-400' />
-                </div>
-                <div>
-                  <p className='text-sm text-gray-500 dark:text-gray-400'>
-                    Total Likes
-                  </p>
-                  <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                    {formatNumber(analytics.totalLikes || 0)}
-                  </p>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {metric === 'shares' && (
-          <Card>
-            <CardBody className='p-6'>
-              <div className='flex items-center gap-3'>
-                <div className='w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center'>
-                  <ShareIcon className='w-5 h-5 text-blue-600 dark:text-blue-400' />
-                </div>
-                <div>
-                  <p className='text-sm text-gray-500 dark:text-gray-400'>
-                    Total Shares
-                  </p>
-                  <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                    {formatNumber(analytics.totalShares || 0)}
-                  </p>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {metric === 'downloads' && (
-          <Card>
-            <CardBody className='p-6'>
-              <div className='flex items-center gap-3'>
-                <div className='w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center'>
-                  <ArrowDownTrayIcon className='w-5 h-5 text-green-600 dark:text-green-400' />
-                </div>
-                <div>
-                  <p className='text-sm text-gray-500 dark:text-gray-400'>
-                    Total Downloads
-                  </p>
-                  <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                    {formatNumber(analytics.totalDownloads || 0)}
-                  </p>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
-        {metric === 'saves' && (
-          <Card>
-            <CardBody className='p-6'>
-              <div className='flex items-center gap-3'>
-                <div className='w-10 h-10 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg flex items-center justify-center'>
-                  <BookmarkIcon className='w-5 h-5 text-yellow-600 dark:text-yellow-400' />
-                </div>
-                <div>
-                  <p className='text-sm text-gray-500 dark:text-gray-400'>
-                    Total Saves
-                  </p>
-                  <p className='text-2xl font-bold text-gray-900 dark:text-white'>
-                    {formatNumber(analytics.totalSaves || 0)}
-                  </p>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        )}
+      <div className='bg-white dark:bg-slate-800/60 rounded-2xl shadow-sm px-6 py-5'>
+        <div className='grid grid-cols-2 sm:grid-cols-4 gap-6 divide-x divide-gray-100 dark:divide-slate-700'>
+          {metric === 'plays' && (
+            <>
+              <StatCard
+                label='Total Plays'
+                value={formatNumber(analytics.totalPlays || 0)}
+              />
+              <StatCard
+                label='Unique Listeners'
+                value={formatNumber(analytics.uniquePlays || 0)}
+              />
+              <StatCard
+                label='Avg Duration'
+                value={
+                  analytics.avgDuration
+                    ? formatDuration(analytics.avgDuration)
+                    : '0:00'
+                }
+              />
+              <StatCard
+                label='Completion Rate'
+                value={
+                  analytics.avgCompletionRate
+                    ? `${analytics.avgCompletionRate.toFixed(1)}%`
+                    : '0%'
+                }
+              />
+            </>
+          )}
+          {metric === 'likes' && (
+            <StatCard
+              label='Total Likes'
+              value={formatNumber(analytics.totalLikes || 0)}
+            />
+          )}
+          {metric === 'shares' && (
+            <StatCard
+              label='Total Shares'
+              value={formatNumber(analytics.totalShares || 0)}
+            />
+          )}
+          {metric === 'downloads' && (
+            <StatCard
+              label='Total Downloads'
+              value={formatNumber(analytics.totalDownloads || 0)}
+            />
+          )}
+          {metric === 'saves' && (
+            <StatCard
+              label='Total Saves'
+              value={formatNumber(analytics.totalSaves || 0)}
+            />
+          )}
+        </div>
       </div>
 
       {/* Top Tracks */}

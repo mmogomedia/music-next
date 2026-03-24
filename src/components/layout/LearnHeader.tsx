@@ -36,6 +36,7 @@ export default function LearnHeader() {
   const navItems = [
     { name: 'Home', href: '/' },
     { name: 'Learn', href: '/learn' },
+    { name: 'Tools', href: '/tools' },
   ];
 
   return (
@@ -81,10 +82,8 @@ export default function LearnHeader() {
               <Link
                 href={item.href}
                 className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
-                  item.href === '/learn'
-                    ? pathname?.startsWith('/learn')
-                      ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20'
-                      : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10'
+                  pathname?.startsWith(item.href) && item.href !== '/'
+                    ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20'
                     : pathname === item.href
                       ? 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20'
                       : 'text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10'

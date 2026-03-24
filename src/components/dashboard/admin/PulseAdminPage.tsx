@@ -33,6 +33,7 @@ type PulseTab =
 export default function PulseAdminPage() {
   const { stats } = useAdminDashboardStats();
   const systemHealth = stats?.systemMetrics?.platformHealth || 'healthy';
+  const systemHealthReasons = stats?.systemMetrics?.platformHealthReasons;
   const [activeTab, setActiveTab] = useState<PulseTab>('overview');
 
   const tabs = [
@@ -95,9 +96,8 @@ export default function PulseAdminPage() {
     <UnifiedLayout
       sidebar={
         <AdminNavigation
-          activeTab='pulse'
-          onTabChange={() => {}}
           systemHealth={systemHealth}
+          systemHealthReasons={systemHealthReasons}
         />
       }
       header={header}

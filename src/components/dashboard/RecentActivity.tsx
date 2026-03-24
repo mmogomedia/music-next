@@ -1,6 +1,7 @@
 'use client';
 
-import { Card, CardBody, Chip } from '@heroui/react';
+import { Chip } from '@heroui/react';
+import FCard from '@/components/ui/FCard';
 import {
   PlayIcon,
   HeartIcon,
@@ -300,26 +301,26 @@ export default function RecentActivity({
     switch (activityType) {
       case 'play':
         return (
-          <div className='w-8 h-8 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center'>
-            <PlayIcon className='w-4 h-4 text-green-600 dark:text-green-400' />
+          <div className='w-8 h-8 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center'>
+            <PlayIcon className='w-4 h-4 text-emerald-600 dark:text-emerald-400' />
           </div>
         );
       case 'like':
         return (
-          <div className='w-8 h-8 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center'>
-            <HeartIcon className='w-4 h-4 text-red-600 dark:text-red-400' />
+          <div className='w-8 h-8 bg-rose-100 dark:bg-rose-900/20 rounded-full flex items-center justify-center'>
+            <HeartIcon className='w-4 h-4 text-rose-600 dark:text-rose-400' />
           </div>
         );
       case 'download':
         return (
-          <div className='w-8 h-8 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center'>
-            <ArrowDownTrayIcon className='w-4 h-4 text-orange-600 dark:text-orange-400' />
+          <div className='w-8 h-8 bg-violet-100 dark:bg-violet-900/20 rounded-full flex items-center justify-center'>
+            <ArrowDownTrayIcon className='w-4 h-4 text-violet-600 dark:text-violet-400' />
           </div>
         );
       case 'page_visit':
         return (
-          <div className='w-8 h-8 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center'>
-            <EyeIcon className='w-4 h-4 text-blue-600 dark:text-blue-400' />
+          <div className='w-8 h-8 bg-primary-100 dark:bg-primary-900/20 rounded-full flex items-center justify-center'>
+            <EyeIcon className='w-4 h-4 text-primary-600 dark:text-primary-400' />
           </div>
         );
       default:
@@ -362,7 +363,7 @@ export default function RecentActivity({
           displayActivities.map(item => (
             <div
               key={item.id}
-              className='flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors'
+              className='flex items-center gap-3 p-3 rounded-lg bg-gray-50/80 dark:bg-slate-900/40 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-colors'
             >
               <div className='flex-shrink-0'>
                 {getActivityIcon(item.activityType)}
@@ -401,7 +402,7 @@ export default function RecentActivity({
 
       {activities.length > 6 && (
         <div className='mt-4 text-center'>
-          <button className='text-sm text-blue-600 dark:text-blue-400 hover:underline'>
+          <button className='text-sm text-primary-600 dark:text-primary-400 hover:underline'>
             View all activity
           </button>
         </div>
@@ -413,9 +414,70 @@ export default function RecentActivity({
     return <div>{content}</div>;
   }
 
+  // FCard provides its own title header — always suppress the internal one
+  const bodyContent = (
+    <>
+      <div className='space-y-3'>
+        {activities.length === 0 ? (
+          <div className='text-center text-gray-500 dark:text-gray-400 py-8'>
+            No recent activity
+          </div>
+        ) : (
+          displayActivities.map(item => (
+            <div
+              key={item.id}
+              className='flex items-center gap-3 p-3 rounded-lg bg-gray-50/80 dark:bg-slate-900/40 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-colors'
+            >
+              <div className='flex-shrink-0'>
+                {getActivityIcon(item.activityType)}
+              </div>
+              <div className='flex-1 min-w-0'>
+                <div className='flex items-center gap-2 mb-1'>
+                  <span className='text-sm font-medium text-gray-900 dark:text-white truncate'>
+                    {item.track.title}
+                  </span>
+                  {item.activityType === 'play' && item.source && (
+                    <Chip
+                      size='sm'
+                      color={getSourceColor(item.source)}
+                      variant='flat'
+                    >
+                      {item.source}
+                    </Chip>
+                  )}
+                  {item.activityType === 'page_visit' && item.slug && (
+                    <Chip size='sm' color='secondary' variant='flat'>
+                      Quick Link
+                    </Chip>
+                  )}
+                </div>
+                <div className='text-xs text-gray-500 dark:text-gray-400'>
+                  {getActivityLabel(item.activityType)} •{' '}
+                  <ArtistDisplay legacyArtist={item.track.artist} /> •{' '}
+                  {formatTimeAgo(item.timestamp)}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+      {activities.length > 6 && (
+        <div className='mt-4 text-center'>
+          <button className='text-sm text-primary-600 dark:text-primary-400 hover:underline'>
+            View all activity
+          </button>
+        </div>
+      )}
+    </>
+  );
+
   return (
-    <Card className='border border-gray-200 dark:border-slate-700'>
-      <CardBody className='p-6'>{content}</CardBody>
-    </Card>
+    <FCard
+      title={noHeader ? undefined : 'Recent Activity'}
+      titleIcon={noHeader ? undefined : <ClockIcon className='w-4 h-4' />}
+      padding='md'
+    >
+      {bodyContent}
+    </FCard>
   );
 }

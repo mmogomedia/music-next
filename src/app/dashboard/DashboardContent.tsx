@@ -6,43 +6,28 @@
 import { useSession } from 'next-auth/react';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import {
-  Card,
-  CardBody,
-  Button,
-  Chip,
-  Avatar,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-} from '@heroui/react';
+import { Card, CardBody, Button, Chip, Avatar } from '@heroui/react';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import {
-  PlayIcon,
-  PauseIcon,
   PencilIcon,
-  TrashIcon,
   MapPinIcon,
   GlobeAltIcon,
-  ClockIcon,
   MusicalNoteIcon,
   PlusIcon,
   UserIcon,
   ChartBarIcon,
-  EllipsisVerticalIcon,
+  ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
-import FileUpload from '@/components/upload/FileUpload';
+import UploadTab from '@/components/dashboard/artist/UploadTab';
+import ToolsTab from '@/components/dashboard/artist/ToolsTab';
 import ArtistProfileForm from '@/components/artist/ArtistProfileForm';
 import StatsGrid from '@/components/dashboard/StatsGrid';
 import RecentTracks from '@/components/dashboard/RecentTracks';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import TopPerformingTracks from '@/components/dashboard/TopPerformingTracks';
 import PlaylistSubmissionsTab from '@/components/dashboard/artist/PlaylistSubmissionsTab';
+import LibraryTab from '@/components/dashboard/artist/LibraryTab';
 import QuickSubmitModal from '@/components/dashboard/artist/QuickSubmitModal';
-import TrackArtwork from '@/components/music/TrackArtwork';
-import ArtistDisplay from '@/components/track/ArtistDisplay';
-import CompletionBadge from '@/components/track/CompletionBadge';
 import { useArtistProfile } from '@/hooks/useArtistProfile';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import {
@@ -50,20 +35,27 @@ import {
   UpdateArtistProfileData,
 } from '@/types/artist-profile';
 import { Track } from '@/types/track';
-import { SourceType } from '@/types/stats';
 import RoleBasedRedirect from '@/components/auth/RoleBasedRedirect';
 import ArtistNavigation from '@/components/dashboard/artist/ArtistNavigation';
 import UnifiedLayout from '@/components/layout/UnifiedLayout';
+import FanDashboardContent from '@/components/dashboard/fan/FanDashboardContent';
 import QuickLinksManager from '@/components/dashboard/quick-links/QuickLinksManager';
 import PulseCard from '@/components/dashboard/pulse/PulseCard';
 import { usePulseData } from '@/hooks/usePulseData';
+import WelcomeStrip from '@/components/dashboard/overview/WelcomeStrip';
 
-export default function DashboardContent() {
+interface DashboardContentProps {
+  hasArtistProfile?: boolean;
+}
+
+export default function DashboardContent({
+  hasArtistProfile = true,
+}: DashboardContentProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { playTrack, currentTrack, isPlaying } = useMusicPlayer();
+  const { playTrack } = useMusicPlayer();
   const [timeRange, setTimeRange] = useState('7d');
 
   const TAB_IDS = [
@@ -71,7 +63,8 @@ export default function DashboardContent() {
     'library',
     'upload',
     'submissions',
-    'quick-links',
+    'tools',
+    'quick-links', // kept for backward-compat deep links; accessible via Tools tab
     'analytics',
     'profile',
   ] as const;
@@ -215,13 +208,18 @@ export default function DashboardContent() {
     setShowDeleteConfirm(trackId);
   };
 
+  // Fan users (no artist profile) get the fan dashboard
+  if (!hasArtistProfile) {
+    return <FanDashboardContent />;
+  }
+
   // Show loading while checking authentication
   if (status === 'loading') {
     return (
       <RoleBasedRedirect>
         <div className='min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center'>
           <div className='text-center'>
-            <div className='w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-4'>
+            <div className='w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center mx-auto mb-4'>
               <MusicalNoteIcon className='w-5 h-5 text-white' />
             </div>
             <p className='text-gray-600 dark:text-gray-400'>Loading...</p>
@@ -259,58 +257,78 @@ export default function DashboardContent() {
     library: 'Library',
     upload: 'Upload',
     submissions: 'Submissions',
+    tools: 'Tools',
     'quick-links': 'Quick Links',
     analytics: 'Analytics',
     profile: 'Profile',
   };
 
   const header = (
-    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
-      <div className='py-3 px-4 sm:px-5 lg:px-6'>
-        <div className='flex items-center justify-between'>
-          <div>
-            <h1 className='text-lg font-bold text-gray-900 dark:text-white'>
-              {tabNames[activeTab] || 'Dashboard'}
-            </h1>
-            {activeTab === 'overview' && (
-              <p className='mt-0.5 text-xs text-gray-500 dark:text-gray-400'>
-                Track your performance
-              </p>
-            )}
-          </div>
-          <div className='flex items-center gap-2'>
-            {/* Quick Stats Pills */}
-            <div className='hidden md:flex items-center gap-1.5'>
-              <Chip
-                size='sm'
-                color='primary'
-                variant='flat'
-                className='h-6 text-xs'
-              >
-                {stats?.overview?.totalTracks || 0} tracks
-              </Chip>
-              <Chip
-                size='sm'
-                color='success'
-                variant='flat'
-                className='h-6 text-xs'
-              >
-                {(stats?.overview?.totalPlays || 0).toLocaleString()} plays
-              </Chip>
-            </div>
-            {activeTab !== 'upload' && (
-              <Button
-                size='sm'
-                color='primary'
-                className='hidden sm:flex h-8 text-xs'
-                startContent={<PlusIcon className='w-3.5 h-3.5' />}
-                onPress={() => navigateToTab('upload')}
-              >
-                Upload
-              </Button>
-            )}
-          </div>
+    <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 h-16 flex items-center px-4 sm:px-5 lg:px-6'>
+      {/* Left — page title */}
+      <div className='flex-1 min-w-0'>
+        <h1 className='text-lg font-bold text-gray-900 dark:text-white truncate'>
+          {tabNames[activeTab] || 'Dashboard'}
+        </h1>
+        {activeTab === 'overview' && (
+          <p className='text-xs text-gray-500 dark:text-gray-400'>
+            Track your performance
+          </p>
+        )}
+      </div>
+
+      {/* Right — stats chips + actions */}
+      <div className='flex items-center gap-2 flex-shrink-0'>
+        <div className='hidden md:flex items-center gap-1.5'>
+          <Chip
+            size='sm'
+            color='primary'
+            variant='flat'
+            className='h-6 text-xs'
+          >
+            {stats?.overview?.totalTracks || 0} tracks
+          </Chip>
+          <Chip
+            size='sm'
+            color='primary'
+            variant='flat'
+            className='h-6 text-xs'
+          >
+            {(stats?.overview?.totalPlays || 0).toLocaleString()} plays
+          </Chip>
         </div>
+        {profile && (
+          <Button
+            as={profile.slug ? 'a' : 'button'}
+            href={profile.slug ? `/artist/${profile.slug}` : undefined}
+            target={profile.slug ? '_blank' : undefined}
+            rel={profile.slug ? 'noopener noreferrer' : undefined}
+            isDisabled={!profile.slug}
+            title={
+              profile.slug
+                ? 'View your public profile'
+                : 'Set a profile URL in your profile settings first'
+            }
+            size='sm'
+            variant='bordered'
+            className='hidden sm:flex h-8 text-xs'
+            endContent={<ArrowTopRightOnSquareIcon className='w-3 h-3' />}
+            onPress={!profile.slug ? () => navigateToTab('profile') : undefined}
+          >
+            View Profile
+          </Button>
+        )}
+        {activeTab !== 'upload' && (
+          <Button
+            size='sm'
+            color='primary'
+            className='hidden sm:flex h-8 text-xs'
+            startContent={<PlusIcon className='w-3.5 h-3.5' />}
+            onPress={() => navigateToTab('upload')}
+          >
+            Upload
+          </Button>
+        )}
       </div>
     </header>
   );
@@ -331,107 +349,77 @@ export default function DashboardContent() {
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className='space-y-4'>
-              {/* Compact Header with Time Range */}
-              <div className='flex items-center justify-between'>
-                <h2 className='text-xl font-bold text-gray-900 dark:text-white'>
-                  Overview
-                </h2>
-                <Dropdown>
-                  <DropdownTrigger>
-                    <Button variant='bordered' size='sm' className='h-8'>
-                      {timeRange === '24h'
-                        ? '24h'
-                        : timeRange === '7d'
-                          ? '7d'
-                          : timeRange === '30d'
-                            ? '30d'
-                            : timeRange === '90d'
-                              ? '90d'
-                              : timeRange === '1y'
-                                ? '1y'
-                                : 'All'}
-                    </Button>
-                  </DropdownTrigger>
-                  <DropdownMenu
-                    selectedKeys={[timeRange]}
-                    onSelectionChange={keys =>
-                      setTimeRange(Array.from(keys)[0] as string)
-                    }
-                  >
-                    <DropdownItem key='24h'>Last 24 Hours</DropdownItem>
-                    <DropdownItem key='7d'>Last 7 Days</DropdownItem>
-                    <DropdownItem key='30d'>Last 30 Days</DropdownItem>
-                    <DropdownItem key='90d'>Last 90 Days</DropdownItem>
-                    <DropdownItem key='1y'>Last Year</DropdownItem>
-                    <DropdownItem key='all'>All Time</DropdownItem>
-                  </DropdownMenu>
-                </Dropdown>
-              </div>
+              {/* Welcome strip with greeting + time range selector */}
+              <WelcomeStrip
+                artistName={
+                  profile?.artistName ??
+                  (stats?.artistProfile as { artistName?: string } | undefined)
+                    ?.artistName ??
+                  'Artist'
+                }
+                profileImage={profile?.profileImage}
+                totalTracks={displayStats.totalTracks}
+                totalPlays={displayStats.totalPlays}
+                timeRange={timeRange}
+                onTimeRangeChange={setTimeRange}
+                loading={statsLoading}
+              />
 
-              {statsLoading ? (
-                <div className='flex justify-center items-center h-24'>
-                  <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600'></div>
-                </div>
-              ) : statsError ? (
-                <div className='text-center text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800 text-sm'>
+              {/* Stats row */}
+              {statsError ? (
+                <div className='text-center text-red-600 dark:text-red-400 p-3 bg-red-50 dark:bg-red-900/20 rounded-2xl border border-red-200 dark:border-red-800 text-sm'>
                   Error loading stats: {statsError}
                 </div>
               ) : (
-                <div className='space-y-4'>
-                  {/* Stats on Left, PULSE³ on Right */}
-                  <div className='flex flex-col lg:flex-row gap-4 items-stretch'>
-                    {/* Stats - Takes 2 columns on desktop */}
-                    <div className='flex-1 lg:flex-[2] flex'>
-                      <div className='bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 p-3 w-full flex flex-col'>
-                        <h3 className='text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2'>
-                          Statistics
-                        </h3>
-                        <StatsGrid
-                          stats={{
-                            totalTracks: displayStats.totalTracks,
-                            totalPlays: displayStats.totalPlays,
-                            totalLikes: displayStats.totalLikes,
-                            totalDownloads: displayStats.totalDownloads,
-                            uniqueListeners: displayStats.uniqueListeners,
-                          }}
-                          growth={stats?.growthMetrics}
-                        />
-                      </div>
-                    </div>
+                <StatsGrid
+                  stats={{
+                    totalTracks: displayStats.totalTracks,
+                    totalPlays: displayStats.totalPlays,
+                    totalLikes: displayStats.totalLikes,
+                    totalDownloads: displayStats.totalDownloads,
+                    uniqueListeners: displayStats.uniqueListeners,
+                  }}
+                  growth={
+                    stats?.growthMetrics as
+                      | {
+                          playsGrowth?: number;
+                          likesGrowth?: number;
+                          sharesGrowth?: number;
+                        }
+                      | undefined
+                  }
+                  loading={statsLoading}
+                />
+              )}
 
-                    {/* PULSE³ Card - Takes 1 column on desktop */}
-                    <div className='flex-1 flex'>
-                      <div className='w-full flex'>
-                        <PulseCard
-                          pulseData={pulseData}
-                          loading={pulseLoading}
-                          onRefresh={refreshPulseData}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Top Tracks and Recent Activity in grid */}
-                  <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
-                    {stats?.topTracks && stats.topTracks.length > 0 && (
-                      <TopPerformingTracks
-                        topTracks={stats.topTracks}
-                        onViewAll={() => navigateToTab('library')}
-                      />
-                    )}
-
-                    <RecentActivity
-                      activity={stats?.recentActivity}
-                      useSSE={true}
+              {/* Top Tracks (3/5) + PULSE³ (2/5) */}
+              {!statsLoading && !statsError && (
+                <div className='grid grid-cols-1 lg:grid-cols-5 gap-4'>
+                  <div className='lg:col-span-3'>
+                    <TopPerformingTracks
+                      topTracks={stats?.topTracks ?? []}
+                      onViewAll={() => navigateToTab('library')}
                     />
                   </div>
+                  <div className='lg:col-span-2'>
+                    <PulseCard
+                      pulseData={pulseData}
+                      loading={pulseLoading}
+                      onRefresh={refreshPulseData}
+                    />
+                  </div>
+                </div>
+              )}
 
-                  {/* Recent Tracks */}
+              {/* Recent Uploads (1/2) + Live Activity (1/2) */}
+              {!statsLoading && !statsError && (
+                <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
                   <RecentTracks
                     tracks={recentTracks}
                     onViewAll={() => navigateToTab('library')}
-                    onPlay={playTrack}
+                    onPlay={track => playTrack(track, 'direct')}
                   />
+                  <RecentActivity activity={stats?.recentActivity} />
                 </div>
               )}
             </div>
@@ -443,7 +431,7 @@ export default function DashboardContent() {
               {!profile && !isEditingProfile ? (
                 <Card>
                   <CardBody className='p-8 text-center'>
-                    <div className='w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4'>
+                    <div className='w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4'>
                       <UserIcon className='w-8 h-8 text-white' />
                     </div>
                     <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
@@ -623,7 +611,7 @@ export default function DashboardContent() {
                               href={profile.website}
                               target='_blank'
                               rel='noopener noreferrer'
-                              className='text-blue-600 dark:text-blue-400 hover:underline'
+                              className='text-primary-600 dark:text-primary-400 hover:underline'
                             >
                               Website
                             </a>
@@ -639,201 +627,37 @@ export default function DashboardContent() {
 
           {/* Upload Tab */}
           {activeTab === 'upload' && (
-            <Card>
-              <CardBody className='p-6'>
-                <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-6'>
-                  Upload Music
-                </h3>
-                <FileUpload
-                  onUploadComplete={_jobId => {
-                    // Refresh tracks after successful upload
-                    const fetchTracks = async () => {
-                      try {
-                        const response = await fetch('/api/tracks');
-                        if (response.ok) {
-                          const data = await response.json();
-                          setTracks(data.tracks || []);
-                        }
-                      } catch (error) {
-                        console.error('Error fetching tracks:', error);
-                      }
-                    };
-                    fetchTracks();
-                  }}
-                  onViewLibrary={() => navigateToTab('library')}
-                  onUploadAnother={() => {
-                    // Reset upload state is handled in the component
-                  }}
-                />
-              </CardBody>
-            </Card>
+            <UploadTab
+              onUploadComplete={_jobId => {
+                const fetchTracks = async () => {
+                  try {
+                    const response = await fetch('/api/tracks');
+                    if (response.ok) {
+                      const data = await response.json();
+                      setTracks(data.tracks || []);
+                    }
+                  } catch (err) {
+                    console.error('Error fetching tracks:', err);
+                  }
+                };
+                fetchTracks();
+              }}
+              onViewLibrary={() => navigateToTab('library')}
+            />
           )}
 
           {/* Library Tab */}
           {activeTab === 'library' && (
-            <Card>
-              <CardBody className='p-6 overflow-visible'>
-                <div className='flex items-center justify-between mb-6'>
-                  <h3 className='text-xl font-bold text-gray-900 dark:text-white'>
-                    My Music Library
-                  </h3>
-                  <Button
-                    color='primary'
-                    className='flex justify-start'
-                    startContent={<PlusIcon className='w-4 h-4' />}
-                    onPress={() => navigateToTab('upload')}
-                  >
-                    Upload New Track
-                  </Button>
-                </div>
-
-                {tracks.length === 0 ? (
-                  <div className='text-center py-12'>
-                    <div className='w-20 h-20 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4'>
-                      <MusicalNoteIcon className='w-10 h-10 text-gray-400' />
-                    </div>
-                    <h4 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>
-                      No tracks yet
-                    </h4>
-                    <p className='text-gray-500 dark:text-gray-400 mb-6'>
-                      Upload your first track to start building your music
-                      library
-                    </p>
-                    <Button
-                      color='primary'
-                      size='lg'
-                      className='flex justify-start'
-                      startContent={<PlusIcon className='w-5 h-5' />}
-                      onPress={() => navigateToTab('upload')}
-                    >
-                      Upload Music
-                    </Button>
-                  </div>
-                ) : (
-                  <div className='space-y-3 overflow-visible'>
-                    {tracks.map(track => (
-                      <div
-                        key={track.id}
-                        className='flex items-center gap-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors relative'
-                      >
-                        <div className='flex-shrink-0'>
-                          <TrackArtwork
-                            artworkUrl={
-                              track.albumArtwork || track.coverImageUrl
-                            }
-                            title={track.title}
-                            size='md'
-                          />
-                        </div>
-
-                        <div className='flex-1 min-w-0'>
-                          <h4 className='font-medium text-gray-900 dark:text-white truncate mb-1'>
-                            {track.title}
-                          </h4>
-                          <div className='flex items-center gap-2 flex-wrap mb-1'>
-                            <p className='text-sm text-gray-500 dark:text-gray-400'>
-                              <ArtistDisplay track={track} />
-                            </p>
-                            {track.completionPercentage !== undefined && (
-                              <>
-                                <span className='text-xs text-gray-400 dark:text-gray-500'>
-                                  •
-                                </span>
-                                <CompletionBadge
-                                  percentage={track.completionPercentage}
-                                  size='sm'
-                                  className='flex-shrink-0'
-                                />
-                              </>
-                            )}
-                          </div>
-                          <div className='flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400'>
-                            <span className='flex items-center gap-1'>
-                              <PlayIcon className='w-3 h-3' />
-                              {track.playCount?.toLocaleString() || 0} plays
-                            </span>
-                            <span className='flex items-center gap-1'>
-                              <ClockIcon className='w-3 h-3' />
-                              {track.duration
-                                ? `${Math.floor(track.duration / 60)}:${(track.duration % 60).toString().padStart(2, '0')}`
-                                : '0:00'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className='flex items-center gap-2'>
-                          <Button
-                            isIconOnly
-                            size='sm'
-                            color='primary'
-                            onPress={() =>
-                              playTrack(track, 'dashboard' as SourceType)
-                            }
-                          >
-                            {currentTrack?.id === track.id && isPlaying ? (
-                              <PauseIcon className='w-4 h-4' />
-                            ) : (
-                              <PlayIcon className='w-4 h-4' />
-                            )}
-                          </Button>
-
-                          {/* 3-dot menu with HeroUI Dropdown */}
-                          <Dropdown placement='bottom-end'>
-                            <DropdownTrigger>
-                              <Button
-                                isIconOnly
-                                size='sm'
-                                variant='light'
-                                className='text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                              >
-                                <EllipsisVerticalIcon className='w-4 h-4' />
-                              </Button>
-                            </DropdownTrigger>
-                            <DropdownMenu aria-label='Track actions'>
-                              <DropdownItem
-                                key='submit'
-                                startContent={
-                                  <MusicalNoteIcon className='w-4 h-4' />
-                                }
-                                onPress={() => {
-                                  setSelectedTrackForSubmit(track);
-                                  setSelectedPlaylistForSubmit(null);
-                                  setShowQuickSubmit(true);
-                                }}
-                              >
-                                Submit to Playlists
-                              </DropdownItem>
-                              <DropdownItem
-                                key='edit'
-                                startContent={
-                                  <PencilIcon className='w-4 h-4' />
-                                }
-                                onPress={() =>
-                                  router.push(
-                                    `/dashboard/tracks/${track.id}/edit`
-                                  )
-                                }
-                              >
-                                Edit Track
-                              </DropdownItem>
-                              <DropdownItem
-                                key='delete'
-                                className='text-danger'
-                                color='danger'
-                                startContent={<TrashIcon className='w-4 h-4' />}
-                                onPress={() => confirmDelete(track.id)}
-                              >
-                                Delete Track
-                              </DropdownItem>
-                            </DropdownMenu>
-                          </Dropdown>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardBody>
-            </Card>
+            <LibraryTab
+              tracks={tracks}
+              onUpload={() => navigateToTab('upload')}
+              onDelete={confirmDelete}
+              onSubmitToPlaylist={track => {
+                setSelectedTrackForSubmit(track);
+                setSelectedPlaylistForSubmit(null);
+                setShowQuickSubmit(true);
+              }}
+            />
           )}
 
           {/* Submissions Tab */}
@@ -855,7 +679,10 @@ export default function DashboardContent() {
             />
           )}
 
-          {/* Quick Links Tab */}
+          {/* Tools Tab */}
+          {activeTab === 'tools' && <ToolsTab />}
+
+          {/* Quick Links Tab — kept for backward-compat; accessible via Tools tab */}
           {activeTab === 'quick-links' && (
             <QuickLinksManager tracks={tracks} profile={profile} />
           )}
@@ -864,7 +691,7 @@ export default function DashboardContent() {
           {activeTab === 'analytics' && (
             <Card>
               <CardBody className='p-8 text-center'>
-                <div className='w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6'>
+                <div className='w-20 h-20 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-6'>
                   <ChartBarIcon className='w-10 h-10 text-white' />
                 </div>
                 <h3 className='text-xl font-bold text-gray-900 dark:text-white mb-3'>

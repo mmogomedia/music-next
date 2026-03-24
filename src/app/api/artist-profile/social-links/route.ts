@@ -2,9 +2,52 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { z } from 'zod';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Zod schema for individual social platform entries (all optional fields)
+const BaseSocialLinkSchema = z.object({
+  url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  verified: z.boolean().optional(),
+});
+
+const UsernameSocialLinkSchema = BaseSocialLinkSchema.extend({
+  username: z.string().optional(),
+  followers: z.number().int().nonnegative().optional(),
+});
+
+const ChannelSocialLinkSchema = BaseSocialLinkSchema.extend({
+  channelName: z.string().optional(),
+  subscribers: z.number().int().nonnegative().optional(),
+});
+
+const PageSocialLinkSchema = BaseSocialLinkSchema.extend({
+  pageName: z.string().optional(),
+  followers: z.number().int().nonnegative().optional(),
+});
+
+const ArtistSocialLinkSchema = BaseSocialLinkSchema.extend({
+  artistName: z.string().optional(),
+  followers: z.number().int().nonnegative().optional(),
+});
+
+const SocialLinksSchema = z
+  .object({
+    instagram: UsernameSocialLinkSchema.optional(),
+    twitter: UsernameSocialLinkSchema.optional(),
+    tiktok: UsernameSocialLinkSchema.optional(),
+    youtube: ChannelSocialLinkSchema.optional(),
+    facebook: PageSocialLinkSchema.optional(),
+    soundcloud: UsernameSocialLinkSchema.optional(),
+    bandcamp: ArtistSocialLinkSchema.optional(),
+  })
+  .optional();
+
+const SocialLinksRequestSchema = z.object({
+  socialLinks: SocialLinksSchema,
+});
 
 // PUT /api/artist-profile/social-links - Update social media links
 export async function PUT(request: NextRequest) {
@@ -16,15 +59,19 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { socialLinks } = body;
 
-    // Validate social links structure
-    if (socialLinks && typeof socialLinks !== 'object') {
+    const parseResult = SocialLinksRequestSchema.safeParse(body);
+    if (!parseResult.success) {
       return NextResponse.json(
-        { error: 'Invalid social links format' },
+        {
+          error: 'Invalid social links format',
+          details: parseResult.error.flatten(),
+        },
         { status: 400 }
       );
     }
+
+    const { socialLinks } = parseResult.data;
 
     // Check if artist profile exists
     const existingProfile = await prisma.artistProfile.findUnique({

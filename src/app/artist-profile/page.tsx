@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Card, CardBody, Button, Spinner } from '@heroui/react';
+import { useRouter } from 'next/navigation';
 import {
   UserIcon,
   LinkIcon,
@@ -19,9 +19,19 @@ import {
   SocialLinks,
   StreamingLinks,
 } from '@/types/artist-profile';
+import {
+  FSpinner,
+  FCard,
+  FButton,
+  FEmptyState,
+  FPageHeader,
+  FSection,
+  FStat,
+} from '@/components/ui';
 
 export default function ArtistProfilePage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [profile, setProfile] = useState<ArtistProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -61,9 +71,7 @@ export default function ArtistProfilePage() {
 
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
@@ -88,9 +96,7 @@ export default function ArtistProfilePage() {
     try {
       const response = await fetch('/api/artist-profile/social-links', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ socialLinks }),
       });
 
@@ -115,9 +121,7 @@ export default function ArtistProfilePage() {
     try {
       const response = await fetch('/api/artist-profile/streaming-links', {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ streamingLinks }),
       });
 
@@ -138,67 +142,52 @@ export default function ArtistProfilePage() {
   };
 
   if (loading) {
-    return (
-      <div className='flex items-center justify-center min-h-screen'>
-        <Spinner size='lg' />
-      </div>
-    );
+    return <FSpinner size='lg' fullScreen />;
   }
 
   if (!session?.user?.id) {
     return (
       <div className='flex items-center justify-center min-h-screen'>
-        <Card className='w-full max-w-md'>
-          <CardBody className='p-8 text-center'>
+        <FCard padding='lg' className='max-w-md w-full'>
+          <div className='text-center'>
             <h2 className='text-xl font-bold text-gray-900 dark:text-white mb-2'>
               Access Denied
             </h2>
             <p className='text-gray-500 dark:text-gray-400'>
               Please sign in to manage your artist profile.
             </p>
-          </CardBody>
-        </Card>
+          </div>
+        </FCard>
       </div>
     );
   }
 
   return (
     <div className='min-h-screen bg-gray-50 dark:bg-gray-900 py-8'>
-      <div className='max-w-6xl mx-auto px-4'>
+      <FSection maxWidth='wide' padding='md'>
         {/* Header */}
         <div className='mb-8'>
-          <h1 className='text-3xl font-bold text-gray-900 dark:text-white mb-2'>
-            Artist Profile
-          </h1>
-          <p className='text-gray-500 dark:text-gray-400'>
-            Manage your artist identity and social media presence
-          </p>
+          <FPageHeader
+            title='Artist Profile'
+            subtitle='Manage your artist identity and social media presence'
+          />
         </div>
 
         {!profile && !showForm ? (
           /* No Profile - Show Create Button */
-          <Card className='w-full max-w-2xl mx-auto'>
-            <CardBody className='p-12 text-center'>
-              <div className='w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4'>
-                <UserIcon className='w-8 h-8 text-white' />
-              </div>
-              <h2 className='text-xl font-bold text-gray-900 dark:text-white mb-2'>
-                Create Your Artist Profile
-              </h2>
-              <p className='text-gray-500 dark:text-gray-400 mb-6'>
-                Set up your artist identity to start sharing your music with the
-                world.
-              </p>
-              <Button
-                color='primary'
-                size='lg'
-                startContent={<PlusIcon className='w-5 h-5' />}
-                onClick={() => setShowForm(true)}
-              >
-                Create Artist Profile
-              </Button>
-            </CardBody>
-          </Card>
+          <div className='max-w-2xl mx-auto'>
+            <FEmptyState
+              icon={UserIcon}
+              title='Create Your Artist Profile'
+              description='Set up your artist identity to start sharing your music with the world.'
+              action={{
+                label: 'Create Artist Profile',
+                onPress: () => setShowForm(true),
+                variant: 'primary',
+              }}
+              size='lg'
+            />
+          </div>
         ) : showForm ? (
           /* Show Form */
           <div className='space-y-6'>
@@ -243,106 +232,110 @@ export default function ArtistProfilePage() {
 
             {/* Management Panel */}
             <div className='space-y-6'>
-              <Card>
-                <CardBody className='p-6'>
-                  <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-4'>
-                    Manage Profile
-                  </h3>
-                  <div className='space-y-3'>
-                    <Button
-                      variant='bordered'
-                      className='w-full justify-start'
-                      startContent={<UserIcon className='w-4 h-4' />}
-                      onClick={() => {
-                        setActiveTab('profile');
-                        setShowForm(true);
-                      }}
-                    >
-                      Edit Profile Info
-                    </Button>
-                    <Button
-                      variant='bordered'
-                      className='w-full justify-start'
-                      startContent={<LinkIcon className='w-4 h-4' />}
-                      onClick={() => {
-                        setActiveTab('social');
-                        setShowForm(true);
-                      }}
-                    >
-                      Social Media Links
-                    </Button>
-                    <Button
-                      variant='bordered'
-                      className='w-full justify-start'
-                      startContent={<MusicalNoteIcon className='w-4 h-4' />}
-                      onClick={() => {
-                        setActiveTab('streaming');
-                        setShowForm(true);
-                      }}
-                    >
-                      Streaming Platforms
-                    </Button>
-                    <Button
-                      variant='bordered'
-                      className='w-full justify-start'
-                      startContent={<ChartBarIcon className='w-4 h-4' />}
-                      onClick={() => {
-                        // TODO: Navigate to analytics
-                        alert('Analytics coming soon!');
-                      }}
-                    >
-                      View Analytics
-                    </Button>
-                  </div>
-                </CardBody>
-              </Card>
+              <FCard variant='default' padding='md'>
+                <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-4'>
+                  Manage Profile
+                </h3>
+                <div className='space-y-3'>
+                  <FButton
+                    variant='outline'
+                    fullWidth
+                    startContent={<UserIcon className='w-4 h-4' />}
+                    onPress={() => {
+                      setActiveTab('profile');
+                      setShowForm(true);
+                    }}
+                  >
+                    Edit Profile Info
+                  </FButton>
+                  <FButton
+                    variant='outline'
+                    fullWidth
+                    startContent={<LinkIcon className='w-4 h-4' />}
+                    onPress={() => {
+                      setActiveTab('social');
+                      setShowForm(true);
+                    }}
+                  >
+                    Social Media Links
+                  </FButton>
+                  <FButton
+                    variant='outline'
+                    fullWidth
+                    startContent={<MusicalNoteIcon className='w-4 h-4' />}
+                    onPress={() => {
+                      setActiveTab('streaming');
+                      setShowForm(true);
+                    }}
+                  >
+                    Streaming Platforms
+                  </FButton>
+                  <FButton
+                    variant='outline'
+                    fullWidth
+                    startContent={<ChartBarIcon className='w-4 h-4' />}
+                    onPress={() => {
+                      router.push('/dashboard?tab=analytics');
+                    }}
+                  >
+                    View Analytics
+                  </FButton>
+                </div>
+              </FCard>
 
               {/* Quick Stats */}
-              <Card>
-                <CardBody className='p-6'>
-                  <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-4'>
-                    Quick Stats
-                  </h3>
-                  <div className='space-y-3'>
-                    <div className='flex justify-between'>
-                      <span className='text-gray-500 dark:text-gray-400'>
-                        Total Plays
-                      </span>
-                      <span className='font-medium'>
-                        {profile?.totalPlays.toLocaleString() || 0}
-                      </span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-gray-500 dark:text-gray-400'>
-                        Total Likes
-                      </span>
-                      <span className='font-medium'>
-                        {profile?.totalLikes.toLocaleString() || 0}
-                      </span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-gray-500 dark:text-gray-400'>
-                        Followers
-                      </span>
-                      <span className='font-medium'>
-                        {profile?.totalFollowers.toLocaleString() || 0}
-                      </span>
-                    </div>
-                    <div className='flex justify-between'>
-                      <span className='text-gray-500 dark:text-gray-400'>
-                        Profile Views
-                      </span>
-                      <span className='font-medium'>
-                        {profile?.profileViews.toLocaleString() || 0}
-                      </span>
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
+              <FCard variant='default' padding='md'>
+                <h3 className='text-lg font-semibold text-gray-900 dark:text-white mb-4'>
+                  Quick Stats
+                </h3>
+                <div className='space-y-3'>
+                  <FStat
+                    layout='stacked'
+                    label='Total Plays'
+                    value={(profile?.totalPlays ?? 0).toLocaleString()}
+                    size='sm'
+                    color='purple'
+                  />
+                  <FStat
+                    layout='stacked'
+                    label='Total Likes'
+                    value={(profile?.totalLikes ?? 0).toLocaleString()}
+                    size='sm'
+                    color='red'
+                  />
+                  <FStat
+                    layout='stacked'
+                    label='Followers'
+                    value={(profile?.totalFollowers ?? 0).toLocaleString()}
+                    size='sm'
+                    color='blue'
+                  />
+                  <FStat
+                    layout='stacked'
+                    label='Profile Views'
+                    value={(profile?.profileViews ?? 0).toLocaleString()}
+                    size='sm'
+                    color='teal'
+                  />
+                </div>
+              </FCard>
             </div>
           </div>
         )}
-      </div>
+
+        {/* Create Profile CTA (when no profile and form is shown, add back button) */}
+        {showForm && (
+          <div className='mt-4'>
+            <FButton
+              variant='ghost'
+              startContent={<PlusIcon className='w-4 h-4 rotate-45' />}
+              onPress={() => setShowForm(false)}
+            >
+              Back
+            </FButton>
+          </div>
+        )}
+      </FSection>
     </div>
   );
 }

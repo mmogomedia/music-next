@@ -7,20 +7,15 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import {
-  Button,
   Card,
   CardBody,
-  Input,
   Select,
   SelectItem,
   Switch,
-  Tab,
-  Tabs,
-  Textarea,
   Progress,
-  Chip,
   Tooltip,
 } from '@heroui/react';
+import { FButton, FInput, FTextarea, FChip } from '@/components/ui';
 import {
   DocumentTextIcon,
   PhotoIcon,
@@ -35,8 +30,13 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   InformationCircleIcon,
+  EllipsisHorizontalIcon,
+  LinkIcon,
+  PlusIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 import AIIcon from '@/components/icons/AIIcon';
+import { cn } from '@/lib/utils/cn';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { constructFileUrl } from '@/lib/url-utils';
 import { uploadImageToR2 } from '@/lib/image-upload';
@@ -90,6 +90,7 @@ export interface TrackEditorValues {
   albumArtwork?: string;
   attributes: string[];
   mood: string[];
+  streamingLinks?: { platform: string; url: string }[];
 }
 
 export interface TrackEditorProps {
@@ -109,6 +110,54 @@ export interface TrackEditorProps {
   }) => void;
 }
 
+const STREAMING_PLATFORMS = [
+  {
+    id: 'spotify',
+    name: 'Spotify',
+    placeholder: 'https://open.spotify.com/track/...',
+  },
+  {
+    id: 'apple_music',
+    name: 'Apple Music',
+    placeholder: 'https://music.apple.com/...',
+  },
+  {
+    id: 'youtube_music',
+    name: 'YouTube Music',
+    placeholder: 'https://music.youtube.com/...',
+  },
+  {
+    id: 'amazon_music',
+    name: 'Amazon Music',
+    placeholder: 'https://music.amazon.com/...',
+  },
+  {
+    id: 'deezer',
+    name: 'Deezer',
+    placeholder: 'https://www.deezer.com/track/...',
+  },
+  {
+    id: 'tidal',
+    name: 'Tidal',
+    placeholder: 'https://tidal.com/browse/track/...',
+  },
+  {
+    id: 'soundcloud',
+    name: 'SoundCloud',
+    placeholder: 'https://soundcloud.com/...',
+  },
+  {
+    id: 'audiomack',
+    name: 'Audiomack',
+    placeholder: 'https://audiomack.com/song/...',
+  },
+  {
+    id: 'boomplay',
+    name: 'Boomplay',
+    placeholder: 'https://www.boomplay.com/songs/...',
+  },
+];
+
 const LICENSE_TYPES = [
   'All Rights Reserved',
   'Creative Commons BY',
@@ -119,6 +168,47 @@ const LICENSE_TYPES = [
   'Creative Commons BY-NC-ND',
   'Public Domain',
 ];
+
+const PRIMARY_TABS = [
+  {
+    key: 'basic',
+    label: 'Basic Info',
+    icon: (cls: string) => <DocumentTextIcon className={cls} />,
+  },
+  {
+    key: 'story',
+    label: 'Story & AI',
+    icon: (cls: string) => <AIIcon className={cls} size={16} />,
+  },
+  {
+    key: 'artwork',
+    label: 'Artwork',
+    icon: (cls: string) => <PhotoIcon className={cls} />,
+  },
+  {
+    key: 'streaming',
+    label: 'Streaming',
+    icon: (cls: string) => <LinkIcon className={cls} />,
+  },
+  {
+    key: 'metadata',
+    label: 'Metadata',
+    icon: (cls: string) => <CalendarIcon className={cls} />,
+  },
+  {
+    key: 'privacy',
+    label: 'Visibility',
+    icon: (cls: string) => <ShieldCheckIcon className={cls} />,
+  },
+] as const;
+
+const OVERFLOW_TABS = [
+  {
+    key: 'copyright',
+    label: 'Copyright',
+    icon: (cls: string) => <DocumentTextIcon className={cls} />,
+  },
+] as const;
 
 const DEFAULT_VALUES: TrackEditorValues = {
   title: '',
@@ -145,6 +235,7 @@ const DEFAULT_VALUES: TrackEditorValues = {
   albumArtwork: '',
   attributes: [],
   mood: [],
+  streamingLinks: [],
 };
 
 const normalizeStringArray = (
@@ -201,6 +292,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
       ...initialValues,
       attributes: normalizeStringArray(initialValues?.attributes ?? []),
       mood: normalizeStringArray(initialValues?.mood ?? []),
+      streamingLinks: initialValues?.streamingLinks ?? [],
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [genres, setGenres] = useState<GenreOption[]>([]);
@@ -228,6 +320,54 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
     const [recentlyAddedMood, setRecentlyAddedMood] = useState<string | null>(
       null
     );
+
+    const [customPlatformName, setCustomPlatformName] = useState('');
+    const [customPlatformUrl, setCustomPlatformUrl] = useState('');
+
+    const getStreamingUrl = (platformId: string) =>
+      values.streamingLinks?.find(l => l.platform === platformId)?.url ?? '';
+
+    const setStreamingUrl = (platformId: string, url: string) => {
+      const existing = (values.streamingLinks ?? []).filter(
+        l => l.platform !== platformId
+      );
+      const updated = url.trim()
+        ? [...existing, { platform: platformId, url: url.trim() }]
+        : existing;
+      updateValue('streamingLinks', updated);
+    };
+
+    const customLinks =
+      values.streamingLinks?.filter(
+        l => !STREAMING_PLATFORMS.some(p => p.id === l.platform)
+      ) ?? [];
+
+    const addCustomLink = () => {
+      if (!customPlatformName.trim() || !customPlatformUrl.trim()) return;
+      const existing = (values.streamingLinks ?? []).filter(
+        l =>
+          l.platform !== customPlatformName.toLowerCase().replace(/\s+/g, '_')
+      );
+      updateValue('streamingLinks', [
+        ...existing,
+        {
+          platform: customPlatformName
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, '_'),
+          url: customPlatformUrl.trim(),
+        },
+      ]);
+      setCustomPlatformName('');
+      setCustomPlatformUrl('');
+    };
+
+    const removeCustomLink = (platformId: string) => {
+      updateValue(
+        'streamingLinks',
+        (values.streamingLinks ?? []).filter(l => l.platform !== platformId)
+      );
+    };
 
     // Completion tracking - fetch rules dynamically
     const [completionRules, setCompletionRules] = useState<
@@ -278,7 +418,8 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
 
     // Tab management for navigation
     const [selectedTab, setSelectedTab] = useState<string>('basic');
-
+    const [overflowOpen, setOverflowOpen] = useState(false);
+    const overflowRef = useRef<HTMLDivElement>(null);
     const effectiveSubmitLabel = useMemo(() => {
       if (submitLabel) return submitLabel;
       return mode === 'create' ? 'Create Track' : 'Save Changes';
@@ -663,6 +804,20 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
       onStateChange,
     ]);
 
+    // Close overflow menu on outside click
+    useEffect(() => {
+      const handler = (e: MouseEvent) => {
+        if (
+          overflowRef.current &&
+          !overflowRef.current.contains(e.target as Node)
+        ) {
+          setOverflowOpen(false);
+        }
+      };
+      document.addEventListener('mousedown', handler);
+      return () => document.removeEventListener('mousedown', handler);
+    }, []);
+
     const FormContent = (
       <form
         ref={formRef}
@@ -670,48 +825,45 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
         className={`space-y-6 ${className ?? ''}`}
       >
         {/* Completion Display */}
-        <div className='space-y-3 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700'>
+        <div className='space-y-3 p-4 bg-gray-50 dark:bg-slate-800/60 rounded-xl border border-gray-100 dark:border-slate-700/60'>
           <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-3'>
-              <div>
-                <div className='flex items-center gap-2'>
-                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                    Track Completion
-                  </span>
-                  <Chip
-                    size='sm'
-                    color={getCompletionColor(completionBreakdown.percentage)}
-                    variant='flat'
-                  >
-                    {completionBreakdown.percentage}%
-                  </Chip>
-                  <span className='text-xs text-gray-500 dark:text-gray-400'>
-                    {getCompletionStatus(completionBreakdown.percentage)}
-                  </span>
-                </div>
-                <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-                  {completionBreakdown.isComplete
-                    ? 'Track is complete!'
-                    : `${100 - completionBreakdown.percentage}% remaining to complete`}
-                </p>
-              </div>
+            <div className='flex items-center gap-2.5'>
+              <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                Track Completion
+              </span>
+              <FChip
+                size='xs'
+                color={
+                  getCompletionColor(completionBreakdown.percentage) as
+                    | 'success'
+                    | 'warning'
+                    | 'danger'
+                    | 'default'
+                }
+                variant='flat'
+              >
+                {completionBreakdown.percentage}%
+              </FChip>
+              <span className='hidden sm:inline text-xs text-gray-400 dark:text-gray-500'>
+                {getCompletionStatus(completionBreakdown.percentage)}
+              </span>
             </div>
-            <Button
+            <FButton
+              variant='ghost'
               size='sm'
-              variant='light'
               onPress={() =>
                 setShowCompletionBreakdown(!showCompletionBreakdown)
               }
               endContent={
                 showCompletionBreakdown ? (
-                  <ChevronUpIcon className='w-4 h-4' />
+                  <ChevronUpIcon className='w-3.5 h-3.5' />
                 ) : (
-                  <ChevronDownIcon className='w-4 h-4' />
+                  <ChevronDownIcon className='w-3.5 h-3.5' />
                 )
               }
             >
-              {showCompletionBreakdown ? 'Hide' : 'Show'} Details
-            </Button>
+              {showCompletionBreakdown ? 'Hide' : 'Details'}
+            </FButton>
           </div>
 
           <Progress
@@ -777,24 +929,83 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
           )}
         </div>
 
-        <Tabs
-          aria-label='Track editor sections'
-          className='w-full'
-          selectedKey={selectedTab}
-          onSelectionChange={key => setSelectedTab(key as string)}
-        >
-          <Tab
-            key='basic'
-            title={
-              <div className='flex items-center gap-2'>
-                <DocumentTextIcon className='w-4 h-4' />
-                <span>Basic Info</span>
-              </div>
-            }
-          >
+        {/* ── Custom tab bar ─────────────────────────────────── */}
+        <div className='border-b border-gray-100 dark:border-slate-700'>
+          <div className='flex items-center'>
+            {PRIMARY_TABS.map(tab => (
+              <button
+                key={tab.key}
+                type='button'
+                onClick={() => setSelectedTab(tab.key)}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap flex-shrink-0',
+                  selectedTab === tab.key
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-200 dark:hover:border-slate-600'
+                )}
+              >
+                {tab.icon('w-4 h-4')}
+                {tab.label}
+              </button>
+            ))}
+
+            {/* 3-dot overflow for less-used tabs */}
+            <div className='relative ml-auto' ref={overflowRef}>
+              <button
+                type='button'
+                onClick={() => setOverflowOpen(v => !v)}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-3 text-sm font-medium border-b-2 -mb-px transition-colors',
+                  OVERFLOW_TABS.some(t => t.key === selectedTab)
+                    ? 'border-primary-500 text-primary-600 dark:text-primary-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                )}
+              >
+                {(() => {
+                  const active = OVERFLOW_TABS.find(t => t.key === selectedTab);
+                  return active ? (
+                    <>
+                      {active.icon('w-4 h-4')}
+                      <span>{active.label}</span>
+                    </>
+                  ) : null;
+                })()}
+                <EllipsisHorizontalIcon className='w-5 h-5' />
+              </button>
+
+              {overflowOpen && (
+                <div className='absolute right-0 top-full mt-1 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-100 dark:border-slate-700 py-1 z-50'>
+                  {OVERFLOW_TABS.map(tab => (
+                    <button
+                      key={tab.key}
+                      type='button'
+                      onClick={() => {
+                        setSelectedTab(tab.key);
+                        setOverflowOpen(false);
+                      }}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors text-left',
+                        selectedTab === tab.key
+                          ? 'text-primary-600 dark:text-primary-400 bg-primary-50/50 dark:bg-primary-900/20 font-medium'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700/50'
+                      )}
+                    >
+                      {tab.icon('w-4 h-4')}
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Tab content ─────────────────────────────────────── */}
+        <div>
+          {selectedTab === 'basic' && (
             <div className='space-y-4 pt-4'>
               <div className='space-y-4'>
-                <Input
+                <FInput
                   label='Title *'
                   placeholder='Enter track title'
                   value={values.title}
@@ -843,7 +1054,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                   </p>
                 )}
 
-                <Input
+                <FInput
                   label='Album'
                   placeholder='Album name'
                   value={values.album || ''}
@@ -873,168 +1084,192 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                 </Select>
               </div>
             </div>
-          </Tab>
+          )}
 
-          <Tab
-            key='story'
-            title={
-              <div className='flex items-center gap-2'>
-                <AIIcon className='w-4 h-4' size={16} />
-                <span>Story & AI Tools</span>
-              </div>
-            }
-          >
+          {selectedTab === 'story' && (
             <div className='space-y-6 pt-4'>
-              <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                {/* Left Column: Lyrics */}
-                <div className='space-y-4'>
-                  <div className='flex items-center justify-between'>
-                    <label
-                      htmlFor='lyrics-textarea'
-                      className='text-sm font-medium text-gray-700 dark:text-gray-300'
-                    >
-                      Lyrics
-                    </label>
+              {/* AI banner */}
+              <div className='rounded-xl bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/40 dark:to-indigo-950/40 border border-violet-100 dark:border-violet-900/50 px-4 py-3.5 flex items-center gap-3'>
+                <div className='rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 p-1.5 flex-shrink-0'>
+                  <AIIcon className='w-4 h-4 text-white' size={16} />
+                </div>
+                <div className='min-w-0 flex-1'>
+                  <p className='text-sm font-semibold text-violet-900 dark:text-violet-200'>
+                    AI Metadata Assistant
+                  </p>
+                  <p className='text-xs text-violet-700 dark:text-violet-400 mt-0.5 leading-relaxed'>
+                    Paste your lyrics and click &quot;Generate&quot; — the AI
+                    will write a description and suggest attributes &amp; mood
+                    tags. Supports English, Zulu, Xhosa, Shona, Ndebele, and
+                    more.
+                  </p>
+                </div>
+              </div>
+
+              {/* ── Lyrics — full width ─────────────────────────────────── */}
+              <div className='space-y-2'>
+                <div className='flex items-center justify-between'>
+                  <label
+                    htmlFor='lyrics-textarea'
+                    className='text-sm font-semibold text-gray-700 dark:text-gray-200'
+                  >
+                    Lyrics
+                  </label>
+                  <div className='flex items-center gap-2'>
+                    {values.lyrics && values.lyrics.length > 0 && (
+                      <FChip size='xs' color='default' variant='flat'>
+                        {values.lyrics.length.toLocaleString()} chars
+                      </FChip>
+                    )}
                     <Tooltip
                       content={
-                        <div className='max-w-xs space-y-2 p-1'>
-                          <p className='font-medium'>AI Metadata Assistant</p>
-                          <p className='text-sm'>
-                            Paste your lyrics here, then use the AI tools to
-                            generate description, attributes, and mood tags. The
-                            AI will auto-detect and translate languages when
-                            needed.
-                          </p>
-                          <p className='text-xs opacity-90 mt-2'>
-                            Supported languages: English, Zulu, Xhosa,
-                            Afrikaans, French, Portuguese, Shona, Ndebele, and
-                            more.
-                          </p>
+                        <div className='max-w-xs space-y-1 p-1 text-xs'>
+                          <p>Paste the full lyrics for the best AI results.</p>
                         </div>
                       }
                       placement='top'
                       showArrow
                     >
-                      <Button
-                        isIconOnly
-                        size='sm'
-                        variant='light'
-                        className='text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                      >
-                        <InformationCircleIcon className='w-5 h-5' />
-                      </Button>
+                      <span>
+                        <InformationCircleIcon className='w-4 h-4 text-gray-400 dark:text-gray-500 cursor-help' />
+                      </span>
                     </Tooltip>
                   </div>
-                  <Textarea
-                    id='lyrics-textarea'
-                    placeholder='Paste your song lyrics here...'
-                    value={values.lyrics || ''}
-                    onValueChange={value => updateValue('lyrics', value)}
-                    rows={12}
-                    className='font-mono text-sm'
-                  />
-                  <div className='flex items-center gap-2'>
-                    <Button
+                </div>
+                <FTextarea
+                  id='lyrics-textarea'
+                  placeholder='Paste your song lyrics here...'
+                  value={values.lyrics || ''}
+                  onValueChange={value => updateValue('lyrics', value)}
+                  minRows={18}
+                  className='font-mono text-sm'
+                />
+              </div>
+
+              {/* ── Generate button + feedback ──────────────────────────── */}
+              <div className='space-y-2'>
+                <FButton
+                  variant='primary'
+                  startContent={
+                    !isGeneratingMetadata && (
+                      <AIIcon className='w-4 h-4' size={16} />
+                    )
+                  }
+                  onPress={handleGenerateMetadata}
+                  isLoading={isGeneratingMetadata}
+                  isDisabled={
+                    !values.lyrics || values.lyrics.trim().length === 0
+                  }
+                  className='w-full'
+                >
+                  {isGeneratingMetadata
+                    ? 'Generating metadata…'
+                    : 'Generate Description & Attributes'}
+                </FButton>
+
+                {metadataRateLimitInfo && (
+                  <p className='text-xs text-gray-400 dark:text-gray-500 text-center'>
+                    {metadataRateLimitInfo.remaining} AI requests remaining this
+                    hour
+                  </p>
+                )}
+                {metadataError && (
+                  <div className='flex items-start gap-2 p-3 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg text-sm text-rose-700 dark:text-rose-400'>
+                    <XCircleIcon className='w-4 h-4 flex-shrink-0 mt-0.5' />
+                    <span className='flex-1 leading-relaxed'>
+                      {metadataError}
+                    </span>
+                    <FButton
                       size='sm'
-                      variant='flat'
-                      color='secondary'
-                      startContent={<AIIcon className='w-4 h-4' size={16} />}
+                      variant='danger-ghost'
                       onPress={handleGenerateMetadata}
-                      isLoading={isGeneratingMetadata}
-                      isDisabled={
-                        !values.lyrics || values.lyrics.trim().length === 0
-                      }
-                      className='flex-1'
+                      isDisabled={isGeneratingMetadata}
+                      className='flex-shrink-0'
                     >
-                      {isGeneratingMetadata
-                        ? 'Generating...'
-                        : 'Generate Description & Attributes'}
-                    </Button>
+                      Retry
+                    </FButton>
                   </div>
-                  {metadataRateLimitInfo && (
-                    <p className='text-xs text-gray-500 dark:text-gray-400'>
-                      {metadataRateLimitInfo.remaining} AI requests remaining
-                      this hour
-                    </p>
-                  )}
-                  {metadataError && (
-                    <div className='flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-sm text-red-600 dark:text-red-400'>
-                      <XCircleIcon className='w-4 h-4 flex-shrink-0' />
-                      <span className='flex-1'>{metadataError}</span>
-                      <Button
-                        size='sm'
-                        variant='light'
-                        color='danger'
-                        onPress={handleGenerateMetadata}
-                        isDisabled={isGeneratingMetadata}
-                      >
-                        Retry
-                      </Button>
-                    </div>
-                  )}
-                  {generationNotice && (
-                    <div className='p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded text-xs text-green-700 dark:text-green-300'>
-                      {generationNotice}
-                    </div>
-                  )}
+                )}
+                {generationNotice && (
+                  <div className='flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs text-emerald-700 dark:text-emerald-300'>
+                    <CheckCircleIcon className='w-4 h-4 flex-shrink-0' />
+                    {generationNotice}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Divider ─────────────────────────────────────────────── */}
+              <div className='border-t border-gray-100 dark:border-slate-700/60' />
+
+              {/* ── Metadata: Description | Attributes | Mood ───────────── */}
+              <div className='grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-5'>
+                {/* Description */}
+                <div className='space-y-1.5'>
+                  <label
+                    htmlFor='description-textarea'
+                    className='text-sm font-semibold text-gray-700 dark:text-gray-200'
+                  >
+                    Description
+                  </label>
+                  <p className='text-xs text-gray-500 dark:text-gray-400'>
+                    AI-generated from lyrics, or write your own.
+                  </p>
+                  <FTextarea
+                    id='description-textarea'
+                    placeholder='A compelling description of your track…'
+                    value={values.description || ''}
+                    onValueChange={value => updateValue('description', value)}
+                    minRows={7}
+                  />
                 </div>
 
-                {/* Right Column: Description, Attributes, Mood */}
-                <div className='space-y-4'>
-                  <div className='space-y-2'>
-                    <label
-                      htmlFor='description-textarea'
-                      className='text-sm font-medium text-gray-700 dark:text-gray-300'
-                    >
-                      Description
-                    </label>
-                    <Textarea
-                      id='description-textarea'
-                      placeholder='Track description (auto-generated from lyrics or write your own)...'
-                      value={values.description || ''}
-                      onValueChange={value => updateValue('description', value)}
-                      rows={4}
-                    />
-                  </div>
-
-                  <div className='space-y-2'>
-                    <div className='flex items-center justify-between flex-wrap gap-2'>
-                      <div>
-                        <p className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                          Attributes
-                        </p>
-                        <p className='text-xs text-gray-500 dark:text-gray-400'>
-                          Themes & topics
-                        </p>
-                      </div>
-                      <Button
-                        variant='flat'
-                        color='primary'
-                        className='sm:w-auto'
-                        onPress={handleAddAttribute}
-                        isDisabled={!attributeInput.trim()}
-                        size='sm'
-                      >
-                        Add Attribute
-                      </Button>
+                {/* Attributes */}
+                <div className='space-y-2.5 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/30 p-3.5'>
+                  <div className='flex items-start justify-between gap-2'>
+                    <div>
+                      <p className='text-sm font-semibold text-gray-700 dark:text-gray-200'>
+                        Attributes
+                      </p>
+                      <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>
+                        Themes &amp; topics that define the song
+                      </p>
                     </div>
-                    <Input
+                    <FChip
+                      size='xs'
+                      color={
+                        values.attributes.length >= 3 ? 'success' : 'default'
+                      }
+                      variant='flat'
+                    >
+                      {values.attributes.length}/3+
+                    </FChip>
+                  </div>
+                  <div className='space-y-2'>
+                    <FInput
                       placeholder='e.g. women empowerment'
                       value={attributeInput}
                       onValueChange={setAttributeInput}
                       onKeyDown={handleAttributeKeyDown}
-                      className='flex-1'
                       size='sm'
                     />
-                    <div className='flex flex-wrap gap-2 min-h-[60px] p-3 border border-gray-200 dark:border-slate-700 rounded-lg'>
-                      {(values.attributes || []).length === 0 && (
-                        <p className='text-xs text-gray-500 dark:text-gray-400'>
-                          Add at least 3 attributes to capture the song&apos;s
-                          themes.
-                        </p>
-                      )}
-                      {(values.attributes || []).map(attribute => (
-                        <Chip
+                    <FButton
+                      variant='primary-outline'
+                      onPress={handleAddAttribute}
+                      isDisabled={!attributeInput.trim()}
+                      size='sm'
+                      className='w-full'
+                    >
+                      Add
+                    </FButton>
+                  </div>
+                  <div className='flex flex-wrap gap-1.5 min-h-[40px] content-start'>
+                    {(values.attributes || []).length === 0 ? (
+                      <p className='text-xs text-gray-400 dark:text-gray-500 italic w-full text-center pt-2'>
+                        Add 3 or more for best AI results.
+                      </p>
+                    ) : (
+                      (values.attributes || []).map(attribute => (
+                        <FChip
                           key={attribute}
                           variant='flat'
                           color='primary'
@@ -1044,86 +1279,89 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                           size='sm'
                           className={`transition-all duration-300 ${
                             recentlyAddedAttribute === attribute
-                              ? 'ring-2 ring-primary-500 ring-offset-2 scale-105 animate-pulse'
+                              ? 'ring-2 ring-primary-500 ring-offset-1 scale-105'
                               : ''
                           }`}
                         >
                           {attribute}
-                        </Chip>
-                      ))}
-                    </div>
+                        </FChip>
+                      ))
+                    )}
                   </div>
+                </div>
 
-                  <div className='space-y-2'>
-                    <div className='flex items-center justify-between flex-wrap gap-2'>
-                      <div>
-                        <p className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                          Mood
-                        </p>
-                        <p className='text-xs text-gray-500 dark:text-gray-400'>
-                          Displayed as pills in AI
-                        </p>
-                      </div>
-                      <Button
-                        variant='flat'
-                        color='primary'
-                        className='sm:w-auto'
-                        onPress={handleAddMood}
-                        isDisabled={!moodInput.trim()}
-                        size='sm'
-                      >
-                        Add Mood
-                      </Button>
+                {/* Mood */}
+                <div className='space-y-2.5 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/30 p-3.5'>
+                  <div className='flex items-start justify-between gap-2'>
+                    <div>
+                      <p className='text-sm font-semibold text-gray-700 dark:text-gray-200'>
+                        Mood
+                      </p>
+                      <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>
+                        Shown as discovery chips in AI chat
+                      </p>
                     </div>
-                    <Input
-                      placeholder='e.g. uplifting'
+                    <FChip
+                      size='xs'
+                      color={values.mood.length > 0 ? 'info' : 'default'}
+                      variant='flat'
+                    >
+                      {values.mood.length} tag
+                      {values.mood.length !== 1 ? 's' : ''}
+                    </FChip>
+                  </div>
+                  <div className='space-y-2'>
+                    <FInput
+                      placeholder='e.g. uplifting, chill'
                       value={moodInput}
                       onValueChange={setMoodInput}
                       onKeyDown={handleMoodKeyDown}
-                      className='flex-1'
                       size='sm'
                     />
-                    <div className='flex flex-wrap gap-2 min-h-[60px] p-3 border border-gray-200 dark:border-slate-700 rounded-lg'>
-                      {(values.mood || []).length === 0 && (
-                        <p className='text-xs text-gray-500 dark:text-gray-400'>
-                          Add mood tags to help users discover your track.
-                        </p>
-                      )}
-                      {(values.mood || []).map(mood => (
-                        <Chip
+                    <FButton
+                      variant='primary-outline'
+                      onPress={handleAddMood}
+                      isDisabled={!moodInput.trim()}
+                      size='sm'
+                      className='w-full'
+                    >
+                      Add
+                    </FButton>
+                  </div>
+                  <div className='flex flex-wrap gap-1.5 min-h-[40px] content-start'>
+                    {(values.mood || []).length === 0 ? (
+                      <p className='text-xs text-gray-400 dark:text-gray-500 italic w-full text-center pt-2'>
+                        No mood tags yet.
+                      </p>
+                    ) : (
+                      (values.mood || []).map(mood => (
+                        <FChip
                           key={mood}
                           variant='flat'
-                          color='secondary'
+                          color='info'
                           onClose={() => removeListValue('mood', mood)}
                           size='sm'
                           className={`transition-all duration-300 ${
                             recentlyAddedMood === mood
-                              ? 'ring-2 ring-secondary-500 ring-offset-2 scale-105 animate-pulse'
+                              ? 'ring-2 ring-sky-500 ring-offset-1 scale-105'
                               : ''
                           }`}
                         >
                           {mood}
-                        </Chip>
-                      ))}
-                    </div>
+                        </FChip>
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-          </Tab>
+          )}
 
-          <Tab
-            key='artwork'
-            title={
-              <div className='flex items-center gap-2'>
-                <PhotoIcon className='w-4 h-4' />
-                <span>Artwork</span>
-              </div>
-            }
-          >
+          {selectedTab === 'artwork' && (
             <div className='pt-4'>
-              <div className='flex items-start gap-4'>
-                <div className='flex-shrink-0'>
+              <div className='flex flex-col lg:flex-row gap-8 items-start'>
+                {/* Left: artwork display + upload controls */}
+                <div className='flex-shrink-0 w-full lg:w-80 space-y-3'>
                   <ImageUpload
                     label=''
                     preview={
@@ -1133,10 +1371,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                     }
                     onImageChange={handleArtworkUpload}
                     onError={error =>
-                      setErrors(prev => ({
-                        ...prev,
-                        artwork: error,
-                      }))
+                      setErrors(prev => ({ ...prev, artwork: error }))
                     }
                     disabled={isUploadingArtwork || isSubmitting || isSaving}
                     aspectRatio={1}
@@ -1145,49 +1380,215 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                     maxWidth={2000}
                     maxHeight={2000}
                     maxFileSize={5}
-                    previewSize='md'
+                    previewSize='xl'
                     showCropButton
                     showRemoveButton
                   />
-                </div>
-                <div className='flex-1 space-y-2'>
-                  <div>
-                    <div className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                      Album Artwork
-                    </div>
-                    <p className='text-xs text-gray-500 dark:text-gray-400 mt-1'>
-                      Recommended: 1000x1000px or larger. Max 5MB.
-                    </p>
-                  </div>
-                  {errors.artwork && (
-                    <p className='text-sm text-red-600 dark:text-red-400'>
-                      {errors.artwork}
+                  {isUploadingArtwork && (
+                    <p className='text-xs text-primary-600 dark:text-primary-400 animate-pulse text-center'>
+                      Uploading artwork…
                     </p>
                   )}
+                  {errors.artwork && (
+                    <div className='flex items-center gap-2 px-3 py-2 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg text-xs text-rose-700 dark:text-rose-400'>
+                      <XCircleIcon className='w-4 h-4 flex-shrink-0' />
+                      {errors.artwork}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right: info + specs */}
+                <div className='flex-1 space-y-5 min-w-0'>
+                  <div>
+                    <h3 className='text-sm font-semibold text-gray-800 dark:text-gray-100'>
+                      Album Artwork
+                    </h3>
+                    <p className='mt-1.5 text-sm text-gray-500 dark:text-gray-400 leading-relaxed'>
+                      A high-quality square image used across the platform and
+                      in streaming services. Upload the best version you have —
+                      you can crop it after selecting.
+                    </p>
+                  </div>
+
+                  {/* Specs table */}
+                  <div className='rounded-xl bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60 overflow-hidden'>
+                    {[
+                      { label: 'Format', value: 'JPG or PNG' },
+                      { label: 'Minimum', value: '500 × 500 px' },
+                      { label: 'Recommended', value: '1000 × 1000 px' },
+                      { label: 'Max file size', value: '5 MB' },
+                    ].map(({ label, value }) => (
+                      <div
+                        key={label}
+                        className='px-4 py-2.5 flex items-center justify-between text-sm border-b border-gray-100 dark:border-slate-700/60 last:border-b-0'
+                      >
+                        <span className='text-gray-500 dark:text-gray-400'>
+                          {label}
+                        </span>
+                        <span className='font-medium text-gray-700 dark:text-gray-200'>
+                          {value}
+                        </span>
+                      </div>
+                    ))}
+                    <div className='px-4 py-2.5 flex items-center justify-between text-sm'>
+                      <span className='text-gray-500 dark:text-gray-400'>
+                        Aspect ratio
+                      </span>
+                      <FChip size='xs' color='primary' variant='flat'>
+                        1:1 square
+                      </FChip>
+                    </div>
+                  </div>
+
+                  {/* Pro tip */}
+                  <div className='flex items-start gap-2.5 px-3.5 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/40'>
+                    <span className='text-amber-500 text-base leading-none mt-0.5'>
+                      💡
+                    </span>
+                    <p className='text-xs text-amber-700 dark:text-amber-300 leading-relaxed'>
+                      Use <strong>1000 × 1000 px or larger</strong> for the best
+                      appearance on Apple Music, Spotify, and other streaming
+                      services.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </Tab>
+          )}
 
-          <Tab
-            key='metadata'
-            title={
-              <div className='flex items-center gap-2'>
-                <CalendarIcon className='w-4 h-4' />
-                <span>Metadata</span>
+          {selectedTab === 'streaming' && (
+            <div className='space-y-5 pt-4'>
+              {/* Header */}
+              <div className='flex items-start justify-between gap-3'>
+                <div>
+                  <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-200'>
+                    Streaming &amp; Distribution Links
+                  </h3>
+                  <p className='text-xs text-gray-500 dark:text-gray-400 mt-0.5'>
+                    Add links where fans can stream or buy your track on other
+                    platforms.
+                  </p>
+                </div>
+                {(values.streamingLinks?.length ?? 0) > 0 && (
+                  <FChip size='sm' color='success' variant='flat'>
+                    {values.streamingLinks?.length} link
+                    {values.streamingLinks?.length !== 1 ? 's' : ''}
+                  </FChip>
+                )}
               </div>
-            }
-          >
+
+              {/* Known platforms */}
+              <div className='space-y-2'>
+                {STREAMING_PLATFORMS.map(platform => (
+                  <div
+                    key={platform.id}
+                    className='flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60'
+                  >
+                    <div className='w-28 flex-shrink-0'>
+                      <span className='text-sm font-medium text-gray-700 dark:text-gray-200'>
+                        {platform.name}
+                      </span>
+                    </div>
+                    <FInput
+                      placeholder={platform.placeholder}
+                      value={getStreamingUrl(platform.id)}
+                      onValueChange={url => setStreamingUrl(platform.id, url)}
+                      size='sm'
+                      classNames={{ base: 'flex-1' }}
+                      startContent={
+                        <LinkIcon className='w-3.5 h-3.5 text-gray-400 flex-shrink-0' />
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Custom platforms */}
+              <div className='space-y-3'>
+                <p className='text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500'>
+                  Custom Platforms
+                </p>
+
+                {customLinks.length > 0 && (
+                  <div className='space-y-2'>
+                    {customLinks.map(link => (
+                      <div
+                        key={link.platform}
+                        className='flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/60'
+                      >
+                        <div className='w-28 flex-shrink-0'>
+                          <span className='text-sm font-medium text-gray-700 dark:text-gray-200 capitalize'>
+                            {link.platform.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                        <div className='flex-1 text-sm text-gray-500 dark:text-gray-400 truncate'>
+                          {link.url}
+                        </div>
+                        <button
+                          type='button'
+                          onClick={() => removeCustomLink(link.platform)}
+                          className='flex-shrink-0 p-1 rounded-md text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors'
+                          aria-label={`Remove ${link.platform}`}
+                        >
+                          <TrashIcon className='w-4 h-4' />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add custom row */}
+                <div className='rounded-xl border border-dashed border-gray-200 dark:border-slate-700 p-3.5 space-y-2.5'>
+                  <p className='text-xs text-gray-500 dark:text-gray-400'>
+                    Add a platform not in the list above:
+                  </p>
+                  <div className='flex gap-2'>
+                    <FInput
+                      placeholder='Platform name'
+                      value={customPlatformName}
+                      onValueChange={setCustomPlatformName}
+                      size='sm'
+                      classNames={{ base: 'w-36 flex-shrink-0' }}
+                    />
+                    <FInput
+                      placeholder='https://...'
+                      value={customPlatformUrl}
+                      onValueChange={setCustomPlatformUrl}
+                      size='sm'
+                      classNames={{ base: 'flex-1' }}
+                      startContent={
+                        <LinkIcon className='w-3.5 h-3.5 text-gray-400 flex-shrink-0' />
+                      }
+                    />
+                    <FButton
+                      variant='primary-outline'
+                      size='sm'
+                      isIconOnly
+                      onPress={addCustomLink}
+                      isDisabled={
+                        !customPlatformName.trim() || !customPlatformUrl.trim()
+                      }
+                      aria-label='Add custom platform'
+                    >
+                      <PlusIcon className='w-4 h-4' />
+                    </FButton>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {selectedTab === 'metadata' && (
             <div className='space-y-4 pt-4'>
               <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                <Input
+                <FInput
                   label='Composer'
                   placeholder='Composer name'
                   value={values.composer || ''}
                   onValueChange={value => updateValue('composer', value)}
                 />
 
-                <Input
+                <FInput
                   type='number'
                   label='Year'
                   placeholder='2024'
@@ -1199,14 +1600,14 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                   errorMessage={errors.year}
                 />
 
-                <Input
+                <FInput
                   type='date'
                   label='Release Date'
                   value={values.releaseDate || ''}
                   onValueChange={value => updateValue('releaseDate', value)}
                 />
 
-                <Input
+                <FInput
                   type='number'
                   label='BPM'
                   placeholder='120'
@@ -1218,7 +1619,7 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                   errorMessage={errors.bpm}
                 />
 
-                <Input
+                <FInput
                   label='ISRC'
                   placeholder='USRC17607839'
                   value={values.isrc || ''}
@@ -1246,17 +1647,9 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                 </Select>
               </div>
             </div>
-          </Tab>
+          )}
 
-          <Tab
-            key='privacy'
-            title={
-              <div className='flex items-center gap-2'>
-                <ShieldCheckIcon className='w-4 h-4' />
-                <span>Visibility</span>
-              </div>
-            }
-          >
+          {selectedTab === 'privacy' && (
             <div className='space-y-4 pt-4'>
               <div className='flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg'>
                 <div className='flex items-center gap-3'>
@@ -1321,17 +1714,9 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                 />
               </div>
             </div>
-          </Tab>
+          )}
 
-          <Tab
-            key='copyright'
-            title={
-              <div className='flex items-center gap-2'>
-                <DocumentTextIcon className='w-4 h-4' />
-                <span>Copyright</span>
-              </div>
-            }
-          >
+          {selectedTab === 'copyright' && (
             <div className='space-y-4 pt-4'>
               <Select
                 label='License Type'
@@ -1347,26 +1732,26 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
                 ))}
               </Select>
 
-              <Textarea
+              <FTextarea
                 label='Copyright Information'
                 placeholder='© 2024 Artist Name. All rights reserved.'
                 value={values.copyrightInfo || ''}
                 onValueChange={value => updateValue('copyrightInfo', value)}
-                rows={2}
+                minRows={2}
               />
 
-              <Textarea
+              <FTextarea
                 label='Distribution Rights'
                 placeholder='Describe distribution rights and restrictions...'
                 value={values.distributionRights || ''}
                 onValueChange={value =>
                   updateValue('distributionRights', value)
                 }
-                rows={3}
+                minRows={3}
               />
             </div>
-          </Tab>
-        </Tabs>
+          )}
+        </div>
 
         {errors.submit && (
           <div className='p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg'>
@@ -1379,24 +1764,24 @@ const TrackEditor = forwardRef<HTMLFormElement, TrackEditorProps>(
         {showFooterActions && (
           <div className='flex gap-3 justify-end'>
             {onCancel && (
-              <Button
-                variant='light'
+              <FButton
+                variant='ghost'
                 onPress={onCancel}
-                disabled={isSubmitting || isSaving}
+                isDisabled={isSubmitting || isSaving}
               >
                 {cancelLabel || 'Cancel'}
-              </Button>
+              </FButton>
             )}
-            <Button
+            <FButton
+              variant='primary'
               type='submit'
-              color='primary'
               isLoading={isSubmitting || isSaving || isUploadingArtwork}
-              disabled={!values.title.trim() || isUploadingArtwork}
+              isDisabled={!values.title.trim() || isUploadingArtwork}
             >
               {isUploadingArtwork
                 ? 'Uploading Artwork...'
                 : effectiveSubmitLabel}
-            </Button>
+            </FButton>
           </div>
         )}
       </form>

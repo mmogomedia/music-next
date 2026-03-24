@@ -1,7 +1,8 @@
 'use client';
 
-import { Card, CardBody, Button } from '@heroui/react';
+import { Button } from '@heroui/react';
 import { PlayIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import FCard from '@/components/ui/FCard';
 import TrackArtwork from '@/components/music/TrackArtwork';
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { SourceType } from '@/types/stats';
@@ -32,43 +33,41 @@ export default function TopPerformingTracks({
 
   if (!topTracks || topTracks.length === 0) {
     return (
-      <Card className='border border-gray-200 dark:border-slate-700'>
-        <CardBody className='p-6'>
-          <div className='text-center py-8'>
-            <div className='w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4'>
-              <ChartBarIcon className='w-8 h-8 text-gray-400' />
-            </div>
-            <h4 className='text-lg font-medium text-gray-900 dark:text-white mb-2'>
-              No performance data yet
-            </h4>
-            <p className='text-gray-500 dark:text-gray-400'>
-              Your top performing tracks will appear here once you get plays
-            </p>
+      <FCard
+        title='Top Performing Tracks'
+        titleIcon={<ChartBarIcon className='w-4 h-4' />}
+      >
+        <div className='text-center py-8'>
+          <div className='w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4'>
+            <ChartBarIcon className='w-8 h-8 text-gray-400' />
           </div>
-        </CardBody>
-      </Card>
+          <h4 className='text-lg font-medium text-gray-900 dark:text-white mb-2'>
+            No performance data yet
+          </h4>
+          <p className='text-gray-500 dark:text-gray-400'>
+            Your top performing tracks will appear here once you get plays
+          </p>
+        </div>
+      </FCard>
     );
   }
 
   return (
-    <Card className='border border-gray-200 dark:border-slate-700'>
-      <CardBody className='p-6'>
-        <div className='flex items-center justify-between mb-4'>
-          <div className='flex items-center gap-2'>
-            <ChartBarIcon className='w-5 h-5 text-gray-500 dark:text-gray-400' />
-            <h3 className='text-lg font-semibold text-gray-900 dark:text-white'>
-              Top Performing Tracks
-            </h3>
-          </div>
-          {onViewAll && (
-            <Button size='sm' variant='light' onPress={onViewAll}>
-              View All
-            </Button>
-          )}
-        </div>
-
-        <div className='space-y-3'>
-          {topTracks.map((item, index) => {
+    <FCard
+      title='Top Performing Tracks'
+      titleIcon={<ChartBarIcon className='w-4 h-4' />}
+      action={
+        onViewAll ? (
+          <Button size='sm' variant='light' onPress={onViewAll}>
+            View All
+          </Button>
+        ) : undefined
+      }
+    >
+      <div className='space-y-3'>
+        {(() => {
+          const maxPlays = topTracks[0]?._count?.id ?? 1;
+          return topTracks.slice(0, 2).map((item, index) => {
             if (!item.track) return null;
 
             const rank = index + 1;
@@ -78,17 +77,17 @@ export default function TopPerformingTracks({
             return (
               <div
                 key={item.trackId}
-                className='flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors'
+                className='flex items-center gap-3 p-3 rounded-xl bg-gray-50/80 dark:bg-slate-900/40 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-colors'
               >
                 <div className='flex-shrink-0 w-8 text-center'>
                   <span
-                    className={`text-sm font-bold ${
+                    className={`text-base font-extrabold ${
                       rank === 1
-                        ? 'text-yellow-600 dark:text-yellow-400'
+                        ? 'text-amber-500 dark:text-amber-400'
                         : rank === 2
                           ? 'text-gray-600 dark:text-gray-400'
                           : rank === 3
-                            ? 'text-orange-600 dark:text-orange-400'
+                            ? 'text-slate-400 dark:text-slate-500'
                             : 'text-gray-500 dark:text-gray-500'
                     }`}
                   >
@@ -122,6 +121,14 @@ export default function TopPerformingTracks({
                         />
                       </>
                     )}
+                  </div>
+                  <div className='mt-1.5 h-1 w-full rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden'>
+                    <div
+                      className='h-full rounded-full bg-primary-500 dark:bg-primary-400 transition-all duration-500'
+                      style={{
+                        width: `${Math.round(((item._count?.id ?? 0) / maxPlays) * 100)}%`,
+                      }}
+                    />
                   </div>
                 </div>
 
@@ -157,12 +164,12 @@ export default function TopPerformingTracks({
                     }}
                     className={
                       isCurrentlyPlaying
-                        ? 'text-blue-600 dark:text-blue-400'
+                        ? 'text-primary-600 dark:text-primary-400'
                         : ''
                     }
                   >
                     {isCurrentlyPlaying ? (
-                      <div className='w-4 h-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin'></div>
+                      <div className='w-4 h-4 border-2 border-primary-600 dark:border-primary-400 border-t-transparent rounded-full animate-spin'></div>
                     ) : (
                       <PlayIcon className='w-4 h-4' />
                     )}
@@ -170,9 +177,9 @@ export default function TopPerformingTracks({
                 </div>
               </div>
             );
-          })}
-        </div>
-      </CardBody>
-    </Card>
+          });
+        })()}
+      </div>
+    </FCard>
   );
 }

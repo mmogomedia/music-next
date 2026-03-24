@@ -7,6 +7,7 @@ import { useAdminDashboardStats } from '@/hooks/useAdminDashboardStats';
 export default function AdminSettingsPage() {
   const { stats } = useAdminDashboardStats();
   const systemHealth = stats?.systemMetrics?.platformHealth || 'healthy';
+  const systemHealthReasons = stats?.systemMetrics?.platformHealthReasons;
 
   const header = (
     <header className='bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700'>
@@ -29,9 +30,8 @@ export default function AdminSettingsPage() {
     <UnifiedLayout
       sidebar={
         <AdminNavigation
-          activeTab='settings'
-          onTabChange={() => {}}
           systemHealth={systemHealth}
+          systemHealthReasons={systemHealthReasons}
         />
       }
       header={header}
