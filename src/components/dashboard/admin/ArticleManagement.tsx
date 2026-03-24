@@ -1469,6 +1469,32 @@ function ClusterForm({ initial, onSave, onCancel, saving }: ClusterFormProps) {
   );
 }
 
+// ── Article markdown serialiser ───────────────────────────────────────────────
+
+function serializeArticleMd(article: Article): string {
+  const secondaryKeywords =
+    article.targetKeywords.length > 0
+      ? article.targetKeywords.map(kw => `  - ${kw}`).join('\n')
+      : '  - ';
+
+  const frontmatter = [
+    '---',
+    `title: ${article.title}`,
+    `excerpt: ${article.excerpt ?? ''}`,
+    `seo_title: ${article.seoTitle ?? ''}`,
+    `meta_description: ${article.metaDescription ?? ''}`,
+    `primary_keyword: ${article.primaryKeyword ?? ''}`,
+    `secondary_keywords:`,
+    secondaryKeywords,
+    `cluster_role: ${article.clusterRole ?? 'SPOKE'}`,
+    `cta_text: ${article.ctaText ?? ''}`,
+    `cta_link: ${article.ctaLink ?? ''}`,
+    '---',
+  ].join('\n');
+
+  return `${frontmatter}\n\n${article.body}`;
+}
+
 // ── Article row (spoke) ───────────────────────────────────────────────────────
 
 interface ArticleRowProps {
@@ -1478,6 +1504,7 @@ interface ArticleRowProps {
   onPublish: (_id: string) => void;
   onArchive: (_id: string) => void;
   onPreview: (_a: Article) => void;
+  onExport: (_a: Article) => void;
   onDelete: (_id: string) => void;
 }
 
@@ -1488,6 +1515,7 @@ function SpokeRow({
   onPublish,
   onArchive,
   onPreview,
+  onExport,
   onDelete,
 }: ArticleRowProps) {
   return (
@@ -1550,6 +1578,13 @@ function SpokeRow({
             </button>
           )}
           <button
+            onClick={() => onExport(article)}
+            title='Export as .md'
+            className='p-1.5 text-gray-400 hover:text-green-500 rounded-md transition-colors'
+          >
+            <ArrowDownTrayIcon className='w-3.5 h-3.5' />
+          </button>
+          <button
             onClick={() => onDelete(article.id)}
             title='Delete'
             className='p-1.5 text-gray-400 hover:text-red-500 rounded-md transition-colors'
@@ -1570,6 +1605,7 @@ function PillarRow({
   onPublish,
   onArchive,
   onPreview,
+  onExport,
   onDelete,
 }: Omit<ArticleRowProps, 'isLast'>) {
   return (
@@ -1626,6 +1662,13 @@ function PillarRow({
             </button>
           )}
           <button
+            onClick={() => onExport(article)}
+            title='Export as .md'
+            className='p-1.5 text-gray-400 hover:text-green-500 rounded-md transition-colors'
+          >
+            <ArrowDownTrayIcon className='w-3.5 h-3.5' />
+          </button>
+          <button
             onClick={() => onDelete(article.id)}
             title='Delete'
             className='p-1.5 text-gray-400 hover:text-red-500 rounded-md transition-colors'
@@ -1652,6 +1695,7 @@ interface ClusterSectionProps {
   onPublishArticle: (_id: string) => void;
   onArchiveArticle: (_id: string) => void;
   onPreviewArticle: (_a: Article) => void;
+  onExportArticle: (_a: Article) => void;
   onDeleteArticle: (_id: string) => void;
 }
 
@@ -1667,6 +1711,7 @@ function ClusterSection({
   onPublishArticle,
   onArchiveArticle,
   onPreviewArticle,
+  onExportArticle,
   onDeleteArticle,
 }: ClusterSectionProps) {
   const [open, setOpen] = useState(true);
@@ -1775,6 +1820,7 @@ function ClusterSection({
                   onPublish={onPublishArticle}
                   onArchive={onArchiveArticle}
                   onPreview={onPreviewArticle}
+                  onExport={onExportArticle}
                   onDelete={onDeleteArticle}
                 />
               )}
@@ -1793,6 +1839,7 @@ function ClusterSection({
                       onPublish={onPublishArticle}
                       onArchive={onArchiveArticle}
                       onPreview={onPreviewArticle}
+                      onExport={onExportArticle}
                       onDelete={onDeleteArticle}
                     />
                   ))}
@@ -1814,6 +1861,7 @@ function UnclusteredSection({
   onPublish,
   onArchive,
   onPreview,
+  onExport,
   onDelete,
 }: {
   articles: Article[];
@@ -1821,6 +1869,7 @@ function UnclusteredSection({
   onPublish: (_id: string) => void;
   onArchive: (_id: string) => void;
   onPreview: (_a: Article) => void;
+  onExport: (_a: Article) => void;
   onDelete: (_id: string) => void;
 }) {
   const [open, setOpen] = useState(true);
@@ -1860,6 +1909,7 @@ function UnclusteredSection({
               onPublish={onPublish}
               onArchive={onArchive}
               onPreview={onPreview}
+              onExport={onExport}
               onDelete={onDelete}
             />
           ))}
@@ -2209,6 +2259,17 @@ export default function ArticleManagement() {
     }
   };
 
+  const handleExportArticle = (article: Article) => {
+    const md = serializeArticleMd(article);
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${article.slug}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleExportCluster = (cluster: ClusterWithCount) => {
     const md = serializeClusterMd({
       name: cluster.name,
@@ -2360,6 +2421,7 @@ export default function ArticleManagement() {
                 onPreviewArticle={a =>
                   setModal({ type: 'article-preview', article: a })
                 }
+                onExportArticle={handleExportArticle}
                 onDeleteArticle={handleDeleteArticle}
               />
             );
@@ -2372,6 +2434,7 @@ export default function ArticleManagement() {
             onPublish={handlePublishExisting}
             onArchive={handleArchiveArticle}
             onPreview={a => setModal({ type: 'article-preview', article: a })}
+            onExport={handleExportArticle}
             onDelete={handleDeleteArticle}
           />
         </div>
