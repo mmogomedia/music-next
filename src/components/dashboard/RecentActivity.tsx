@@ -88,35 +88,12 @@ export default function RecentActivity({
   const maxReconnectAttempts = 5;
 
   const displayActivities = useMemo(() => {
-    const sortedActivities = [...activities].sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    );
-
-    const prioritized: ActivityItem[] = [];
-    const priorityOrder: ActivityItem['activityType'][] = [
-      'play',
-      'download',
-      'page_visit',
-      'like',
-    ];
-
-    priorityOrder.forEach(type => {
-      const item = sortedActivities.find(
-        activity => activity.activityType === type
-      );
-      if (item && !prioritized.includes(item)) {
-        prioritized.push(item);
-      }
-    });
-
-    sortedActivities.forEach(item => {
-      if (!prioritized.includes(item) && prioritized.length < 6) {
-        prioritized.push(item);
-      }
-    });
-
-    return prioritized.slice(0, 6);
+    return [...activities]
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      )
+      .slice(0, 6);
   }, [activities]);
 
   // Initialize activities from props
