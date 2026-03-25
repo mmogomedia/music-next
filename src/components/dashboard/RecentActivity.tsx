@@ -320,6 +320,50 @@ export default function RecentActivity({
     }
   };
 
+  const renderActivityRow = (item: ActivityItem) => (
+    <div
+      key={item.id}
+      className='flex items-center justify-between p-3 rounded-lg bg-gray-50/80 dark:bg-slate-900/40 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-colors'
+    >
+      <div className='flex items-center gap-3 flex-1 min-w-0'>
+        <div className='flex-shrink-0'>
+          {getActivityIcon(item.activityType)}
+        </div>
+        <div className='flex-1 min-w-0'>
+          <div className='flex items-center gap-2 mb-1'>
+            <span className='font-medium text-gray-900 dark:text-white truncate'>
+              {item.track.title}
+            </span>
+            {item.activityType === 'play' && item.source && (
+              <Chip
+                size='sm'
+                color={getSourceColor(item.source)}
+                variant='flat'
+              >
+                {item.source}
+              </Chip>
+            )}
+            {item.activityType === 'page_visit' && item.slug && (
+              <Chip size='sm' color='secondary' variant='flat'>
+                Quick Link
+              </Chip>
+            )}
+          </div>
+          <div className='flex items-center gap-2 flex-wrap text-xs text-gray-500 dark:text-gray-400'>
+            <span>{getActivityLabel(item.activityType)}</span>
+            <span>•</span>
+            <ArtistDisplay legacyArtist={item.track.artist} />
+          </div>
+        </div>
+      </div>
+      <div className='text-right flex-shrink-0 ml-3 hidden sm:block'>
+        <div className='text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap'>
+          {formatTimeAgo(item.timestamp)}
+        </div>
+      </div>
+    </div>
+  );
+
   const content = (
     <>
       {!noHeader && (
@@ -337,43 +381,7 @@ export default function RecentActivity({
             No recent activity
           </div>
         ) : (
-          displayActivities.map(item => (
-            <div
-              key={item.id}
-              className='flex items-center gap-3 p-3 rounded-lg bg-gray-50/80 dark:bg-slate-900/40 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-colors'
-            >
-              <div className='flex-shrink-0'>
-                {getActivityIcon(item.activityType)}
-              </div>
-
-              <div className='flex-1 min-w-0'>
-                <div className='flex items-center gap-2 mb-1'>
-                  <span className='text-sm font-medium text-gray-900 dark:text-white truncate'>
-                    {item.track.title}
-                  </span>
-                  {item.activityType === 'play' && item.source && (
-                    <Chip
-                      size='sm'
-                      color={getSourceColor(item.source)}
-                      variant='flat'
-                    >
-                      {item.source}
-                    </Chip>
-                  )}
-                  {item.activityType === 'page_visit' && item.slug && (
-                    <Chip size='sm' color='secondary' variant='flat'>
-                      Quick Link
-                    </Chip>
-                  )}
-                </div>
-                <div className='text-xs text-gray-500 dark:text-gray-400'>
-                  {getActivityLabel(item.activityType)} •{' '}
-                  <ArtistDisplay legacyArtist={item.track.artist} /> •{' '}
-                  {formatTimeAgo(item.timestamp)}
-                </div>
-              </div>
-            </div>
-          ))
+          displayActivities.map(item => renderActivityRow(item))
         )}
       </div>
 
@@ -400,42 +408,7 @@ export default function RecentActivity({
             No recent activity
           </div>
         ) : (
-          displayActivities.map(item => (
-            <div
-              key={item.id}
-              className='flex items-center gap-3 p-3 rounded-lg bg-gray-50/80 dark:bg-slate-900/40 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-colors'
-            >
-              <div className='flex-shrink-0'>
-                {getActivityIcon(item.activityType)}
-              </div>
-              <div className='flex-1 min-w-0'>
-                <div className='flex items-center gap-2 mb-1'>
-                  <span className='text-sm font-medium text-gray-900 dark:text-white truncate'>
-                    {item.track.title}
-                  </span>
-                  {item.activityType === 'play' && item.source && (
-                    <Chip
-                      size='sm'
-                      color={getSourceColor(item.source)}
-                      variant='flat'
-                    >
-                      {item.source}
-                    </Chip>
-                  )}
-                  {item.activityType === 'page_visit' && item.slug && (
-                    <Chip size='sm' color='secondary' variant='flat'>
-                      Quick Link
-                    </Chip>
-                  )}
-                </div>
-                <div className='text-xs text-gray-500 dark:text-gray-400'>
-                  {getActivityLabel(item.activityType)} •{' '}
-                  <ArtistDisplay legacyArtist={item.track.artist} /> •{' '}
-                  {formatTimeAgo(item.timestamp)}
-                </div>
-              </div>
-            </div>
-          ))
+          displayActivities.map(item => renderActivityRow(item))
         )}
       </div>
       {activities.length > 6 && (

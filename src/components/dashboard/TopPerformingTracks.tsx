@@ -58,13 +58,6 @@ export default function TopPerformingTracks({
     <FCard
       title='Top Performing Tracks'
       titleIcon={<ChartBarIcon className='w-4 h-4' />}
-      action={
-        onViewAll ? (
-          <Button size='sm' variant='light' onPress={onViewAll}>
-            View All
-          </Button>
-        ) : undefined
-      }
     >
       <div className='space-y-3'>
         {(() => {
@@ -187,6 +180,16 @@ export default function TopPerformingTracks({
           });
         })()}
       </div>
+      {onViewAll && (
+        <div className='mt-4 text-center'>
+          <button
+            onClick={onViewAll}
+            className='text-sm text-primary-600 dark:text-primary-400 hover:underline'
+          >
+            View all tracks
+          </button>
+        </div>
+      )}
     </FCard>
   );
 }

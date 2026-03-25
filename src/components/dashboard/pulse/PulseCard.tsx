@@ -58,7 +58,7 @@ function MiniBar({ label, value }: { label: string; value: number }) {
 }
 
 const CARD =
-  'w-full rounded-xl bg-gradient-to-br from-slate-900 via-purple-950 to-blue-900 border border-purple-800/30 overflow-hidden flex flex-col';
+  'w-full h-full rounded-xl bg-gradient-to-br from-slate-900 via-purple-950 to-blue-900 border border-purple-800/30 overflow-hidden flex flex-col';
 
 function CardHeader({
   badge,
