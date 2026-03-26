@@ -189,6 +189,8 @@ function getAgentForIntent(intent: string): RoutingDecision['agent'] {
       return 'HelpAgent';
     case 'timeline':
       return 'TimelineAgent';
+    case 'audit':
+      return 'AuditAgent';
     default:
       return 'DiscoveryAgent';
   }
@@ -220,6 +222,27 @@ function isHelpIntent(message: string): boolean {
     /\b(where|how)\s+(can|do|to|is|are)\s+(i|you|we)\s+(search|find|play|discover|get|access|use|navigate)/i,
     /\b(can you|can i|how does|how do|how is|how are)\s+(search|find|discover|get|access|use|navigate|work|operate)/i,
     /\b(how|what|where|when|why)\s+(can|do|to|is|are|does)\s+(i|you|we)\s+.*\b(here|this|system|app|platform|website|site)\b/i,
+  ];
+  return patterns.some(p => p.test(message));
+}
+
+/**
+ * Check if message matches career audit intent patterns
+ */
+function isAuditIntent(message: string): boolean {
+  const patterns = [
+    /\baudit\b/i,
+    /\bcareer (check|research|readiness|review|analysis|audit)\b/i,
+    /\breadiness\b/i,
+    /\bhow ready am i\b/i,
+    /\bcheck my (profile|career|platforms?|readiness)\b/i,
+    /\bresearch my (career|profile|platforms?|social)\b/i,
+    /\bwhat (am i|are we) missing\b/i,
+    /\bgaps? in my (profile|career|marketing|platforms?)\b/i,
+    /\bcareer (gaps?|score|review)\b/i,
+    /\bartist (audit|score|check|readiness)\b/i,
+    /\banalyse? my (career|profile|readiness)\b/i,
+    /\bhow (complete|strong|ready) (is|am) (my|i)\b/i,
   ];
   return patterns.some(p => p.test(message));
 }
@@ -309,6 +332,15 @@ export function analyzeIntent(
       intent: 'timeline',
       confidence: 0.85,
       agent: 'TimelineAgent',
+    };
+  }
+
+  // Priority 3c2: Check for career audit queries
+  if (isAuditIntent(message)) {
+    return {
+      intent: 'audit',
+      confidence: 0.95,
+      agent: 'AuditAgent',
     };
   }
 

@@ -15,6 +15,13 @@ import type {
   GenreItem,
   TimelinePostItem,
 } from '@/lib/ai/tools/output-schemas';
+import type {
+  RankedAction,
+  MissingCapability,
+  BlockedRevenueStream,
+  RevenueUnlockPathItem,
+  AuditTier,
+} from '@/types/career-intelligence';
 import type { PlaylistWithTracks } from '@/lib/services';
 import type { PostType } from '@prisma/client';
 
@@ -375,6 +382,31 @@ export interface UserPreferencesResponse extends BaseAIResponse {
 }
 
 /**
+ * Career audit response — returned when an artist runs a readiness audit
+ */
+export interface ArtistAuditResponse extends BaseAIResponse {
+  type: 'artist_audit';
+  data: {
+    decisionId: string;
+    auditId: string;
+    artistProfileId: string;
+    overallScore: number;
+    tier: AuditTier;
+    profileScore: number;
+    platformScore: number;
+    releaseScore: number;
+    businessScore: number;
+    prioritizedActions: RankedAction[];
+    missingCapabilities: MissingCapability[];
+    blockedRevenue: BlockedRevenueStream[];
+    revenueUnlockPath: RevenueUnlockPathItem[];
+    reasoning: string;
+    estimatedScoreIfCompleted: number;
+  };
+  actions?: Action[];
+}
+
+/**
  * Union type of all possible AI responses
  */
 export type AIResponse =
@@ -391,7 +423,8 @@ export type AIResponse =
   | QuickLinkArtistResponse
   | ClarificationResponse
   | TimelinePostListResponse
-  | UserPreferencesResponse;
+  | UserPreferencesResponse
+  | ArtistAuditResponse;
 
 /**
  * Registry of available response types
@@ -411,6 +444,7 @@ export const RESPONSE_TYPES = {
   clarification: 'clarification',
   timeline_post_list: 'timeline_post_list',
   user_preferences: 'user_preferences',
+  artist_audit: 'artist_audit',
 } as const;
 
 /**

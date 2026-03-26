@@ -19,6 +19,7 @@ import { FallbackAgent } from './fallback-agent';
 import { TimelineAgent } from './timeline-agent';
 import { HelpAgent } from './help-agent';
 import { PreferencesAgent } from './preferences-agent';
+import { AuditAgent } from './audit-agent';
 import {
   analyzeIntent,
   extractDiscoveryMetadata,
@@ -36,6 +37,7 @@ export type AgentIntent =
   | 'industry'
   | 'help'
   | 'timeline'
+  | 'audit'
   | 'unknown';
 
 export interface RoutingDecision {
@@ -49,6 +51,7 @@ export interface RoutingDecision {
     | 'IndustryInfoAgent'
     | 'HelpAgent'
     | 'TimelineAgent'
+    | 'AuditAgent'
     | 'FallbackAgent';
 }
 
@@ -65,6 +68,7 @@ export class RouterAgent {
   private industryInfoAgent: IndustryInfoAgent;
   private helpAgent: HelpAgent;
   private timelineAgent: TimelineAgent;
+  private auditAgent: AuditAgent;
   private intentClassifierAgent: IntentClassifierAgent;
   private clarificationAgent: ClarificationAgent;
   private fallbackAgent: FallbackAgent;
@@ -81,6 +85,7 @@ export class RouterAgent {
     this.industryInfoAgent = new IndustryInfoAgent();
     this.helpAgent = new HelpAgent();
     this.timelineAgent = new TimelineAgent(provider);
+    this.auditAgent = new AuditAgent();
     this.intentClassifierAgent = new IntentClassifierAgent(provider);
     this.clarificationAgent = new ClarificationAgent();
     this.fallbackAgent = new FallbackAgent();
@@ -447,6 +452,8 @@ export class RouterAgent {
         return await this.helpAgent.process(message, context);
       case 'timeline':
         return await this.timelineAgent.process(message, context);
+      case 'audit':
+        return await this.auditAgent.process(message, context);
       case 'discovery':
         return await this.discoveryAgent.process(message, context);
       case 'recommendation':

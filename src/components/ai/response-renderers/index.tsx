@@ -14,6 +14,7 @@ import { QuickLinkArtistRenderer } from './quick-link-artist-renderer';
 import { ClarificationRenderer } from './clarification-renderer';
 import { TimelinePostListRenderer } from './timeline-post-list-renderer';
 import { PreferencesRenderer } from './preferences-renderer';
+import { ArtistAuditRenderer } from './artist-audit-renderer';
 import type { AIResponse } from '@/types/ai-responses';
 import { responseRegistry } from '@/lib/ai/response-registry';
 import { useEffect } from 'react';
@@ -345,6 +346,27 @@ function registerDefaultHandlers() {
       },
     });
   }
+
+  if (!responseRegistry.isRegistered('artist_audit')) {
+    responseRegistry.register('artist_audit', {
+      component: ArtistAuditRenderer,
+      promptTemplate: 'Use when an artist runs a career readiness audit',
+      schema: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', const: 'artist_audit' },
+          message: { type: 'string' },
+          data: { type: 'object' },
+        },
+        required: ['type', 'message', 'data'],
+      },
+      metadata: {
+        description: 'Career readiness audit result',
+        category: 'info',
+        priority: 20,
+      },
+    });
+  }
 }
 
 // Register defaults immediately when module is loaded
@@ -642,6 +664,27 @@ export function ResponseRenderer({
           description: "User's taste profile",
           category: 'info',
           priority: 14,
+        },
+      });
+    }
+
+    if (!responseRegistry.isRegistered('artist_audit')) {
+      responseRegistry.register('artist_audit', {
+        component: ArtistAuditRenderer,
+        promptTemplate: 'Use when an artist runs a career readiness audit',
+        schema: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'artist_audit' },
+            message: { type: 'string' },
+            data: { type: 'object' },
+          },
+          required: ['type', 'message', 'data'],
+        },
+        metadata: {
+          description: 'Career readiness audit result',
+          category: 'info',
+          priority: 20,
         },
       });
     }

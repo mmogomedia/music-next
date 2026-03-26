@@ -147,6 +147,17 @@ model ArtistProfile {
   leagueEntries          LeagueEntry[]           @relation("LeagueEntries")
   pulseEligibilityRecalcArtistLogs PulseEligibilityRecalcArtistLog[] @relation("PulseEligibilityRecalcArtistLogs")
 
+  // Career intelligence engine
+  artistType            ArtistType    @default(INDEPENDENT)
+  careerStage           CareerStage   @default(STARTING)
+  revenueModels         RevenueModel[] // ordered, max 3 — position drives ranking weight
+  growthEngines         GrowthEngine[] // ordered, max 3 — position drives ranking weight
+  audits                ArtistAudit[]
+  artistCapabilities    ArtistCapability[]
+  actionOutcomes        ActionOutcome[]
+  questionnaireResponses ArtistQuestionnaireResponse[]
+  decisionResults       DecisionResult[]
+
   @@map("artist_profiles")
 }
 
@@ -494,6 +505,56 @@ model PlaylistAnalytics {
   @@unique([playlistId, date])
   @@map("playlist_analytics")
 }
+
+// ── CAREER INTELLIGENCE ENGINE ────────────────────────
+
+enum ArtistType {
+  INDEPENDENT      // DIY artist, self-manages everything
+  SESSION_PRODUCER // Producer/beat maker, works with other artists
+  SIGNED_ARTIST    // Label signed or management deal
+  PERFORMER        // Primary focus is live performance
+  SONGWRITER       // Primarily a writer, may not perform
+  HYBRID           // Combination of multiple roles
+}
+
+enum CareerStage {
+  STARTING    // 0–5 tracks, < 1 year active
+  EMERGING    // Building audience, 6–20 tracks
+  DEVELOPING  // Established local presence, 20+ tracks
+  ESTABLISHED // National/regional recognition
+}
+
+enum RevenueModel {
+  LIVE_PERFORMER   // Gigs, tours, bookings
+  STREAMING_ARTIST // Streaming royalties
+  PRODUCER         // Production fees, beats, session work
+  SYNC_FOCUSED     // TV, film, ad placements
+  MERCH_DRIVEN     // Merchandise and direct product sales
+  HYBRID           // No dominant stream (default)
+}
+
+enum GrowthEngine {
+  SOCIAL_FIRST         // TikTok/Instagram is primary discovery
+  PLAYLIST_DRIVEN      // Spotify/Apple editorial + algorithmic playlists
+  LIVE_DISCOVERY       // Fans find them through live shows
+  COMMUNITY_DRIVEN     // Word of mouth, local scene, cultural community
+  COLLABORATION_DRIVEN // Other artists' audiences discover them
+  PRESS_DRIVEN         // Media coverage, blogs, radio
+}
+
+enum ArticleIntent {
+  EDUCATIONAL // Teaches a concept
+  STRATEGIC   // Guides a decision
+  TACTICAL    // Step-by-step how-to
+}
+
+enum ActionEffort {
+  LOW    // < 1 hour
+  MEDIUM // 1 day to 1 week
+  HIGH   // 1 week+
+}
+
+// ──────────────────────────────────────────────────────
 
 enum UserRole {
   USER
@@ -1651,9 +1712,16 @@ model Article {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  cluster   ArticleCluster?  @relation(fields: [clusterId], references: [id], onDelete: SetNull)
-  author    User             @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  versions  ArticleVersion[]
+  // Career intelligence engine fields
+  intent       ArticleIntent    @default(EDUCATIONAL)
+  artistTypes  ArtistType[]
+  careerStages CareerStage[]
+
+  cluster              ArticleCluster?       @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+  author               User                  @relation("ArticleAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  versions             ArticleVersion[]
+  articleCapabilities  ArticleCapability[]
+  articleRevenues      ArticleRevenueStream[]
 
   @@index([slug])
   @@index([status, publishedAt])
@@ -1774,4 +1842,212 @@ enum LinkType {
   USES_TOOL      // Artist/Track uses a Tool
   EXPLAINED_BY   // Tool is explained by an Article
   RELATED        // Generic related content
+}
+
+// ── CAREER INTELLIGENCE ENGINE MODELS ─────────────────
+
+model ArtistAudit {
+  id              String   @id @default(cuid())
+  artistProfileId String
+  overallScore    Float
+  tier            String   // 'tour_ready' | 'developing' | 'needs_work' | 'just_starting'
+  profileScore    Float
+  platformScore   Float
+  releaseScore    Float
+  businessScore   Float
+  gaps            Json     // AuditGap[]
+  checks          Json     // AuditCheck[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  artistProfile  ArtistProfile   @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
+  decisionResult DecisionResult?
+
+  @@index([artistProfileId])
+  @@map("artist_audits")
+}
+
+model Capability {
+  id          String @id  // e.g. 'AUDIENCE_GROWTH'
+  label       String
+  description String
+  category    String  // 'growth' | 'business' | 'creative' | 'performance'
+
+  gapMappings          AuditCheckCapability[]
+  revenueRequirements  RevenueStreamCapability[]
+  actions              Action[]
+  artistCapabilities   ArtistCapability[]
+  articleCapabilities  ArticleCapability[]
+
+  @@map("capabilities")
+}
+
+model RevenueStream {
+  id                  String   @id  // e.g. 'STREAMING'
+  label               String
+  description         String
+  supportingPlatforms String[]
+
+  requiredCapabilities RevenueStreamCapability[]
+  actionLinks          ActionRevenueStream[]
+  articleLinks         ArticleRevenueStream[]
+
+  @@map("revenue_streams")
+}
+
+model RevenueStreamCapability {
+  revenueStreamId String
+  capabilityId    String
+  required        Boolean @default(true)
+
+  revenueStream RevenueStream @relation(fields: [revenueStreamId], references: [id])
+  capability    Capability    @relation(fields: [capabilityId], references: [id])
+
+  @@id([revenueStreamId, capabilityId])
+  @@map("revenue_stream_capabilities")
+}
+
+model AuditCheckCapability {
+  checkId      String
+  capabilityId String
+  weight       Float  @default(1.0)
+
+  capability Capability @relation(fields: [capabilityId], references: [id])
+
+  @@id([checkId, capabilityId])
+  @@map("audit_check_capabilities")
+}
+
+model Action {
+  id                    String         @id @default(cuid())
+  label                 String
+  description           String
+  capabilityId          String
+  dimension             String         // 'profile' | 'platform' | 'release' | 'business'
+  effort                ActionEffort
+  timeToComplete        String
+  expectedImpact        Float
+  artistTypeRelevance   ArtistType[]
+  revenueModelRelevance RevenueModel[]
+  growthEngineRelevance GrowthEngine[]
+  actionUrl             String?
+  isActive              Boolean        @default(true)
+
+  capability     Capability           @relation(fields: [capabilityId], references: [id])
+  revenueStreams ActionRevenueStream[]
+  outcomes       ActionOutcome[]
+
+  @@index([capabilityId])
+  @@index([dimension])
+  @@map("actions")
+}
+
+model ActionRevenueStream {
+  actionId        String
+  revenueStreamId String
+
+  action        Action        @relation(fields: [actionId], references: [id])
+  revenueStream RevenueStream @relation(fields: [revenueStreamId], references: [id])
+
+  @@id([actionId, revenueStreamId])
+  @@map("action_revenue_streams")
+}
+
+model ArtistCapability {
+  id              String   @id @default(cuid())
+  artistProfileId String
+  capabilityId    String
+  level           Float    // 0.0–1.0
+  assessedAt      DateTime @default(now())
+  source          String   // 'audit' | 'manual' | 'action_outcome'
+
+  artistProfile ArtistProfile @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
+  capability    Capability    @relation(fields: [capabilityId], references: [id])
+
+  @@unique([artistProfileId, capabilityId])
+  @@index([artistProfileId])
+  @@map("artist_capabilities")
+}
+
+model ActionOutcome {
+  id              String   @id @default(cuid())
+  actionId        String
+  artistProfileId String
+  completedAt     DateTime @default(now())
+  selfReported    Boolean  @default(true)
+  impactDelta     Float?
+
+  action        Action        @relation(fields: [actionId], references: [id])
+  artistProfile ArtistProfile @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@index([artistProfileId])
+  @@map("action_outcomes")
+}
+
+model DecisionResult {
+  id                  String   @id @default(cuid())
+  auditId             String   @unique
+  artistProfileId     String
+  missingCapabilities String[]
+  blockedRevenue      String[]
+  rankedActions       String[]
+  reasoning           String   @db.Text
+  revenueUnlockPath   Json
+  createdAt           DateTime @default(now())
+
+  audit         ArtistAudit   @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  artistProfile ArtistProfile @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@index([artistProfileId])
+  @@map("decision_results")
+}
+
+model ArtistQuestionnaireResponse {
+  id              String   @id @default(cuid())
+  artistProfileId String
+  submittedAt     DateTime @default(now())
+
+  // Raw answers (stored as-is — never modified)
+  journeyType     String
+  discoveryRanked String[]  // Q2 ordered, max 3
+  socialManaged   String
+  incomeRanked    String[]  // Q4 ordered, max 3
+  primaryGoal     String
+  trackCount      String
+  collaborations  String    // Q7
+
+  // Derived values (computed at submission time)
+  derivedRevenueModels RevenueModel[]
+  derivedGrowthEngines GrowthEngine[]
+  derivedCareerStage   CareerStage
+  derivedCollabBand    String         // 'none' | 'few' | 'some' | 'many'
+
+  artistProfile ArtistProfile @relation(fields: [artistProfileId], references: [id], onDelete: Cascade)
+
+  @@index([artistProfileId])
+  @@map("artist_questionnaire_responses")
+}
+
+model ArticleCapability {
+  articleId    String
+  capabilityId String
+  isPrimary    Boolean @default(false)
+
+  article    Article    @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  capability Capability @relation(fields: [capabilityId], references: [id])
+
+  @@id([articleId, capabilityId])
+  @@map("article_capabilities")
+}
+
+model ArticleRevenueStream {
+  articleId       String
+  revenueStreamId String
+  isPrimary       Boolean @default(false)
+
+  article       Article       @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  revenueStream RevenueStream @relation(fields: [revenueStreamId], references: [id])
+
+  @@id([articleId, revenueStreamId])
+  @@map("article_revenue_streams")
 }
