@@ -7,6 +7,46 @@
 
 ---
 
+## Introduction
+
+This document is the technical and product design specification for the **Artist Career Intelligence Engine** — a system built inside Flemoji that helps independent music artists understand where they are in their career, what is blocking their growth, and what to do next.
+
+### What this document covers
+
+- The full architecture of the intelligence engine, from data inputs to ranked outputs
+- Every new data model, service, and agent required to build it
+- How it connects to the existing Flemoji infrastructure without replacing it
+- A concrete example of the system running end-to-end for a real artist type
+- The implementation order for development
+
+### What problem this solves
+
+Most platforms tell artists what they're missing. A low Spotify play count. An incomplete bio. A missing social link. That information is correct but useless without context.
+
+An amapiano producer who earns from sync licensing and collaborations does not need to be told to post on TikTok more often. A singer-songwriter building a streaming audience does not need advice about beat licensing platforms. Yet a generic checklist system treats both identically.
+
+This engine solves that by introducing **career modeling** — a structured understanding of how each artist earns, how they grow, and what stage they are at — and using that model to make every recommendation specific to that artist's path.
+
+### What it is NOT
+
+- It is not a replacement for the existing audit system. The existing audit agents, scoring rules, and renderers are all preserved and extended.
+- It is not a social analytics tool. It does not replace dedicated platforms like Spotify for Artists or TikTok Analytics.
+- It is not an AI that guesses what to tell artists. All ranking and routing logic is deterministic. The LLM is called exactly once per audit — only to write a plain-English explanation of what the system already calculated.
+
+### Who uses it
+
+- **Artists** — triggered through the AI chat ("audit my career") or a dashboard button. Receives a scored report with ranked actions, a revenue unlock path, and relevant articles.
+- **Admins** — can view audit history, seed new actions and capabilities, and monitor the quality of recommendations over time.
+- **The system itself** — partial re-audits trigger automatically when an artist uploads a track, connects a platform, or marks an action complete.
+
+### Core design principle
+
+> The system must be able to answer: **"What should this artist do next, and why — given who they are and how they earn?"**
+
+Not "here is everything that's missing." Not "here is what average artists do." A prioritised, ranked, context-aware answer specific to this artist.
+
+---
+
 ## Premise
 
 The original audit system was structurally sound: score four dimensions, surface gaps, suggest actions.
@@ -54,19 +94,102 @@ Into:
 
 ---
 
-## 2. Updated Artist Profile Dimensions
+## 2. Concepts & Definitions
 
-The current `artistType` classifies _what kind of artist_ they are. Two new dimensions model _how they earn_ and _how they grow_ — each with a **primary** (dominant) value and **secondary** (supporting) array.
+Before diving into the architecture, these are the core concepts used throughout this document and the codebase.
 
-### Why primary + secondary?
+### Audit
 
-Real artists are not mono-dimensional. A producer who earns primarily from beats but also performs live has a `PRODUCER` primary revenue model and `LIVE_PERFORMER` as secondary. The system:
+A full assessment of an artist's career readiness across four dimensions: Profile, Platform, Release Planning, and Business Infrastructure. Produces a score (0–100), a tier label, and a list of Gaps. An audit is triggered on-demand and stored as an `ArtistAudit` record.
 
-- Uses **primary** for routing logic and action ranking (clear, deterministic)
-- Uses **secondary** to widen the action set and knowledge articles retrieved
-- Weights secondary attributes at **0.6×** vs primary at **1.0×** in the DecisionEngine
+### Dimension
 
-### 2A. `revenueModel` — How the artist earns
+One of the four assessment areas of an audit. Each dimension has its own sub-agent, its own weighted checks, and its own score.
+
+| Dimension            | What it measures                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------- |
+| **Profile**          | Completeness of the artist's Flemoji profile — bio, image, genre tags, social links   |
+| **Platform**         | Presence and activity on connected external platforms — TikTok, Spotify, YouTube      |
+| **Release Planning** | Quality and consistency of music releases — smart links, cover art, metadata, cadence |
+| **Business**         | Legal and financial infrastructure — split sheets, distribution, PRO registration     |
+
+### Gap
+
+A specific thing that is missing or below threshold in an artist's audit. Each gap comes from a named `AuditCheck` with a measured `impact` score. Gaps are the raw output of the audit sub-agents before any intelligence is applied.
+
+_Example: "No split sheet created" is a gap. Its impact is 18 points. It maps to the `BUSINESS_ADMIN` capability._
+
+### Capability
+
+A skill or infrastructure component that an artist must have to unlock revenue. Capabilities are the bridge between gaps (what's missing) and outcomes (what that earns them). There are 12 capabilities in the registry.
+
+_Example: `BUSINESS_ADMIN` is a capability. It is required by the `SYNC_LICENSING` and `PRODUCTION_SERVICES` revenue streams. It is built by actions like "Create a split sheet" and "Register with SAMRO"._
+
+### Revenue Stream
+
+A specific channel through which an artist can earn money. Each revenue stream requires a set of capabilities to unlock. The system uses revenue streams to show artists what income is currently blocked and what actions would unblock it.
+
+_Example: `PRODUCTION_SERVICES` (earning from beats, features, session work) requires `COLLABORATION`, `BUSINESS_ADMIN`, and `DIGITAL_DISTRIBUTION`. An artist missing only `BUSINESS_ADMIN` is one action away from unlocking it._
+
+### Action
+
+A concrete, specific task an artist can complete to build a capability and move toward unlocking a revenue stream. Actions are first-class objects in the database — not strings, not suggestions. Each action has a defined effort level, expected score impact, and deep link into Flemoji where applicable.
+
+_Example: "Create a split sheet in Flemoji" → Capability: BUSINESS_ADMIN → Effort: LOW → Impact: +18 → Unlocks: PRODUCTION_SERVICES_
+
+### Decision Engine
+
+The core intelligence service. It takes an audit result and an artist profile as inputs and produces a ranked list of actions, a revenue unlock path, and a plain-English explanation. All ranking and routing logic inside the Decision Engine is deterministic — the LLM is used only once, to write the explanation after all decisions have already been made.
+
+### Decision Result
+
+The persisted output of a Decision Engine run. Stored against the audit so the artist can revisit their recommendations without re-running the engine.
+
+### Revenue Unlock Path
+
+A structured output from the Decision Engine that shows: for each blocked revenue stream, which actions would unlock it and how close the artist is (as a percentage).
+
+_Example: "Complete actions #1 and #2 → PRODUCTION_SERVICES unlocks. Complete all 5 → score goes from 51 to 74."_
+
+### Action Outcome
+
+A record of an artist completing (or marking as complete) an action. Triggers a partial re-audit of the affected dimension. Can be self-reported or system-verified (e.g. if the action is "upload a track", the system checks whether a new track actually exists).
+
+### System Loop
+
+The cyclical process that keeps the engine up to date without requiring a full re-audit every time. A single action completion triggers a partial re-audit of the relevant dimension, which updates the audit score and re-runs the Decision Engine. The loop closes when the artist marks the next action complete.
+
+### Partial Re-Audit
+
+A re-run of one or more audit sub-agents (not all four) triggered by a specific event. Merges new results with the unchanged dimensions and recomputes the overall score. Faster and cheaper than a full audit.
+
+### Artist Capability State
+
+A persisted record of which capabilities an artist currently has, at what level (0.0–1.0), and how that was assessed (audit, self-reported, or action outcome). This is what makes the system loop possible — the engine can track capability progression over time.
+
+### Questionnaire
+
+A 7-question onboarding flow that collects artist context before the first audit runs. Responses are stored in `ArtistQuestionnaireResponse` and used to set `revenueModels`, `growthEngines`, `careerStage`, and seed the initial `collaborationScore`. Responses are never overwritten — each submission creates a new record so the system can track how an artist's self-perception changes over time.
+
+---
+
+## 3. Updated Artist Profile Dimensions
+
+The current `artistType` classifies _what kind of artist_ they are. Two new dimensions model _how they earn_ and _how they grow_ — each stored as an **ordered array of up to 3 values**.
+
+### Why an ordered array instead of primary + secondary fields?
+
+Real artists are not mono-dimensional and their emphasis across streams is rarely binary. An artist might earn from live gigs first, streaming second, and sync licensing third — all meaningfully, not just as a footnote.
+
+An ordered array of up to 3 solves this:
+
+- **Position 0** = highest weight (1.0×) — the dominant model
+- **Position 1** = mid weight (0.6×) — meaningful but secondary
+- **Position 2** = low weight (0.3×) — supplementary, expands article retrieval
+
+This collapses 4 schema fields into 2, while giving the ranking algorithm richer signal. The questionnaire enforces the max-3 constraint — artists rank their selections (drag-to-rank or numbered selection).
+
+### `revenueModels` — How the artist earns
 
 ```prisma
 enum RevenueModel {
@@ -75,24 +198,26 @@ enum RevenueModel {
   PRODUCER         // Production fees, beats, session work
   SYNC_FOCUSED     // TV, film, ad placements
   MERCH_DRIVEN     // Merchandise and direct product sales
-  HYBRID           // No dominant stream (default)
+  HYBRID           // No dominant stream (only used when no answer given)
 }
 ```
 
 ```prisma
 // ArtistProfile additions
-primaryRevenueModel    RevenueModel    @default(HYBRID)
-secondaryRevenueModels RevenueModel[]  // empty = not yet assessed
+revenueModels  RevenueModel[]  // ordered, max 3 — [0]=1.0×, [1]=0.6×, [2]=0.3×
 ```
 
-**How secondary changes recommendations:**
-A `primaryRevenueModel: PRODUCER` with `secondaryRevenueModels: [LIVE_PERFORMER]` will receive:
+**How position changes recommendations:**
 
-- Primary actions: split sheets, beat licensing, distribution setup
-- Secondary actions (weighted lower): press kit, booking link, venue contacts
-- Articles: both "Producer Credits & Licensing" AND "Getting Booked: What Venues Look For"
+An artist with `revenueModels: [PRODUCER, LIVE_PERFORMER, STREAMING_ARTIST]` receives:
 
-### 2B. `growthEngine` — How the artist is discovered
+| Position | Model            | Weight | Actions surfaced                           |
+| -------- | ---------------- | ------ | ------------------------------------------ |
+| 0        | PRODUCER         | 1.0×   | Split sheets, beat licensing, distribution |
+| 1        | LIVE_PERFORMER   | 0.6×   | Press kit, booking link, venue contacts    |
+| 2        | STREAMING_ARTIST | 0.3×   | Spotify profile, release cadence           |
+
+### `growthEngines` — How the artist is discovered
 
 ```prisma
 enum GrowthEngine {
@@ -107,56 +232,95 @@ enum GrowthEngine {
 
 ```prisma
 // ArtistProfile additions
-primaryGrowthEngine    GrowthEngine    @default(SOCIAL_FIRST)
-secondaryGrowthEngines GrowthEngine[]  // empty = not yet assessed
+growthEngines  GrowthEngine[]  // ordered, max 3 — [0]=1.0×, [1]=0.6×, [2]=0.3×
 ```
 
-**How secondary changes recommendations:**
-A `primaryGrowthEngine: COLLABORATION_DRIVEN` with `secondaryGrowthEngines: [PLAYLIST_DRIVEN]` will be advised to:
+**How position changes recommendations:**
 
-- Lead with: expanding feature network, credited releases, collab promotion
-- Support with: SubmitHub pitching, Spotify profile completeness, release consistency for algorithmic pickup
+An artist with `growthEngines: [COLLABORATION_DRIVEN, PLAYLIST_DRIVEN]` is advised to:
+
+| Position | Engine               | Weight | Actions surfaced                                              |
+| -------- | -------------------- | ------ | ------------------------------------------------------------- |
+| 0        | COLLABORATION_DRIVEN | 1.0×   | Feature network, credited releases, collab promotion          |
+| 1        | PLAYLIST_DRIVEN      | 0.6×   | SubmitHub pitching, Spotify completeness, release consistency |
 
 ### Updated `ArtistProfile` schema (full delta)
 
 ```prisma
-// Replace single-value fields with primary + secondary
-primaryRevenueModel    RevenueModel    @default(HYBRID)
-secondaryRevenueModels RevenueModel[]
-primaryGrowthEngine    GrowthEngine    @default(SOCIAL_FIRST)
-secondaryGrowthEngines GrowthEngine[]
+// 2 fields replace the previous 4
+revenueModels  RevenueModel[]  // ordered, max 3
+growthEngines  GrowthEngine[]  // ordered, max 3
 ```
 
-### Updated onboarding questionnaire (now 7 questions)
+### Onboarding questionnaire (7 questions)
 
-Questions 1–6 use **multi-select** where marked, so artists can pick primary + secondary naturally.
+Questions 2 and 4 use **ranked multi-select (max 3)** — the order the artist ranks them maps directly to the array positions above. All responses are stored in `ArtistQuestionnaireResponse` (see below).
 
 1. "How would you describe your artist journey?" → Independent / With a team / Label signed / Producer / Session artist
-2. "Where do fans discover you?" _(multi-select, mark your top pick)_ → Social media / Live shows / Streaming playlists / Through other artists / Word of mouth / Press & media
+2. "Where do fans discover you?" _(rank up to 3)_ → Social media / Live shows / Streaming playlists / Through other artists / Word of mouth / Press & media → maps to `growthEngines[]`
 3. "Do you manage your own social media?" → Yes, myself / I have help / I don't use social media
-4. "Where does your music income come from?" _(multi-select, mark your top pick)_ → Live gigs / Streaming / Production/beats / Sync/licensing / Merch / I don't earn from music yet
+4. "Where does your music income come from?" _(rank up to 3)_ → Live gigs / Streaming / Production/beats / Sync/licensing / Merch / I don't earn from music yet → maps to `revenueModels[]`
 5. "What's your primary goal right now?" → More streams / More gigs / Getting signed / Building a team / Licensing my music
-6. "How many tracks have you released?" → 0 / 1–5 / 6–20 / 20+ _(maps to `careerStage`)_
-7. **"How many times have you collaborated with other artists?"** → Never / 1–3 times / 4–10 times / More than 10 times _(maps to `collaborationScore` + informs `COLLABORATION` capability level)_
+6. "How many tracks have you released?" → 0 / 1–5 / 6–20 / 20+ → maps to `careerStage`
+7. **"How many times have you collaborated with other artists?"** → Never / 1–3 times / 4–10 times / More than 10 times → seeds `collaborationScore` on `ArtistCapability[COLLABORATION]`
 
-> **Q7 rationale:** Collaboration history is a strong career signal. Artists with 4+ collabs already have `COLLABORATION` capability partially demonstrated — the audit should reflect this rather than flagging it as a full gap. We also cross-reference Flemoji's actual data (split sheets, `featuredArtistIds` on tracks) to verify and enrich this self-reported answer.
+> **Q7 rationale:** Collaboration history is a strong career signal. Artists with 4+ collabs have `COLLABORATION` capability partially demonstrated — the audit should reflect this. Responses are also cross-referenced with actual Flemoji data to enrich the score.
+
+### Questionnaire response storage
+
+Responses are stored as a dedicated model rather than fields on `ArtistProfile`. Reasons:
+
+- Responses must never be overwritten — each resubmission creates a new record so the system can track how an artist's self-perception changes over time
+- The raw answers (strings) are kept separate from the derived values (`revenueModels`, `growthEngines`) so we can re-derive if the mapping logic changes
+- Supports future admin tooling to review answer quality and spot system-wide patterns
+
+```prisma
+model ArtistQuestionnaireResponse {
+  id              String   @id @default(cuid())
+  artistProfileId String
+  submittedAt     DateTime @default(now())
+
+  // Raw answers (stored as-is from the UI)
+  journeyType     String    // Q1
+  discoveryRanked String[]  // Q2 — ordered array, max 3
+  socialManaged   String    // Q3
+  incomeRanked    String[]  // Q4 — ordered array, max 3
+  primaryGoal     String    // Q5
+  trackCount      String    // Q6
+  collaborations  String    // Q7
+
+  // Derived values (computed from raw answers at submission time)
+  derivedRevenueModels  RevenueModel[]
+  derivedGrowthEngines  GrowthEngine[]
+  derivedCareerStage    CareerStage
+  derivedCollabBand     String    // 'none' | 'few' | 'some' | 'many'
+
+  artistProfile ArtistProfile @relation(fields: [artistProfileId], references: [id])
+
+  @@index([artistProfileId])
+  @@map("artist_questionnaire_responses")
+}
+```
+
+When a questionnaire is submitted:
+
+1. Raw answers are stored as-is
+2. Derived values are computed and saved on the same record
+3. `ArtistProfile.revenueModels`, `growthEngines`, and `careerStage` are updated to the latest derived values
+4. The `collaborationScore` on `ArtistCapability` is seeded/updated at 20% weight (the remaining 80% comes from actual Flemoji data)
 
 ### Collaboration data enrichment
 
-The questionnaire answer is a starting point. The system also checks:
+The questionnaire answer (Q7) seeds the `COLLABORATION` capability score at 20% weight. The remaining 80% comes from actual Flemoji data:
 
-- Number of tracks where the artist appears in `featuredArtistIds` (collaborations as featured)
-- Number of split sheets with other artists (formal collaboration)
-- Number of tracks with `primaryArtistIds.length > 1` (joint releases)
+| Signal                                                 | Weight |
+| ------------------------------------------------------ | ------ |
+| Self-reported (Q7)                                     | 20%    |
+| Featured on other tracks (`featuredArtistIds`)         | 30%    |
+| Split sheets created with other artists                | 30%    |
+| Joint primary releases (`primaryArtistIds.length > 1`) | 20%    |
 
-These are merged into a `collaborationScore` (0–100) stored on `ArtistCapability` for the `COLLABORATION` capability:
-
-| Signal                        | Weight |
-| ----------------------------- | ------ |
-| Self-reported (questionnaire) | 20%    |
-| Featured on other tracks      | 30%    |
-| Split sheets created          | 30%    |
-| Joint primary releases        | 20%    |
+These are merged into a `collaborationScore` (0–100) stored on `ArtistCapability` for the `COLLABORATION` capability.
 
 ---
 
@@ -494,26 +658,22 @@ function rankActions(
       const effortScore = effortInverse[action.effort] * 0.25;
       const revenueScore = revenueUnlockValue(action, context) * 0.35;
 
-      // Relevance multiplier: primary match = 1.0, secondary match = 0.6, no match = 0.3
-      const revenueRelevance = action.revenueModelRelevance.includes(
-        profile.primaryRevenueModel
-      )
-        ? 1.0
-        : profile.secondaryRevenueModels.some(m =>
-              action.revenueModelRelevance.includes(m)
-            )
-          ? 0.6
-          : 0.3;
+      // Relevance multiplier derived from array position:
+      // position 0 = 1.0×, position 1 = 0.6×, position 2 = 0.3×, not present = 0.2×
+      const POSITION_WEIGHTS = [1.0, 0.6, 0.3];
 
-      const growthRelevance = action.growthEngineRelevance?.includes(
-        profile.primaryGrowthEngine
-      )
-        ? 1.0
-        : profile.secondaryGrowthEngines.some(g =>
-              action.growthEngineRelevance?.includes(g)
-            )
-          ? 0.6
-          : 1.0; // growth engine is advisory — no penalty for mismatch
+      const revenueIdx = profile.revenueModels.findIndex(m =>
+        action.revenueModelRelevance.includes(m)
+      );
+      const revenueRelevance =
+        revenueIdx >= 0 ? (POSITION_WEIGHTS[revenueIdx] ?? 0.3) : 0.2;
+
+      const growthIdx = profile.growthEngines.findIndex(g =>
+        action.growthEngineRelevance?.includes(g)
+      );
+      // Growth engine is advisory — no match = neutral 1.0, not a penalty
+      const growthRelevance =
+        growthIdx >= 0 ? (POSITION_WEIGHTS[growthIdx] ?? 0.3) : 1.0;
 
       const baseScore = impactScore + effortScore + revenueScore;
       return {
@@ -831,10 +991,13 @@ enum ActionEffort {
 // ── EXTEND EXISTING MODELS ────────────────────────────
 
 // ArtistProfile: add
-//   primaryRevenueModel    RevenueModel   @default(HYBRID)
-//   secondaryRevenueModels RevenueModel[]
-//   primaryGrowthEngine    GrowthEngine   @default(SOCIAL_FIRST)
-//   secondaryGrowthEngines GrowthEngine[]
+//   revenueModels  RevenueModel[]  // ordered array, max 3 — position drives ranking weight
+//   growthEngines  GrowthEngine[]  // ordered array, max 3 — position drives ranking weight
+//
+//   [0] = 1.0× weight (dominant)
+//   [1] = 0.6× weight (secondary)
+//   [2] = 0.3× weight (supplementary)
+//   empty = questionnaire not yet completed
 
 // Article: add
 //   intent          ArticleIntent       @default(EDUCATIONAL)
@@ -982,6 +1145,34 @@ model DecisionResult {
 
   @@index([artistProfileId])
   @@map("decision_results")
+}
+
+// ── QUESTIONNAIRE RESPONSES ───────────────────────────
+
+model ArtistQuestionnaireResponse {
+  id              String   @id @default(cuid())
+  artistProfileId String
+  submittedAt     DateTime @default(now())
+
+  // Raw answers (stored as-is from the UI — never modified)
+  journeyType     String
+  discoveryRanked String[]   // Q2 ordered, max 3
+  socialManaged   String
+  incomeRanked    String[]   // Q4 ordered, max 3
+  primaryGoal     String
+  trackCount      String
+  collaborations  String     // Q7
+
+  // Derived values (computed at submission time, persisted for audit trail)
+  derivedRevenueModels RevenueModel[]
+  derivedGrowthEngines GrowthEngine[]
+  derivedCareerStage   CareerStage
+  derivedCollabBand    String          // 'none' | 'few' | 'some' | 'many'
+
+  artistProfile ArtistProfile @relation(fields: [artistProfileId], references: [id])
+
+  @@index([artistProfileId])
+  @@map("artist_questionnaire_responses")
 }
 
 // ── ARTICLE JUNCTION MODELS ───────────────────────────
@@ -1211,25 +1402,26 @@ src/app/dashboard/DashboardContent.tsx           ← No change needed
 
 ## 17. Implementation Order
 
-| Step | Task                                                              | Priority |
-| ---- | ----------------------------------------------------------------- | -------- |
-| 1    | Schema migration (all new models + enum additions)                | Critical |
-| 2    | Seed Capability registry (12 capabilities)                        | Critical |
-| 3    | Seed RevenueStream registry (6 streams)                           | Critical |
-| 4    | Seed AuditCheckCapability map (23 check→capability rows)          | Critical |
-| 5    | Seed RevenueStreamCapability map                                  | Critical |
-| 6    | Seed Action registry (~20 initial actions)                        | Critical |
-| 7    | `capability-service.ts` — graph lookups                           | High     |
-| 8    | `decision-engine.ts` — core ranking logic                         | High     |
-| 9    | Extend `AuditOrchestratorAgent` to call DecisionEngine            | High     |
-| 10   | Extend `ArtistAuditResponse` type                                 | High     |
-| 11   | Extend `ArtistAuditRenderer` — show revenue path + ranked actions | High     |
-| 12   | `partial-reaudit-service.ts`                                      | Medium   |
-| 13   | `action-complete` API route                                       | Medium   |
-| 14   | Update `AuditSection` dashboard — action queue                    | Medium   |
-| 15   | Article model migration (add capability + intent fields)          | Medium   |
-| 16   | Update onboarding questionnaire (6 questions)                     | Low      |
-| 17   | Tests for DecisionEngine ranking logic                            | Low      |
+| Step | Task                                                               | Priority |
+| ---- | ------------------------------------------------------------------ | -------- |
+| 1    | Schema migration (all new models + enum additions)                 | Critical |
+| 2    | Seed Capability registry (12 capabilities)                         | Critical |
+| 3    | Seed RevenueStream registry (6 streams)                            | Critical |
+| 4    | Seed AuditCheckCapability map (23 check→capability rows)           | Critical |
+| 5    | Seed RevenueStreamCapability map                                   | Critical |
+| 6    | Seed Action registry (~20 initial actions)                         | Critical |
+| 7    | `capability-service.ts` — graph lookups                            | High     |
+| 8    | `decision-engine.ts` — core ranking logic                          | High     |
+| 9    | Extend `AuditOrchestratorAgent` to call DecisionEngine             | High     |
+| 10   | Extend `ArtistAuditResponse` type                                  | High     |
+| 11   | Extend `ArtistAuditRenderer` — show revenue path + ranked actions  | High     |
+| 12   | `partial-reaudit-service.ts`                                       | Medium   |
+| 13   | `action-complete` API route                                        | Medium   |
+| 14   | Update `AuditSection` dashboard — action queue                     | Medium   |
+| 15   | Article model migration (add capability + intent fields)           | Medium   |
+| 16   | Update onboarding questionnaire (7 questions, ranked multi-select) | Low      |
+| 16a  | `ArtistQuestionnaireResponse` migration + submission handler       | Low      |
+| 17   | Tests for DecisionEngine ranking logic                             | Low      |
 
 ---
 
