@@ -43,6 +43,7 @@ import QuickLinksManager from '@/components/dashboard/quick-links/QuickLinksMana
 import PulseCard from '@/components/dashboard/pulse/PulseCard';
 import { usePulseData } from '@/hooks/usePulseData';
 import WelcomeStrip from '@/components/dashboard/overview/WelcomeStrip';
+import CareerAuditTab from '@/components/dashboard/artist/CareerAuditTab';
 
 interface DashboardContentProps {
   hasArtistProfile?: boolean;
@@ -66,6 +67,7 @@ export default function DashboardContent({
     'tools',
     'quick-links', // kept for backward-compat deep links; accessible via Tools tab
     'analytics',
+    'career-audit',
     'profile',
   ] as const;
 
@@ -260,6 +262,7 @@ export default function DashboardContent({
     tools: 'Tools',
     'quick-links': 'Quick Links',
     analytics: 'Analytics',
+    'career-audit': 'Career Audit',
     profile: 'Profile',
   };
 
@@ -690,6 +693,9 @@ export default function DashboardContent({
           {activeTab === 'quick-links' && (
             <QuickLinksManager tracks={tracks} profile={profile} />
           )}
+
+          {/* Career Audit Tab */}
+          {activeTab === 'career-audit' && <CareerAuditTab />}
 
           {/* Analytics Tab */}
           {activeTab === 'analytics' && (

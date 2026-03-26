@@ -8,6 +8,7 @@ import {
   FolderOpenIcon,
   WrenchScrewdriverIcon,
   HomeIcon,
+  SparklesIcon,
 } from '@heroicons/react/24/outline';
 import {
   MusicalNoteIcon as MusicalNoteSolid,
@@ -17,6 +18,7 @@ import {
   FolderOpenIcon as FolderOpenSolid,
   WrenchScrewdriverIcon as WrenchScrewdriverSolid,
   HomeIcon as HomeSolid,
+  SparklesIcon as SparklesSolid,
 } from '@heroicons/react/24/solid';
 import UserDetailsFooter from '@/components/layout/UserDetailsFooter';
 import FSideNav, { FSideNavGroup } from '@/components/ui/FSideNav';
@@ -28,6 +30,7 @@ type TabId =
   | 'submissions'
   | 'tools'
   | 'analytics'
+  | 'career-audit'
   | 'profile'
   | 'pulse';
 
@@ -80,6 +83,12 @@ const NAV_GROUP_DEFS = [
   {
     label: 'Insights',
     items: [
+      {
+        id: 'career-audit' as TabId,
+        label: 'Career Audit',
+        icon: SparklesIcon,
+        activeIcon: SparklesSolid,
+      },
       {
         id: 'analytics' as TabId,
         label: 'Analytics',
