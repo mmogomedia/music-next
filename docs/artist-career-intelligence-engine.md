@@ -56,50 +56,107 @@ Into:
 
 ## 2. Updated Artist Profile Dimensions
 
-The current `artistType` classifies _what kind of artist_ they are. Two new dimensions are needed to model _how they earn_ and _how they grow_.
+The current `artistType` classifies _what kind of artist_ they are. Two new dimensions model _how they earn_ and _how they grow_ — each with a **primary** (dominant) value and **secondary** (supporting) array.
 
-### 2A. `revenueModel` — How the artist primarily earns
+### Why primary + secondary?
+
+Real artists are not mono-dimensional. A producer who earns primarily from beats but also performs live has a `PRODUCER` primary revenue model and `LIVE_PERFORMER` as secondary. The system:
+
+- Uses **primary** for routing logic and action ranking (clear, deterministic)
+- Uses **secondary** to widen the action set and knowledge articles retrieved
+- Weights secondary attributes at **0.6×** vs primary at **1.0×** in the DecisionEngine
+
+### 2A. `revenueModel` — How the artist earns
 
 ```prisma
 enum RevenueModel {
-  LIVE_PERFORMER     // Primary income: gigs, tours, bookings
-  STREAMING_ARTIST   // Primary income: streaming royalties
-  PRODUCER           // Primary income: production fees, beats, session work
-  SYNC_FOCUSED       // Primary income: TV, film, ad placements
-  HYBRID             // Multiple streams, no dominant one
+  LIVE_PERFORMER   // Gigs, tours, bookings
+  STREAMING_ARTIST // Streaming royalties
+  PRODUCER         // Production fees, beats, session work
+  SYNC_FOCUSED     // TV, film, ad placements
+  MERCH_DRIVEN     // Merchandise and direct product sales
+  HYBRID           // No dominant stream (default)
 }
 ```
 
-### 2B. `growthEngine` — How the artist is primarily discovered
+```prisma
+// ArtistProfile additions
+primaryRevenueModel    RevenueModel    @default(HYBRID)
+secondaryRevenueModels RevenueModel[]  // empty = not yet assessed
+```
+
+**How secondary changes recommendations:**
+A `primaryRevenueModel: PRODUCER` with `secondaryRevenueModels: [LIVE_PERFORMER]` will receive:
+
+- Primary actions: split sheets, beat licensing, distribution setup
+- Secondary actions (weighted lower): press kit, booking link, venue contacts
+- Articles: both "Producer Credits & Licensing" AND "Getting Booked: What Venues Look For"
+
+### 2B. `growthEngine` — How the artist is discovered
 
 ```prisma
 enum GrowthEngine {
-  SOCIAL_FIRST        // TikTok/Instagram is the primary discovery channel
-  PLAYLIST_DRIVEN     // Spotify/Apple editorial + algorithmic playlists
-  LIVE_DISCOVERY      // Fans find them through live shows
-  COMMUNITY_DRIVEN    // Word of mouth, local scene, cultural community
+  SOCIAL_FIRST         // TikTok/Instagram is primary discovery
+  PLAYLIST_DRIVEN      // Spotify/Apple editorial + algorithmic playlists
+  LIVE_DISCOVERY       // Fans find them through live shows
+  COMMUNITY_DRIVEN     // Word of mouth, local scene, cultural community
   COLLABORATION_DRIVEN // Other artists' audiences discover them
+  PRESS_DRIVEN         // Media coverage, blogs, radio
 }
 ```
 
-> **Note:** These are NOT mutually exclusive in reality but must have a **dominant** classification for routing logic. The questionnaire must ask "where do MOST of your fans come from" not "where do any fans come from."
-
-### Updated `ArtistProfile` schema additions
-
 ```prisma
-// Add to ArtistProfile model
-revenueModel  RevenueModel  @default(HYBRID)
-growthEngine  GrowthEngine  @default(SOCIAL_FIRST)
+// ArtistProfile additions
+primaryGrowthEngine    GrowthEngine    @default(SOCIAL_FIRST)
+secondaryGrowthEngines GrowthEngine[]  // empty = not yet assessed
 ```
 
-### Updated onboarding questionnaire (now 6 questions)
+**How secondary changes recommendations:**
+A `primaryGrowthEngine: COLLABORATION_DRIVEN` with `secondaryGrowthEngines: [PLAYLIST_DRIVEN]` will be advised to:
+
+- Lead with: expanding feature network, credited releases, collab promotion
+- Support with: SubmitHub pitching, Spotify profile completeness, release consistency for algorithmic pickup
+
+### Updated `ArtistProfile` schema (full delta)
+
+```prisma
+// Replace single-value fields with primary + secondary
+primaryRevenueModel    RevenueModel    @default(HYBRID)
+secondaryRevenueModels RevenueModel[]
+primaryGrowthEngine    GrowthEngine    @default(SOCIAL_FIRST)
+secondaryGrowthEngines GrowthEngine[]
+```
+
+### Updated onboarding questionnaire (now 7 questions)
+
+Questions 1–6 use **multi-select** where marked, so artists can pick primary + secondary naturally.
 
 1. "How would you describe your artist journey?" → Independent / With a team / Label signed / Producer / Session artist
-2. "Where do most fans discover you?" → Social media / Live shows / Streaming playlists / Through other artists / Word of mouth
-3. "Do you manage your own social media?" → Yes / I have help / I don't use social media
-4. "What is your primary income source from music?" → Live gigs / Streaming / Production/beats / Sync placements / I don't earn from music yet
+2. "Where do fans discover you?" _(multi-select, mark your top pick)_ → Social media / Live shows / Streaming playlists / Through other artists / Word of mouth / Press & media
+3. "Do you manage your own social media?" → Yes, myself / I have help / I don't use social media
+4. "Where does your music income come from?" _(multi-select, mark your top pick)_ → Live gigs / Streaming / Production/beats / Sync/licensing / Merch / I don't earn from music yet
 5. "What's your primary goal right now?" → More streams / More gigs / Getting signed / Building a team / Licensing my music
 6. "How many tracks have you released?" → 0 / 1–5 / 6–20 / 20+ _(maps to `careerStage`)_
+7. **"How many times have you collaborated with other artists?"** → Never / 1–3 times / 4–10 times / More than 10 times _(maps to `collaborationScore` + informs `COLLABORATION` capability level)_
+
+> **Q7 rationale:** Collaboration history is a strong career signal. Artists with 4+ collabs already have `COLLABORATION` capability partially demonstrated — the audit should reflect this rather than flagging it as a full gap. We also cross-reference Flemoji's actual data (split sheets, `featuredArtistIds` on tracks) to verify and enrich this self-reported answer.
+
+### Collaboration data enrichment
+
+The questionnaire answer is a starting point. The system also checks:
+
+- Number of tracks where the artist appears in `featuredArtistIds` (collaborations as featured)
+- Number of split sheets with other artists (formal collaboration)
+- Number of tracks with `primaryArtistIds.length > 1` (joint releases)
+
+These are merged into a `collaborationScore` (0–100) stored on `ArtistCapability` for the `COLLABORATION` capability:
+
+| Signal                        | Weight |
+| ----------------------------- | ------ |
+| Self-reported (questionnaire) | 20%    |
+| Featured on other tracks      | 30%    |
+| Split sheets created          | 30%    |
+| Joint primary releases        | 20%    |
 
 ---
 
@@ -422,18 +479,47 @@ export class DecisionEngine {
 
 ### Action Ranking Algorithm (deterministic)
 
+Secondary attributes are included in ranking at **0.6× weight** — they widen the action set without overriding the primary path.
+
 ```typescript
 function rankActions(
   actions: Action[],
   context: RankingContext
 ): RankedAction[] {
+  const { profile } = context;
+
   return actions
     .map(action => {
-      const impactScore = (action.expectedImpact / 30) * 0.4; // max ~30pts normalised
-      const effortScore = effortInverse[action.effort] * 0.25; // LOW=1.0, MED=0.6, HIGH=0.3
-      const revenueScore = revenueUnlockValue(action, context) * 0.35; // how many streams unlocked
+      const impactScore = (action.expectedImpact / 30) * 0.4;
+      const effortScore = effortInverse[action.effort] * 0.25;
+      const revenueScore = revenueUnlockValue(action, context) * 0.35;
 
-      return { ...action, rankScore: impactScore + effortScore + revenueScore };
+      // Relevance multiplier: primary match = 1.0, secondary match = 0.6, no match = 0.3
+      const revenueRelevance = action.revenueModelRelevance.includes(
+        profile.primaryRevenueModel
+      )
+        ? 1.0
+        : profile.secondaryRevenueModels.some(m =>
+              action.revenueModelRelevance.includes(m)
+            )
+          ? 0.6
+          : 0.3;
+
+      const growthRelevance = action.growthEngineRelevance?.includes(
+        profile.primaryGrowthEngine
+      )
+        ? 1.0
+        : profile.secondaryGrowthEngines.some(g =>
+              action.growthEngineRelevance?.includes(g)
+            )
+          ? 0.6
+          : 1.0; // growth engine is advisory — no penalty for mismatch
+
+      const baseScore = impactScore + effortScore + revenueScore;
+      return {
+        ...action,
+        rankScore: baseScore * revenueRelevance * growthRelevance,
+      };
     })
     .sort((a, b) => b.rankScore - a.rankScore);
 }
@@ -686,8 +772,10 @@ enum ActionEffort {
 // ── EXTEND EXISTING MODELS ────────────────────────────
 
 // ArtistProfile: add
-//   revenueModel   RevenueModel  @default(HYBRID)
-//   growthEngine   GrowthEngine  @default(SOCIAL_FIRST)
+//   primaryRevenueModel    RevenueModel   @default(HYBRID)
+//   secondaryRevenueModels RevenueModel[]
+//   primaryGrowthEngine    GrowthEngine   @default(SOCIAL_FIRST)
+//   secondaryGrowthEngines GrowthEngine[]
 
 // Article: add
 //   capabilityId    String?
@@ -760,7 +848,8 @@ model Action {
   timeToComplete        String
   expectedImpact        Float
   artistTypeRelevance   ArtistType[]
-  revenueModelRelevance RevenueModel[]
+  revenueModelRelevance RevenueModel[]   // actions ranked 1.0× for primary match, 0.6× for secondary
+  growthEngineRelevance GrowthEngine[]   // advisory — used to surface growth-specific articles
   actionUrl             String?
   isActive              Boolean      @default(true)
 
