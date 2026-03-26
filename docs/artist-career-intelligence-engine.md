@@ -637,15 +637,27 @@ export async function partialReAudit(
 
 Articles are currently passive knowledge. They must become **structured knowledge nodes** that the DecisionEngine can retrieve and rank by relevance to the artist's current state.
 
-### Updated `Article` model fields
+### Why many-to-many for capabilities?
+
+An article does not build exactly one capability. _"The Independent Artist Pre-Release Checklist"_ builds `DIGITAL_DISTRIBUTION`, `CONSISTENT_RELEASE`, and `PRESS_MEDIA` simultaneously. A single `capabilityId` FK would mean the retrieval system misses that article when the artist's gap is `CONSISTENT_RELEASE` or `PRESS_MEDIA`.
+
+The same applies to revenue streams — _"How to Diversify Your Music Income"_ is relevant to `STREAMING`, `DIRECT_TO_FAN`, and `MERCHANDISE` at once.
+
+The solution is a **many-to-many junction** with an `isPrimary` flag so the engine knows which capability/stream the article is _most_ focused on without discarding secondary links.
+
+### Updated `Article` model
 
 ```prisma
-// Add to existing Article model
-capabilityId    String?          // which capability this article builds
-revenueStreamId String?          // which revenue stream this supports
-intent          ArticleIntent    @default(EDUCATIONAL)
-artistTypes     ArtistType[]     // which artist types this is relevant for
-careerStages    CareerStage[]    // which career stages this applies to
+// Remove from Article model:
+//   capabilityId    String?     ← replaced by junction
+//   revenueStreamId String?     ← replaced by junction
+
+// Add to Article model:
+intent       ArticleIntent       @default(EDUCATIONAL)
+artistTypes  ArtistType[]
+careerStages CareerStage[]
+capabilities ArticleCapability[]
+revenues     ArticleRevenueStream[]
 
 enum ArticleIntent {
   EDUCATIONAL  // Teaches a concept ("What is a split sheet?")
@@ -654,22 +666,69 @@ enum ArticleIntent {
 }
 ```
 
+### Junction models
+
+```prisma
+model ArticleCapability {
+  articleId    String
+  capabilityId String
+  isPrimary    Boolean @default(false) // true = main focus; false = supporting
+
+  article    Article    @relation(fields: [articleId], references: [id])
+  capability Capability @relation(fields: [capabilityId], references: [id])
+
+  @@id([articleId, capabilityId])
+  @@map("article_capabilities")
+}
+
+model ArticleRevenueStream {
+  articleId       String
+  revenueStreamId String
+  isPrimary       Boolean @default(false)
+
+  article       Article       @relation(fields: [articleId], references: [id])
+  revenueStream RevenueStream @relation(fields: [revenueStreamId], references: [id])
+
+  @@id([articleId, revenueStreamId])
+  @@map("article_revenue_streams")
+}
+```
+
+### Example — how a single article maps to multiple nodes
+
+| Article                                             | Capabilities (✅ = isPrimary)                                     | Revenue streams                             |
+| --------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------- |
+| "The Independent Artist Pre-Release Checklist"      | `DIGITAL_DISTRIBUTION` ✅ · `CONSISTENT_RELEASE` · `PRESS_MEDIA`  | `STREAMING` ✅ · `DIRECT_TO_FAN`            |
+| "Split Sheets: The Contract That Saves Friendships" | `BUSINESS_ADMIN` ✅ · `COLLABORATION`                             | All streams                                 |
+| "Social Media Isn't For Everyone"                   | `AUDIENCE_GROWTH` ✅ · `CONTENT_CREATION` · `INDUSTRY_NETWORKING` | `MERCHANDISE` · `DIRECT_TO_FAN`             |
+| "Producer Credits & Licensing: The Basics"          | `BUSINESS_ADMIN` ✅ · `SYNC_LICENSING` · `COLLABORATION`          | `SYNC_LICENSING` ✅ · `PRODUCTION_SERVICES` |
+| "Getting Booked: What Venues Look For Online"       | `PRESS_MEDIA` ✅ · `INDUSTRY_NETWORKING`                          | `LIVE_PERFORMANCE` ✅                       |
+
 ### How articles plug into the graph
 
 ```
 Gap (no split sheet)
   → Capability: BUSINESS_ADMIN
     → Action: "Create a split sheet in Flemoji"
-      → Article (TACTICAL): "How to create a split sheet" [linked at action level]
-    → Article (EDUCATIONAL): "Why split sheets matter" [linked at capability level]
-    → Article (STRATEGIC): "When to hire a music lawyer" [linked at career stage]
+      → Article (TACTICAL, isPrimary=BUSINESS_ADMIN):
+          "How to create a split sheet"          ← action level
+      → Article (EDUCATIONAL, isPrimary=BUSINESS_ADMIN):
+          "Why split sheets matter"               ← capability level
+    → Article (STRATEGIC, careerStage=EMERGING):
+          "When to hire a music lawyer"           ← career stage level
+
+  → Also surfaces via secondary capability link:
+    → Article (TACTICAL, secondary=COLLABORATION):
+          "Split Sheets: The Contract That Saves Friendships"
 ```
 
-The `DecisionEngine` retrieves articles at three levels:
+### How `DecisionEngine` retrieves articles (updated)
 
-1. **Per action** — tactical how-to articles linked directly to the action
-2. **Per capability** — educational articles explaining the capability concept
-3. **Per artist profile** — strategic articles relevant to their type + stage (via `searchArticlesTool`)
+1. **Per action** — `ArticleCapability` where `capabilityId = action.capabilityId AND isPrimary = true AND intent = TACTICAL`
+2. **Per capability** — `ArticleCapability` where `capabilityId IN missingCapabilities AND intent = EDUCATIONAL` (primary ranked above secondary)
+3. **Per artist profile** — `searchArticlesTool` semantic search filtered by `artistType` + `careerStage` (strategic articles)
+
+A single article can surface at multiple points in the same audit result. Output is deduped by `articleId` before rendering.
 
 ---
 
@@ -778,11 +837,14 @@ enum ActionEffort {
 //   secondaryGrowthEngines GrowthEngine[]
 
 // Article: add
-//   capabilityId    String?
-//   revenueStreamId String?
-//   intent          ArticleIntent @default(EDUCATIONAL)
+//   intent          ArticleIntent       @default(EDUCATIONAL)
 //   artistTypes     ArtistType[]
 //   careerStages    CareerStage[]
+//   capabilities    ArticleCapability[]   ← replaces single capabilityId FK
+//   revenues        ArticleRevenueStream[] ← replaces single revenueStreamId FK
+// Article: remove
+//   capabilityId    String?   ← replaced by ArticleCapability junction
+//   revenueStreamId String?   ← replaced by ArticleRevenueStream junction
 
 // ArtistAudit: add
 //   decisionResultId String? @unique  (set after DecisionEngine runs)
@@ -920,6 +982,32 @@ model DecisionResult {
 
   @@index([artistProfileId])
   @@map("decision_results")
+}
+
+// ── ARTICLE JUNCTION MODELS ───────────────────────────
+
+model ArticleCapability {
+  articleId    String
+  capabilityId String
+  isPrimary    Boolean @default(false)
+
+  article    Article    @relation(fields: [articleId], references: [id])
+  capability Capability @relation(fields: [capabilityId], references: [id])
+
+  @@id([articleId, capabilityId])
+  @@map("article_capabilities")
+}
+
+model ArticleRevenueStream {
+  articleId       String
+  revenueStreamId String
+  isPrimary       Boolean @default(false)
+
+  article       Article       @relation(fields: [articleId], references: [id])
+  revenueStream RevenueStream @relation(fields: [revenueStreamId], references: [id])
+
+  @@id([articleId, revenueStreamId])
+  @@map("article_revenue_streams")
 }
 ```
 
