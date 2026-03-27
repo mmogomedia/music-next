@@ -20,9 +20,9 @@ import type { ArtistProfile } from '@prisma/client';
 import type {
   AuditResult,
   DecisionEngineResult,
-  MissingCapability,
   BlockedRevenueStream,
   RankedAction,
+  PersonalisedAction,
 } from '@/types/career-intelligence';
 import {
   resolveCapabilitiesFromGaps,
@@ -36,11 +36,9 @@ import {
 
 const anthropic = new Anthropic();
 
-// How many top actions to surface in the decision result
 const TOP_ACTIONS_LIMIT = 5;
-
-// How many capabilities to pass to the LLM for narrative context
-const LLM_CAPABILITY_CONTEXT_LIMIT = 5;
+const COACHING_MODEL = 'claude-sonnet-4-6';
+const NARRATIVE_MODEL = 'claude-opus-4-6';
 
 /**
  * Run the full decision engine pipeline for a completed audit.
@@ -85,17 +83,35 @@ export async function runDecisionEngine(
       topActions.reduce((sum, a) => sum + a.expectedImpact, 0)
   );
 
-  // ── Step 6: ONE LLM call — narrative reasoning only ───────────────────────
-  const reasoning = await generateReasoning(
-    audit,
-    missingCapabilities,
-    blockedRevenue,
+  // ── Step 6: AI coaching — all 4 dimensions in parallel ────────────────────
+  const [profileCoaching, platformCoaching, releaseCoaching, businessCoaching] =
+    await Promise.all([
+      generateDimensionCoaching('profile', audit, profile),
+      generateDimensionCoaching('platform', audit, profile),
+      generateDimensionCoaching('release', audit, profile),
+      generateDimensionCoaching('business', audit, profile),
+    ]);
+
+  // ── Step 7: Gap story ──────────────────────────────────────────────────────
+  const gapStory = await generateGapStory(audit, profile);
+
+  // ── Step 8: Action personalisation ────────────────────────────────────────
+  const personalisedActions = await generatePersonalisedActions(
     topActions,
-    estimatedScoreIfCompleted,
     profile
   );
 
-  // ── Step 7: Persist all capabilities (present + missing) ──────────────────
+  // ── Step 9: Upgraded overall narrative ────────────────────────────────────
+  const reasoning = await generateReasoning(
+    audit,
+    blockedRevenue,
+    topActions,
+    estimatedScoreIfCompleted,
+    profile,
+    gapStory
+  );
+
+  // ── Step 10: Persist capabilities ─────────────────────────────────────────
   const allCapabilityIds = await getAllCapabilityIds();
   await persistArtistCapabilities(
     audit.artistProfileId,
@@ -103,9 +119,11 @@ export async function runDecisionEngine(
     allCapabilityIds
   );
 
-  // ── Step 8: Persist DecisionResult ────────────────────────────────────────
+  // ── Step 11: Persist DecisionResult ───────────────────────────────────────
   const unlockPathJson =
     revenueUnlockPath as unknown as import('@prisma/client').Prisma.InputJsonValue;
+  const personalisedJson =
+    personalisedActions as unknown as import('@prisma/client').Prisma.InputJsonValue;
 
   const decisionResult = await prisma.decisionResult.upsert({
     where: { auditId },
@@ -115,6 +133,12 @@ export async function runDecisionEngine(
       rankedActions: topActions.map(a => a.id),
       reasoning,
       revenueUnlockPath: unlockPathJson,
+      profileCoaching,
+      platformCoaching,
+      releaseCoaching,
+      businessCoaching,
+      gapStory,
+      personalisedActions: personalisedJson,
     },
     create: {
       auditId,
@@ -124,6 +148,12 @@ export async function runDecisionEngine(
       rankedActions: topActions.map(a => a.id),
       reasoning,
       revenueUnlockPath: unlockPathJson,
+      profileCoaching,
+      platformCoaching,
+      releaseCoaching,
+      businessCoaching,
+      gapStory,
+      personalisedActions: personalisedJson,
     },
   });
 
@@ -142,29 +172,178 @@ export async function runDecisionEngine(
     revenueUnlockPath,
     reasoning,
     estimatedScoreIfCompleted: Math.round(estimatedScoreIfCompleted),
+    profileCoaching,
+    platformCoaching,
+    releaseCoaching,
+    businessCoaching,
+    gapStory,
+    personalisedActions,
   };
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-/**
- * Generate a plain-language reasoning narrative using one LLM call.
- * This is the ONLY place in the career intelligence engine where an LLM is used.
- * Scores, rankings, and prioritisation are all deterministic — the LLM only writes prose.
- */
+/** Convenience: call the LLM and return text, with a fallback. */
+async function callLLM(
+  prompt: string,
+  model: string,
+  maxTokens: number,
+  fallback: string
+): Promise<string> {
+  try {
+    const message = await anthropic.messages.create({
+      model,
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const content = message.content[0];
+    return content.type === 'text' ? content.text.trim() : fallback;
+  } catch (err) {
+    console.error('[DecisionEngine] LLM call failed:', err);
+    return fallback;
+  }
+}
+
+/** Per-dimension coaching (industry insider tone). */
+async function generateDimensionCoaching(
+  dimension: 'profile' | 'platform' | 'release' | 'business',
+  audit: AuditResult,
+  profile: ArtistProfile
+): Promise<string> {
+  const phaseLabel = {
+    profile: 'Profile',
+    platform: 'Platform Presence',
+    release: 'Release Planning',
+    business: 'Business Readiness',
+  }[dimension];
+  const dimensionResult = audit.dimensions.find(d => d.dimension === dimension);
+  const score = {
+    profile: audit.profileScore,
+    platform: audit.platformScore,
+    release: audit.releaseScore,
+    business: audit.businessScore,
+  }[dimension];
+  const failed =
+    dimensionResult?.checks
+      .filter(c => !c.passed)
+      .map(c => `- ${c.label}${c.details ? `: ${c.details}` : ''}`)
+      .join('\n') || 'None';
+  const passed =
+    dimensionResult?.checks
+      .filter(c => c.passed)
+      .map(c => `- ${c.label}`)
+      .join('\n') || 'None';
+
+  const prompt = `You are a senior A&R consultant reviewing a ${phaseLabel} audit.
+
+Artist: ${profile.artistType} | Stage: ${profile.careerStage} | Revenue: ${(profile.revenueModels as string[]).join(', ') || 'not set'}
+${phaseLabel} score: ${score}/100
+
+Checks that failed:
+${failed}
+
+Checks that passed:
+${passed}
+
+Write 2–3 sentences of direct feedback as if closing a label meeting. Reference what DSPs, curators, or bookers look for. Use the real check data — no generic advice. No filler phrases.`;
+
+  return callLLM(
+    prompt,
+    COACHING_MODEL,
+    200,
+    `Score: ${score}/100. Review the failed checks above and address the highest-impact items first.`
+  );
+}
+
+/** Gap story connecting the dots across all dimensions. */
+async function generateGapStory(
+  audit: AuditResult,
+  profile: ArtistProfile
+): Promise<string> {
+  const topGaps = audit.gaps
+    .slice(0, 3)
+    .map(
+      g => `- ${g.label}: ${g.details ?? 'not addressed'} (−${g.impact} pts)`
+    )
+    .join('\n');
+
+  const prompt = `You are an A&R consultant presenting career audit findings.
+
+Artist: ${profile.artistType} | Stage: ${profile.careerStage}
+Scores: Profile ${audit.profileScore}/100 · Platform ${audit.platformScore}/100 · Release ${audit.releaseScore}/100 · Business ${audit.businessScore}/100
+
+Top gaps:
+${topGaps}
+
+In 2–3 sentences, describe the single biggest thing holding this artist back. Connect the dots — don't list gaps. Frame it in terms of what it's costing them: lost streams, missed bookings, blocked DSP consideration, uncollected royalties.`;
+
+  return callLLM(
+    prompt,
+    COACHING_MODEL,
+    150,
+    `Your ${audit.gaps[0]?.label ?? 'top gap'} is the primary barrier right now.`
+  );
+}
+
+/** Personalise action descriptions using artist context. */
+async function generatePersonalisedActions(
+  topActions: RankedAction[],
+  profile: ArtistProfile
+): Promise<PersonalisedAction[]> {
+  if (topActions.length === 0) return [];
+
+  const actionsJson = JSON.stringify(
+    topActions.map(a => ({
+      id: a.id,
+      label: a.label,
+      description: a.description,
+    }))
+  );
+
+  const prompt = `You are a music industry consultant. Rewrite these action descriptions for a ${profile.artistType} artist at the ${profile.careerStage} stage.
+
+Use direct industry language. Each description: 1–2 sentences max. Do not change the IDs.
+Return ONLY a valid JSON array with the same IDs, updated label and description fields. No markdown, no explanation.
+
+Actions:
+${actionsJson}`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: COACHING_MODEL,
+      max_tokens: 600,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const raw =
+      message.content[0]?.type === 'text'
+        ? message.content[0].text.trim()
+        : '[]';
+    const cleaned = raw
+      .replace(/^```(?:json)?\n?/, '')
+      .replace(/\n?```$/, '')
+      .trim();
+    const parsed = JSON.parse(cleaned) as PersonalisedAction[];
+    if (!Array.isArray(parsed)) throw new Error('Not an array');
+    return parsed;
+  } catch (err) {
+    console.error('[DecisionEngine] Action personalisation failed:', err);
+    return topActions.map(a => ({
+      id: a.id,
+      label: a.label,
+      description: a.description,
+    }));
+  }
+}
+
+/** Upgraded 5–7 sentence overall narrative (industry insider tone). */
 async function generateReasoning(
   audit: AuditResult,
-  missingCapabilities: MissingCapability[],
   blockedRevenue: BlockedRevenueStream[],
   topActions: RankedAction[],
   estimatedScoreIfCompleted: number,
-  profile: ArtistProfile
+  profile: ArtistProfile,
+  gapStory: string
 ): Promise<string> {
-  const topCaps = missingCapabilities
-    .slice(0, LLM_CAPABILITY_CONTEXT_LIMIT)
-    .map(c => `- ${c.label} (${c.category}): ${c.description}`)
-    .join('\n');
-
   const topActionsText = topActions
     .map(
       (a, i) =>
@@ -176,58 +355,33 @@ async function generateReasoning(
     blockedRevenue.length > 0
       ? blockedRevenue
           .slice(0, 3)
-          .map(
-            b =>
-              `- ${b.label}: ${b.completionPct}% complete, blocked by ${b.blockedBy.length} capability gap(s)`
-          )
+          .map(b => `- ${b.label}: ${b.completionPct}% complete`)
           .join('\n')
       : 'No revenue streams fully blocked.';
 
-  const prompt = `You are a music industry career advisor. An artist just completed a career readiness audit.
-Write a concise, encouraging, and actionable 2–3 sentence summary of their situation and what they should do next.
+  const prompt = `You are a senior A&R consultant closing a career readiness meeting.
 
-Tone: direct, supportive, specific. Avoid generic advice. Reference the real gaps and actions below.
+Artist: ${profile.artistType} | Stage: ${profile.careerStage} | Overall: ${audit.overallScore}/100 (${audit.tier.replace(/_/g, ' ')})
+Profile: ${audit.profileScore} · Platform: ${audit.platformScore} · Release: ${audit.releaseScore} · Business: ${audit.businessScore}
+Revenue models: ${(profile.revenueModels as string[]).join(', ') || 'not set'}
 
-AUDIT SUMMARY:
-- Overall Score: ${audit.overallScore}/100 (${audit.tier.replace(/_/g, ' ')})
-- Profile: ${audit.profileScore}/100 | Platform: ${audit.platformScore}/100 | Release: ${audit.releaseScore}/100 | Business: ${audit.businessScore}/100
-- Artist type: ${profile.artistType}
-- Revenue models: ${(profile.revenueModels as string[]).join(', ') || 'not set'}
-
-TOP CAPABILITY GAPS:
-${topCaps}
-
-BLOCKED REVENUE STREAMS:
+Blocked revenue streams:
 ${blockedStreamsText}
 
-TOP RECOMMENDED ACTIONS:
+Top recommended actions:
 ${topActionsText}
 
-ESTIMATED SCORE IF TOP ACTIONS COMPLETED: ${estimatedScoreIfCompleted}/100
+Score if top actions completed: ${estimatedScoreIfCompleted}/100
 
-Write the summary now (2–3 sentences max):`;
+Gap story already shared with artist (do NOT repeat this):
+"${gapStory}"
 
-  try {
-    const message = await anthropic.messages.create({
-      model: 'claude-opus-4-5',
-      max_tokens: 256,
-      messages: [{ role: 'user', content: prompt }],
-    });
+Write 5–7 sentences. Sound like you are wrapping up a real meeting — honest, direct, specific. Reference their career stage and what artists at their level focus on. No filler phrases. End with one clear statement about the single biggest opportunity in front of them right now.`;
 
-    const content = message.content[0];
-    return content.type === 'text'
-      ? content.text.trim()
-      : buildFallbackReasoning(audit, topActions);
-  } catch (error) {
-    console.error('[DecisionEngine] LLM narrative generation failed:', error);
-    return buildFallbackReasoning(audit, topActions);
-  }
+  const fallback = buildFallbackReasoning(audit, topActions);
+  return callLLM(prompt, NARRATIVE_MODEL, 400, fallback);
 }
 
-/**
- * Deterministic fallback narrative if the LLM call fails.
- * Ensures the engine always returns a complete result.
- */
 function buildFallbackReasoning(
   audit: AuditResult,
   topActions: RankedAction[]
@@ -235,7 +389,6 @@ function buildFallbackReasoning(
   const tierLabel = audit.tier.replace(/_/g, ' ');
   const firstAction = topActions[0]?.label ?? 'address your top gaps';
   const actionCount = topActions.length;
-
   return (
     `Your career readiness score is ${audit.overallScore}/100 — ${tierLabel}. ` +
     `Start by focusing on "${firstAction}" to make the biggest immediate impact. ` +
@@ -243,10 +396,6 @@ function buildFallbackReasoning(
   );
 }
 
-/**
- * Fetch all capability IDs from the DB for use in persistArtistCapabilities.
- * Cached within a single engine run — no repeated queries.
- */
 async function getAllCapabilityIds(): Promise<string[]> {
   const caps = await prisma.capability.findMany({ select: { id: true } });
   return caps.map(c => c.id);

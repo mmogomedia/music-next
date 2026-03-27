@@ -1993,6 +1993,15 @@ model DecisionResult {
   rankedActions       String[]
   reasoning           String   @db.Text
   revenueUnlockPath   Json
+
+  // AI coaching — populated during the audit stream
+  profileCoaching     String?  @db.Text
+  platformCoaching    String?  @db.Text
+  releaseCoaching     String?  @db.Text
+  businessCoaching    String?  @db.Text
+  gapStory            String?  @db.Text
+  personalisedActions Json?
+
   createdAt           DateTime @default(now())
 
   audit         ArtistAudit   @relation(fields: [auditId], references: [id], onDelete: Cascade)

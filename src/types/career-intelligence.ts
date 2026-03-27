@@ -104,6 +104,12 @@ export interface RevenueUnlockPathItem {
   estimatedScoreDelta: number;
 }
 
+export interface PersonalisedAction {
+  id: string;
+  label: string;
+  description: string;
+}
+
 export interface DecisionEngineResult {
   id: string;
   auditId: string;
@@ -121,6 +127,13 @@ export interface DecisionEngineResult {
   revenueUnlockPath: RevenueUnlockPathItem[];
   reasoning: string;
   estimatedScoreIfCompleted: number;
+  // AI coaching (populated during streaming)
+  profileCoaching?: string;
+  platformCoaching?: string;
+  releaseCoaching?: string;
+  businessCoaching?: string;
+  gapStory?: string;
+  personalisedActions?: PersonalisedAction[];
 }
 
 // ── QUESTIONNAIRE TYPES ───────────────────────────────

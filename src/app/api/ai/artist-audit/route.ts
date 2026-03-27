@@ -28,7 +28,18 @@ export async function GET() {
 
     const artistProfile = await prisma.artistProfile.findFirst({
       where: { userId: session.user.id },
-      select: { id: true },
+      select: {
+        id: true,
+        artistType: true,
+        careerStage: true,
+        revenueModels: true,
+        growthEngines: true,
+        questionnaireResponses: {
+          orderBy: { submittedAt: 'desc' },
+          take: 1,
+          select: { id: true, submittedAt: true },
+        },
+      },
     });
 
     if (!artistProfile) {
@@ -38,15 +49,31 @@ export async function GET() {
       );
     }
 
+    const questionnaireCompleted =
+      artistProfile.questionnaireResponses.length > 0;
+
     const result = await getLatestAuditResult(artistProfile.id);
 
     if (!result || !result.audit) {
-      return NextResponse.json({ audit: null, decision: null });
+      return NextResponse.json({
+        audit: null,
+        decision: null,
+        profile: {
+          artistType: artistProfile.artistType,
+          careerStage: artistProfile.careerStage,
+          questionnaireCompleted,
+        },
+      });
     }
 
     return NextResponse.json({
       audit: result.audit,
       decision: result.decision,
+      profile: {
+        artistType: artistProfile.artistType,
+        careerStage: artistProfile.careerStage,
+        questionnaireCompleted,
+      },
     });
   } catch (error) {
     console.error('[GET /api/ai/artist-audit] Error:', error);
