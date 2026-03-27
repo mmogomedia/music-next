@@ -383,20 +383,34 @@ function DecisionCard({
   gapStory,
   personalisedActions,
   narrative,
+  phases,
 }: {
   started: boolean;
   gapStory: string;
   personalisedActions: PersonalisedAction[] | null;
   narrative: string;
+  phases: Record<AuditDimension, import('@/hooks/useAuditStream').PhaseState>;
 }) {
   const isActive = started && (gapStory || narrative);
+
+  // Count how many dimension agents are still running / coaching
+  const runningCount = Object.values(phases).filter(
+    p => p.status === 'running' || p.status === 'coaching'
+  ).length;
+  const completedCount = Object.values(phases).filter(
+    p => p.status === 'complete'
+  ).length;
+  const waitingForPhases = !started && runningCount > 0;
 
   return (
     <div
       className={clsx(
         'rounded-xl border p-4 transition-all duration-300',
         !started &&
+          !waitingForPhases &&
           'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 opacity-60',
+        waitingForPhases &&
+          'border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-800/80',
         started &&
           !isActive &&
           'border-orange-300 dark:border-orange-600 bg-white dark:bg-slate-800/80',
@@ -409,7 +423,10 @@ function DecisionCard({
           className={clsx(
             'w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0',
             !started &&
+              !waitingForPhases &&
               'bg-slate-100 dark:bg-slate-700 ring-2 ring-rose-400 dark:ring-rose-600',
+            waitingForPhases &&
+              'bg-indigo-100 dark:bg-indigo-900/30 ring-2 ring-indigo-400 dark:ring-indigo-500 animate-pulse',
             started &&
               !isActive &&
               'bg-orange-100 dark:bg-orange-900/30 ring-2 ring-orange-400 dark:ring-orange-500 animate-pulse',
@@ -420,36 +437,74 @@ function DecisionCard({
           <CpuChipIcon
             className={clsx(
               'w-4.5 h-4.5',
-              !started && 'text-slate-400 dark:text-slate-500',
+              !started &&
+                !waitingForPhases &&
+                'text-slate-400 dark:text-slate-500',
+              waitingForPhases && 'text-indigo-500 dark:text-indigo-400',
               started && !isActive && 'text-orange-500 dark:text-orange-400',
               isActive && 'text-purple-600 dark:text-purple-400'
             )}
           />
         </div>
-        <div>
+        <div className='flex-1 min-w-0'>
           <p className='text-sm font-semibold text-slate-800 dark:text-slate-200'>
             Career Intelligence
           </p>
           <p
             className={clsx(
               'text-xs font-medium',
-              !started && 'text-slate-400 dark:text-slate-500',
+              !started &&
+                !waitingForPhases &&
+                'text-slate-400 dark:text-slate-500',
+              waitingForPhases && 'text-indigo-500 dark:text-indigo-400',
               started && !isActive && 'text-orange-500 dark:text-orange-400',
               isActive && 'text-purple-600 dark:text-purple-400'
             )}
           >
-            {!started
-              ? 'Not started'
-              : narrative
-                ? 'Analysis complete'
-                : personalisedActions
-                  ? 'Writing narrative…'
-                  : gapStory
-                    ? 'Personalising your actions…'
-                    : 'Building gap analysis…'}
+            {!started && !waitingForPhases
+              ? 'Waiting to start'
+              : waitingForPhases
+                ? `Waiting for ${runningCount} agent${runningCount !== 1 ? 's' : ''} to finish… (${completedCount}/4 done)`
+                : narrative
+                  ? 'Analysis complete'
+                  : personalisedActions
+                    ? 'Writing narrative…'
+                    : gapStory
+                      ? 'Personalising your actions…'
+                      : 'Building gap analysis…'}
           </p>
         </div>
+
+        {/* Mini progress dots — visible while waiting for parallel agents */}
+        {waitingForPhases && (
+          <div className='flex items-center gap-1.5 flex-shrink-0'>
+            {PHASE_ORDER.map(phaseId => {
+              const p = phases[phaseId];
+              return (
+                <span
+                  key={phaseId}
+                  className={clsx(
+                    'w-2 h-2 rounded-full transition-colors duration-300',
+                    p.status === 'idle' && 'bg-slate-300 dark:bg-slate-600',
+                    p.status === 'running' && 'bg-orange-400 animate-pulse',
+                    p.status === 'coaching' && 'bg-purple-400 animate-pulse',
+                    p.status === 'complete' && 'bg-emerald-500'
+                  )}
+                  title={`${p.label}: ${p.status}`}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
+
+      {/* Waiting state: skeleton placeholder */}
+      {waitingForPhases && (
+        <div className='space-y-2 mt-2 animate-pulse'>
+          <div className='h-2.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 w-3/4' />
+          <div className='h-2.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 w-1/2' />
+        </div>
+      )}
 
       {started && !gapStory && !narrative && (
         <div className='space-y-2 mt-2 animate-pulse'>
@@ -1033,6 +1088,7 @@ export default function CareerAuditTab() {
           gapStory={stream.gapStory}
           personalisedActions={stream.personalisedActions}
           narrative={stream.narrative}
+          phases={stream.phases}
         />
       </div>
     );

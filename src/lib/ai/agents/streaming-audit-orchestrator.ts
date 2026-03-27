@@ -2,8 +2,8 @@
  * Streaming Audit Orchestrator
  *
  * A streaming variant of runCareerAudit that emits SSE events as each
- * phase completes. Sub-agents run sequentially (not parallel) so the UI
- * can show each phase's checks appearing in order.
+ * phase completes. The 4 dimension agents run in parallel (Promise.allSettled)
+ * so all LLM calls fire concurrently — coaching also runs in parallel after.
  *
  * Key differences from runCareerAudit:
  *  - Sequential phases (emit phase_start → check_result × N → phase_complete)
@@ -190,6 +190,7 @@ export async function streamCareerAudit(
     business: '',
   };
 
+  // ── Fire all 4 phase_start events upfront so the UI shows them running in parallel
   for (const phase of phases) {
     emit({
       type: 'phase_start',
@@ -198,37 +199,69 @@ export async function streamCareerAudit(
       timestamp: ts(),
     });
     await flush();
+  }
 
-    const result = await phase.run();
-    dimensionResults[phase.id] = result;
+  // ── Run all 4 LLM agents concurrently ─────────────────────────────────────
+  await Promise.allSettled(
+    phases.map(async phase => {
+      try {
+        const result = await phase.run();
+        dimensionResults[phase.id] = result;
 
-    for (const checkItem of result.checks) {
+        for (const checkItem of result.checks) {
+          emit({
+            type: 'check_result',
+            phase: phase.id,
+            check: checkItem,
+            timestamp: ts(),
+          });
+          await flush();
+        }
+
+        emit({
+          type: 'phase_complete',
+          phase: phase.id,
+          score: result.score,
+          timestamp: ts(),
+        });
+        await flush();
+      } catch (err) {
+        console.error(`[StreamingAudit] Phase ${phase.id} failed:`, err);
+      }
+    })
+  );
+
+  // Ensure every dimension has a result (safety net if a phase crashed entirely)
+  for (const phase of phases) {
+    if (!dimensionResults[phase.id]) {
+      dimensionResults[phase.id] = {
+        dimension: phase.id,
+        score: 0,
+        checks: [],
+        gaps: [],
+      };
       emit({
-        type: 'check_result',
+        type: 'phase_complete',
         phase: phase.id,
-        check: checkItem,
+        score: 0,
         timestamp: ts(),
       });
       await flush();
     }
-
-    emit({
-      type: 'phase_complete',
-      phase: phase.id,
-      score: result.score,
-      timestamp: ts(),
-    });
-    await flush();
-
-    // ── AI coaching for this dimension ─────────────────────────────────────
-    coachingByPhase[phase.id] = await streamDimensionCoaching(
-      phase.id,
-      result.checks,
-      result.score,
-      profile as ArtistProfile,
-      emit
-    );
   }
+
+  // ── Run all 4 coaching streams concurrently ────────────────────────────────
+  await Promise.allSettled(
+    phases.map(async phase => {
+      coachingByPhase[phase.id] = await streamDimensionCoaching(
+        phase.id,
+        dimensionResults[phase.id].checks,
+        dimensionResults[phase.id].score,
+        profile as ArtistProfile,
+        emit
+      );
+    })
+  );
 
   // ── Aggregate scores + persist ArtistAudit ────────────────────────────────
   const auditResult: AuditResult = buildAuditResult(
