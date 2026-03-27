@@ -17,6 +17,7 @@ import type { ArtistProfile, ArtistType } from '@prisma/client';
 import type {
   AuditResult,
   DecisionEngineResult,
+  DimensionResult,
   PersonalisedAction,
 } from '@/types/career-intelligence';
 import type { AuditSSEEvent, AuditDimension } from '@/types/audit-stream';
@@ -138,16 +139,16 @@ export async function streamCareerAudit(
   // ── Phase runners — sequential so events stream in order ──────────────────
 
   const dimensionResults: {
-    profile: ReturnType<typeof runProfileAudit>;
-    platform: ReturnType<typeof runPlatformAudit>;
-    release: ReturnType<typeof runReleasePlanningAudit>;
-    business: ReturnType<typeof runBusinessReadinessAudit>;
+    profile: DimensionResult;
+    platform: DimensionResult;
+    release: DimensionResult;
+    business: DimensionResult;
   } = {} as never;
 
   const phases: Array<{
     id: AuditDimension;
     label: string;
-    run: () => ReturnType<typeof runProfileAudit>;
+    run: () => Promise<DimensionResult>;
   }> = [
     {
       id: 'profile',
@@ -198,8 +199,8 @@ export async function streamCareerAudit(
     });
     await flush();
 
-    const result = phase.run();
-    dimensionResults[phase.id] = result as never;
+    const result = await phase.run();
+    dimensionResults[phase.id] = result;
 
     for (const checkItem of result.checks) {
       emit({

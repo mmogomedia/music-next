@@ -1,8 +1,11 @@
 /**
  * Release Planning Audit Agent
  *
- * Checks release infrastructure — smart links, metadata completeness,
- * cover art, and release cadence.
+ * Evaluates an artist's release infrastructure using Azure OpenAI.
+ * The LLM receives actual track counts, metadata completeness, cadence data,
+ * and smart link status and makes contextual judgements for the artist's type.
+ *
+ * Falls back to deterministic rule evaluation if the LLM call fails.
  *
  * Checks:
  *  - release_has_tracks      At least 1 track is uploaded
@@ -19,24 +22,151 @@ import type {
   AuditGap,
   DimensionResult,
 } from '@/types/career-intelligence';
+import {
+  evaluateChecksWithLLM,
+  type LLMCheckInput,
+} from './llm-audit-evaluator';
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const RECENT_RELEASE_DAYS = 90;
+
+const SYSTEM_PROMPT = `You are an A&R consultant evaluating an artist's release infrastructure and catalog momentum.
+
+Consider context: a 95-day gap for a SESSION_PRODUCER who releases beats differently than
+an INDEPENDENT artist actively building a fanbase. A smart link is table stakes for any
+artist trying to convert social traffic to streams. Metadata completeness affects algorithmic
+discovery — genre tagging on every track is how playlisting algorithms find you.
+
+For passed checks: 1 sentence confirming the strength.
+For failed checks: 1–2 sentences on what it costs them — lost streams, blocked distribution,
+reduced algorithmic visibility. Direct industry language. No filler phrases.`;
+
+// ── Main export ───────────────────────────────────────────────────────────────
 
 interface ReleasePlanningAuditInput {
   tracks: Track[];
   smartLinks: SmartLink[];
 }
 
-// A track counts as "recently released" if it was created within 90 days
-const RECENT_RELEASE_DAYS = 90;
-
-export function runReleasePlanningAudit({
+export async function runReleasePlanningAudit({
   tracks,
   smartLinks,
-}: ReleasePlanningAuditInput): DimensionResult {
+}: ReleasePlanningAuditInput): Promise<DimensionResult> {
   const now = Date.now();
   const recentCutoff = now - RECENT_RELEASE_DAYS * 24 * 60 * 60 * 1000;
 
   const hasTracks = tracks.length > 0;
-  const mostRecentTrack = tracks.sort(
+  const sortedTracks = [...tracks].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  const mostRecentTrack = sortedTracks[0];
+  const hasRecentRelease = tracks.some(
+    t => new Date(t.createdAt).getTime() >= recentCutoff
+  );
+  const tracksWithMetadata = tracks.filter(
+    t => t.title?.trim() && (t.genreId || t.genre)
+  );
+  const metadataCoverage = hasTracks
+    ? Math.round((tracksWithMetadata.length / tracks.length) * 100)
+    : 0;
+  const hasCoverArt = Boolean(
+    mostRecentTrack &&
+      (mostRecentTrack.coverImageUrl || mostRecentTrack.albumArtwork)
+  );
+  const daysSinceLastRelease = mostRecentTrack
+    ? Math.floor(
+        (now - new Date(mostRecentTrack.createdAt).getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    : null;
+
+  const checkInputs: LLMCheckInput[] = [
+    {
+      checkId: 'release_has_tracks',
+      label: 'At least one track is uploaded',
+      impact: 18,
+      rulePassedHint: hasTracks,
+      ruleDetail: hasTracks
+        ? `${tracks.length} track${tracks.length !== 1 ? 's' : ''} uploaded.`
+        : 'No tracks uploaded.',
+    },
+    {
+      checkId: 'release_smart_link',
+      label: 'At least one smart link created',
+      impact: 20,
+      rulePassedHint: smartLinks.length > 0,
+      ruleDetail:
+        smartLinks.length > 0
+          ? `${smartLinks.length} smart link${smartLinks.length !== 1 ? 's' : ''} active.`
+          : 'No smart links created.',
+    },
+    {
+      checkId: 'release_cover_art',
+      label: 'Latest track has cover art',
+      impact: 15,
+      rulePassedHint: hasTracks && hasCoverArt,
+      ruleDetail: !hasTracks
+        ? 'No tracks uploaded yet.'
+        : hasCoverArt
+          ? `Most recent track "${mostRecentTrack?.title ?? 'untitled'}" has cover art.`
+          : `Most recent track "${mostRecentTrack?.title ?? 'untitled'}" is missing cover art.`,
+    },
+    {
+      checkId: 'release_metadata',
+      label: 'Tracks have titles and genre tags (≥ 80%)',
+      impact: 14,
+      rulePassedHint: metadataCoverage >= 80,
+      ruleDetail: hasTracks
+        ? `${metadataCoverage}% of tracks have complete metadata (title + genre). ${tracksWithMetadata.length} of ${tracks.length} tracks.`
+        : 'No tracks to check metadata on.',
+    },
+    {
+      checkId: 'release_cadence',
+      label: `A track was released in the last ${RECENT_RELEASE_DAYS} days`,
+      impact: 18,
+      rulePassedHint: hasRecentRelease,
+      ruleDetail: hasRecentRelease
+        ? `Most recent release: ${daysSinceLastRelease} days ago.`
+        : `No release in the last ${RECENT_RELEASE_DAYS} days${daysSinceLastRelease ? ` (last was ${daysSinceLastRelease} days ago)` : ''}.`,
+    },
+    {
+      checkId: 'release_multiple_tracks',
+      label: 'Library has 3 or more tracks',
+      impact: 15,
+      rulePassedHint: tracks.length >= 3,
+      ruleDetail: `Library has ${tracks.length} track${tracks.length !== 1 ? 's' : ''}.`,
+    },
+  ];
+
+  const artistContext = `Catalog summary:
+- Total tracks: ${tracks.length}
+- Most recent track: "${mostRecentTrack?.title ?? 'none'}" uploaded ${daysSinceLastRelease ?? 'N/A'} days ago${hasCoverArt ? ', cover art present' : ', no cover art'}
+- Metadata completeness: ${metadataCoverage}% of tracks have title + genre
+- Smart links: ${smartLinks.length}
+- Days since last release: ${daysSinceLastRelease ?? 'no tracks'}`;
+
+  const checks = await evaluateChecksWithLLM(
+    SYSTEM_PROMPT,
+    artistContext,
+    checkInputs,
+    () => runReleasePlanningAuditFallback(tracks, smartLinks)
+  );
+
+  return buildDimensionResult('release', checks);
+}
+
+// ── Rule-based fallback ───────────────────────────────────────────────────────
+
+function runReleasePlanningAuditFallback(
+  tracks: Track[],
+  smartLinks: SmartLink[]
+): AuditCheck[] {
+  const now = Date.now();
+  const recentCutoff = now - RECENT_RELEASE_DAYS * 24 * 60 * 60 * 1000;
+
+  const hasTracks = tracks.length > 0;
+  const mostRecentTrack = [...tracks].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )[0];
   const hasRecentRelease = tracks.some(
@@ -53,7 +183,7 @@ export function runReleasePlanningAudit({
       (mostRecentTrack.coverImageUrl || mostRecentTrack.albumArtwork)
   );
 
-  const checks: AuditCheck[] = [
+  return [
     check(
       'release_has_tracks',
       'At least one track is uploaded',
@@ -111,8 +241,6 @@ export function runReleasePlanningAudit({
         : `Library has ${tracks.length} track${tracks.length !== 1 ? 's' : ''}. Aim for 3+ so fans have a body of work to explore.`
     ),
   ];
-
-  return buildDimensionResult('release', checks);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

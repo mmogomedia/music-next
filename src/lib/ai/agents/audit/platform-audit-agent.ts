@@ -1,9 +1,11 @@
 /**
  * Platform Audit Agent
  *
- * Reads PulsePlatformData (PULSE³ connections) for TikTok, Spotify, and YouTube.
- * If data is missing or stale (>7 days), the check is marked 'unverified' — score degrades
- * proportionally rather than failing hard.
+ * Evaluates an artist's platform presence using Azure OpenAI.
+ * The LLM receives actual follower counts, connection status, and cadence
+ * data and makes contextual judgements based on artist type and career stage.
+ *
+ * Falls back to deterministic rule evaluation if the LLM call fails.
  *
  * Checks:
  *  - platform_tiktok_connected    TikTok data present in PULSE³
@@ -25,13 +27,13 @@ import type {
   AuditGap,
   DimensionResult,
 } from '@/types/career-intelligence';
+import {
+  evaluateChecksWithLLM,
+  type LLMCheckInput,
+} from './llm-audit-evaluator';
 
-interface PlatformAuditInput {
-  profile: ArtistProfile;
-  platformData: PulsePlatformData[];
-}
+// ── Constants ─────────────────────────────────────────────────────────────────
 
-// Platforms that are required per artist type
 const REQUIRED_PLATFORMS: Record<ArtistType, string[]> = {
   INDEPENDENT: ['tiktok', 'spotify'],
   HYBRID: ['tiktok', 'spotify', 'youtube'],
@@ -41,13 +43,31 @@ const REQUIRED_PLATFORMS: Record<ArtistType, string[]> = {
   SONGWRITER: ['spotify'],
 };
 
-// Stale threshold: data older than 7 days counts as unverified
 const STALE_DAYS = 7;
 
-export function runPlatformAudit({
+const SYSTEM_PROMPT = `You are an A&R consultant evaluating an artist's platform presence for a career audit.
+Assess each check using the actual data provided.
+
+Consider artist type context: a PERFORMER with 45 Spotify followers playing weekly differs from
+an INDEPENDENT artist with 45 followers and no live presence. A SESSION_PRODUCER doesn't
+need TikTok; a HYBRID artist does. Is the follower count meaningful for this career stage?
+Is the posting cadence realistic for their artist type?
+
+For passed checks: 1 sentence confirming the strength.
+For failed checks: 1–2 sentences on the real-world cost — what it means for their DSP
+discovery, editorial consideration, or audience building. Direct industry language. No filler.`;
+
+// ── Main export ───────────────────────────────────────────────────────────────
+
+interface PlatformAuditInput {
+  profile: ArtistProfile;
+  platformData: PulsePlatformData[];
+}
+
+export async function runPlatformAudit({
   profile,
   platformData,
-}: PlatformAuditInput): DimensionResult {
+}: PlatformAuditInput): Promise<DimensionResult> {
   const artistType = profile.artistType as ArtistType;
   const requiredPlatforms = REQUIRED_PLATFORMS[artistType] ?? ['spotify'];
   const now = new Date();
@@ -60,8 +80,124 @@ export function runPlatformAudit({
   const isSpotifyRequired = requiredPlatforms.includes('spotify');
   const isYoutubeRequired = requiredPlatforms.includes('youtube');
 
-  const checks: AuditCheck[] = [
-    // ── Connection checks ────────────────────────────────────────────────────
+  const tiktokFollowers = getMetric(tiktok, 'follower_count', 'followers');
+  const spotifyFollowers = getMetric(spotify, 'followers');
+  const youtubeSubscribers = getMetric(
+    youtube,
+    'subscriber_count',
+    'subscribers'
+  );
+  const recentActivity = hasRecentActivity(tiktok, youtube);
+  const lastPostDate = getLastPostDate(tiktok, youtube);
+
+  const checkInputs: LLMCheckInput[] = [
+    {
+      checkId: 'platform_tiktok_connected',
+      label: 'TikTok connected to PULSE³',
+      impact: isTiktokRequired ? 15 : 6,
+      rulePassedHint: Boolean(tiktok),
+      ruleDetail: tiktok
+        ? `TikTok connected, data fetched ${daysSince(tiktok.fetchedAt)} days ago.`
+        : isTiktokRequired
+          ? 'TikTok not connected (required for this artist type).'
+          : 'TikTok not connected (optional for this artist type).',
+    },
+    {
+      checkId: 'platform_spotify_connected',
+      label: 'Spotify connected to PULSE³',
+      impact: isSpotifyRequired ? 15 : 6,
+      rulePassedHint: Boolean(spotify),
+      ruleDetail: spotify
+        ? `Spotify connected, data fetched ${daysSince(spotify.fetchedAt)} days ago.`
+        : 'Spotify not connected.',
+    },
+    {
+      checkId: 'platform_youtube_connected',
+      label: 'YouTube connected to PULSE³',
+      impact: isYoutubeRequired ? 12 : 5,
+      rulePassedHint: Boolean(youtube),
+      ruleDetail: youtube
+        ? `YouTube connected, data fetched ${daysSince(youtube.fetchedAt)} days ago.`
+        : isYoutubeRequired
+          ? 'YouTube not connected (required for this artist type).'
+          : 'YouTube not connected (optional for this artist type).',
+    },
+    {
+      checkId: 'platform_tiktok_followers',
+      label: 'TikTok followers ≥ 100',
+      impact: isTiktokRequired ? 12 : 4,
+      rulePassedHint: tiktokFollowers >= 100,
+      ruleDetail: tiktok
+        ? `TikTok followers: ${tiktokFollowers.toLocaleString()} (threshold: 100)`
+        : 'TikTok not connected — follower count unavailable.',
+    },
+    {
+      checkId: 'platform_spotify_followers',
+      label: 'Spotify followers ≥ 50',
+      impact: isSpotifyRequired ? 12 : 4,
+      rulePassedHint: spotifyFollowers >= 50,
+      ruleDetail: spotify
+        ? `Spotify followers: ${spotifyFollowers.toLocaleString()} (threshold: 50)`
+        : 'Spotify not connected — follower count unavailable.',
+    },
+    {
+      checkId: 'platform_youtube_subscribers',
+      label: 'YouTube subscribers ≥ 50',
+      impact: isYoutubeRequired ? 10 : 4,
+      rulePassedHint: youtubeSubscribers >= 50,
+      ruleDetail: youtube
+        ? `YouTube subscribers: ${youtubeSubscribers.toLocaleString()} (threshold: 50)`
+        : 'YouTube not connected — subscriber count unavailable.',
+    },
+    {
+      checkId: 'platform_posting_cadence',
+      label: 'Content posted in the last 30 days',
+      impact: isTiktokRequired || isYoutubeRequired ? 14 : 5,
+      rulePassedHint: recentActivity,
+      ruleDetail: recentActivity
+        ? `Recent content detected${lastPostDate ? ` (last post: ${lastPostDate})` : ''}.`
+        : 'No content detected in the last 30 days.',
+    },
+  ];
+
+  const artistContext = `Artist type: ${artistType}
+Required platforms for ${artistType}: ${requiredPlatforms.join(', ')}
+Career stage: ${profile.careerStage ?? 'unknown'}
+
+Platform data:
+- TikTok: ${tiktok ? `${tiktokFollowers.toLocaleString()} followers, last post: ${lastPostDate ?? 'unknown'}` : 'not connected'}
+- Spotify: ${spotify ? `${spotifyFollowers.toLocaleString()} followers` : 'not connected'}
+- YouTube: ${youtube ? `${youtubeSubscribers.toLocaleString()} subscribers, last video: ${lastPostDate ?? 'unknown'}` : 'not connected'}`;
+
+  const checks = await evaluateChecksWithLLM(
+    SYSTEM_PROMPT,
+    artistContext,
+    checkInputs,
+    () => runPlatformAuditFallback(profile, platformData)
+  );
+
+  return buildDimensionResult('platform', checks);
+}
+
+// ── Rule-based fallback ───────────────────────────────────────────────────────
+
+function runPlatformAuditFallback(
+  profile: ArtistProfile,
+  platformData: PulsePlatformData[]
+): AuditCheck[] {
+  const artistType = profile.artistType as ArtistType;
+  const requiredPlatforms = REQUIRED_PLATFORMS[artistType] ?? ['spotify'];
+  const now = new Date();
+
+  const tiktok = findFreshData(platformData, 'tiktok', now);
+  const spotify = findFreshData(platformData, 'spotify', now);
+  const youtube = findFreshData(platformData, 'youtube', now);
+
+  const isTiktokRequired = requiredPlatforms.includes('tiktok');
+  const isSpotifyRequired = requiredPlatforms.includes('spotify');
+  const isYoutubeRequired = requiredPlatforms.includes('youtube');
+
+  return [
     check(
       'platform_tiktok_connected',
       'TikTok connected to PULSE³',
@@ -93,8 +229,6 @@ export function runPlatformAudit({
           ? 'Connect YouTube in PULSE³ — video content drives discovery for your artist type.'
           : 'YouTube is optional for your artist type — connect it when ready.'
     ),
-
-    // ── Audience size checks ──────────────────────────────────────────────────
     check(
       'platform_tiktok_followers',
       'TikTok followers ≥ 100',
@@ -130,8 +264,6 @@ export function runPlatformAudit({
           )
         : 'Connect YouTube first to check subscriber count.'
     ),
-
-    // ── Activity check ────────────────────────────────────────────────────────
     check(
       'platform_posting_cadence',
       'Content posted in the last 30 days',
@@ -142,8 +274,6 @@ export function runPlatformAudit({
         : 'No content detected in the last 30 days — consistent posting is key to algorithm visibility.'
     ),
   ];
-
-  return buildDimensionResult('platform', checks);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -193,6 +323,26 @@ function hasRecentActivity(
     }
   }
   return false;
+}
+
+function getLastPostDate(
+  tiktok: PulsePlatformData | undefined,
+  youtube: PulsePlatformData | undefined
+): string | null {
+  for (const platform of [tiktok, youtube]) {
+    if (!platform) continue;
+    const data = platform.data as Record<string, unknown>;
+    const lastPost =
+      data.last_post_date ?? data.last_video_date ?? data.updated_at;
+    if (typeof lastPost === 'string') return lastPost;
+  }
+  return null;
+}
+
+function daysSince(date: Date | string): number {
+  return Math.floor(
+    (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24)
+  );
 }
 
 function formatFollowerDetail(
