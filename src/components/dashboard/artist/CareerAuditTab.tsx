@@ -220,10 +220,17 @@ interface PhaseCardProps {
   coaching: string;
 }
 
-function PhaseCard({ label, status, score, checks, coaching }: PhaseCardProps) {
-  const Icon =
-    PHASE_ICONS[label.toLowerCase().replace(' ', '_') as AuditDimension] ??
-    SparklesIcon;
+function PhaseCard({
+  id,
+  label,
+  status,
+  score,
+  checks,
+  coaching,
+}: PhaseCardProps) {
+  const Icon = PHASE_ICONS[id] ?? SparklesIcon;
+  const passedCount = checks.filter(c => c.passed).length;
+  const failedCount = checks.filter(c => !c.passed).length;
 
   return (
     <div
@@ -264,14 +271,18 @@ function PhaseCard({ label, status, score, checks, coaching }: PhaseCardProps) {
             {label}
           </p>
           <p className={clsx('text-xs font-medium', statusTextClass(status))}>
-            {statusLabel(status)}
+            {status === 'running' && checks.length === 0
+              ? 'Azure OpenAI evaluating checks…'
+              : status === 'running'
+                ? `${checks.length} check${checks.length !== 1 ? 's' : ''} received…`
+                : statusLabel(status)}
             {status === 'complete' &&
               score !== null &&
               ` · ${Math.round(score)}/100`}
           </p>
         </div>
 
-        {status === 'complete' && score !== null && (
+        {(status === 'complete' || status === 'coaching') && score !== null && (
           <div className='flex-shrink-0'>
             <div className='w-10 h-10 relative'>
               <svg viewBox='0 0 36 36' className='w-10 h-10 -rotate-90'>
@@ -311,42 +322,94 @@ function PhaseCard({ label, status, score, checks, coaching }: PhaseCardProps) {
         )}
       </div>
 
-      {/* Checks list — only shown once the phase has received at least one check */}
-      {checks.length > 0 && (
-        <ul className='space-y-1.5 mt-3 pl-1'>
-          {checks.map(check => (
-            <li key={check.checkId} className='flex items-start gap-2'>
-              {check.passed ? (
-                <CheckCircleSolid className='w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5' />
-              ) : (
-                <XCircleSolid className='w-3.5 h-3.5 text-rose-400 flex-shrink-0 mt-0.5' />
-              )}
-              <div className='min-w-0'>
-                <span className='text-xs text-slate-600 dark:text-slate-400 leading-tight'>
-                  {check.label}
-                </span>
-                {!check.passed && check.details && (
-                  <p className='text-[11px] text-slate-400 dark:text-slate-500 leading-tight mt-0.5 line-clamp-2'>
-                    {check.details}
-                  </p>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+      {/* Activity indicator while waiting for first check */}
+      {status === 'running' && checks.length === 0 && (
+        <div className='mt-2 mb-1'>
+          <div className='flex items-center gap-2 text-[11px] text-orange-500 dark:text-orange-400 font-medium'>
+            <span className='flex gap-0.5'>
+              <span
+                className='w-1 h-1 rounded-full bg-orange-400 animate-bounce'
+                style={{ animationDelay: '0ms' }}
+              />
+              <span
+                className='w-1 h-1 rounded-full bg-orange-400 animate-bounce'
+                style={{ animationDelay: '150ms' }}
+              />
+              <span
+                className='w-1 h-1 rounded-full bg-orange-400 animate-bounce'
+                style={{ animationDelay: '300ms' }}
+              />
+            </span>
+            Querying Azure OpenAI for {label.toLowerCase()} checks
+          </div>
+          <div className='space-y-2 mt-2.5 animate-pulse'>
+            {[80, 65, 75].map((w, n) => (
+              <div
+                key={n}
+                className='h-2.5 rounded-full bg-slate-100 dark:bg-slate-700'
+                style={{ width: `${w}%` }}
+              />
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* Running placeholder rows */}
-      {status === 'running' && checks.length === 0 && (
-        <div className='space-y-2 mt-3 animate-pulse'>
-          {[1, 2, 3].map(n => (
-            <div
-              key={n}
-              className='h-3 rounded-full bg-slate-100 dark:bg-slate-700'
-              style={{ width: `${60 + n * 10}%` }}
-            />
-          ))}
-        </div>
+      {/* Checks list — streams in one by one as Azure OpenAI returns results */}
+      {checks.length > 0 && (
+        <>
+          {/* Pass/fail summary pill — visible once checks start arriving */}
+          {status !== 'idle' && checks.length > 2 && (
+            <div className='flex items-center gap-2 mb-2.5'>
+              <span className='inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'>
+                <CheckCircleSolid className='w-3 h-3' /> {passedCount} passed
+              </span>
+              {failedCount > 0 && (
+                <span className='inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 dark:bg-rose-900/20 text-rose-500 dark:text-rose-400'>
+                  <XCircleSolid className='w-3 h-3' /> {failedCount} failed
+                </span>
+              )}
+            </div>
+          )}
+          <ul className='space-y-2 pl-0.5'>
+            {checks.map((check, i) => (
+              <li key={check.checkId} className='flex items-start gap-2'>
+                {check.passed ? (
+                  <CheckCircleSolid className='w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5' />
+                ) : (
+                  <XCircleSolid className='w-3.5 h-3.5 text-rose-400 flex-shrink-0 mt-0.5' />
+                )}
+                <div className='min-w-0 flex-1'>
+                  <p
+                    className={clsx(
+                      'text-xs font-medium leading-tight',
+                      check.passed
+                        ? 'text-slate-700 dark:text-slate-300'
+                        : 'text-slate-800 dark:text-slate-200'
+                    )}
+                  >
+                    {check.label}
+                    {/* Streaming cursor on the last check while running */}
+                    {status === 'running' && i === checks.length - 1 && (
+                      <span className='inline-block w-0.5 h-[0.85em] bg-orange-400 ml-0.5 align-middle animate-pulse' />
+                    )}
+                  </p>
+                  {check.details && (
+                    <p
+                      className={clsx(
+                        'text-[11px] leading-relaxed mt-0.5',
+                        check.passed
+                          ? 'text-slate-400 dark:text-slate-500'
+                          : 'text-rose-500 dark:text-rose-400'
+                      )}
+                    >
+                      {check.details}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {/* Coaching blurb — appears after checks, types out during 'coaching' status */}
@@ -384,99 +447,113 @@ function DecisionCard({
   personalisedActions,
   narrative,
   phases,
+  continueClicked,
+  onContinue,
 }: {
   started: boolean;
   gapStory: string;
   personalisedActions: PersonalisedAction[] | null;
   narrative: string;
   phases: Record<AuditDimension, import('@/hooks/useAuditStream').PhaseState>;
+  continueClicked: boolean;
+  onContinue: () => void;
 }) {
-  const isActive = started && (gapStory || narrative);
-
-  // Count how many dimension agents are still running / coaching
-  const runningCount = Object.values(phases).filter(
+  const phaseList = Object.values(phases);
+  const runningCount = phaseList.filter(
     p => p.status === 'running' || p.status === 'coaching'
   ).length;
-  const completedCount = Object.values(phases).filter(
-    p => p.status === 'complete'
-  ).length;
-  const waitingForPhases = !started && runningCount > 0;
+  const completedCount = phaseList.filter(p => p.status === 'complete').length;
+  const allPhasesComplete = phaseList.every(p => p.status === 'complete');
+  const waitingForPhases = !allPhasesComplete && runningCount > 0;
+  const showContinueButton = allPhasesComplete && !continueClicked;
+  const isActive = continueClicked && (gapStory || narrative);
+
+  // Border / bg
+  const containerClass = clsx(
+    'rounded-xl border p-4 transition-all duration-300',
+    !waitingForPhases && !showContinueButton && !continueClicked
+      ? 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 opacity-50'
+      : waitingForPhases
+        ? 'border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-800/80'
+        : showContinueButton
+          ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/30 dark:bg-emerald-900/10'
+          : isActive
+            ? 'border-purple-300 dark:border-purple-700 bg-purple-50/30 dark:bg-purple-900/10'
+            : 'border-orange-300 dark:border-orange-600 bg-white dark:bg-slate-800/80'
+  );
+
+  // Icon ring / bg
+  const iconWrapClass = clsx(
+    'w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0',
+    !waitingForPhases && !showContinueButton && !continueClicked
+      ? 'bg-slate-100 dark:bg-slate-700 ring-2 ring-slate-300 dark:ring-slate-600'
+      : waitingForPhases
+        ? 'bg-indigo-100 dark:bg-indigo-900/30 ring-2 ring-indigo-400 dark:ring-indigo-500 animate-pulse'
+        : showContinueButton
+          ? 'bg-emerald-100 dark:bg-emerald-900/30 ring-2 ring-emerald-400 dark:ring-emerald-500'
+          : isActive
+            ? 'bg-purple-100 dark:bg-purple-900/40 ring-2 ring-purple-400 dark:ring-purple-500'
+            : 'bg-orange-100 dark:bg-orange-900/30 ring-2 ring-orange-400 dark:ring-orange-500 animate-pulse'
+  );
+
+  const iconColorClass = clsx(
+    'w-4.5 h-4.5',
+    !waitingForPhases && !showContinueButton && !continueClicked
+      ? 'text-slate-400 dark:text-slate-500'
+      : waitingForPhases
+        ? 'text-indigo-500 dark:text-indigo-400'
+        : showContinueButton
+          ? 'text-emerald-600 dark:text-emerald-400'
+          : isActive
+            ? 'text-purple-600 dark:text-purple-400'
+            : 'text-orange-500 dark:text-orange-400'
+  );
+
+  const statusTextColorClass = clsx(
+    'text-xs font-medium',
+    !waitingForPhases && !showContinueButton && !continueClicked
+      ? 'text-slate-400 dark:text-slate-500'
+      : waitingForPhases
+        ? 'text-indigo-500 dark:text-indigo-400'
+        : showContinueButton
+          ? 'text-emerald-600 dark:text-emerald-400'
+          : isActive
+            ? 'text-purple-600 dark:text-purple-400'
+            : 'text-orange-500 dark:text-orange-400'
+  );
+
+  const statusText =
+    !waitingForPhases && !showContinueButton && !continueClicked
+      ? 'Waiting for dimension agents…'
+      : waitingForPhases
+        ? `Running ${runningCount} agent${runningCount !== 1 ? 's' : ''} in parallel… (${completedCount}/4 done)`
+        : showContinueButton
+          ? 'All 4 agents complete — ready for deep analysis'
+          : narrative
+            ? 'Analysis complete'
+            : personalisedActions
+              ? 'Writing narrative…'
+              : gapStory
+                ? 'Personalising your actions…'
+                : 'Building gap analysis…';
 
   return (
-    <div
-      className={clsx(
-        'rounded-xl border p-4 transition-all duration-300',
-        !started &&
-          !waitingForPhases &&
-          'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 opacity-60',
-        waitingForPhases &&
-          'border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-800/80',
-        started &&
-          !isActive &&
-          'border-orange-300 dark:border-orange-600 bg-white dark:bg-slate-800/80',
-        isActive &&
-          'border-purple-300 dark:border-purple-700 bg-purple-50/30 dark:bg-purple-900/10'
-      )}
-    >
+    <div className={containerClass}>
+      {/* Header row */}
       <div className='flex items-center gap-3 mb-2'>
-        <div
-          className={clsx(
-            'w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0',
-            !started &&
-              !waitingForPhases &&
-              'bg-slate-100 dark:bg-slate-700 ring-2 ring-rose-400 dark:ring-rose-600',
-            waitingForPhases &&
-              'bg-indigo-100 dark:bg-indigo-900/30 ring-2 ring-indigo-400 dark:ring-indigo-500 animate-pulse',
-            started &&
-              !isActive &&
-              'bg-orange-100 dark:bg-orange-900/30 ring-2 ring-orange-400 dark:ring-orange-500 animate-pulse',
-            isActive &&
-              'bg-purple-100 dark:bg-purple-900/40 ring-2 ring-purple-400 dark:ring-purple-500'
-          )}
-        >
-          <CpuChipIcon
-            className={clsx(
-              'w-4.5 h-4.5',
-              !started &&
-                !waitingForPhases &&
-                'text-slate-400 dark:text-slate-500',
-              waitingForPhases && 'text-indigo-500 dark:text-indigo-400',
-              started && !isActive && 'text-orange-500 dark:text-orange-400',
-              isActive && 'text-purple-600 dark:text-purple-400'
-            )}
-          />
+        <div className={iconWrapClass}>
+          <CpuChipIcon className={iconColorClass} />
         </div>
+
         <div className='flex-1 min-w-0'>
           <p className='text-sm font-semibold text-slate-800 dark:text-slate-200'>
             Career Intelligence
           </p>
-          <p
-            className={clsx(
-              'text-xs font-medium',
-              !started &&
-                !waitingForPhases &&
-                'text-slate-400 dark:text-slate-500',
-              waitingForPhases && 'text-indigo-500 dark:text-indigo-400',
-              started && !isActive && 'text-orange-500 dark:text-orange-400',
-              isActive && 'text-purple-600 dark:text-purple-400'
-            )}
-          >
-            {!started && !waitingForPhases
-              ? 'Waiting to start'
-              : waitingForPhases
-                ? `Waiting for ${runningCount} agent${runningCount !== 1 ? 's' : ''} to finish… (${completedCount}/4 done)`
-                : narrative
-                  ? 'Analysis complete'
-                  : personalisedActions
-                    ? 'Writing narrative…'
-                    : gapStory
-                      ? 'Personalising your actions…'
-                      : 'Building gap analysis…'}
-          </p>
+          <p className={statusTextColorClass}>{statusText}</p>
         </div>
 
-        {/* Mini progress dots — visible while waiting for parallel agents */}
-        {waitingForPhases && (
+        {/* Live phase dots — visible while agents running or all done */}
+        {(waitingForPhases || showContinueButton) && (
           <div className='flex items-center gap-1.5 flex-shrink-0'>
             {PHASE_ORDER.map(phaseId => {
               const p = phases[phaseId];
@@ -498,7 +575,7 @@ function DecisionCard({
         )}
       </div>
 
-      {/* Waiting state: skeleton placeholder */}
+      {/* Waiting: animated skeleton */}
       {waitingForPhases && (
         <div className='space-y-2 mt-2 animate-pulse'>
           <div className='h-2.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 w-3/4' />
@@ -506,39 +583,71 @@ function DecisionCard({
         </div>
       )}
 
-      {started && !gapStory && !narrative && (
-        <div className='space-y-2 mt-2 animate-pulse'>
-          <div className='h-3 rounded-full bg-slate-100 dark:bg-slate-700 w-4/5' />
-          <div className='h-3 rounded-full bg-slate-100 dark:bg-slate-700 w-3/5' />
-        </div>
-      )}
-
-      {/* Gap story streams first */}
-      {gapStory && (
-        <div className='mt-2 mb-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/60 px-3 py-2.5'>
-          <p className='text-xs text-amber-800 dark:text-amber-300 leading-relaxed font-medium'>
-            {gapStory}
-            {!personalisedActions && (
-              <span className='inline-block w-0.5 h-[1em] bg-amber-500 ml-0.5 align-middle animate-pulse' />
-            )}
+      {/* ── All agents done — Continue to Analysis button ─────────────────── */}
+      {showContinueButton && (
+        <div className='mt-3'>
+          <p className='text-xs text-slate-500 dark:text-slate-400 mb-3 leading-relaxed'>
+            All 4 dimension agents finished. Click below to run the deep career
+            intelligence analysis and get your personalised action plan.
           </p>
+          <button
+            onClick={onContinue}
+            className='w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-semibold text-sm transition-colors'
+          >
+            <SparklesIcon className='w-4 h-4' />
+            View Full Analysis
+            <svg
+              className='w-4 h-4 ml-auto'
+              fill='none'
+              stroke='currentColor'
+              strokeWidth='2'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                d='M13 7l5 5m0 0l-5 5m5-5H6'
+              />
+            </svg>
+          </button>
         </div>
       )}
 
-      {/* Personalising actions spinner */}
-      {gapStory && !personalisedActions && !narrative && (
-        <div className='flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400 animate-pulse'>
-          <ArrowPathIcon className='w-3.5 h-3.5 animate-spin' />
-          Personalising your top actions…
-        </div>
-      )}
+      {/* ── Decision engine output (gated behind Continue click) ──────────── */}
+      {continueClicked && (
+        <>
+          {started && !gapStory && !narrative && (
+            <div className='space-y-2 mt-2 animate-pulse'>
+              <div className='h-3 rounded-full bg-slate-100 dark:bg-slate-700 w-4/5' />
+              <div className='h-3 rounded-full bg-slate-100 dark:bg-slate-700 w-3/5' />
+            </div>
+          )}
 
-      {/* Streaming narrative */}
-      {narrative && (
-        <p className='text-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-1'>
-          {narrative}
-          <span className='inline-block w-0.5 h-[1em] bg-purple-500 ml-0.5 align-middle animate-pulse' />
-        </p>
+          {gapStory && (
+            <div className='mt-2 mb-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/60 px-3 py-2.5'>
+              <p className='text-xs text-amber-800 dark:text-amber-300 leading-relaxed font-medium'>
+                {gapStory}
+                {!personalisedActions && (
+                  <span className='inline-block w-0.5 h-[1em] bg-amber-500 ml-0.5 align-middle animate-pulse' />
+                )}
+              </p>
+            </div>
+          )}
+
+          {gapStory && !personalisedActions && !narrative && (
+            <div className='flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400 animate-pulse'>
+              <ArrowPathIcon className='w-3.5 h-3.5 animate-spin' />
+              Personalising your top actions…
+            </div>
+          )}
+
+          {narrative && (
+            <p className='text-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-1'>
+              {narrative}
+              <span className='inline-block w-0.5 h-[1em] bg-purple-500 ml-0.5 align-middle animate-pulse' />
+            </p>
+          )}
+        </>
       )}
     </div>
   );
@@ -948,12 +1057,15 @@ export default function CareerAuditTab() {
   const [questionnaireJustDone, setQuestionnaireJustDone] = useState(false);
   const [showQuestionnaireOverride, setShowQuestionnaireOverride] =
     useState(false);
+  // Gating: user must click "View Full Analysis" after all 4 agents finish
+  const [continueClicked, setContinueClicked] = useState(false);
 
   function handleReset() {
     clearResult();
     stream.reset();
     setQuestionnaireJustDone(false);
     setShowQuestionnaireOverride(false);
+    setContinueClicked(false);
   }
 
   function handleRedoQuestionnaire() {
@@ -1064,7 +1176,18 @@ export default function CareerAuditTab() {
           </span>
         </div>
 
-        {/* Phase cards */}
+        {/* Career Intelligence card — at the top so the orchestrator is always visible */}
+        <DecisionCard
+          started={stream.decisionStarted}
+          gapStory={stream.gapStory}
+          personalisedActions={stream.personalisedActions}
+          narrative={stream.narrative}
+          phases={stream.phases}
+          continueClicked={continueClicked}
+          onContinue={() => setContinueClicked(true)}
+        />
+
+        {/* Phase cards — 2-column grid below the orchestrator */}
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
           {PHASE_ORDER.map(phaseId => {
             const phase = stream.phases[phaseId];
@@ -1081,15 +1204,6 @@ export default function CareerAuditTab() {
             );
           })}
         </div>
-
-        {/* Decision engine / narrative card */}
-        <DecisionCard
-          started={stream.decisionStarted}
-          gapStory={stream.gapStory}
-          personalisedActions={stream.personalisedActions}
-          narrative={stream.narrative}
-          phases={stream.phases}
-        />
       </div>
     );
   }
@@ -1111,6 +1225,7 @@ export default function CareerAuditTab() {
           gapStory={displayGapStory}
           personalisedActions={displayPersonalisedActions}
           onReRun={() => {
+            setContinueClicked(false);
             stream.reset();
             stream.startAudit();
           }}
