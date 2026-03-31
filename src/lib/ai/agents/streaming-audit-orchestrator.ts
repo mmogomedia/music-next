@@ -355,40 +355,38 @@ export async function streamCareerAudit(
     allCaps.map(c => c.id)
   );
 
-  const unlockPathJson =
-    revenueUnlockPath as unknown as import('@prisma/client').Prisma.InputJsonValue;
-  const personalisedJson =
-    personalisedActions as unknown as import('@prisma/client').Prisma.InputJsonValue;
+  const toJson = (v: unknown) =>
+    v as unknown as import('@prisma/client').Prisma.InputJsonValue;
 
   const decisionResult = await prisma.decisionResult.upsert({
     where: { auditId: savedAudit.id },
     update: {
       missingCapabilities: missingCapabilities.map(c => c.id),
-      blockedRevenue: blockedRevenue.map(b => b.revenueStreamId),
-      rankedActions: topActions.map(a => a.id),
+      blockedRevenue: toJson(blockedRevenue),
+      rankedActions: toJson(topActions),
       reasoning,
-      revenueUnlockPath: unlockPathJson,
+      revenueUnlockPath: toJson(revenueUnlockPath),
       profileCoaching: coachingByPhase.profile,
       platformCoaching: coachingByPhase.platform,
       releaseCoaching: coachingByPhase.release,
       businessCoaching: coachingByPhase.business,
       gapStory,
-      personalisedActions: personalisedJson,
+      personalisedActions: toJson(personalisedActions),
     },
     create: {
       auditId: savedAudit.id,
       artistProfileId,
       missingCapabilities: missingCapabilities.map(c => c.id),
-      blockedRevenue: blockedRevenue.map(b => b.revenueStreamId),
-      rankedActions: topActions.map(a => a.id),
+      blockedRevenue: toJson(blockedRevenue),
+      rankedActions: toJson(topActions),
       reasoning,
-      revenueUnlockPath: unlockPathJson,
+      revenueUnlockPath: toJson(revenueUnlockPath),
       profileCoaching: coachingByPhase.profile,
       platformCoaching: coachingByPhase.platform,
       releaseCoaching: coachingByPhase.release,
       businessCoaching: coachingByPhase.business,
       gapStory,
-      personalisedActions: personalisedJson,
+      personalisedActions: toJson(personalisedActions),
     },
   });
 
