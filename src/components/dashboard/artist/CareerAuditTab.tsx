@@ -321,7 +321,7 @@ function PhaseCard({
       </div>
 
       {/* Scrollable body — grows to max-h then scrolls */}
-      <div className='max-h-[260px] overflow-y-auto space-y-0 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent'>
+      <div className='max-h-[260px] overflow-y-auto'>
         {/* Activity indicator while waiting for first check */}
         {status === 'running' && checks.length === 0 && (
           <div className='mt-2 mb-1'>
