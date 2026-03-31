@@ -19,11 +19,9 @@ import {
   SparklesIcon,
   ArrowPathIcon,
   CheckCircleIcon,
-  ExclamationCircleIcon,
-  ClockIcon,
   BoltIcon,
-  UserCircleIcon,
-  SignalIcon,
+  IdentificationIcon,
+  GlobeAltIcon,
   MusicalNoteIcon,
   BriefcaseIcon,
   CpuChipIcon,
@@ -56,17 +54,17 @@ const TIER_META: Record<
   },
   developing: {
     label: 'Developing',
-    color: 'text-indigo-700 dark:text-indigo-400',
-    bg: 'bg-indigo-50/50 dark:bg-indigo-900/10 border-indigo-200/60 dark:border-indigo-800/40',
-    bar: 'bg-indigo-400',
-    dot: 'bg-indigo-400',
+    color: 'text-blue-700 dark:text-blue-400',
+    bg: 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/60 dark:border-blue-800/40',
+    bar: 'bg-blue-400',
+    dot: 'bg-blue-400',
   },
   needs_work: {
     label: 'Needs Work',
-    color: 'text-violet-700 dark:text-violet-400',
-    bg: 'bg-violet-50/50 dark:bg-violet-900/10 border-violet-200/60 dark:border-violet-800/40',
-    bar: 'bg-violet-400',
-    dot: 'bg-violet-400',
+    color: 'text-amber-700 dark:text-amber-400',
+    bg: 'bg-amber-50/50 dark:bg-amber-900/10 border-amber-200/60 dark:border-amber-800/40',
+    bar: 'bg-amber-400',
+    dot: 'bg-amber-400',
   },
   just_starting: {
     label: 'Just Starting',
@@ -83,8 +81,8 @@ const PHASE_ICONS: Record<
   AuditDimension,
   ComponentType<{ className?: string }>
 > = {
-  profile: UserCircleIcon,
-  platform: SignalIcon,
+  profile: IdentificationIcon,
+  platform: GlobeAltIcon,
   release: MusicalNoteIcon,
   business: BriefcaseIcon,
 };
@@ -105,9 +103,9 @@ function phaseRingClass(status: PhaseStatus): string {
     case 'running':
       return 'ring-2 ring-blue-400 dark:ring-blue-500 animate-pulse';
     case 'coaching':
-      return 'ring-2 ring-violet-400 dark:ring-violet-500 animate-pulse';
+      return 'ring-2 ring-blue-300 dark:ring-blue-600 animate-pulse';
     case 'complete':
-      return 'ring-1 ring-indigo-200 dark:ring-indigo-800';
+      return 'ring-1 ring-emerald-300 dark:ring-emerald-800';
   }
 }
 
@@ -116,11 +114,11 @@ function phaseIconBgClass(status: PhaseStatus): string {
     case 'idle':
       return 'bg-slate-100 dark:bg-slate-800';
     case 'running':
-      return 'bg-blue-100 dark:bg-blue-900/30';
+      return 'bg-blue-50 dark:bg-blue-900/20';
     case 'coaching':
-      return 'bg-violet-100 dark:bg-violet-900/30';
+      return 'bg-blue-50 dark:bg-blue-900/20';
     case 'complete':
-      return 'bg-indigo-50 dark:bg-indigo-900/20';
+      return 'bg-emerald-50 dark:bg-emerald-900/20';
   }
 }
 
@@ -129,11 +127,11 @@ function phaseIconColorClass(status: PhaseStatus): string {
     case 'idle':
       return 'text-slate-400 dark:text-slate-600';
     case 'running':
-      return 'text-blue-600 dark:text-blue-400';
+      return 'text-blue-500 dark:text-blue-400';
     case 'coaching':
-      return 'text-violet-600 dark:text-violet-400';
+      return 'text-blue-500 dark:text-blue-400';
     case 'complete':
-      return 'text-indigo-500 dark:text-indigo-400';
+      return 'text-emerald-600 dark:text-emerald-400';
   }
 }
 
@@ -144,7 +142,7 @@ function statusLabel(status: PhaseStatus): string {
     case 'running':
       return 'Analysing…';
     case 'coaching':
-      return 'Getting coach feedback…';
+      return 'Synthesising…';
     case 'complete':
       return 'Complete';
   }
@@ -157,9 +155,9 @@ function statusTextClass(status: PhaseStatus): string {
     case 'running':
       return 'text-blue-600 dark:text-blue-400';
     case 'coaching':
-      return 'text-violet-600 dark:text-violet-400';
+      return 'text-blue-500 dark:text-blue-400';
     case 'complete':
-      return 'text-indigo-500 dark:text-indigo-400';
+      return 'text-emerald-600 dark:text-emerald-400';
   }
 }
 
@@ -167,8 +165,7 @@ function statusTextClass(status: PhaseStatus): string {
 
 function scoreBarColor(score: number): string {
   if (score >= 80) return 'bg-emerald-400';
-  if (score >= 60) return 'bg-indigo-400';
-  if (score >= 40) return 'bg-violet-400';
+  if (score >= 50) return 'bg-blue-400';
   return 'bg-rose-300';
 }
 
@@ -235,12 +232,15 @@ function PhaseCard({
   return (
     <div
       className={clsx(
-        'rounded-xl border bg-white dark:bg-slate-800/80 p-4 transition-all duration-300',
+        'rounded-2xl border p-4 transition-all duration-300',
         status === 'idle' &&
-          'border-slate-200 dark:border-slate-800 opacity-50',
-        status === 'running' && 'border-blue-200 dark:border-blue-800/70',
-        status === 'coaching' && 'border-violet-200 dark:border-violet-800/70',
-        status === 'complete' && 'border-slate-200 dark:border-slate-700'
+          'border-slate-100 dark:border-slate-800/60 opacity-40',
+        status === 'running' &&
+          'border-blue-100 dark:border-blue-900/40 bg-blue-50/30 dark:bg-blue-900/5',
+        status === 'coaching' &&
+          'border-blue-100 dark:border-blue-900/40 bg-blue-50/20 dark:bg-blue-900/5',
+        status === 'complete' &&
+          'border-slate-200 dark:border-slate-700/60 bg-white dark:bg-slate-800/60 shadow-sm'
       )}
     >
       {/* Phase header */}
@@ -306,11 +306,9 @@ function PhaseCard({
                   className={clsx(
                     score >= 80
                       ? 'stroke-emerald-400'
-                      : score >= 60
-                        ? 'stroke-indigo-400'
-                        : score >= 40
-                          ? 'stroke-violet-400'
-                          : 'stroke-rose-300'
+                      : score >= 50
+                        ? 'stroke-blue-400'
+                        : 'stroke-rose-300'
                   )}
                 />
               </svg>
@@ -325,18 +323,18 @@ function PhaseCard({
       {/* Activity indicator while waiting for first check */}
       {status === 'running' && checks.length === 0 && (
         <div className='mt-2 mb-1'>
-          <div className='flex items-center gap-2 text-[11px] text-blue-600 dark:text-blue-400 font-medium'>
+          <div className='flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium'>
             <span className='flex gap-0.5'>
               <span
-                className='w-1 h-1 rounded-full bg-blue-400 animate-bounce'
+                className='w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce'
                 style={{ animationDelay: '0ms' }}
               />
               <span
-                className='w-1 h-1 rounded-full bg-blue-400 animate-bounce'
+                className='w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce'
                 style={{ animationDelay: '150ms' }}
               />
               <span
-                className='w-1 h-1 rounded-full bg-blue-400 animate-bounce'
+                className='w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce'
                 style={{ animationDelay: '300ms' }}
               />
             </span>
@@ -374,17 +372,17 @@ function PhaseCard({
             {checks.map((check, i) => (
               <li key={check.checkId} className='flex items-start gap-2'>
                 {check.passed ? (
-                  <CheckCircleSolid className='w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 flex-shrink-0 mt-0.5' />
+                  <CheckCircleSolid className='w-3 h-3 text-emerald-400 dark:text-emerald-500 flex-shrink-0 mt-0.5' />
                 ) : (
-                  <XCircleSolid className='w-3.5 h-3.5 text-rose-400/70 dark:text-rose-400 flex-shrink-0 mt-0.5' />
+                  <XCircleSolid className='w-3 h-3 text-rose-300 dark:text-rose-400/70 flex-shrink-0 mt-0.5' />
                 )}
                 <div className='min-w-0 flex-1'>
                   <p
                     className={clsx(
                       'text-xs font-medium leading-tight',
                       check.passed
-                        ? 'text-slate-700 dark:text-slate-300'
-                        : 'text-slate-800 dark:text-slate-200'
+                        ? 'text-slate-600 dark:text-slate-400'
+                        : 'text-slate-700 dark:text-slate-300'
                     )}
                   >
                     {check.label}
@@ -414,25 +412,20 @@ function PhaseCard({
 
       {/* Coaching blurb — appears after checks, types out during 'coaching' status */}
       {(status === 'coaching' || coaching) && (
-        <div className='mt-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/60 px-3 py-2.5'>
-          <div className='flex items-start gap-2'>
-            <span className='text-blue-400 dark:text-blue-500 flex-shrink-0 mt-0.5 text-sm leading-none'>
-              💬
-            </span>
-            {coaching ? (
-              <p className='text-xs text-blue-700 dark:text-blue-300 leading-relaxed'>
-                {coaching}
-                {status === 'coaching' && (
-                  <span className='inline-block w-0.5 h-[1em] bg-blue-500 ml-0.5 align-middle animate-pulse' />
-                )}
-              </p>
-            ) : (
-              <div className='space-y-1.5 flex-1 animate-pulse'>
-                <div className='h-2.5 rounded-full bg-blue-200 dark:bg-blue-800/60 w-full' />
-                <div className='h-2.5 rounded-full bg-blue-200 dark:bg-blue-800/60 w-4/5' />
-              </div>
-            )}
-          </div>
+        <div className='mt-3 pl-3 border-l-2 border-blue-300 dark:border-blue-700'>
+          {coaching ? (
+            <p className='text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic'>
+              {coaching}
+              {status === 'coaching' && (
+                <span className='inline-block w-0.5 h-[1em] bg-blue-400 ml-0.5 align-middle animate-pulse' />
+              )}
+            </p>
+          ) : (
+            <div className='space-y-1.5 animate-pulse'>
+              <div className='h-2 rounded-full bg-slate-200 dark:bg-slate-700 w-full' />
+              <div className='h-2 rounded-full bg-slate-200 dark:bg-slate-700 w-4/5' />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -478,8 +471,8 @@ function DecisionCard({
         : showContinueButton
           ? 'border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-900/5'
           : isActive
-            ? 'border-blue-200 dark:border-blue-800/60 bg-blue-50/20 dark:bg-blue-900/5'
-            : 'border-violet-200 dark:border-violet-800 bg-white dark:bg-slate-800/80'
+            ? 'border-blue-100 dark:border-blue-900/40 bg-blue-50/20 dark:bg-blue-900/5'
+            : 'border-blue-100 dark:border-blue-900/40 bg-blue-50/20 dark:bg-blue-900/5'
   );
 
   // Icon ring / bg
@@ -492,8 +485,8 @@ function DecisionCard({
         : showContinueButton
           ? 'bg-emerald-100 dark:bg-emerald-900/30 ring-2 ring-emerald-400 dark:ring-emerald-500'
           : isActive
-            ? 'bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-400 dark:ring-blue-500'
-            : 'bg-violet-100 dark:bg-violet-900/30 ring-2 ring-violet-400 dark:ring-violet-500 animate-pulse'
+            ? 'bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-300 dark:ring-blue-700 animate-pulse'
+            : 'bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-300 dark:ring-blue-700 animate-pulse'
   );
 
   const iconColorClass = clsx(
@@ -518,8 +511,8 @@ function DecisionCard({
         : showContinueButton
           ? 'text-emerald-600 dark:text-emerald-400'
           : isActive
-            ? 'text-blue-600 dark:text-blue-400'
-            : 'text-violet-600 dark:text-violet-400'
+            ? 'text-blue-500 dark:text-blue-400'
+            : 'text-blue-500 dark:text-blue-400'
   );
 
   const statusText =
@@ -564,7 +557,7 @@ function DecisionCard({
                     'w-2 h-2 rounded-full transition-colors duration-300',
                     p.status === 'idle' && 'bg-slate-300 dark:bg-slate-600',
                     p.status === 'running' && 'bg-blue-400 animate-pulse',
-                    p.status === 'coaching' && 'bg-violet-400 animate-pulse',
+                    p.status === 'coaching' && 'bg-blue-300 animate-pulse',
                     p.status === 'complete' && 'bg-emerald-400'
                   )}
                   title={`${p.label}: ${p.status}`}
@@ -771,7 +764,7 @@ function ResultView({
                     const effortColors: Record<string, string> = {
                       LOW: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20',
                       MEDIUM:
-                        'text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20',
+                        'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20',
                       HIGH: 'text-rose-500 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-900/10',
                     };
                     const effortClass =
@@ -791,7 +784,7 @@ function ResultView({
                         key={action.id}
                         className='flex items-start gap-4 px-6 py-4'
                       >
-                        <span className='flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold flex items-center justify-center mt-0.5'>
+                        <span className='flex-shrink-0 w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold flex items-center justify-center mt-0.5'>
                           {i + 1}
                         </span>
                         <div className='flex-1 min-w-0'>
@@ -850,7 +843,7 @@ function ResultView({
                           {stream.completionPct >= 80 ? (
                             <CheckCircleSolid className='w-3.5 h-3.5 text-emerald-400' />
                           ) : (
-                            <ExclamationCircleIcon className='w-3.5 h-3.5 text-violet-400' />
+                            <XCircleSolid className='w-3.5 h-3.5 text-rose-300 dark:text-rose-400/70' />
                           )}
                           {stream.label}
                         </span>
@@ -860,7 +853,7 @@ function ResultView({
                       </div>
                       <div className='h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden'>
                         <div
-                          className={`h-full rounded-full transition-all duration-700 ${stream.completionPct >= 80 ? 'bg-emerald-400' : 'bg-violet-400'}`}
+                          className={`h-full rounded-full transition-all duration-700 ${stream.completionPct >= 80 ? 'bg-emerald-400' : 'bg-blue-300'}`}
                           style={{ width: `${stream.completionPct}%` }}
                         />
                       </div>
@@ -953,7 +946,7 @@ function EmptyState({
 
       {error && (
         <div className='mb-6 flex items-center gap-2 text-sm text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 px-4 py-2.5 rounded-xl'>
-          <ExclamationCircleIcon className='w-4 h-4 flex-shrink-0' />
+          <XCircleSolid className='w-4 h-4 flex-shrink-0' />
           {error}
         </div>
       )}
@@ -1162,31 +1155,26 @@ export default function CareerAuditTab() {
             <h2 className='text-xl font-bold text-slate-900 dark:text-white'>
               Career Readiness Audit
             </h2>
-            <p className='text-xs text-slate-400 dark:text-slate-500 mt-0.5 flex items-center gap-1'>
-              <ClockIcon className='w-3.5 h-3.5' />
+            <p className='text-xs text-slate-400 dark:text-slate-500 mt-0.5'>
               {stream.status === 'connecting'
                 ? 'Starting audit…'
-                : 'Audit running — this takes about 15 seconds'}
+                : 'Audit running · this takes about 15 seconds'}
             </p>
           </div>
 
           {/* Legend inline */}
-          <div className='flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500 flex-wrap justify-end'>
+          <div className='flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500'>
             <span className='flex items-center gap-1.5'>
               <span className='w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600' />
-              Not started
+              Idle
             </span>
-            <span className='flex items-center gap-1.5 text-blue-500 dark:text-blue-400'>
-              <span className='w-2 h-2 rounded-full bg-blue-400' />
+            <span className='flex items-center gap-1.5'>
+              <span className='w-2 h-2 rounded-full bg-blue-400 animate-pulse' />
               Running
             </span>
-            <span className='flex items-center gap-1.5 text-violet-500 dark:text-violet-400'>
-              <span className='w-2 h-2 rounded-full bg-violet-400' />
-              Coaching
-            </span>
-            <span className='flex items-center gap-1.5 text-indigo-400 dark:text-indigo-400'>
-              <span className='w-2 h-2 rounded-full bg-indigo-400' />
-              Complete
+            <span className='flex items-center gap-1.5'>
+              <span className='w-2 h-2 rounded-full bg-emerald-400' />
+              Done
             </span>
           </div>
         </div>
@@ -1229,9 +1217,8 @@ export default function CareerAuditTab() {
       <div className='w-full'>
         {/* Last run timestamp */}
         {formattedDate && !streamDone && (
-          <p className='text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1 mb-2'>
-            <ClockIcon className='w-3.5 h-3.5' />
-            Last run {formattedDate}
+          <p className='text-xs text-slate-400 dark:text-slate-500 mb-2'>
+            Last run · {formattedDate}
           </p>
         )}
         <ResultView
