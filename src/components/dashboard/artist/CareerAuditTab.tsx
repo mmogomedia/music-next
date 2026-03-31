@@ -745,7 +745,8 @@ function ResultView({
 
           {/* Top actions */}
           {Array.isArray(result.prioritizedActions) &&
-            result.prioritizedActions.length > 0 && (
+            result.prioritizedActions.length > 0 &&
+            typeof result.prioritizedActions[0] === 'object' && (
               <div className='rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 overflow-hidden'>
                 <div className='px-6 py-4 border-b border-slate-100 dark:border-slate-700'>
                   <h3 className='text-sm font-semibold text-slate-800 dark:text-slate-200'>
@@ -824,7 +825,8 @@ function ResultView({
 
           {/* Blocked revenue */}
           {Array.isArray(result.blockedRevenue) &&
-            result.blockedRevenue.length > 0 && (
+            result.blockedRevenue.length > 0 &&
+            typeof result.blockedRevenue[0] === 'object' && (
               <div className='rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 p-6'>
                 <h3 className='text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1'>
                   Blocked Revenue Streams
