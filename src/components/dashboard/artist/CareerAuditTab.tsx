@@ -103,7 +103,7 @@ function phaseRingClass(status: PhaseStatus): string {
     case 'idle':
       return '';
     case 'running':
-      return 'ring-2 ring-purple-400 dark:ring-purple-500 animate-pulse';
+      return 'ring-2 ring-blue-400 dark:ring-blue-500 animate-pulse';
     case 'coaching':
       return 'ring-2 ring-violet-400 dark:ring-violet-500 animate-pulse';
     case 'complete':
@@ -116,7 +116,7 @@ function phaseIconBgClass(status: PhaseStatus): string {
     case 'idle':
       return 'bg-slate-100 dark:bg-slate-800';
     case 'running':
-      return 'bg-purple-100 dark:bg-purple-900/30';
+      return 'bg-blue-100 dark:bg-blue-900/30';
     case 'coaching':
       return 'bg-violet-100 dark:bg-violet-900/30';
     case 'complete':
@@ -129,7 +129,7 @@ function phaseIconColorClass(status: PhaseStatus): string {
     case 'idle':
       return 'text-slate-400 dark:text-slate-600';
     case 'running':
-      return 'text-purple-600 dark:text-purple-400';
+      return 'text-blue-600 dark:text-blue-400';
     case 'coaching':
       return 'text-violet-600 dark:text-violet-400';
     case 'complete':
@@ -155,7 +155,7 @@ function statusTextClass(status: PhaseStatus): string {
     case 'idle':
       return 'text-slate-400 dark:text-slate-500';
     case 'running':
-      return 'text-purple-600 dark:text-purple-400';
+      return 'text-blue-600 dark:text-blue-400';
     case 'coaching':
       return 'text-violet-600 dark:text-violet-400';
     case 'complete':
@@ -238,7 +238,7 @@ function PhaseCard({
         'rounded-xl border bg-white dark:bg-slate-800/80 p-4 transition-all duration-300',
         status === 'idle' &&
           'border-slate-200 dark:border-slate-800 opacity-50',
-        status === 'running' && 'border-purple-200 dark:border-purple-800/70',
+        status === 'running' && 'border-blue-200 dark:border-blue-800/70',
         status === 'coaching' && 'border-violet-200 dark:border-violet-800/70',
         status === 'complete' && 'border-slate-200 dark:border-slate-700'
       )}
@@ -325,18 +325,18 @@ function PhaseCard({
       {/* Activity indicator while waiting for first check */}
       {status === 'running' && checks.length === 0 && (
         <div className='mt-2 mb-1'>
-          <div className='flex items-center gap-2 text-[11px] text-purple-600 dark:text-purple-400 font-medium'>
+          <div className='flex items-center gap-2 text-[11px] text-blue-600 dark:text-blue-400 font-medium'>
             <span className='flex gap-0.5'>
               <span
-                className='w-1 h-1 rounded-full bg-purple-400 animate-bounce'
+                className='w-1 h-1 rounded-full bg-blue-400 animate-bounce'
                 style={{ animationDelay: '0ms' }}
               />
               <span
-                className='w-1 h-1 rounded-full bg-purple-400 animate-bounce'
+                className='w-1 h-1 rounded-full bg-blue-400 animate-bounce'
                 style={{ animationDelay: '150ms' }}
               />
               <span
-                className='w-1 h-1 rounded-full bg-purple-400 animate-bounce'
+                className='w-1 h-1 rounded-full bg-blue-400 animate-bounce'
                 style={{ animationDelay: '300ms' }}
               />
             </span>
@@ -390,7 +390,7 @@ function PhaseCard({
                     {check.label}
                     {/* Streaming cursor on the last check while running */}
                     {status === 'running' && i === checks.length - 1 && (
-                      <span className='inline-block w-0.5 h-[0.85em] bg-purple-400 ml-0.5 align-middle animate-pulse' />
+                      <span className='inline-block w-0.5 h-[0.85em] bg-blue-400 ml-0.5 align-middle animate-pulse' />
                     )}
                   </p>
                   {check.details && (
@@ -414,22 +414,22 @@ function PhaseCard({
 
       {/* Coaching blurb — appears after checks, types out during 'coaching' status */}
       {(status === 'coaching' || coaching) && (
-        <div className='mt-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/60 px-3 py-2.5'>
+        <div className='mt-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/60 px-3 py-2.5'>
           <div className='flex items-start gap-2'>
-            <span className='text-purple-400 dark:text-purple-500 flex-shrink-0 mt-0.5 text-sm leading-none'>
+            <span className='text-blue-400 dark:text-blue-500 flex-shrink-0 mt-0.5 text-sm leading-none'>
               💬
             </span>
             {coaching ? (
-              <p className='text-xs text-purple-700 dark:text-purple-300 leading-relaxed'>
+              <p className='text-xs text-blue-700 dark:text-blue-300 leading-relaxed'>
                 {coaching}
                 {status === 'coaching' && (
-                  <span className='inline-block w-0.5 h-[1em] bg-purple-500 ml-0.5 align-middle animate-pulse' />
+                  <span className='inline-block w-0.5 h-[1em] bg-blue-500 ml-0.5 align-middle animate-pulse' />
                 )}
               </p>
             ) : (
               <div className='space-y-1.5 flex-1 animate-pulse'>
-                <div className='h-2.5 rounded-full bg-purple-200 dark:bg-purple-800/60 w-full' />
-                <div className='h-2.5 rounded-full bg-purple-200 dark:bg-purple-800/60 w-4/5' />
+                <div className='h-2.5 rounded-full bg-blue-200 dark:bg-blue-800/60 w-full' />
+                <div className='h-2.5 rounded-full bg-blue-200 dark:bg-blue-800/60 w-4/5' />
               </div>
             )}
           </div>
@@ -474,11 +474,11 @@ function DecisionCard({
     !waitingForPhases && !showContinueButton && !continueClicked
       ? 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 opacity-50'
       : waitingForPhases
-        ? 'border-purple-200 dark:border-purple-800/60 bg-white dark:bg-slate-800/80'
+        ? 'border-blue-200 dark:border-blue-800/60 bg-white dark:bg-slate-800/80'
         : showContinueButton
           ? 'border-emerald-200/80 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-emerald-900/5'
           : isActive
-            ? 'border-purple-200 dark:border-purple-800/60 bg-purple-50/20 dark:bg-purple-900/5'
+            ? 'border-blue-200 dark:border-blue-800/60 bg-blue-50/20 dark:bg-blue-900/5'
             : 'border-violet-200 dark:border-violet-800 bg-white dark:bg-slate-800/80'
   );
 
@@ -488,11 +488,11 @@ function DecisionCard({
     !waitingForPhases && !showContinueButton && !continueClicked
       ? 'bg-slate-100 dark:bg-slate-700 ring-2 ring-slate-300 dark:ring-slate-600'
       : waitingForPhases
-        ? 'bg-purple-100 dark:bg-purple-900/30 ring-2 ring-purple-400 dark:ring-purple-500 animate-pulse'
+        ? 'bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-400 dark:ring-blue-500 animate-pulse'
         : showContinueButton
           ? 'bg-emerald-100 dark:bg-emerald-900/30 ring-2 ring-emerald-400 dark:ring-emerald-500'
           : isActive
-            ? 'bg-purple-100 dark:bg-purple-900/40 ring-2 ring-purple-400 dark:ring-purple-500'
+            ? 'bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-400 dark:ring-blue-500'
             : 'bg-violet-100 dark:bg-violet-900/30 ring-2 ring-violet-400 dark:ring-violet-500 animate-pulse'
   );
 
@@ -501,11 +501,11 @@ function DecisionCard({
     !waitingForPhases && !showContinueButton && !continueClicked
       ? 'text-slate-400 dark:text-slate-500'
       : waitingForPhases
-        ? 'text-purple-600 dark:text-purple-400'
+        ? 'text-blue-600 dark:text-blue-400'
         : showContinueButton
           ? 'text-emerald-600 dark:text-emerald-400'
           : isActive
-            ? 'text-purple-600 dark:text-purple-400'
+            ? 'text-blue-600 dark:text-blue-400'
             : 'text-violet-600 dark:text-violet-400'
   );
 
@@ -514,11 +514,11 @@ function DecisionCard({
     !waitingForPhases && !showContinueButton && !continueClicked
       ? 'text-slate-400 dark:text-slate-500'
       : waitingForPhases
-        ? 'text-purple-600 dark:text-purple-400'
+        ? 'text-blue-600 dark:text-blue-400'
         : showContinueButton
           ? 'text-emerald-600 dark:text-emerald-400'
           : isActive
-            ? 'text-purple-600 dark:text-purple-400'
+            ? 'text-blue-600 dark:text-blue-400'
             : 'text-violet-600 dark:text-violet-400'
   );
 
@@ -563,7 +563,7 @@ function DecisionCard({
                   className={clsx(
                     'w-2 h-2 rounded-full transition-colors duration-300',
                     p.status === 'idle' && 'bg-slate-300 dark:bg-slate-600',
-                    p.status === 'running' && 'bg-purple-400 animate-pulse',
+                    p.status === 'running' && 'bg-blue-400 animate-pulse',
                     p.status === 'coaching' && 'bg-violet-400 animate-pulse',
                     p.status === 'complete' && 'bg-emerald-400'
                   )}
@@ -578,8 +578,8 @@ function DecisionCard({
       {/* Waiting: animated skeleton */}
       {waitingForPhases && (
         <div className='space-y-2 mt-2 animate-pulse'>
-          <div className='h-2.5 rounded-full bg-purple-100 dark:bg-purple-900/20 w-3/4' />
-          <div className='h-2.5 rounded-full bg-purple-100 dark:bg-purple-900/20 w-1/2' />
+          <div className='h-2.5 rounded-full bg-blue-100 dark:bg-blue-900/20 w-3/4' />
+          <div className='h-2.5 rounded-full bg-blue-100 dark:bg-blue-900/20 w-1/2' />
         </div>
       )}
 
@@ -592,7 +592,7 @@ function DecisionCard({
           </p>
           <button
             onClick={onContinue}
-            className='w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-semibold text-sm transition-colors'
+            className='w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm transition-colors'
           >
             <SparklesIcon className='w-4 h-4' />
             View Full Analysis
@@ -628,14 +628,14 @@ function DecisionCard({
               <p className='text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-medium'>
                 {gapStory}
                 {!personalisedActions && (
-                  <span className='inline-block w-0.5 h-[1em] bg-purple-400 ml-0.5 align-middle animate-pulse' />
+                  <span className='inline-block w-0.5 h-[1em] bg-blue-400 ml-0.5 align-middle animate-pulse' />
                 )}
               </p>
             </div>
           )}
 
           {gapStory && !personalisedActions && !narrative && (
-            <div className='flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400 animate-pulse'>
+            <div className='flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 animate-pulse'>
               <ArrowPathIcon className='w-3.5 h-3.5 animate-spin' />
               Personalising your top actions…
             </div>
@@ -644,7 +644,7 @@ function DecisionCard({
           {narrative && (
             <p className='text-sm text-slate-700 dark:text-slate-300 leading-relaxed pl-1'>
               {narrative}
-              <span className='inline-block w-0.5 h-[1em] bg-purple-500 ml-0.5 align-middle animate-pulse' />
+              <span className='inline-block w-0.5 h-[1em] bg-blue-500 ml-0.5 align-middle animate-pulse' />
             </p>
           )}
         </>
@@ -694,7 +694,7 @@ function ResultView({
           <button
             onClick={onReRun}
             disabled={running}
-            className='inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-purple-300 dark:border-purple-700 bg-white dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-900/20 disabled:opacity-50 text-purple-700 dark:text-purple-300 font-medium text-sm transition-colors'
+            className='inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:opacity-50 text-blue-700 dark:text-blue-300 font-medium text-sm transition-colors'
           >
             <ArrowPathIcon
               className={clsx('w-3.5 h-3.5', running && 'animate-spin')}
@@ -738,7 +738,7 @@ function ResultView({
             )}
 
             {result.estimatedScoreIfCompleted > result.overallScore && (
-              <div className='mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-3 py-1.5 rounded-full'>
+              <div className='mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 px-3 py-1.5 rounded-full'>
                 <BoltIcon className='w-3.5 h-3.5' />
                 Complete top actions → reach {result.estimatedScoreIfCompleted}
                 /100
@@ -791,7 +791,7 @@ function ResultView({
                         key={action.id}
                         className='flex items-start gap-4 px-6 py-4'
                       >
-                        <span className='flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 text-xs font-bold flex items-center justify-center mt-0.5'>
+                        <span className='flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs font-bold flex items-center justify-center mt-0.5'>
                           {i + 1}
                         </span>
                         <div className='flex-1 min-w-0'>
@@ -939,7 +939,7 @@ function EmptyState({
 }) {
   return (
     <div className='flex flex-col items-center justify-center min-h-[60vh] text-center px-4'>
-      <div className='w-20 h-20 rounded-2xl bg-purple-600 flex items-center justify-center mx-auto mb-6'>
+      <div className='w-20 h-20 rounded-2xl bg-blue-600 flex items-center justify-center mx-auto mb-6'>
         <SparklesIcon className='w-10 h-10 text-white' />
       </div>
       <h2 className='text-2xl font-bold text-slate-900 dark:text-white mb-3'>
@@ -960,7 +960,7 @@ function EmptyState({
 
       <button
         onClick={onStart}
-        className='inline-flex items-center gap-2.5 px-8 py-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm transition-colors'
+        className='inline-flex items-center gap-2.5 px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-colors'
       >
         <SparklesIcon className='w-4 h-4' />
         Run My Audit
@@ -1176,8 +1176,8 @@ export default function CareerAuditTab() {
               <span className='w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600' />
               Not started
             </span>
-            <span className='flex items-center gap-1.5 text-purple-500 dark:text-purple-400'>
-              <span className='w-2 h-2 rounded-full bg-purple-400' />
+            <span className='flex items-center gap-1.5 text-blue-500 dark:text-blue-400'>
+              <span className='w-2 h-2 rounded-full bg-blue-400' />
               Running
             </span>
             <span className='flex items-center gap-1.5 text-violet-500 dark:text-violet-400'>
