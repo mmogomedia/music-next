@@ -320,114 +320,118 @@ function PhaseCard({
         )}
       </div>
 
-      {/* Activity indicator while waiting for first check */}
-      {status === 'running' && checks.length === 0 && (
-        <div className='mt-2 mb-1'>
-          <div className='flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium'>
-            <span className='flex gap-0.5'>
-              <span
-                className='w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce'
-                style={{ animationDelay: '0ms' }}
-              />
-              <span
-                className='w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce'
-                style={{ animationDelay: '150ms' }}
-              />
-              <span
-                className='w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce'
-                style={{ animationDelay: '300ms' }}
-              />
-            </span>
-            Querying Azure OpenAI for {label.toLowerCase()} checks
-          </div>
-          <div className='space-y-2 mt-2.5 animate-pulse'>
-            {[80, 65, 75].map((w, n) => (
-              <div
-                key={n}
-                className='h-2.5 rounded-full bg-slate-100 dark:bg-slate-700'
-                style={{ width: `${w}%` }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Checks list — streams in one by one as Azure OpenAI returns results */}
-      {checks.length > 0 && (
-        <>
-          {/* Pass/fail summary pill — visible once checks start arriving */}
-          {status !== 'idle' && checks.length > 2 && (
-            <div className='flex items-center gap-2 mb-2.5'>
-              <span className='inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'>
-                <CheckCircleSolid className='w-3 h-3' /> {passedCount} passed
+      {/* Scrollable body — grows to max-h then scrolls */}
+      <div className='max-h-[260px] overflow-y-auto space-y-0 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent'>
+        {/* Activity indicator while waiting for first check */}
+        {status === 'running' && checks.length === 0 && (
+          <div className='mt-2 mb-1'>
+            <div className='flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium'>
+              <span className='flex gap-0.5'>
+                <span
+                  className='w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce'
+                  style={{ animationDelay: '0ms' }}
+                />
+                <span
+                  className='w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce'
+                  style={{ animationDelay: '150ms' }}
+                />
+                <span
+                  className='w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 animate-bounce'
+                  style={{ animationDelay: '300ms' }}
+                />
               </span>
-              {failedCount > 0 && (
-                <span className='inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50/70 dark:bg-rose-900/10 text-rose-400 dark:text-rose-400'>
-                  <XCircleSolid className='w-3 h-3' /> {failedCount} failed
-                </span>
-              )}
+              Querying Azure OpenAI for {label.toLowerCase()} checks
             </div>
-          )}
-          <ul className='space-y-2 pl-0.5'>
-            {checks.map((check, i) => (
-              <li key={check.checkId} className='flex items-start gap-2'>
-                {check.passed ? (
-                  <CheckCircleSolid className='w-3 h-3 text-emerald-400 dark:text-emerald-500 flex-shrink-0 mt-0.5' />
-                ) : (
-                  <XCircleSolid className='w-3 h-3 text-rose-300 dark:text-rose-400/70 flex-shrink-0 mt-0.5' />
+            <div className='space-y-2 mt-2.5 animate-pulse'>
+              {[80, 65, 75].map((w, n) => (
+                <div
+                  key={n}
+                  className='h-2.5 rounded-full bg-slate-100 dark:bg-slate-700'
+                  style={{ width: `${w}%` }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Checks list — streams in one by one as Azure OpenAI returns results */}
+        {checks.length > 0 && (
+          <>
+            {/* Pass/fail summary pill — visible once checks start arriving */}
+            {status !== 'idle' && checks.length > 2 && (
+              <div className='flex items-center gap-2 mb-2.5'>
+                <span className='inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'>
+                  <CheckCircleSolid className='w-3 h-3' /> {passedCount} passed
+                </span>
+                {failedCount > 0 && (
+                  <span className='inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50/70 dark:bg-rose-900/10 text-rose-400 dark:text-rose-400'>
+                    <XCircleSolid className='w-3 h-3' /> {failedCount} failed
+                  </span>
                 )}
-                <div className='min-w-0 flex-1'>
-                  <p
-                    className={clsx(
-                      'text-xs font-medium leading-tight',
-                      check.passed
-                        ? 'text-slate-600 dark:text-slate-400'
-                        : 'text-slate-700 dark:text-slate-300'
-                    )}
-                  >
-                    {check.label}
-                    {/* Streaming cursor on the last check while running */}
-                    {status === 'running' && i === checks.length - 1 && (
-                      <span className='inline-block w-0.5 h-[0.85em] bg-blue-400 ml-0.5 align-middle animate-pulse' />
-                    )}
-                  </p>
-                  {check.details && (
+              </div>
+            )}
+            <ul className='space-y-2 pl-0.5'>
+              {checks.map((check, i) => (
+                <li key={check.checkId} className='flex items-start gap-2'>
+                  {check.passed ? (
+                    <CheckCircleSolid className='w-3 h-3 text-emerald-400 dark:text-emerald-500 flex-shrink-0 mt-0.5' />
+                  ) : (
+                    <XCircleSolid className='w-3 h-3 text-rose-300 dark:text-rose-400/70 flex-shrink-0 mt-0.5' />
+                  )}
+                  <div className='min-w-0 flex-1'>
                     <p
                       className={clsx(
-                        'text-[11px] leading-relaxed mt-0.5',
+                        'text-xs font-medium leading-tight',
                         check.passed
-                          ? 'text-slate-400 dark:text-slate-500'
-                          : 'text-slate-500 dark:text-slate-400'
+                          ? 'text-slate-600 dark:text-slate-400'
+                          : 'text-slate-700 dark:text-slate-300'
                       )}
                     >
-                      {check.details}
+                      {check.label}
+                      {/* Streaming cursor on the last check while running */}
+                      {status === 'running' && i === checks.length - 1 && (
+                        <span className='inline-block w-0.5 h-[0.85em] bg-blue-400 ml-0.5 align-middle animate-pulse' />
+                      )}
                     </p>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+                    {check.details && (
+                      <p
+                        className={clsx(
+                          'text-[11px] leading-relaxed mt-0.5',
+                          check.passed
+                            ? 'text-slate-400 dark:text-slate-500'
+                            : 'text-slate-500 dark:text-slate-400'
+                        )}
+                      >
+                        {check.details}
+                      </p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
 
-      {/* Coaching blurb — appears after checks, types out during 'coaching' status */}
-      {(status === 'coaching' || coaching) && (
-        <div className='mt-3 pl-3 border-l-2 border-blue-300 dark:border-blue-700'>
-          {coaching ? (
-            <p className='text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic'>
-              {coaching}
-              {status === 'coaching' && (
-                <span className='inline-block w-0.5 h-[1em] bg-blue-400 ml-0.5 align-middle animate-pulse' />
-              )}
-            </p>
-          ) : (
-            <div className='space-y-1.5 animate-pulse'>
-              <div className='h-2 rounded-full bg-slate-200 dark:bg-slate-700 w-full' />
-              <div className='h-2 rounded-full bg-slate-200 dark:bg-slate-700 w-4/5' />
-            </div>
-          )}
-        </div>
-      )}
+        {/* Coaching blurb — appears after checks, types out during 'coaching' status */}
+        {(status === 'coaching' || coaching) && (
+          <div className='mt-3 pl-3 border-l-2 border-blue-300 dark:border-blue-700'>
+            {coaching ? (
+              <p className='text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic'>
+                {coaching}
+                {status === 'coaching' && (
+                  <span className='inline-block w-0.5 h-[1em] bg-blue-400 ml-0.5 align-middle animate-pulse' />
+                )}
+              </p>
+            ) : (
+              <div className='space-y-1.5 animate-pulse'>
+                <div className='h-2 rounded-full bg-slate-200 dark:bg-slate-700 w-full' />
+                <div className='h-2 rounded-full bg-slate-200 dark:bg-slate-700 w-4/5' />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {/* end scrollable body */}
     </div>
   );
 }
