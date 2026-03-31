@@ -360,7 +360,7 @@ function PhaseCard({
           {/* Pass/fail summary pill — visible once checks start arriving */}
           {status !== 'idle' && checks.length > 2 && (
             <div className='flex items-center gap-2 mb-2.5'>
-              <span className='inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'>
+              <span className='inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'>
                 <CheckCircleSolid className='w-3 h-3' /> {passedCount} passed
               </span>
               {failedCount > 0 && (
@@ -374,7 +374,7 @@ function PhaseCard({
             {checks.map((check, i) => (
               <li key={check.checkId} className='flex items-start gap-2'>
                 {check.passed ? (
-                  <CheckCircleSolid className='w-3.5 h-3.5 text-indigo-400 dark:text-indigo-400 flex-shrink-0 mt-0.5' />
+                  <CheckCircleSolid className='w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 flex-shrink-0 mt-0.5' />
                 ) : (
                   <XCircleSolid className='w-3.5 h-3.5 text-rose-400/70 dark:text-rose-400 flex-shrink-0 mt-0.5' />
                 )}
