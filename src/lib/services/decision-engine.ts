@@ -120,40 +120,40 @@ export async function runDecisionEngine(
   );
 
   // ── Step 11: Persist DecisionResult ───────────────────────────────────────
-  const unlockPathJson =
-    revenueUnlockPath as unknown as import('@prisma/client').Prisma.InputJsonValue;
-  const personalisedJson =
-    personalisedActions as unknown as import('@prisma/client').Prisma.InputJsonValue;
+  // JSON.parse(JSON.stringify()) materialises values to plain POJOs so Prisma
+  // sends them as JSON over the wire — not as typed PostgreSQL arrays.
+  const toJson = (v: unknown): import('@prisma/client').Prisma.InputJsonValue =>
+    JSON.parse(JSON.stringify(v ?? null));
 
   const decisionResult = await prisma.decisionResult.upsert({
     where: { auditId },
     update: {
       missingCapabilities: missingCapabilities.map(c => c.id),
-      blockedRevenue: blockedRevenue.map(b => b.revenueStreamId),
-      rankedActions: topActions.map(a => a.id),
+      blockedRevenue: toJson(blockedRevenue),
+      rankedActions: toJson(topActions),
       reasoning,
-      revenueUnlockPath: unlockPathJson,
+      revenueUnlockPath: toJson(revenueUnlockPath),
       profileCoaching,
       platformCoaching,
       releaseCoaching,
       businessCoaching,
       gapStory,
-      personalisedActions: personalisedJson,
+      personalisedActions: toJson(personalisedActions),
     },
     create: {
       auditId,
       artistProfileId: audit.artistProfileId,
       missingCapabilities: missingCapabilities.map(c => c.id),
-      blockedRevenue: blockedRevenue.map(b => b.revenueStreamId),
-      rankedActions: topActions.map(a => a.id),
+      blockedRevenue: toJson(blockedRevenue),
+      rankedActions: toJson(topActions),
       reasoning,
-      revenueUnlockPath: unlockPathJson,
+      revenueUnlockPath: toJson(revenueUnlockPath),
       profileCoaching,
       platformCoaching,
       releaseCoaching,
       businessCoaching,
       gapStory,
-      personalisedActions: personalisedJson,
+      personalisedActions: toJson(personalisedActions),
     },
   });
 
