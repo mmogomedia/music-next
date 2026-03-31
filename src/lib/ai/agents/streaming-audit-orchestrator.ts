@@ -355,8 +355,13 @@ export async function streamCareerAudit(
     allCaps.map(c => c.id)
   );
 
-  const toJson = (v: unknown) =>
-    v as unknown as import('@prisma/client').Prisma.InputJsonValue;
+  // Materialize to a plain JSON value so Prisma sends it over the wire as
+  // JSON, not as a PostgreSQL array.  A pure `as` cast leaves the runtime
+  // value unchanged, which causes Postgres error 54000 ("array dimensions
+  // exceed maximum") when the column is JSONB but the client still encodes
+  // it as a typed array.
+  const toJson = (v: unknown): import('@prisma/client').Prisma.InputJsonValue =>
+    JSON.parse(JSON.stringify(v ?? null));
 
   const decisionResult = await prisma.decisionResult.upsert({
     where: { auditId: savedAudit.id },
