@@ -70,10 +70,8 @@ export async function runReleasePlanningAudit({
   const metadataCoverage = hasTracks
     ? Math.round((tracksWithMetadata.length / tracks.length) * 100)
     : 0;
-  const hasCoverArt = Boolean(
-    mostRecentTrack &&
-      (mostRecentTrack.coverImageUrl || mostRecentTrack.albumArtwork)
-  );
+  const hasCoverArt =
+    !!mostRecentTrack?.coverImageUrl || !!mostRecentTrack?.albumArtwork;
   const daysSinceLastRelease = mostRecentTrack
     ? Math.floor(
         (now - new Date(mostRecentTrack.createdAt).getTime()) /
@@ -178,10 +176,8 @@ function runReleasePlanningAuditFallback(
   const metadataCoverage = hasTracks
     ? Math.round((tracksWithMetadata.length / tracks.length) * 100)
     : 0;
-  const hasCoverArt = Boolean(
-    mostRecentTrack &&
-      (mostRecentTrack.coverImageUrl || mostRecentTrack.albumArtwork)
-  );
+  const hasCoverArt =
+    !!mostRecentTrack?.coverImageUrl || !!mostRecentTrack?.albumArtwork;
 
   return [
     check(
