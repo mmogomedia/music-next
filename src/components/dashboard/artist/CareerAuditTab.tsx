@@ -1142,7 +1142,8 @@ export default function CareerAuditTab() {
   }
 
   // ── Streaming pipeline view ─────────────────────────────────────────────────
-  if (isStreaming || (streamDone && !displayResult)) {
+  // Stay in pipeline view until the user explicitly clicks "View Full Analysis"
+  if (isStreaming || (streamDone && !continueClicked)) {
     return (
       <div className='space-y-4 max-w-3xl'>
         {/* Pipeline header */}
