@@ -25,7 +25,6 @@ import {
   MusicalNoteIcon,
   BriefcaseIcon,
   CpuChipIcon,
-  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import {
   CheckCircleIcon as CheckCircleSolid,
@@ -660,6 +659,7 @@ function ResultView({
   onReRun,
   onReset,
   running,
+  resetting,
 }: {
   result: DecisionEngineResult;
   narrative: string;
@@ -668,6 +668,7 @@ function ResultView({
   onReRun: () => void;
   onReset: () => void;
   running: boolean;
+  resetting: boolean;
 }) {
   const tier = TIER_META[result.tier] ?? TIER_META.just_starting;
 
@@ -681,12 +682,14 @@ function ResultView({
         <div className='flex items-center gap-2'>
           <button
             onClick={onReset}
-            disabled={running}
+            disabled={running || resetting}
             title='Clear results and start fresh'
             className='inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-500 dark:text-slate-400 font-medium text-sm transition-colors'
           >
-            <XMarkIcon className='w-3.5 h-3.5' />
-            Reset
+            <ArrowPathIcon
+              className={clsx('w-3.5 h-3.5', resetting && 'animate-spin')}
+            />
+            {resetting ? 'Resetting…' : 'Reset'}
           </button>
           <button
             onClick={onReRun}
@@ -1066,8 +1069,17 @@ export default function CareerAuditTab() {
     useState(false);
   // Gating: user must click "View Full Analysis" after all 4 agents finish
   const [continueClicked, setContinueClicked] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
-  function handleReset() {
+  async function handleReset() {
+    setResetting(true);
+    try {
+      await fetch('/api/ai/artist-audit', { method: 'DELETE' });
+    } catch {
+      // best-effort — clear UI regardless
+    } finally {
+      setResetting(false);
+    }
     clearResult();
     stream.reset();
     setQuestionnaireJustDone(false);
@@ -1237,6 +1249,7 @@ export default function CareerAuditTab() {
           }}
           onReset={handleReset}
           running={isStreaming}
+          resetting={resetting}
         />
       </div>
     );

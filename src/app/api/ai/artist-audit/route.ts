@@ -84,6 +84,42 @@ export async function GET() {
   }
 }
 
+// ── DELETE — reset (wipe all audits for this artist) ─────────────────────────
+
+export async function DELETE() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const artistProfile = await prisma.artistProfile.findFirst({
+      where: { userId: session.user.id },
+      select: { id: true },
+    });
+
+    if (!artistProfile) {
+      return NextResponse.json(
+        { error: 'Artist profile not found' },
+        { status: 404 }
+      );
+    }
+
+    // deleteMany cascades to DecisionResult via the relation onDelete: Cascade
+    await prisma.artistAudit.deleteMany({
+      where: { artistProfileId: artistProfile.id },
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error('[DELETE /api/ai/artist-audit] Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to reset audit' },
+      { status: 500 }
+    );
+  }
+}
+
 // ── POST — run audit ──────────────────────────────────────────────────────────
 
 export async function POST() {
