@@ -70,6 +70,7 @@ export function createModel(
     modelName?: string;
     deploymentName?: string;
     apiVersion?: string;
+    maxTokens?: number;
   }
 ): BaseChatModel {
   switch (provider) {
@@ -88,6 +89,7 @@ export function createModel(
         azureOpenAIApiVersion:
           overrides?.apiVersion || DEFAULT_CONFIG.azure.apiVersion,
         temperature,
+        ...(overrides?.maxTokens ? { maxTokens: overrides.maxTokens } : {}),
       });
     }
 

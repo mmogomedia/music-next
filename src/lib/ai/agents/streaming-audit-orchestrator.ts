@@ -7,11 +7,11 @@
  *
  * Key differences from runCareerAudit:
  *  - Sequential phases (emit phase_start → check_result × N → phase_complete)
- *  - LLM narrative streamed token-by-token (anthropic.messages.stream)
+ *  - LLM narrative streamed token-by-token (Azure OpenAI via AzureChatOpenAI.stream)
  *  - Same DB persistence as the non-streaming path
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+import { HumanMessage } from '@langchain/core/messages';
 import { prisma } from '@/lib/db';
 import type { ArtistProfile, ArtistType } from '@prisma/client';
 import type {
@@ -35,11 +35,16 @@ import {
   fetchAndRankActions,
   computeRevenueUnlockPath,
 } from '@/lib/services/action-service';
+import { createModel } from './model-factory';
 
-const anthropic = new Anthropic();
 const TOP_ACTIONS_LIMIT = 5;
-const COACHING_MODEL = 'claude-sonnet-4-6';
-const NARRATIVE_MODEL = 'claude-opus-4-6';
+// Both Claude models now map to the shared Azure OpenAI resource.
+// Coaching → default deployment (gpt-5.4-mini); narrative → stronger
+// primary model (gpt-5.4-pro) when configured, else the default deployment.
+const COACHING_DEPLOYMENT =
+  process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5.4-mini';
+const NARRATIVE_DEPLOYMENT =
+  process.env.AZURE_OPENAI_MODEL_PRIMARY || COACHING_DEPLOYMENT;
 
 export type AuditStreamEmitter = (_event: AuditSSEEvent) => void;
 
@@ -424,24 +429,36 @@ export async function streamCareerAudit(
 
 // ── Helper: stream a text response token-by-token ─────────────────────────────
 
+/** Coerce a LangChain message `content` (string | content-parts[]) to text. */
+function chunkText(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map(part =>
+        typeof part === 'string'
+          ? part
+          : ((part as { text?: string }).text ?? '')
+      )
+      .join('');
+  }
+  return '';
+}
+
 async function streamText(
   prompt: string,
-  model: string,
+  deployment: string,
   maxTokens: number,
   onToken: (_token: string) => void
 ): Promise<string> {
   let fullText = '';
-  const stream = anthropic.messages.stream({
-    model,
-    max_tokens: maxTokens,
-    messages: [{ role: 'user', content: prompt }],
+  const model = createModel('azure-openai', {
+    deploymentName: deployment,
+    maxTokens,
   });
-  for await (const event of stream) {
-    if (
-      event.type === 'content_block_delta' &&
-      event.delta.type === 'text_delta'
-    ) {
-      const token = event.delta.text;
+  const stream = await model.stream([new HumanMessage(prompt)]);
+  for await (const chunk of stream) {
+    const token = chunkText(chunk.content);
+    if (token) {
       fullText += token;
       onToken(token);
     }
@@ -493,7 +510,7 @@ Write 2–3 sentences of direct feedback as if closing a label meeting. Referenc
 
   let coaching = '';
   try {
-    coaching = await streamText(prompt, COACHING_MODEL, 200, async token => {
+    coaching = await streamText(prompt, COACHING_DEPLOYMENT, 200, async token => {
       emit({ type: 'dimension_coaching_token', phase, token, timestamp: ts() });
       await flush();
     });
@@ -545,7 +562,7 @@ In 2–3 sentences, describe the single biggest thing holding this artist back. 
 
   let story = '';
   try {
-    story = await streamText(prompt, COACHING_MODEL, 150, async token => {
+    story = await streamText(prompt, COACHING_DEPLOYMENT, 150, async token => {
       emit({ type: 'gap_story_token', token, timestamp: ts() });
       await flush();
     });
@@ -586,16 +603,13 @@ Actions:
 ${actionsJson}`;
 
   try {
-    const response = await anthropic.messages.create({
-      model: COACHING_MODEL,
-      max_tokens: 600,
-      messages: [{ role: 'user', content: prompt }],
+    const model = createModel('azure-openai', {
+      deploymentName: COACHING_DEPLOYMENT,
+      maxTokens: 600,
     });
+    const response = await model.invoke([new HumanMessage(prompt)]);
 
-    const raw =
-      response.content[0]?.type === 'text'
-        ? response.content[0].text.trim()
-        : '[]';
+    const raw = chunkText(response.content).trim() || '[]';
     // Strip markdown code fences if present
     const cleaned = raw
       .replace(/^```(?:json)?\n?/, '')
@@ -665,7 +679,7 @@ Write 5–7 sentences. Sound like you are wrapping up a real meeting — honest,
   let fullText = '';
 
   try {
-    fullText = await streamText(prompt, NARRATIVE_MODEL, 400, async token => {
+    fullText = await streamText(prompt, NARRATIVE_DEPLOYMENT, 400, async token => {
       emit({ type: 'thinking_token', token, timestamp: ts() });
       await flush();
     });
