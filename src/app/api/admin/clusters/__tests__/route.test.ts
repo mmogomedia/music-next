@@ -1,3 +1,4 @@
+import type { NextRequest } from 'next/server';
 import { GET, POST } from '../route';
 import { getClusters, createCluster } from '@/lib/services/article-service';
 
@@ -42,7 +43,8 @@ const mockCluster = {
 };
 
 // eslint-disable-next-line no-undef
-const makeRequest = (url: string, opts?: RequestInit) => new Request(url, opts);
+const makeRequest = (url: string, opts?: RequestInit) =>
+  new Request(url, opts) as unknown as NextRequest;
 
 // ─── GET /api/admin/clusters ──────────────────────────────────────────────────
 

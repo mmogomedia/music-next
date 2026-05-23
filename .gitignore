@@ -5,11 +5,9 @@ node_modules
 .next
 out
 
-# Env
-.env
-.env.local
-.env.*.local
-.env.vercel.production
+# Env — ignore all local env files (backups, dumps, vercel pulls); keep the example tracked
+.env*
+!.env.example
 
 # Misc
 dist

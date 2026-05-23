@@ -1,3 +1,7 @@
+# Nested git worktrees (created by AI coding tools — never format these)
+.claude/
+.cursor/
+
 # Dependencies
 node_modules/
 .pnp

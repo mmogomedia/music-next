@@ -1,3 +1,4 @@
+import type { NextRequest } from 'next/server';
 import { GET } from '../route';
 import { getArticles } from '@/lib/services/article-service';
 
@@ -33,7 +34,7 @@ const mockArticle = {
   updatedAt: new Date('2026-01-01'),
 };
 
-const makeRequest = (url: string) => new Request(url);
+const makeRequest = (url: string) => new Request(url) as unknown as NextRequest;
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
