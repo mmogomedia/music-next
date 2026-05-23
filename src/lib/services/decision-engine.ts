@@ -14,7 +14,8 @@
  * The LLM is used only to write the narrative — it never influences scores.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+import { HumanMessage } from '@langchain/core/messages';
+import { createModel } from '@/lib/ai/agents/model-factory';
 import { prisma } from '@/lib/db';
 import type { ArtistProfile } from '@prisma/client';
 import type {
@@ -34,11 +35,29 @@ import {
   computeRevenueUnlockPath,
 } from './action-service';
 
-const anthropic = new Anthropic();
-
 const TOP_ACTIONS_LIMIT = 5;
-const COACHING_MODEL = 'claude-sonnet-4-6';
-const NARRATIVE_MODEL = 'claude-opus-4-6';
+// Both Claude models now map to the shared Azure OpenAI resource.
+// Coaching → default deployment (gpt-5.4-mini); narrative → stronger
+// primary model (gpt-5.4-pro) when configured, else the default deployment.
+const COACHING_DEPLOYMENT =
+  process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME || 'gpt-5.4-mini';
+const NARRATIVE_DEPLOYMENT =
+  process.env.AZURE_OPENAI_MODEL_PRIMARY || COACHING_DEPLOYMENT;
+
+/** Coerce a LangChain message `content` (string | content-parts[]) to text. */
+function chunkText(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map(part =>
+        typeof part === 'string'
+          ? part
+          : ((part as { text?: string }).text ?? '')
+      )
+      .join('');
+  }
+  return '';
+}
 
 /**
  * Run the full decision engine pipeline for a completed audit.
@@ -186,18 +205,17 @@ export async function runDecisionEngine(
 /** Convenience: call the LLM and return text, with a fallback. */
 async function callLLM(
   prompt: string,
-  model: string,
+  deployment: string,
   maxTokens: number,
   fallback: string
 ): Promise<string> {
   try {
-    const message = await anthropic.messages.create({
-      model,
-      max_tokens: maxTokens,
-      messages: [{ role: 'user', content: prompt }],
+    const llm = createModel('azure-openai', {
+      deploymentName: deployment,
+      maxTokens,
     });
-    const content = message.content[0];
-    return content.type === 'text' ? content.text.trim() : fallback;
+    const message = await llm.invoke([new HumanMessage(prompt)]);
+    return chunkText(message.content).trim() || fallback;
   } catch (err) {
     console.error('[DecisionEngine] LLM call failed:', err);
     return fallback;
@@ -249,7 +267,7 @@ Write 2–3 sentences of direct feedback as if closing a label meeting. Referenc
 
   return callLLM(
     prompt,
-    COACHING_MODEL,
+    COACHING_DEPLOYMENT,
     200,
     `Score: ${score}/100. Review the failed checks above and address the highest-impact items first.`
   );
@@ -279,7 +297,7 @@ In 2–3 sentences, describe the single biggest thing holding this artist back. 
 
   return callLLM(
     prompt,
-    COACHING_MODEL,
+    COACHING_DEPLOYMENT,
     150,
     `Your ${audit.gaps[0]?.label ?? 'top gap'} is the primary barrier right now.`
   );
@@ -309,15 +327,12 @@ Actions:
 ${actionsJson}`;
 
   try {
-    const message = await anthropic.messages.create({
-      model: COACHING_MODEL,
-      max_tokens: 600,
-      messages: [{ role: 'user', content: prompt }],
+    const llm = createModel('azure-openai', {
+      deploymentName: COACHING_DEPLOYMENT,
+      maxTokens: 600,
     });
-    const raw =
-      message.content[0]?.type === 'text'
-        ? message.content[0].text.trim()
-        : '[]';
+    const message = await llm.invoke([new HumanMessage(prompt)]);
+    const raw = chunkText(message.content).trim() || '[]';
     const cleaned = raw
       .replace(/^```(?:json)?\n?/, '')
       .replace(/\n?```$/, '')
@@ -379,7 +394,7 @@ Gap story already shared with artist (do NOT repeat this):
 Write 5–7 sentences. Sound like you are wrapping up a real meeting — honest, direct, specific. Reference their career stage and what artists at their level focus on. No filler phrases. End with one clear statement about the single biggest opportunity in front of them right now.`;
 
   const fallback = buildFallbackReasoning(audit, topActions);
-  return callLLM(prompt, NARRATIVE_MODEL, 400, fallback);
+  return callLLM(prompt, NARRATIVE_DEPLOYMENT, 400, fallback);
 }
 
 function buildFallbackReasoning(
