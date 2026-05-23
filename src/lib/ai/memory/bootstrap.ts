@@ -13,8 +13,8 @@ import { OpenAIEmbeddingAdapter } from './presets/openai-embedding-adapter';
 
 const sys = createMemorySystem({
   storage: new PrismaStorageAdapter(prisma),
-  embedder: process.env.OPENAI_API_KEY
-    ? new OpenAIEmbeddingAdapter(process.env.OPENAI_API_KEY)
+  embedder: process.env.AZURE_OPENAI_API_KEY
+    ? new OpenAIEmbeddingAdapter(process.env.AZURE_OPENAI_API_KEY)
     : null,
   logger,
 });

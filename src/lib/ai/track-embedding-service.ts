@@ -30,10 +30,10 @@ let _embeddingAdapter: OpenAIEmbeddingAdapter | null = null;
 
 function getEmbeddingAdapter(): OpenAIEmbeddingAdapter {
   if (!_embeddingAdapter) {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.AZURE_OPENAI_API_KEY;
     if (!apiKey) {
       throw new Error(
-        '[TrackEmbeddingService] OPENAI_API_KEY is not set — cannot generate embeddings.'
+        '[TrackEmbeddingService] AZURE_OPENAI_API_KEY is not set — cannot generate embeddings.'
       );
     }
     _embeddingAdapter = new OpenAIEmbeddingAdapter(
