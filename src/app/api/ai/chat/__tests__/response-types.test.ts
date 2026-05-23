@@ -23,7 +23,7 @@ import type {
   QuickLinkArtistResponse,
   TextResponse,
 } from '@/types/ai-responses';
-import type { TrackWithArtist } from '@/lib/services';
+import type { TrackItem } from '@/lib/ai/tools/output-schemas';
 
 // Mock NextResponse
 jest.mock('next/server', () => ({
@@ -314,7 +314,7 @@ describe('AI Chat Response Types', () => {
               isDownloadable: false,
               artistProfile: null,
               fileUrl: 'https://example.com/demo-tracks/ocean-waves-36.mp3',
-            } as TrackWithArtist,
+            } as unknown as TrackItem,
           ],
           metadata: {
             total: 1,
@@ -1003,7 +1003,7 @@ describe('AI Chat Response Types', () => {
               isDownloadable: false,
               artistProfile: null,
               fileUrl: 'https://example.com/track1.mp3',
-            } as TrackWithArtist,
+            } as unknown as TrackItem,
           ],
           metadata: {
             total: 1,

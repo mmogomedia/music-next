@@ -91,7 +91,9 @@ describe('RouterAgent intent routing', () => {
 
   it('handles context-aware routing', async () => {
     const context = {
-      conversationHistory: [{ role: 'user', content: 'find amapiano tracks' }],
+      conversationHistory: [
+        { role: 'user' as const, content: 'find amapiano tracks' },
+      ],
       filters: { genre: 'amapiano' },
     };
     await agent.route('show me more', context);
