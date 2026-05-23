@@ -35,6 +35,11 @@ jobs:
       - name: Generate Prisma client
         run: yarn prisma:generate
 
+      # docs.ts imports src/lib/mcp/docs-index.generated.json (gitignored,
+      # produced from rules/*.md). Generate it so tsc can resolve the import.
+      - name: Generate MCP docs index
+        run: node scripts/generate-mcp-docs-index.mjs
+
       - name: Type-check, lint, and format check
         run: yarn check-all
 
@@ -64,6 +69,9 @@ jobs:
 
       - name: Generate Prisma client
         run: yarn prisma:generate
+
+      - name: Generate MCP docs index
+        run: node scripts/generate-mcp-docs-index.mjs
 
       - name: Run tests
         run: yarn test --ci
