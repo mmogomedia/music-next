@@ -399,6 +399,10 @@ export default function DashboardContent({
                     <TopPerformingTracks
                       topTracks={stats?.topTracks ?? []}
                       onViewAll={() => navigateToTab('library')}
+                      hasPulseScore={
+                        pulseData?.eligibilityScore !== null &&
+                        pulseData?.eligibilityScore !== undefined
+                      }
                     />
                   </div>
                   <div className='lg:col-span-2'>

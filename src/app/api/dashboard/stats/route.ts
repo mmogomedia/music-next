@@ -386,15 +386,14 @@ async function getRecentActivity(trackIds: string[], startDate: Date) {
   };
 }
 
-async function getTopPerformingTracks(trackIds: string[], startDate: Date) {
+async function getTopPerformingTracks(trackIds: string[], _startDate: Date) {
   if (trackIds.length === 0) return [];
 
+  // Group by all-time play events (no date filter) so tracks with older plays
+  // are not hidden by the selected time range
   const topTracks = await prisma.playEvent.groupBy({
     by: ['trackId'],
-    where: {
-      trackId: { in: trackIds },
-      timestamp: { gte: startDate },
-    },
+    where: { trackId: { in: trackIds } },
     _count: { id: true },
     orderBy: { _count: { id: 'desc' } },
     take: 5,
@@ -412,13 +411,10 @@ async function getTopPerformingTracks(trackIds: string[], startDate: Date) {
     },
   });
 
-  return topTracks.map(stat => {
-    const track = trackDetails.find(t => t.id === stat.trackId);
-    return {
-      ...stat,
-      track: track || null,
-    };
-  });
+  return topTracks.map(stat => ({
+    ...stat,
+    track: trackDetails.find(t => t.id === stat.trackId) ?? null,
+  }));
 }
 
 async function getEngagementMetrics(trackIds: string[], startDate: Date) {

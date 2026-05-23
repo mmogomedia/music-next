@@ -1,3 +1,4 @@
+import type { NextRequest } from 'next/server';
 import { GET, POST } from '../route';
 import { getArticles, createArticle } from '@/lib/services/article-service';
 
@@ -47,7 +48,7 @@ const mockArticle = {
 
 // eslint-disable-next-line no-undef
 function makeRequest(url: string, opts?: RequestInit) {
-  return new Request(url, opts);
+  return new Request(url, opts) as unknown as NextRequest;
 }
 
 // ─── GET /api/admin/articles ──────────────────────────────────────────────────

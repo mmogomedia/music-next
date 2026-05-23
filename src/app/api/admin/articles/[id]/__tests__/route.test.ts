@@ -1,3 +1,4 @@
+import type { NextRequest } from 'next/server';
 import { GET, PATCH, DELETE } from '../route';
 import { getArticleById, updateArticle } from '@/lib/services/article-service';
 import { prisma } from '@/lib/db';
@@ -50,7 +51,8 @@ const mockArticle = {
 };
 
 // eslint-disable-next-line no-undef
-const makeRequest = (url: string, opts?: RequestInit) => new Request(url, opts);
+const makeRequest = (url: string, opts?: RequestInit) =>
+  new Request(url, opts) as unknown as NextRequest;
 
 // ─── GET /api/admin/articles/[id] ─────────────────────────────────────────────
 
@@ -64,7 +66,7 @@ describe('GET /api/admin/articles/[id]', () => {
     const response = await GET(
       makeRequest('http://localhost/api/admin/articles/article-1'),
       {
-        params: { id: 'article-1' },
+        params: Promise.resolve({ id: 'article-1' }),
       }
     );
 
@@ -78,7 +80,7 @@ describe('GET /api/admin/articles/[id]', () => {
 
     const response = await GET(
       makeRequest('http://localhost/api/admin/articles/article-1'),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
     const data = await response.json();
 
@@ -96,7 +98,7 @@ describe('GET /api/admin/articles/[id]', () => {
 
     const response = await GET(
       makeRequest('http://localhost/api/admin/articles/non-existent'),
-      { params: { id: 'non-existent' } }
+      { params: Promise.resolve({ id: 'non-existent' }) }
     );
 
     expect(response.status).toBe(404);
@@ -118,7 +120,7 @@ describe('PATCH /api/admin/articles/[id]', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: 'New Title' }),
       }),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
 
     expect(response.status).toBe(401);
@@ -138,7 +140,7 @@ describe('PATCH /api/admin/articles/[id]', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: 'Updated Title' }),
       }),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
     const data = await response.json();
 
@@ -160,7 +162,7 @@ describe('PATCH /api/admin/articles/[id]', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: '' }), // empty title fails Zod min(1)
       }),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
 
     expect(response.status).toBe(400);
@@ -177,7 +179,7 @@ describe('PATCH /api/admin/articles/[id]', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: 'Valid Title' }),
       }),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
 
     expect(response.status).toBe(500);
@@ -195,7 +197,7 @@ describe('DELETE /api/admin/articles/[id]', () => {
 
     const response = await DELETE(
       makeRequest('http://localhost/api/admin/articles/article-1'),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
 
     expect(response.status).toBe(401);
@@ -211,7 +213,7 @@ describe('DELETE /api/admin/articles/[id]', () => {
 
     const response = await DELETE(
       makeRequest('http://localhost/api/admin/articles/article-1'),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
     const data = await response.json();
 
@@ -232,7 +234,7 @@ describe('DELETE /api/admin/articles/[id]', () => {
 
     const response = await DELETE(
       makeRequest('http://localhost/api/admin/articles/article-1'),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
 
     expect(response.status).toBe(500);

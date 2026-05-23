@@ -13,6 +13,7 @@ import LearnHeader from '@/components/layout/LearnHeader';
 import PublicFooter from '@/components/layout/PublicFooter';
 import ReadingProgress from '@/components/learn/ReadingProgress';
 import ShareButton from '@/components/learn/ShareButton';
+import DownloadArticleButton from '@/components/learn/DownloadArticleButton';
 import { getToolBySlug } from '@/lib/tools/registry';
 import { ToolSummaryCard } from '@/components/tools/ToolSummaryCard';
 import { absoluteUrl, SITE_URL } from '@/lib/utils/site-url';
@@ -654,6 +655,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
             {/* Share row */}
             <div className='mt-8 pt-6 border-t border-gray-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4'>
               <ShareButton title={article.title} />
+              <DownloadArticleButton slug={article.slug} />
             </div>
 
             {/* CTA */}

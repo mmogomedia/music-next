@@ -1,3 +1,4 @@
+import type { NextRequest } from 'next/server';
 import { POST } from '../route';
 import { publishArticle } from '@/lib/services/article-service';
 
@@ -37,7 +38,8 @@ const mockPublishedArticle = {
 };
 
 // eslint-disable-next-line no-undef
-const makeRequest = (url: string, opts?: RequestInit) => new Request(url, opts);
+const makeRequest = (url: string, opts?: RequestInit) =>
+  new Request(url, opts) as unknown as NextRequest;
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
@@ -52,7 +54,7 @@ describe('POST /api/admin/articles/[id]/publish', () => {
       makeRequest('http://localhost/api/admin/articles/article-1/publish', {
         method: 'POST',
       }),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
 
     expect(response.status).toBe(401);
@@ -68,7 +70,7 @@ describe('POST /api/admin/articles/[id]/publish', () => {
       makeRequest('http://localhost/api/admin/articles/article-1/publish', {
         method: 'POST',
       }),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
 
     expect(response.status).toBe(401);
@@ -83,7 +85,7 @@ describe('POST /api/admin/articles/[id]/publish', () => {
       makeRequest('http://localhost/api/admin/articles/article-1/publish', {
         method: 'POST',
       }),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
     const data = await response.json();
 
@@ -107,7 +109,7 @@ describe('POST /api/admin/articles/[id]/publish', () => {
       makeRequest('http://localhost/api/admin/articles/article-1/publish', {
         method: 'POST',
       }),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
     const data = await response.json();
 
@@ -129,7 +131,7 @@ describe('POST /api/admin/articles/[id]/publish', () => {
       makeRequest('http://localhost/api/admin/articles/non-existent/publish', {
         method: 'POST',
       }),
-      { params: { id: 'non-existent' } }
+      { params: Promise.resolve({ id: 'non-existent' }) }
     );
 
     expect(response.status).toBe(404);
@@ -146,7 +148,7 @@ describe('POST /api/admin/articles/[id]/publish', () => {
       makeRequest('http://localhost/api/admin/articles/article-1/publish', {
         method: 'POST',
       }),
-      { params: { id: 'article-1' } }
+      { params: Promise.resolve({ id: 'article-1' }) }
     );
     const data = await response.json();
 
