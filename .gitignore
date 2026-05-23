@@ -21,3 +21,6 @@ dist
 
 # TypeScript incremental build cache (regenerated on every tsc run)
 tsconfig.tsbuildinfo
+
+# MCP docs index (generated at build/CI from rules/*.md by scripts/generate-mcp-docs-index.mjs)
+src/lib/mcp/docs-index.generated.json

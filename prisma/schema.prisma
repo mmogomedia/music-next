@@ -1641,6 +1641,8 @@ model Article {
   readTime        Int           @default(0)
   status          ArticleStatus @default(DRAFT)
   publishedAt     DateTime?
+  scheduledAt     DateTime?     // MCP scheduling: when an article is queued to auto-publish
+  socialImages    Json?         // MCP ingest: array of { platform, key, url, alt? }
   authorId        String
   timelinePostId  String?       @unique
 
@@ -1774,4 +1776,60 @@ enum LinkType {
   USES_TOOL      // Artist/Track uses a Tool
   EXPLAINED_BY   // Tool is explained by an Article
   RELATED        // Generic related content
+}
+
+// ---------------------------------------------------------------------------
+// MCP integration (Picasite) — OAuth 2.1 clients, tokens, and audit log.
+// See PICASITE_MCP_INTEGRATION_PLAN.md (Interface Contract v1).
+// ---------------------------------------------------------------------------
+
+enum McpTokenType {
+  ACCESS
+  REFRESH
+}
+
+model McpClient {
+  id               String          @id @default(cuid())
+  clientId         String          @unique
+  clientSecretHash String          // sha256 hash of the client secret (never stored plaintext)
+  name             String
+  redirectUris     String[]        @default([])
+  webhookUrl       String?         // Picasite change-webhook endpoint for this client
+  webhookSecret    String?         // shared secret used to HMAC-sign webhook bodies
+  scopes           String[]        @default([])  // e.g. articles:read, articles:write, docs:read
+  createdAt        DateTime        @default(now())
+  revokedAt        DateTime?
+
+  tokens           McpAccessToken[]
+
+  @@map("mcp_clients")
+}
+
+model McpAccessToken {
+  id        String       @id @default(cuid())
+  tokenHash String       @unique // sha256 hash of the opaque token
+  clientId  String
+  scopes    String[]     @default([])
+  type      McpTokenType
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime     @default(now())
+
+  client    McpClient    @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([expiresAt])
+  @@map("mcp_access_tokens")
+}
+
+model McpAuditLog {
+  id       String   @id @default(cuid())
+  clientId String?
+  tool     String
+  ok       Boolean
+  detail   String?  @db.Text
+  at       DateTime @default(now())
+
+  @@index([clientId, at])
+  @@map("mcp_audit_logs")
 }

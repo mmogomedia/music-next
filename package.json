@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev --port 3002",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "node scripts/generate-mcp-docs-index.mjs && prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -67,6 +67,7 @@
     "@langchain/core": "^1.0.2",
     "@langchain/google-genai": "^1.0.0",
     "@langchain/openai": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@next/third-parties": "^16.2.0",
     "@prisma/client": "^5.22.0",
