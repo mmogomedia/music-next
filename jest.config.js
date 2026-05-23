@@ -9,6 +9,11 @@ const createJestConfig = nextJest({
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jsdom',
+  // Recycle a worker once its heap crosses this limit so jsdom-heavy suites
+  // (e.g. MusicPlayerContext) don't accumulate memory until the worker OOMs.
+  workerIdleMemoryLimit: '512MB',
+  // Keep total footprint sane on CI's 2-core runners.
+  maxWorkers: '50%',
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
