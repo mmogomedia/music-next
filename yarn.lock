@@ -9660,6 +9660,7 @@ __metadata:
     "@types/node": "npm:24.3.0"
     "@types/react": "npm:19.1.12"
     "@types/react-dom": "npm:19.1.11"
+    "@types/uuid": "npm:^10.0.0"
     "@typescript-eslint/eslint-plugin": "npm:^8.42.0"
     "@typescript-eslint/parser": "npm:^8.42.0"
     "@upstash/redis": "npm:^1.36.2"
@@ -9706,6 +9707,7 @@ __metadata:
     tiptap-markdown: "npm:^0.9.0"
     typescript: "npm:^5.5.4"
     undici: "npm:^7.16.0"
+    uuid: "npm:^10.0.0"
     zod: "npm:^4.1.12"
   languageName: unknown
   linkType: soft
