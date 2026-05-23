@@ -148,3 +148,11 @@ process.env.GOOGLE_CLIENT_SECRET = 'test-google-client-secret';
 process.env.ABLY_API_KEY = 'test-ably-api-key';
 process.env.R2_AUDIO_BUCKET_NAME = 'test-bucket';
 process.env.R2_PUBLIC_URL = 'https://test.example.com';
+
+// Dummy Azure OpenAI config so AzureChatOpenAI construction in agent
+// constructors (createModel -> new AzureChatOpenAI) doesn't throw under CI,
+// where no .env* files exist. No live calls are made in tests.
+process.env.AZURE_OPENAI_API_KEY = 'test-azure-openai-key';
+process.env.AZURE_OPENAI_API_INSTANCE_NAME = 'test-instance';
+process.env.AZURE_OPENAI_API_DEPLOYMENT_NAME = 'gpt-5-mini';
+process.env.AZURE_OPENAI_API_VERSION = '2024-05-01-preview';
