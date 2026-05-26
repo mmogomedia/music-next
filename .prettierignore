@@ -2,6 +2,10 @@
 .claude/
 .cursor/
 
+# Plan / spec markdown docs at repo root (prose; not subject to prettier wrap)
+PICASITE_MCP_INTEGRATION_PLAN.md
+FLEMOJI_MCP_V2_PLAN.md
+
 # Dependencies
 node_modules/
 .pnp
