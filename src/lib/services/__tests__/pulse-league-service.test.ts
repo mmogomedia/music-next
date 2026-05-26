@@ -26,9 +26,43 @@ jest.mock('@/lib/db', () => ({
       groupBy: jest.fn(),
       findFirst: jest.fn(),
     },
+    $queryRaw: jest.fn(),
     $transaction: jest.fn(),
   },
 }));
+
+/**
+ * Helper: stub `prisma.$queryRaw` to resolve with the given scores.
+ *
+ * `getLatestEligibilityScores` was refactored from `groupBy` + N×`findFirst`
+ * into a single `$queryRaw` returning rows with shape
+ * `{ artistProfileId, score, followerScore, engagementScore,
+ *    consistencyScore, platformDiversityScore }`.
+ *
+ * Tests now seed the raw rows directly instead of orchestrating two
+ * separate mocks.
+ */
+function mockEligibilityScores(
+  scores: Array<{
+    artistProfileId: string;
+    score: number;
+    followerScore: number | null;
+    engagementScore: number | null;
+    consistencyScore: number | null;
+    platformDiversityScore: number | null;
+  }>
+) {
+  (prisma.$queryRaw as jest.Mock).mockResolvedValue(
+    scores.map(s => ({
+      artistProfileId: s.artistProfileId,
+      score: s.score,
+      followerScore: s.followerScore,
+      engagementScore: s.engagementScore,
+      consistencyScore: s.consistencyScore,
+      platformDiversityScore: s.platformDiversityScore,
+    }))
+  );
+}
 
 describe('PulseLeagueService', () => {
   beforeEach(() => {
@@ -136,27 +170,8 @@ describe('PulseLeagueService', () => {
     }));
 
     beforeEach(() => {
-      // Mock getLatestEligibilityScores
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue(
-        mockScores.map(s => ({
-          artistProfileId: s.artistProfileId,
-          _max: { calculatedAt: new Date() },
-        }))
-      );
-
-      mockScores.forEach(score => {
-        (
-          prisma.pulseEligibilityScore.findFirst as jest.Mock
-        ).mockResolvedValueOnce({
-          artistProfileId: score.artistProfileId,
-          score: score.score,
-          followerScore: score.followerScore,
-          engagementScore: score.engagementScore,
-          consistencyScore: score.consistencyScore,
-          platformDiversityScore: score.platformDiversityScore,
-          calculatedAt: new Date(),
-        });
-      });
+      // Mock getLatestEligibilityScores (now a single $queryRaw)
+      mockEligibilityScores(mockScores);
 
       // Mock previous run (none exists)
       (prisma.leagueRun.findFirst as jest.Mock).mockResolvedValue(null);
@@ -285,21 +300,7 @@ describe('PulseLeagueService', () => {
         },
       ];
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue(
-        tiedScores.map(s => ({
-          artistProfileId: s.artistProfileId,
-          _max: { calculatedAt: new Date() },
-        }))
-      );
-
-      tiedScores.forEach(score => {
-        (
-          prisma.pulseEligibilityScore.findFirst as jest.Mock
-        ).mockResolvedValueOnce({
-          ...score,
-          calculatedAt: new Date(),
-        });
-      });
+      mockEligibilityScores(tiedScores);
 
       await PulseLeagueService.runLeagueForTier(mockTier, 'SCHEDULED');
 
@@ -308,7 +309,7 @@ describe('PulseLeagueService', () => {
     });
 
     it('should throw error when no eligibility scores found', async () => {
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue([]);
+      (prisma.$queryRaw as jest.Mock).mockResolvedValue([]);
 
       await expect(
         PulseLeagueService.runLeagueForTier(mockTier, 'SCHEDULED')
@@ -337,14 +338,7 @@ describe('PulseLeagueService', () => {
         platformDiversityScore: 50,
       };
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue([
-        { artistProfileId: 'artist-1', _max: { calculatedAt: new Date() } },
-      ]);
-
-      (prisma.pulseEligibilityScore.findFirst as jest.Mock).mockResolvedValue({
-        ...lowScore,
-        calculatedAt: new Date(),
-      });
+      mockEligibilityScores([lowScore]);
 
       (prisma.leagueRun.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.leagueEntry.findMany as jest.Mock).mockResolvedValue([]);
@@ -388,14 +382,7 @@ describe('PulseLeagueService', () => {
         platformDiversityScore: 80,
       };
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue([
-        { artistProfileId: 'artist-1', _max: { calculatedAt: new Date() } },
-      ]);
-
-      (prisma.pulseEligibilityScore.findFirst as jest.Mock).mockResolvedValue({
-        ...highScore,
-        calculatedAt: new Date(),
-      });
+      mockEligibilityScores([highScore]);
 
       (prisma.leagueRun.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.leagueEntry.findMany as jest.Mock).mockResolvedValue([]);
@@ -439,14 +426,7 @@ describe('PulseLeagueService', () => {
         platformDiversityScore: 65,
       };
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue([
-        { artistProfileId: 'artist-1', _max: { calculatedAt: new Date() } },
-      ]);
-
-      (prisma.pulseEligibilityScore.findFirst as jest.Mock).mockResolvedValue({
-        ...secureScore,
-        calculatedAt: new Date(),
-      });
+      mockEligibilityScores([secureScore]);
 
       (prisma.leagueRun.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.leagueEntry.findMany as jest.Mock).mockResolvedValue([]);
@@ -493,14 +473,7 @@ describe('PulseLeagueService', () => {
         platformDiversityScore: 50,
       };
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue([
-        { artistProfileId: 'artist-new', _max: { calculatedAt: new Date() } },
-      ]);
-
-      (prisma.pulseEligibilityScore.findFirst as jest.Mock).mockResolvedValue({
-        ...score,
-        calculatedAt: new Date(),
-      });
+      mockEligibilityScores([score]);
 
       (prisma.leagueRun.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.leagueEntry.findMany as jest.Mock).mockResolvedValue([]);
@@ -553,14 +526,7 @@ describe('PulseLeagueService', () => {
         { artistProfileId: 'artist-1', rank: 5 }, // Was rank 5
       ];
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue([
-        { artistProfileId: 'artist-1', _max: { calculatedAt: new Date() } },
-      ]);
-
-      (prisma.pulseEligibilityScore.findFirst as jest.Mock).mockResolvedValue({
-        ...score,
-        calculatedAt: new Date(),
-      });
+      mockEligibilityScores([score]);
 
       (prisma.leagueRun.findFirst as jest.Mock)
         .mockResolvedValueOnce(previousRun)
@@ -629,21 +595,7 @@ describe('PulseLeagueService', () => {
         { artistProfileId: 'artist-2', rank: 2 },
       ];
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue(
-        scores.map(s => ({
-          artistProfileId: s.artistProfileId,
-          _max: { calculatedAt: new Date() },
-        }))
-      );
-
-      scores.forEach(s => {
-        (
-          prisma.pulseEligibilityScore.findFirst as jest.Mock
-        ).mockResolvedValueOnce({
-          ...s,
-          calculatedAt: new Date(),
-        });
-      });
+      mockEligibilityScores(scores);
 
       (prisma.leagueRun.findFirst as jest.Mock)
         .mockResolvedValueOnce(previousRun)
@@ -701,14 +653,7 @@ describe('PulseLeagueService', () => {
         { artistProfileId: 'artist-1', rank: 1 }, // Was rank 1, still rank 1
       ];
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue([
-        { artistProfileId: 'artist-1', _max: { calculatedAt: new Date() } },
-      ]);
-
-      (prisma.pulseEligibilityScore.findFirst as jest.Mock).mockResolvedValue({
-        ...score,
-        calculatedAt: new Date(),
-      });
+      mockEligibilityScores([score]);
 
       (prisma.leagueRun.findFirst as jest.Mock)
         .mockResolvedValueOnce(previousRun)
@@ -918,21 +863,7 @@ describe('PulseLeagueService', () => {
         platformDiversityScore: 50,
       }));
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue(
-        mockScores.map(s => ({
-          artistProfileId: s.artistProfileId,
-          _max: { calculatedAt: new Date() },
-        }))
-      );
-
-      mockScores.forEach(score => {
-        (
-          prisma.pulseEligibilityScore.findFirst as jest.Mock
-        ).mockResolvedValueOnce({
-          ...score,
-          calculatedAt: new Date(),
-        });
-      });
+      mockEligibilityScores(mockScores);
 
       (prisma.leagueRun.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.leagueEntry.findMany as jest.Mock).mockResolvedValue([]);
@@ -969,7 +900,7 @@ describe('PulseLeagueService', () => {
         maxScore: null,
       };
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue([]);
+      (prisma.$queryRaw as jest.Mock).mockResolvedValue([]);
 
       await expect(
         PulseLeagueService.runLeagueForTier(mockTier, 'SCHEDULED')
@@ -1005,21 +936,7 @@ describe('PulseLeagueService', () => {
         },
       ];
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue(
-        mockScores.map(s => ({
-          artistProfileId: s.artistProfileId,
-          _max: { calculatedAt: new Date() },
-        }))
-      );
-
-      mockScores.forEach(score => {
-        (
-          prisma.pulseEligibilityScore.findFirst as jest.Mock
-        ).mockResolvedValueOnce({
-          ...score,
-          calculatedAt: new Date(),
-        });
-      });
+      mockEligibilityScores(mockScores);
 
       (prisma.leagueRun.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.leagueEntry.findMany as jest.Mock).mockResolvedValue([]);
@@ -1050,7 +967,7 @@ describe('PulseLeagueService', () => {
     it('should correctly exclude artists from excluded list', async () => {
       // Reset all mocks to ensure clean state
       jest.clearAllMocks();
-      (prisma.pulseEligibilityScore.findFirst as jest.Mock).mockReset();
+      (prisma.$queryRaw as jest.Mock).mockReset();
 
       const mockTier = {
         id: 'tier-1',
@@ -1070,30 +987,7 @@ describe('PulseLeagueService', () => {
         platformDiversityScore: 50,
       }));
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue(
-        mockScores.map(s => ({
-          artistProfileId: s.artistProfileId,
-          _max: { calculatedAt: new Date() },
-        }))
-      );
-
-      // Mock findFirst to return scores based on artistProfileId and calculatedAt
-      (prisma.pulseEligibilityScore.findFirst as jest.Mock).mockImplementation(
-        async (args: any) => {
-          const artistId = args.where.artistProfileId;
-          const score = mockScores.find(s => s.artistProfileId === artistId);
-          if (!score) return null;
-          return {
-            artistProfileId: score.artistProfileId,
-            score: score.score,
-            followerScore: score.followerScore,
-            engagementScore: score.engagementScore,
-            consistencyScore: score.consistencyScore,
-            platformDiversityScore: score.platformDiversityScore,
-            calculatedAt: args.where.calculatedAt || new Date(),
-          };
-        }
-      );
+      mockEligibilityScores(mockScores);
 
       (prisma.leagueRun.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.leagueEntry.findMany as jest.Mock).mockResolvedValue([]);
@@ -1138,7 +1032,7 @@ describe('PulseLeagueService', () => {
     it('should handle tier with maxScore correctly', async () => {
       // Reset all mocks to ensure clean state
       jest.clearAllMocks();
-      (prisma.pulseEligibilityScore.findFirst as jest.Mock).mockReset();
+      (prisma.$queryRaw as jest.Mock).mockReset();
 
       const mockTier = {
         id: 'tier-1',
@@ -1184,30 +1078,7 @@ describe('PulseLeagueService', () => {
         },
       ];
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue(
-        mockScores.map(s => ({
-          artistProfileId: s.artistProfileId,
-          _max: { calculatedAt: new Date() },
-        }))
-      );
-
-      // Mock findFirst to return scores based on artistProfileId and calculatedAt
-      (prisma.pulseEligibilityScore.findFirst as jest.Mock).mockImplementation(
-        async (args: any) => {
-          const artistId = args.where.artistProfileId;
-          const score = mockScores.find(s => s.artistProfileId === artistId);
-          if (!score) return null;
-          return {
-            artistProfileId: score.artistProfileId,
-            score: score.score,
-            followerScore: score.followerScore,
-            engagementScore: score.engagementScore,
-            consistencyScore: score.consistencyScore,
-            platformDiversityScore: score.platformDiversityScore,
-            calculatedAt: args.where.calculatedAt || new Date(),
-          };
-        }
-      );
+      mockEligibilityScores(mockScores);
 
       (prisma.leagueRun.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.leagueEntry.findMany as jest.Mock).mockResolvedValue([]);
@@ -1272,21 +1143,7 @@ describe('PulseLeagueService', () => {
         platformDiversityScore: 50,
       }));
 
-      (prisma.pulseEligibilityScore.groupBy as jest.Mock).mockResolvedValue(
-        mockScores.map(s => ({
-          artistProfileId: s.artistProfileId,
-          _max: { calculatedAt: new Date() },
-        }))
-      );
-
-      mockScores.forEach(score => {
-        (
-          prisma.pulseEligibilityScore.findFirst as jest.Mock
-        ).mockResolvedValueOnce({
-          ...score,
-          calculatedAt: new Date(),
-        });
-      });
+      mockEligibilityScores(mockScores);
 
       (prisma.leagueRun.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.leagueEntry.findMany as jest.Mock).mockResolvedValue([]);
