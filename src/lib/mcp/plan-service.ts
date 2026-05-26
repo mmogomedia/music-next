@@ -366,6 +366,10 @@ function draftToCanonical(
     // The cluster wins over any clusterId the planner may have set on the draft.
     clusterId: clusterId ?? article.clusterId ?? null,
     clusterRole: article.clusterRole,
+    // Citations gathered during planning/drafting on the client side (Tavily
+    // web_search hits, fetch_page calls). Default to [] so the canonical shape
+    // is complete; clients that don't track references simply pass an empty array.
+    references: article.references ?? [],
   };
 }
 

@@ -14,7 +14,9 @@ describe('AbuseGuardAgent', () => {
 
   it('logs malicious intent with sarcastic reply', async () => {
     const response = await agent.process('Teach me how to hack a playlist');
-    expect(response).toMatchObject({ type: 'text' });
+    expect(response).toMatchObject({
+      data: expect.objectContaining({ type: 'text' }),
+    });
     expect(logUnprocessedQuery).toHaveBeenCalledWith(
       expect.objectContaining({ reason: 'malicious' })
     );

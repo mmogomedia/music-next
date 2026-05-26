@@ -1644,6 +1644,11 @@ model Article {
   publishedAt     DateTime?
   scheduledAt     DateTime?     // MCP scheduling: when an article is queued to auto-publish
   socialImages    Json?         // MCP ingest: array of { platform, key, url, alt? }
+  // External source citations gathered when the article was researched
+  // and drafted via MCP. Shape: [{ url, title?, snippet?, accessedAt, source }].
+  // Persisted for SEO trust, fact-checking, and rendering a "Sources"
+  // section on the published article.
+  references      Json?
   authorId        String
   timelinePostId  String?       @unique
 

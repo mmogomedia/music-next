@@ -12,10 +12,8 @@ jest.mock('@heroui/dom-animation', () => ({
 jest.mock('@heroui/ripple', () => ({
   useRipple: () => ({
     ripples: [],
-    onMouseDown: jest.fn(),
-    onMouseUp: jest.fn(),
-    onTouchStart: jest.fn(),
-    onTouchEnd: jest.fn(),
+    onPress: jest.fn(),
+    onClear: jest.fn(),
   }),
   Ripple: () => null,
 }));

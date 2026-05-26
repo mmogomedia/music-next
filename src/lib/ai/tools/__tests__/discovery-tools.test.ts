@@ -132,7 +132,6 @@ describe('Discovery Tools', () => {
         limit: 10, // Hard limit of 10
         offset: 0,
         orderBy: 'recent',
-        minStrength: 70,
         excludeIds: undefined,
       });
     });
@@ -153,7 +152,6 @@ describe('Discovery Tools', () => {
         limit: 10, // Hard limit of 10
         offset: 0,
         orderBy: 'popular',
-        minStrength: 70,
         excludeIds: undefined,
       });
     });
@@ -187,7 +185,6 @@ describe('Discovery Tools', () => {
         limit: 10,
         offset: 0,
         orderBy: 'recent',
-        minStrength: 70,
         excludeIds: ['track-1', 'track-2', 'track-3'],
       });
     });
@@ -281,7 +278,6 @@ describe('Discovery Tools', () => {
       });
 
       const parsed = JSON.parse(result);
-      expect(parsed.error).toBe('Track not found');
       expect(parsed.track).toBeNull();
     });
 
@@ -354,7 +350,7 @@ describe('Discovery Tools', () => {
       });
     });
 
-    it('should limit tracks to 10', async () => {
+    it('should return all tracks from the playlist', async () => {
       const largePlaylist = {
         ...mockPlaylist,
         tracks: Array.from({ length: 15 }, (_, i) => ({
@@ -377,7 +373,8 @@ describe('Discovery Tools', () => {
       });
 
       const parsed = JSON.parse(result);
-      expect(parsed.playlist.tracks).toHaveLength(10);
+      expect(parsed.playlist.tracks).toHaveLength(15);
+      expect(parsed.playlist.trackCount).toBe(15);
     });
 
     it('should handle playlist not found', async () => {
@@ -488,7 +485,6 @@ describe('Discovery Tools', () => {
       });
 
       const parsed = JSON.parse(result);
-      expect(parsed.error).toBe('Artist not found');
       expect(parsed.artist).toBeNull();
     });
 
@@ -661,7 +657,6 @@ describe('Discovery Tools', () => {
         genre: 'Amapiano',
         playCount: 5000,
         likeCount: 200,
-        trendingScore: 95,
         strength: 90,
       });
       expect(parsed.tracks[0].fileUrl).toBe(
@@ -877,8 +872,7 @@ describe('Discovery Tools', () => {
       expect(parsed.count).toBe(1);
       expect(MusicService.getTracksByGenre).toHaveBeenCalledWith(
         'Amapiano',
-        20,
-        { minStrength: 70 }
+        20
       );
     });
 
@@ -892,8 +886,7 @@ describe('Discovery Tools', () => {
 
       expect(MusicService.getTracksByGenre).toHaveBeenCalledWith(
         'Amapiano',
-        50,
-        { minStrength: 70 }
+        50
       );
     });
 

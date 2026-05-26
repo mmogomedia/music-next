@@ -11,7 +11,19 @@ global.TextDecoder = TextDecoder;
 if (typeof global.Request === 'undefined') {
   global.Request = class Request {
     constructor(input, init = {}) {
-      this.url = typeof input === 'string' ? input : input.url;
+      // `NextRequest` extends `Request` and defines `url` as a
+      // read-only accessor on its prototype. A plain `this.url = ...`
+      // here trips "Cannot set property url of #<NextRequest> which
+      // has only a getter". Using Object.defineProperty creates an
+      // OWN property that shadows the prototype getter — works for
+      // both plain `new Request(...)` and `new NextRequest(...)`.
+      const url = typeof input === 'string' ? input : input.url;
+      Object.defineProperty(this, 'url', {
+        value: url,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      });
       this.method = init.method || 'GET';
       // eslint-disable-next-line no-undef
       this.headers = new Map();
@@ -49,6 +61,21 @@ if (typeof global.Request === 'undefined') {
           this.headers.set(key.toLowerCase(), value);
         });
       }
+    }
+
+    /**
+     * Static JSON factory — part of the fetch standard, used by
+     * `NextResponse.json(body, init)` internally. Without this, every
+     * API-route test that returns NextResponse.json(...) throws
+     * "Response.json is not a function".
+     */
+    static json(body, init = {}) {
+      const serialized = JSON.stringify(body);
+      const headers = {
+        'content-type': 'application/json',
+        ...(init.headers ?? {}),
+      };
+      return new global.Response(serialized, { ...init, headers });
     }
 
     async json() {
