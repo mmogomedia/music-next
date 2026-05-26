@@ -44,21 +44,28 @@ jest.mock('@/lib/ai/agents', () => ({
   },
 }));
 
-jest.mock('@/lib/ai/memory/conversation-store', () => ({
+jest.mock('@/lib/ai/memory/bootstrap', () => ({
   conversationStore: {
     storeMessage: jest.fn(),
     getConversation: jest.fn().mockResolvedValue([]),
   },
-}));
-
-jest.mock('@/lib/ai/memory/preference-tracker', () => ({
-  preferenceTracker: {
-    updateFromMessage: jest.fn(),
-    updateFromResults: jest.fn(),
+  semanticMemoryManager: {
+    extractPreferencesFromText: jest.fn().mockResolvedValue(undefined),
+    updateFromResults: jest.fn().mockResolvedValue(undefined),
   },
-}));
-
-jest.mock('@/lib/ai/memory/context-builder', () => ({
+  memoryOrchestrator: {
+    buildEnhancedContext: jest.fn().mockResolvedValue({
+      recentMessages: '',
+      relevantMemories: [],
+      preferences: {
+        genres: [],
+        artists: [],
+        moods: [],
+      },
+      tokenCount: 0,
+      memoryRetrievalTime: 0,
+    }),
+  },
   contextBuilder: {
     buildContext: jest.fn().mockResolvedValue({
       filters: {},
