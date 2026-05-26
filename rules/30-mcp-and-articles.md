@@ -161,6 +161,62 @@ contract's canonical article shape onto the `Article` model (e.g.
   `publishArticle()` side-effects (TimelinePost + embedding) as the admin
   publish route.
 
+### Contract v2 — clusters, full fields, self-description & planning
+
+The MCP negotiates its contract via the `x-contract-version` header, which
+accepts **`1` or `2`**. v1 clients are unaffected; a client that sends `2` gets
+the additional surface below. v2 adds the scopes `clusters:read` and
+`clusters:write`.
+
+**Self-description (scope `docs:read`)** — the one call that teaches an AI the
+whole system:
+
+- `describe_article_system()` → a structured manifest generated from the live
+  schema + tools registry (so it can't drift): every `Article` and
+  `ArticleCluster` field with its type, whether it is `ai`-writable / `derived` /
+  `managed`, a description, and its column mapping; the pillar/spoke methodology;
+  internal-linking and SEO keyword-tier rules; the publish pipeline; the
+  embeddable tools catalog; worked example cluster plans; and constraints.
+- `list_tools_catalog()` → `{ tools: [{ slug, name, category, description }] }` —
+  the interactive tools an article may embed via `toolSlugs[]`.
+- `search_articles({ query, limit? })` → semantic (pgvector) search over existing
+  articles. (`articles:read`)
+- `suggest_internal_links({ id? | draftBody?, limit? })` → scored sibling-article
+  suggestions for wiring `internalLinks[]`. (`articles:read`)
+
+**Cluster tools** — full CRUD over `ArticleCluster`, mapping a canonical cluster
+shape (`coverImageKey` ↔ `coverImageUrl`; `targetKeywords` is a derived,
+read-only combined list):
+
+- `list_clusters({ status?, q? })` → `{ clusters: [ClusterSummary] }` (`clusters:read`)
+- `get_cluster({ id?, slug? })` → the cluster plus its `members[]`
+  (`{ articleId, slug, title, clusterRole, status }`) and per-field `hashes` +
+  `contentHash`. (`clusters:read`)
+- `create_cluster(...)` / `update_cluster({ id, patch, baseHash? })` /
+  `delete_cluster({ id })` (`clusters:write`). `update_cluster` honors optimistic
+  concurrency (409 on `baseHash` mismatch); `delete_cluster` unassigns member
+  articles (never hard-deletes them).
+
+**Full-field articles (v2)** — under contract v2 the article tools read and write
+every ai-writable field: `primaryKeyword`, `internalLinks[]`, `toolSlugs[]`,
+`ctaText`, `ctaLink`, `clusterId`, `clusterRole` (in addition to the v1 fields).
+Per-field hashing covers this extended set for v2 clients while v1 hashes are
+preserved unchanged.
+
+**Content planning (`articles:write` + `clusters:write`)** — plan and create a
+whole topic cluster in one go:
+
+- `validate_content_plan({ cluster?, articles: [DraftArticle], links? })` →
+  `{ ok, issues: [{ level, code, message, path? }], normalized? }` — a dry-run
+  (no writes) that checks slug collisions, internal-link resolution, exactly one
+  `PILLAR` per cluster, required fields, `toolSlugs` existence, and schedule
+  sanity.
+- `apply_content_plan({ cluster?, articles, links? })` →
+  `{ clusterId?, articles: [{ id, slug, contentHash }], created, updated }` —
+  validates first (writes nothing on any `error`), then upserts the cluster +
+  articles by slug, wiring `clusterId`/`clusterRole`/`internalLinks` and
+  schedules, emitting the appropriate webhooks.
+
 ### Change webhook (Flemoji → Picasite)
 
 On article create/update/publish/delete, Flemoji POSTs an HMAC-signed body to
@@ -175,3 +231,7 @@ The signature is computed with the client's shared secret and sent in the
 `X-Flemoji-Signature` header. `contentHash` and `changedFields` are computed
 consistently with `get_article`'s per-field hashing so both sides can detect
 exactly which canonical fields changed.
+
+Under contract v2, cluster changes emit the same signed envelope shape with
+`event: "cluster.created|updated|deleted"` and `clusterId`/`slug`/`contentHash`/
+`changedFields`, so a cluster-aware mirror stays 1:1 as well.
