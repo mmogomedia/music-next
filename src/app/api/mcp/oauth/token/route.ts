@@ -13,7 +13,7 @@ import { NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { prisma } from '@/lib/db';
 import { hashToken, randomToken } from '@/lib/mcp/crypto';
-import type { McpScope } from '@/lib/mcp/contract';
+import { MCP_SCOPES, type McpScope } from '@/lib/mcp/contract';
 import {
   ACCESS_TOKEN_TTL_MS,
   REFRESH_TOKEN_TTL_MS,
@@ -116,8 +116,13 @@ async function verifyClient(
     }
   }
 
+  // Filter against the canonical MCP_SCOPES union — adding new scopes
+  // (e.g. clusters:read / clusters:write in v2) automatically flows
+  // through both this helper and the refresh path below. Previously
+  // this list was hardcoded and silently dropped cluster scopes on
+  // every refresh, which broke any client that needed them.
   const scopes = client.scopes.filter((s): s is McpScope =>
-    ['docs:read', 'articles:read', 'articles:write'].includes(s)
+    (MCP_SCOPES as readonly string[]).includes(s)
   );
   return { ok: true, scopes };
 }
@@ -263,8 +268,13 @@ async function handleRefreshToken(
     return oauthError(400, 'invalid_grant', 'client_id mismatch');
   }
 
+  // Same canonical filter as verifyClient() above — refresh used to
+  // hardcode the same incomplete allowlist and silently strip
+  // clusters:read / clusters:write off the new token, so a client
+  // that connected with all v2 scopes lost cluster access on its
+  // first refresh.
   const scopes = record.scopes.filter((s): s is McpScope =>
-    ['docs:read', 'articles:read', 'articles:write'].includes(s)
+    (MCP_SCOPES as readonly string[]).includes(s)
   );
 
   // Rotate: revoke the presented refresh token, then issue a new pair.
