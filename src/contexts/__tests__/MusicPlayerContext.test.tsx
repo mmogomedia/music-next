@@ -1,5 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from '@testing-library/react';
 import { useMusicPlayer, MusicPlayerProvider } from '../MusicPlayerContext';
 
 // Test component to access context
@@ -55,22 +61,56 @@ const renderWithProvider = (ui: React.ReactElement) => {
 };
 
 describe('MusicPlayerContext', () => {
-  beforeEach(() => {
-    // Mock HTMLAudioElement
-    const mockAudio = {
-      play: jest.fn().mockResolvedValue(undefined),
-      pause: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      currentTime: 0,
-      duration: 180,
-      volume: 1,
-    };
+  let getItemSpy: jest.SpyInstance;
+  let setItemSpy: jest.SpyInstance;
 
+  beforeEach(() => {
+    // The provider's init effect reads persisted settings (volume/muted/etc)
+    // from localStorage and calls setState with them. The persist effect
+    // writes them back on every state change. With a real localStorage these
+    // two effects form a feedback loop across re-renders (init reads stale
+    // value, sets state, persist writes new value, init re-runs, ...), which
+    // produces "Maximum update depth exceeded" and an OOM crash in the
+    // worker. Forcing getItem to return null breaks the cycle by ensuring
+    // the init effect never calls setState. setItem is also stubbed so a
+    // previous test can't leave state behind.
+    getItemSpy = jest
+      .spyOn(window.localStorage.__proto__, 'getItem')
+      .mockReturnValue(null);
+    setItemSpy = jest
+      .spyOn(window.localStorage.__proto__, 'setItem')
+      .mockImplementation(() => undefined);
+
+    // Mock HTMLAudioElement. A fresh object per Audio() instantiation
+    // avoids cross-test state leakage if the provider's init effect
+    // happens to re-run mid-test.
     Object.defineProperty(window, 'Audio', {
       writable: true,
-      value: jest.fn(() => mockAudio),
+      configurable: true,
+      value: jest.fn(() => ({
+        play: jest.fn().mockResolvedValue(undefined),
+        pause: jest.fn(),
+        load: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        currentTime: 0,
+        duration: 180,
+        volume: 1,
+        muted: false,
+        src: '',
+        preload: 'auto',
+      })),
     });
+  });
+
+  afterEach(() => {
+    // Unmount any rendered components so their cleanup effects run before
+    // the next test mounts a fresh provider. Without this, retained
+    // listeners + persisted state compound across tests and the worker's
+    // heap grows monotonically.
+    cleanup();
+    getItemSpy.mockRestore();
+    setItemSpy.mockRestore();
   });
 
   it('should provide initial state', () => {
