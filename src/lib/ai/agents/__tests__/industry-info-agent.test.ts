@@ -14,7 +14,9 @@ describe('IndustryInfoAgent', () => {
 
   it('logs placeholder response for industry questions', async () => {
     const response = await agent.process('Tell me about publishing splits');
-    expect(response).toMatchObject({ type: 'text' });
+    expect(response).toMatchObject({
+      data: expect.objectContaining({ type: 'text' }),
+    });
     expect(logUnprocessedQuery).toHaveBeenCalledWith(
       expect.objectContaining({ reason: 'knowledge_feature_not_ready' })
     );
