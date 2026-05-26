@@ -45,39 +45,78 @@ export function hashField(value: unknown): string {
 }
 
 /**
- * Compute the per-field hash map over `CANONICAL_ARTICLE_FIELDS` (stable order).
- * Returned shape matches the `hashes` map in `get_article`.
+ * Generalized per-field hash map over an arbitrary STABLE field list. This is
+ * the single hashing implementation shared by v1 (`CANONICAL_ARTICLE_FIELDS`)
+ * and v2 (`CANONICAL_ARTICLE_FIELDS_V2`, `CANONICAL_CLUSTER_FIELDS`). The
+ * returned shape matches the `hashes` map in `get_article` / `get_cluster`.
  */
-export function fieldHashes(
-  canonical: Record<string, unknown>
+export function fieldHashesFor(
+  canonical: Record<string, unknown>,
+  fields: readonly string[]
 ): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const field of CANONICAL_ARTICLE_FIELDS) {
+  for (const field of fields) {
     out[field] = hashField(canonical[field]);
   }
   return out;
 }
 
 /**
- * Combined content hash: sha256 over the concatenation of each per-field hash
- * in `CANONICAL_ARTICLE_FIELDS` order. Deterministic and order-stable.
+ * Generalized combined content hash: sha256 over the concatenation of each
+ * per-field hash, in the supplied field-list order. Deterministic and
+ * order-stable; shared by v1 and v2 hashing.
  */
-export function contentHash(canonical: Record<string, unknown>): string {
-  const hashes = fieldHashes(canonical);
-  const concatenated = CANONICAL_ARTICLE_FIELDS.map(f => hashes[f]).join('');
+export function contentHashFor(
+  canonical: Record<string, unknown>,
+  fields: readonly string[]
+): string {
+  const hashes = fieldHashesFor(canonical, fields);
+  const concatenated = fields.map(f => hashes[f]).join('');
   return sha256(concatenated);
 }
 
 /**
+ * Generalized diff of two field-hash maps over a STABLE field list — returns the
+ * names of fields whose hashes changed, in field-list order. Shared by v1 and
+ * v2 for webhook `changedFields` and conflict reporting.
+ */
+export function changedFieldsFor(
+  before: Record<string, string>,
+  after: Record<string, string>,
+  fields: readonly string[]
+): string[] {
+  return fields.filter(f => before[f] !== after[f]);
+}
+
+/**
+ * Compute the per-field hash map over `CANONICAL_ARTICLE_FIELDS` (stable order).
+ * v1 wrapper — delegates to `fieldHashesFor`.
+ */
+export function fieldHashes(
+  canonical: Record<string, unknown>
+): Record<string, string> {
+  return fieldHashesFor(canonical, CANONICAL_ARTICLE_FIELDS);
+}
+
+/**
+ * Combined content hash over `CANONICAL_ARTICLE_FIELDS` order. v1 wrapper —
+ * delegates to `contentHashFor`.
+ */
+export function contentHash(canonical: Record<string, unknown>): string {
+  return contentHashFor(canonical, CANONICAL_ARTICLE_FIELDS);
+}
+
+/**
  * Diff two canonical field-hash maps and return the names of fields whose
- * hashes changed (in `CANONICAL_ARTICLE_FIELDS` order). Used for webhook
- * `changedFields` and optimistic-concurrency conflict reporting.
+ * hashes changed (in `CANONICAL_ARTICLE_FIELDS` order). v1 wrapper — delegates
+ * to `changedFieldsFor`. Used for webhook `changedFields` and
+ * optimistic-concurrency conflict reporting.
  */
 export function changedFields(
   before: Record<string, string>,
   after: Record<string, string>
 ): string[] {
-  return CANONICAL_ARTICLE_FIELDS.filter(f => before[f] !== after[f]);
+  return changedFieldsFor(before, after, CANONICAL_ARTICLE_FIELDS);
 }
 
 /** HMAC-SHA256 signature of `body` using `secret`, returned as hex. */

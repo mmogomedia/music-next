@@ -16,14 +16,14 @@
 import {
   ListArticlesInputSchema,
   GetArticleInputSchema,
-  CreateArticleInputSchema,
-  UpdateArticleInputSchema,
+  CreateArticleInputV2Schema,
+  UpdateArticleInputV2Schema,
   DeleteArticleInputSchema,
   PublishArticleInputSchema,
   type ListArticlesInput,
   type GetArticleInput,
-  type CreateArticleInput,
-  type UpdateArticleInput,
+  type CreateArticleInputV2,
+  type UpdateArticleInputV2,
   type DeleteArticleInput,
   type PublishArticleInput,
 } from '../contract';
@@ -42,12 +42,13 @@ export const registerArticleTools: ToolRegistrar = (server, ctx) => {
     'list_articles',
     {
       description:
-        'List articles with optional status filter, pagination, and text search. Returns lightweight article summaries plus total/page counts.',
+        'List articles with optional status filter, pagination, and text search. Returns lightweight article summaries (incl. clusterId/clusterRole/readTime under contract v2) plus total/page counts.',
       inputSchema: ListArticlesInputSchema.shape,
     },
     wrapTool(
       { name: 'list_articles', scopes: ['articles:read'], ctx },
-      async (args: ListArticlesInput) => listArticles(args)
+      async (args: ListArticlesInput, c) =>
+        listArticles(args, c.contractVersion)
     )
   );
 
@@ -55,12 +56,12 @@ export const registerArticleTools: ToolRegistrar = (server, ctx) => {
     'get_article',
     {
       description:
-        'Fetch a single article by `id` or `slug` as the canonical article shape, including a per-field `hashes` map and `contentHash` for sync and optimistic concurrency.',
+        'Fetch a single article by `id` or `slug` as the canonical article shape, including a per-field `hashes` map and `contentHash` for sync and optimistic concurrency. Under contract v2 the shape covers the full field set (primaryKeyword, internalLinks, toolSlugs, ctaText, ctaLink, clusterId, clusterRole, derived readTime) and hashes cover the extended set.',
       inputSchema: GetArticleInputSchema.shape,
     },
     wrapTool(
       { name: 'get_article', scopes: ['articles:read'], ctx },
-      async (args: GetArticleInput) => getArticle(args)
+      async (args: GetArticleInput, c) => getArticle(args, c.contractVersion)
     )
   );
 
@@ -68,12 +69,13 @@ export const registerArticleTools: ToolRegistrar = (server, ctx) => {
     'create_article',
     {
       description:
-        'Create a new article from canonical fields (slug auto-generated when omitted). Returns the new id and contentHash, and emits an article.created webhook.',
-      inputSchema: CreateArticleInputSchema.shape,
+        'Create a new article from canonical fields (slug auto-generated when omitted). Under contract v2 accepts the full field set (primaryKeyword, internalLinks, toolSlugs, ctaText, ctaLink, clusterId, clusterRole); v1 clients simply omit them. Returns the new id and contentHash, and emits an article.created webhook.',
+      inputSchema: CreateArticleInputV2Schema.shape,
     },
     wrapTool(
       { name: 'create_article', scopes: ['articles:write'], ctx },
-      async (args: CreateArticleInput) => createArticle(args)
+      async (args: CreateArticleInputV2, c) =>
+        createArticle(args, c.contractVersion)
     )
   );
 
@@ -81,16 +83,17 @@ export const registerArticleTools: ToolRegistrar = (server, ctx) => {
     'update_article',
     {
       description:
-        'Apply a partial canonical patch to an article. When `baseHash` is supplied and no longer matches the current contentHash, returns a 409 conflict carrying the current per-field hashes. Emits an article.updated webhook with changedFields.',
-      inputSchema: UpdateArticleInputSchema.shape,
+        'Apply a partial canonical patch to an article (full v2 field set under contract v2). When `baseHash` is supplied and no longer matches the current contentHash, returns a 409 conflict carrying the current per-field hashes. Emits an article.updated webhook with changedFields.',
+      inputSchema: UpdateArticleInputV2Schema.shape,
     },
     wrapTool(
       { name: 'update_article', scopes: ['articles:write'], ctx },
-      async (args: UpdateArticleInput) =>
+      async (args: UpdateArticleInputV2, c) =>
         updateArticle({
           id: args.id,
           patch: args.patch,
           baseHash: args.baseHash,
+          contractVersion: c.contractVersion,
         })
     )
   );
@@ -104,8 +107,12 @@ export const registerArticleTools: ToolRegistrar = (server, ctx) => {
     },
     wrapTool(
       { name: 'delete_article', scopes: ['articles:write'], ctx },
-      async (args: DeleteArticleInput) =>
-        deleteArticle({ id: args.id, hard: args.hard })
+      async (args: DeleteArticleInput, c) =>
+        deleteArticle({
+          id: args.id,
+          hard: args.hard,
+          contractVersion: c.contractVersion,
+        })
     )
   );
 
@@ -118,7 +125,8 @@ export const registerArticleTools: ToolRegistrar = (server, ctx) => {
     },
     wrapTool(
       { name: 'publish_article', scopes: ['articles:write'], ctx },
-      async (args: PublishArticleInput) => publishArticleById(args.id)
+      async (args: PublishArticleInput, c) =>
+        publishArticleById(args.id, c.contractVersion)
     )
   );
 };

@@ -25,6 +25,12 @@ export interface McpToolContext {
   clientId: string | null;
   scopes: string[];
   static: boolean;
+  /**
+   * Negotiated contract version from the `x-contract-version` header (1 or 2).
+   * Defaults to 1. The MCP route sets this after authentication; tool modules
+   * may branch on it to expose v2-only behaviour.
+   */
+  contractVersion: number;
 }
 
 /** Typed error thrown by MCP auth/tool code; maps cleanly to HTTP/JSON-RPC. */
@@ -73,13 +79,21 @@ export async function verifyBearerToken(
   const token = extractBearer(req);
   if (!token) return null;
 
-  // 1. Static admin fallback.
+  // 1. Static admin fallback. Full scope set (incl. v2 cluster scopes); the
+  // route overrides `contractVersion` from the request header after auth.
   const staticToken = process.env.MCP_STATIC_ADMIN_TOKEN;
   if (staticToken && token === staticToken) {
     return {
       clientId: null,
-      scopes: ['docs:read', 'articles:read', 'articles:write'],
+      scopes: [
+        'docs:read',
+        'articles:read',
+        'articles:write',
+        'clusters:read',
+        'clusters:write',
+      ],
       static: true,
+      contractVersion: 1,
     };
   }
 
@@ -100,6 +114,7 @@ export async function verifyBearerToken(
     clientId: record.clientId,
     scopes: record.scopes,
     static: false,
+    contractVersion: 1,
   };
 }
 
