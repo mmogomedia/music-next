@@ -75,7 +75,7 @@ export const registerArticleTools: ToolRegistrar = (server, ctx) => {
     wrapTool(
       { name: 'create_article', scopes: ['articles:write'], ctx },
       async (args: CreateArticleInputV2, c) =>
-        createArticle(args, c.contractVersion)
+        createArticle(args, c.contractVersion, c.clientId)
     )
   );
 
@@ -94,6 +94,7 @@ export const registerArticleTools: ToolRegistrar = (server, ctx) => {
           patch: args.patch,
           baseHash: args.baseHash,
           contractVersion: c.contractVersion,
+          clientId: c.clientId,
         })
     )
   );
@@ -126,7 +127,7 @@ export const registerArticleTools: ToolRegistrar = (server, ctx) => {
     wrapTool(
       { name: 'publish_article', scopes: ['articles:write'], ctx },
       async (args: PublishArticleInput, c) =>
-        publishArticleById(args.id, c.contractVersion)
+        publishArticleById(args.id, c.contractVersion, c.clientId)
     )
   );
 };
