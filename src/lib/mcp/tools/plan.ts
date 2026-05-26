@@ -53,7 +53,7 @@ export const registerPlanTools: ToolRegistrar = (server, ctx) => {
         ctx,
       },
       async (args: ApplyContentPlanInput) =>
-        applyContentPlan(args, ctx.contractVersion)
+        applyContentPlan(args, ctx.contractVersion, ctx.clientId)
     )
   );
 };

@@ -258,12 +258,36 @@ export function canonicalToArticleData(
 }
 
 // ---------------------------------------------------------------------------
-// Author resolution. MCP requests carry no Flemoji user; reuse the first ADMIN
-// account as the authoring/publishing identity (mirrors the admin-route auth
-// gate, which only ADMINs satisfy).
+// Author resolution. MCP requests carry no Flemoji user. We resolve in this
+// order:
+//   1. If the call's `clientId` maps to an `McpClient.authorUserId` that is
+//      still an ADMIN, use that user. (Per-client attribution.)
+//   2. Otherwise fall back to the earliest-created ADMIN account.
+//      (Mirrors the admin-route auth gate, which only ADMINs satisfy.)
+// Lenient by design: if a client has a mapping but the mapped user is
+// missing/no-longer-ADMIN, we log a warning and fall back so MCP writes
+// don't break on a stale mapping.
 // ---------------------------------------------------------------------------
 
-async function resolveAdminAuthorId(): Promise<string> {
+async function resolveAdminAuthorId(clientId?: string | null): Promise<string> {
+  if (clientId) {
+    const client = await prisma.mcpClient.findUnique({
+      where: { clientId },
+      select: {
+        authorUserId: true,
+        authorUser: { select: { id: true, role: true } },
+      },
+    });
+    const mapped = client?.authorUser;
+    if (mapped && mapped.role === 'ADMIN') {
+      return mapped.id;
+    }
+    if (client?.authorUserId) {
+      console.warn(
+        `[mcp] McpClient ${clientId} has authorUserId=${client.authorUserId} but the user is missing or not ADMIN; falling back to earliest ADMIN`
+      );
+    }
+  }
   const admin = await prisma.user.findFirst({
     where: { role: 'ADMIN' },
     orderBy: { createdAt: 'asc' },
@@ -430,9 +454,10 @@ export async function getArticle(
 
 export async function createArticle(
   input: CreateArticleInputV2,
-  contractVersion = 2
+  contractVersion = 2,
+  clientId?: string | null
 ): Promise<{ id: string; contentHash: string }> {
-  const authorId = await resolveAdminAuthorId();
+  const authorId = await resolveAdminAuthorId(clientId);
   const mapped = canonicalToArticleData(input);
 
   // Reuse the existing create logic (slugify, readTime, content-graph sync). The
@@ -491,8 +516,9 @@ export async function updateArticle(args: {
   patch: ArticlePatchV2;
   baseHash?: string;
   contractVersion?: number;
+  clientId?: string | null;
 }): Promise<{ id: string; contentHash: string }> {
-  const { id, patch, baseHash, contractVersion = 2 } = args;
+  const { id, patch, baseHash, contractVersion = 2, clientId } = args;
   const fields = fieldsFor(contractVersion);
 
   const before = await loadRowById(id);
@@ -519,7 +545,7 @@ export async function updateArticle(args: {
   // Reuse the existing update logic (version snapshot, readTime, slugify on
   // title change, content-graph sync incl. tool links). Pass an author to
   // snapshot a version. The service accepts the full v2 ai-writable set.
-  const authorId = await resolveAdminAuthorId();
+  const authorId = await resolveAdminAuthorId(clientId);
   await updateArticleSvc(id, mapped.svc, authorId);
 
   // Apply the additive columns directly.
@@ -600,9 +626,10 @@ export async function deleteArticle(args: {
 
 export async function publishArticleById(
   id: string,
-  contractVersion = 2
+  contractVersion = 2,
+  clientId?: string | null
 ): Promise<{ id: string; status: 'PUBLISHED'; publishedAt: string | null }> {
-  const adminUserId = await resolveAdminAuthorId();
+  const adminUserId = await resolveAdminAuthorId(clientId);
 
   // Reuse the existing publish path: status → PUBLISHED, publishedAt,
   // TimelinePost (NEWS_ARTICLE), embedding enqueue.

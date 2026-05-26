@@ -86,6 +86,7 @@ model User {
   articleVersions      ArticleVersion[]      @relation("ArticleVersionSavedBy")
   splitSheets          SplitSheet[]
   revenueEstimates     RevenueEstimate[]
+  mcpClients           McpClient[]           @relation("McpClientAuthor")
 
   // Enhanced AI memory relations
   conversationEmbeddings ConversationEmbedding[]
@@ -1800,8 +1801,16 @@ model McpClient {
   createdAt        DateTime        @default(now())
   revokedAt        DateTime?
 
+  // Per-client author attribution. When set, articles created by this MCP
+  // client are attributed to this User (must be ADMIN); otherwise the
+  // service falls back to the earliest-created ADMIN. NEVER settable via DCR
+  // — only an authenticated Flemoji ADMIN can update this field.
+  authorUserId     String?
+  authorUser       User?           @relation("McpClientAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+
   tokens           McpAccessToken[]
 
+  @@index([authorUserId])
   @@map("mcp_clients")
 }
 
