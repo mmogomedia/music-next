@@ -35,6 +35,9 @@ jest.mock('@/lib/db', () => ({
     timelinePost: {
       create: jest.fn(),
     },
+    contentLink: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     $executeRaw: jest.fn(),
     $queryRaw: jest.fn(),
   },
