@@ -63,6 +63,21 @@ if (typeof global.Request === 'undefined') {
       }
     }
 
+    /**
+     * Static JSON factory — part of the fetch standard, used by
+     * `NextResponse.json(body, init)` internally. Without this, every
+     * API-route test that returns NextResponse.json(...) throws
+     * "Response.json is not a function".
+     */
+    static json(body, init = {}) {
+      const serialized = JSON.stringify(body);
+      const headers = {
+        'content-type': 'application/json',
+        ...(init.headers ?? {}),
+      };
+      return new global.Response(serialized, { ...init, headers });
+    }
+
     async json() {
       return typeof this.body === 'string' ? JSON.parse(this.body) : this.body;
     }
