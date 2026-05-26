@@ -396,7 +396,8 @@ function draftToCanonical(
  */
 export async function applyContentPlan(
   input: ApplyContentPlanInput,
-  contractVersion: number
+  contractVersion: number,
+  clientId?: string | null
 ): Promise<ApplyContentPlanOutput> {
   // 1. Validate first — never write on an invalid plan.
   const validation = await validateContentPlan(input);
@@ -481,6 +482,7 @@ export async function applyContentPlan(
           patch: canonical,
           baseHash,
           contractVersion,
+          clientId,
         });
         applied.push({
           id: result.id,
@@ -489,7 +491,11 @@ export async function applyContentPlan(
         });
         updated.push(result.id);
       } else {
-        const result = await createArticleSvc(canonical, contractVersion);
+        const result = await createArticleSvc(
+          canonical,
+          contractVersion,
+          clientId
+        );
         createdArticleIds.push(result.id);
         applied.push({
           id: result.id,
