@@ -2,7 +2,23 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
-import ClaimProfileStep from '../ClaimProfileStep';
+
+// Mock HeroUI ripple + dom-animation before any other imports so HeroUI
+// Button click handlers don't try to dynamic-import framer-motion features
+// (which jest's jsdom env can't resolve without --experimental-vm-modules).
+jest.mock('@heroui/dom-animation', () => ({
+  __esModule: true,
+  default: () => ({}),
+}));
+
+jest.mock('@heroui/ripple', () => ({
+  useRipple: () => ({
+    ripples: [],
+    onPress: jest.fn(),
+    onClear: jest.fn(),
+  }),
+  Ripple: () => null,
+}));
 
 // Mock Next.js Image component
 jest.mock('next/image', () => ({
@@ -12,6 +28,8 @@ jest.mock('next/image', () => ({
     return <img src={src} alt={alt} {...props} />;
   },
 }));
+
+import ClaimProfileStep from '../ClaimProfileStep';
 
 // Mock fetch
 global.fetch = jest.fn();
@@ -42,8 +60,9 @@ const defaultProps = {
 
 describe('ClaimProfileStep', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (fetch as jest.Mock).mockClear();
+    // mockReset (not just mockClear) so each test starts with a fresh
+    // mockResolvedValueOnce queue and no leftover responses from prior cases.
+    (fetch as jest.Mock).mockReset();
   });
 
   it('should render search input and description', () => {
@@ -53,7 +72,7 @@ describe('ClaimProfileStep', () => {
       screen.getByPlaceholderText('Search by artist name...')
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Already have music on Flemoji/)
+      screen.getByText(/Search for your existing artist profile/i)
     ).toBeInTheDocument();
   });
 
