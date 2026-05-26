@@ -1,0 +1,11 @@
+-- Add a nullable JSONB column to Article to persist external source
+-- citations attached during MCP-driven planning/drafting (Picasite's
+-- Tavily web_search results, fetch_page calls, etc.). Shape:
+--   [{ url, title?, snippet?, accessedAt, source }]
+-- where `source` is "web_search" | "fetch_page" | "manual".
+--
+-- Deliberately EXCLUDED from the canonical article hash (per
+-- CANONICAL_ARTICLE_FIELDS_V2) so reference changes don't invalidate
+-- other clients' baseHash for the article. Same pattern as
+-- socialImages / readTime.
+ALTER TABLE "articles" ADD COLUMN "references" JSONB;

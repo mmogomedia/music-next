@@ -39,12 +39,14 @@ import { McpError } from './auth';
 import { fieldHashesFor, contentHashFor, changedFieldsFor } from './crypto';
 import {
   ArticleCanonicalV2Schema,
+  ArticleReferenceSchema,
   ArticleStatusSchema,
   ClusterRoleSchema,
   SocialImageSchema,
   CANONICAL_ARTICLE_FIELDS,
   CANONICAL_ARTICLE_FIELDS_V2,
   type ArticleCanonicalV2,
+  type ArticleReference,
   type ArticlePatchV2,
   type ArticleSummaryV2,
   type ArticleWithHashesV2,
@@ -93,6 +95,7 @@ interface ArticleRowLike {
   targetKeywords: string[];
   coverImageUrl: string | null;
   socialImages?: unknown;
+  references?: unknown;
   scheduledAt?: Date | string | null;
   status: string;
   publishedAt: Date | string | null;
@@ -121,6 +124,13 @@ function toIso(value: Date | string | null | undefined): string | null {
 function parseSocialImages(value: unknown): SocialImage[] {
   if (!Array.isArray(value)) return [];
   const parsed = SocialImageSchema.array().safeParse(value);
+  return parsed.success ? parsed.data : [];
+}
+
+/** Parse the loosely-typed `references` Json column into typed elements. */
+function parseReferences(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  const parsed = ArticleReferenceSchema.array().safeParse(value);
   return parsed.success ? parsed.data : [];
 }
 
@@ -153,6 +163,7 @@ export function mapArticleToCanonical(
     keywords: article.targetKeywords ?? [],
     coverImageKey: article.coverImageUrl ?? null,
     socialImages: parseSocialImages(article.socialImages),
+    references: parseReferences(article.references),
     scheduledAt: toIso(article.scheduledAt ?? null),
     status: article.status,
     publishedAt: toIso(article.publishedAt ?? null),
@@ -203,6 +214,7 @@ interface MappedArticleData {
   extra: {
     scheduledAt?: Date | null;
     socialImages?: SocialImage[];
+    references?: ArticleReference[];
   };
   hasExtra: boolean;
 }
@@ -251,6 +263,10 @@ export function canonicalToArticleData(
   }
   if (input.socialImages !== undefined) {
     extra.socialImages = input.socialImages ?? [];
+    hasExtra = true;
+  }
+  if (input.references !== undefined) {
+    extra.references = input.references ?? [];
     hasExtra = true;
   }
 
@@ -318,6 +334,7 @@ const ARTICLE_ROW_SELECT = {
   targetKeywords: true,
   coverImageUrl: true,
   socialImages: true,
+  references: true,
   scheduledAt: true,
   status: true,
   publishedAt: true,
@@ -373,6 +390,10 @@ function buildExtraUpdateData(
   }
   if (extra.socialImages !== undefined) {
     data.socialImages = extra.socialImages as unknown as Prisma.InputJsonValue;
+    any = true;
+  }
+  if (extra.references !== undefined) {
+    data.references = extra.references as unknown as Prisma.InputJsonValue;
     any = true;
   }
   return any ? data : null;

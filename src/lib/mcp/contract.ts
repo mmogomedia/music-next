@@ -399,6 +399,25 @@ export type ClusterRoleValue = z.infer<typeof ClusterRoleSchema>;
 // hashed.
 // ---------------------------------------------------------------------------
 
+/**
+ * External source citation. Tracks where the article's information came
+ * from — populated automatically when the MCP client (e.g. Picasite)
+ * runs a web search or fetches a URL during planning/drafting. Stored
+ * on `Article.references` (Json column) so it survives publish and can
+ * be rendered as a "Sources" section on the live article.
+ */
+export const ArticleReferenceSchema = z.object({
+  url: z.string(),
+  title: z.string().optional(),
+  /** Short excerpt from the source (search hit content or page summary). */
+  snippet: z.string().optional(),
+  /** ISO timestamp of when the source was looked up. */
+  accessedAt: z.string(),
+  /** Where this reference was captured in the client's pipeline. */
+  source: z.enum(['web_search', 'fetch_page', 'manual']).optional(),
+});
+export type ArticleReference = z.infer<typeof ArticleReferenceSchema>;
+
 export const ArticleCanonicalV2Schema = ArticleCanonicalSchema.extend({
   primaryKeyword: z.string().nullable().optional(),
   internalLinks: z.array(z.string()).default([]),
@@ -407,6 +426,14 @@ export const ArticleCanonicalV2Schema = ArticleCanonicalSchema.extend({
   ctaLink: z.string().nullable().optional(),
   clusterId: z.string().nullable().optional(),
   clusterRole: ClusterRoleSchema.optional(),
+  /**
+   * Citation list. Deliberately EXCLUDED from CANONICAL_ARTICLE_FIELDS_V2
+   * below — references don't participate in content hashing or webhook
+   * changedFields. Treat like `socialImages` / `readTime`: persisted but
+   * not part of the optimistic-concurrency contract. Lets clients update
+   * references without invalidating other clients' baseHash.
+   */
+  references: z.array(ArticleReferenceSchema).default([]),
 });
 export type ArticleCanonicalV2 = z.infer<typeof ArticleCanonicalV2Schema>;
 
