@@ -925,3 +925,27 @@ export const ClusterWebhookPayloadSchema = z.object({
   at: z.string().datetime(),
 });
 export type ClusterWebhookPayload = z.infer<typeof ClusterWebhookPayloadSchema>;
+
+/* ── Site profile (get_site_profile / set_site_profile) ─────────────────────
+ * The editable site-level identity (homepage title / meta description /
+ * tagline). Lets a connected AI client read + update how the site presents
+ * itself. Kept a plain z.object (no .refine) so `.shape` works as inputSchema;
+ * the "at least one field" rule is enforced in the tool handler.
+ */
+export const GetSiteProfileInputSchema = z.object({});
+export type GetSiteProfileInput = z.infer<typeof GetSiteProfileInputSchema>;
+
+export const SiteProfileSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  tagline: z.string(),
+  updatedAt: z.string().datetime().nullable(),
+});
+export type SiteProfileShape = z.infer<typeof SiteProfileSchema>;
+
+export const SetSiteProfileInputSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().min(1).max(500).optional(),
+  tagline: z.string().max(200).optional(),
+});
+export type SetSiteProfileInput = z.infer<typeof SetSiteProfileInputSchema>;

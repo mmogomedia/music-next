@@ -12,6 +12,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { GoogleAnalytics } from '@next/third-parties/google';
 import { SITE_URL } from '@/lib/utils/site-url';
 import { serializeJsonLd } from '@/lib/utils/seo';
+import { getSiteProfile } from '@/lib/services/site-profile-service';
 
 // Optimize font loading - only essential weights for faster FCP
 const inter = Inter({
@@ -38,42 +39,45 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: 'Flemoji — AI-Powered South African Music Discovery',
-  description:
-    'Discover and stream South African music with AI. Chat with Flemoji to find new tracks, explore artists, and build your perfect playlist.',
-  alternates: {
-    canonical: SITE_URL,
-  },
-  openGraph: {
-    title: 'Flemoji — AI-Powered South African Music Discovery',
-    description:
-      'Discover and stream South African music with AI. Chat with Flemoji to find new tracks, explore artists, and build your perfect playlist.',
-    url: SITE_URL,
-    siteName: 'Flemoji',
-    // OG image is auto-discovered from src/app/opengraph-image.tsx
-    locale: 'en_ZA',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Flemoji — AI-Powered South African Music Discovery',
-    description:
-      'Discover and stream South African music with AI. Chat with Flemoji to find new tracks, explore artists, and build your perfect playlist.',
-    site: '@flemoji',
-  },
-  appleWebApp: {
-    capable: true,
-    title: 'Flemoji',
-  },
-  other: {
-    // Resource hints for performance
-    'dns-prefetch':
-      'https://asset.flemoji.com, https://audio.flemoji.com, https://profile-images.flemoji.com',
-    'apple-mobile-web-app-title': 'Flemoji',
-  },
-};
+// Title + description come from the editable SiteProfile (get_site_profile /
+// set_site_profile MCP tools) so a connected AI client can manage them; they
+// fall back to the previous static values until the profile is edited.
+export async function generateMetadata(): Promise<Metadata> {
+  const { title, description } = await getSiteProfile();
+  return {
+    metadataBase: new URL(SITE_URL),
+    title,
+    description,
+    alternates: {
+      canonical: SITE_URL,
+    },
+    openGraph: {
+      title,
+      description,
+      url: SITE_URL,
+      siteName: 'Flemoji',
+      // OG image is auto-discovered from src/app/opengraph-image.tsx
+      locale: 'en_ZA',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      site: '@flemoji',
+    },
+    appleWebApp: {
+      capable: true,
+      title: 'Flemoji',
+    },
+    other: {
+      // Resource hints for performance
+      'dns-prefetch':
+        'https://asset.flemoji.com, https://audio.flemoji.com, https://profile-images.flemoji.com',
+      'apple-mobile-web-app-title': 'Flemoji',
+    },
+  };
+}
 
 const websiteJsonLd = {
   '@context': 'https://schema.org',

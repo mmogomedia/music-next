@@ -21,6 +21,7 @@ import { registerScheduleTools } from '@/lib/mcp/tools/scheduling';
 import { registerClusterTools } from '@/lib/mcp/tools/clusters';
 import { registerSystemTools } from '@/lib/mcp/tools/system';
 import { registerPlanTools } from '@/lib/mcp/tools/plan';
+import { registerSiteProfileTools } from '@/lib/mcp/tools/site-profile';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -90,6 +91,7 @@ async function handle(req: Request): Promise<Response> {
     registerClusterTools(server, ctx);
     registerSystemTools(server, ctx);
     registerPlanTools(server, ctx);
+    registerSiteProfileTools(server, ctx);
   }
 
   // 4. Stateless Web-Standard transport — one server per request.
