@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ['@prisma/client'],
+  // Lint is gated by CI (`yarn check-all` = typecheck + next lint + prettier
+  // --check) on every PR. Don't ALSO run ESLint inside `next build`: on a fresh
+  // Vercel install the build-integrated eslint-plugin-prettier disagrees with
+  // the pinned prettier 3.6.2 on union-type formatting and fails the deploy on
+  // pure formatting (works locally + CI stays green). tsc still runs.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Optimize images
   images: {
     remotePatterns: [
