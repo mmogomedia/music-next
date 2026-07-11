@@ -1753,6 +1753,22 @@ model Tool {
   @@map("tools")
 }
 
+/// Editable site-level identity (title / description / tagline). A singleton
+/// (id is always "default"). Read by generateMetadata for the homepage <title>
+/// + <meta description>, and read/written over MCP by connected AI clients
+/// (get_site_profile / set_site_profile) so the CMS can manage it. Absent row
+/// falls back to the hardcoded defaults in site-profile-service.
+model SiteProfile {
+  id          String   @id @default("default")
+  title       String
+  description String
+  tagline     String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("site_profile")
+}
+
 model ContentLink {
   id        String      @id @default(cuid())
   fromType  ContentType
