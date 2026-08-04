@@ -47,6 +47,19 @@ const nextConfig = {
         source: '/audio.flemoji.com/:path*',
         destination: 'https://audio.flemoji.com/:path*',
       },
+      // Individual guides moved out from under /learn to the root of the site:
+      // articles are now `/:slug` and topics `/topic/:slug`. These rewrites
+      // keep every previously-published /learn/* URL serving the same page
+      // instead of 404ing. They're rewrites, not redirects, so old links stay
+      // valid; each page sets its canonical to the new root URL, so search
+      // engines consolidate there rather than seeing duplicates.
+      //
+      // `/learn` itself is NOT rewritten — it's a real page (the Learn
+      // directory, src/app/learn/page.tsx) and keeps its own URL.
+      //
+      // Order matters — /learn/topic/:slug must be matched before /learn/:slug.
+      { source: '/learn/topic/:slug', destination: '/topic/:slug' },
+      { source: '/learn/:slug', destination: '/:slug' },
     ];
   },
 };

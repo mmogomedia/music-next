@@ -8,15 +8,15 @@ export const metadata: Metadata = {
   title: 'Flemoji — AI-Powered South African Music Discovery',
   description:
     'Discover and stream South African music with AI. Chat with Flemoji to find new tracks, explore artists, and build your perfect playlist.',
-  alternates: { canonical: absoluteUrl('/') },
+  alternates: { canonical: absoluteUrl('/stream') },
   openGraph: {
     title: 'Flemoji — AI-Powered South African Music Discovery',
     description:
       'Discover and stream South African music with AI. Chat with Flemoji to find new tracks, explore artists, and build your perfect playlist.',
-    url: absoluteUrl('/'),
+    url: absoluteUrl('/stream'),
     siteName: 'Flemoji',
     type: 'website',
-    // OG image is auto-discovered from src/app/opengraph-image.tsx
+    // OG image is auto-discovered from this segment's opengraph-image.tsx
   },
   twitter: {
     card: 'summary_large_image',
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default function StreamPage() {
   return (
     <Suspense fallback={null}>
       <ChatLayout />

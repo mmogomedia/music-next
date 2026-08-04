@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useRef,
 } from 'react';
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import {
   BookmarkIcon,
@@ -965,12 +966,12 @@ export default function RevenuePredictorTool() {
 
         {!session && (
           <p className='text-xs text-center text-gray-400 dark:text-slate-500 pb-4'>
-            <a
+            <Link
               href='/login'
               className='text-emerald-600 dark:text-emerald-400 font-semibold hover:underline'
             >
               Sign in
-            </a>{' '}
+            </Link>{' '}
             to save predictions and attach split sheets.
           </p>
         )}

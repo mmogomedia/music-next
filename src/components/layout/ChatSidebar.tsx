@@ -21,7 +21,7 @@ const navItems = [
   { label: 'Trending', href: '/chat/trending', icon: FireIcon },
 ];
 
-const learnItem = { label: 'Learn', href: '/learn', icon: BookOpenIcon };
+const learnItem = { label: 'Learn', href: '/', icon: BookOpenIcon };
 const toolsItem = {
   label: 'Tools',
   href: '/tools',
@@ -118,14 +118,14 @@ export default function ChatSidebar() {
         {/* Learn sub-items (always visible as quick links) */}
         <div className='ml-6 pl-3 border-l border-gray-100 dark:border-slate-800 space-y-0.5 py-1'>
           <Link
-            href='/learn?cluster='
+            href='/?cluster='
             className='flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors'
           >
             <span className='w-1 h-1 rounded-full bg-current flex-shrink-0' />
             All articles
           </Link>
           <Link
-            href='/learn'
+            href='/'
             className='flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors'
           >
             <span className='w-1 h-1 rounded-full bg-current flex-shrink-0' />
@@ -152,7 +152,7 @@ export default function ChatSidebar() {
       {/* Learn CTA card */}
       <div className='px-3 py-3'>
         <Link
-          href='/learn'
+          href='/'
           className='block p-3 rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-100 dark:border-purple-800/30 hover:border-purple-200 dark:hover:border-purple-700 transition-colors group'
         >
           <div className='flex items-center gap-2 mb-1'>

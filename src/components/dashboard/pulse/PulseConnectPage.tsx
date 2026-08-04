@@ -216,7 +216,7 @@ export default function PulseConnectPage() {
                 width={220}
                 height={60}
                 priority
-                className='h-10 w-auto hidden lg:block'
+                className='h-10 w-auto hidden lg:block dark:brightness-0 dark:invert'
               />
             </Link>
             <Button

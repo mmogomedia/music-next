@@ -191,7 +191,7 @@ export default function FanNavigation({
             alt='Flemoji'
             width={120}
             height={32}
-            className='h-8 w-auto'
+            className='h-8 w-auto dark:brightness-0 dark:invert'
           />
         </Link>
       </div>
