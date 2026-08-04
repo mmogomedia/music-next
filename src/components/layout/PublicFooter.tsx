@@ -30,10 +30,10 @@ export default function PublicFooter() {
                 Home
               </Link>
               <Link
-                href='/learn'
+                href='/stream'
                 className='hover:text-purple-600 dark:hover:text-purple-400 transition-colors'
               >
-                Learn
+                Streaming
               </Link>
               <Link
                 href='/tools'

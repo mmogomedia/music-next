@@ -124,7 +124,7 @@ export default function ChatNavigation({
                 width={220}
                 height={60}
                 priority
-                className='h-12 w-auto'
+                className='h-12 w-auto dark:brightness-0 dark:invert'
               />
             </Link>
           </div>

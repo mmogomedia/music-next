@@ -74,8 +74,7 @@ export class HelpAgent extends BaseAgent {
         if (parsed.articles?.length > 0) {
           const articleList = parsed.articles
             .map(
-              (a: any) =>
-                `- [${a.title}](/learn/${a.slug}) (${a.readTime} min read)`
+              (a: any) => `- [${a.title}](/${a.slug}) (${a.readTime} min read)`
             )
             .join('\n');
           const response = `Here are some articles that may help:\n\n${articleList}`;

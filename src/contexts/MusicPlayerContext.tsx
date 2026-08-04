@@ -1,5 +1,7 @@
 'use client';
 
+import { trackEvent } from '@/lib/analytics/events';
+
 import React, {
   createContext,
   useContext,
@@ -400,6 +402,14 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
     playlistId?: string
   ) => {
     if (!audioRef.current) return;
+
+    // GA4 conversion signal. Fired once here rather than in each branch below,
+    // so a repeat-play of the current track isn't counted twice. This is
+    // separate from trackPlayStart(), which feeds the in-app stats tables.
+    trackEvent({
+      name: 'track_play',
+      params: { track_id: track.id, track_title: track.title },
+    });
 
     // Update source and playlistId for stats tracking
     setCurrentSource(source);

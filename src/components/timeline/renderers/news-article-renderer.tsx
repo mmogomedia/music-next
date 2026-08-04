@@ -46,9 +46,7 @@ export function NewsArticleRenderer({
 
   const content = (post.content as any) || {};
   const isInternal = content.isInternal === true;
-  const articleUrl = isInternal
-    ? `/learn/${content.slug}`
-    : (content.url ?? null);
+  const articleUrl = isInternal ? `/${content.slug}` : (content.url ?? null);
   const readTime = content.readTime;
   const coverUrl = post.coverImageUrl
     ? constructFileUrl(post.coverImageUrl)

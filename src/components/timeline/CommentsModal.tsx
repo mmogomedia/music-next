@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import {
   XMarkIcon,
@@ -385,12 +386,12 @@ export default function CommentsModal({
           ) : (
             <div className='flex-shrink-0 px-6 py-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-center'>
               <p className='text-sm text-gray-500 dark:text-gray-400'>
-                <a
+                <Link
                   href='/login'
                   className='text-blue-600 dark:text-blue-400 hover:underline'
                 >
                   Sign in
-                </a>{' '}
+                </Link>{' '}
                 to comment
               </p>
             </div>

@@ -1,7 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt =
-  'Flemoji Learn — Music Industry Guides for Independent South African Artists';
+export const alt = 'Flemoji — AI-Powered South African Music Discovery';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -16,33 +15,34 @@ export default function Image() {
         alignItems: 'center',
         justifyContent: 'center',
         background:
-          'linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #6d28d9 100%)',
+          'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
-      {/* Grid pattern overlay */}
+      {/* Glow circles */}
       <div
         style={{
           position: 'absolute',
-          inset: 0,
-          backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-        }}
-      />
-
-      {/* Glow */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-60px',
-          right: '-60px',
-          width: '350px',
-          height: '350px',
+          top: '-80px',
+          left: '-80px',
+          width: '400px',
+          height: '400px',
           borderRadius: '50%',
           background:
-            'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%)',
+            'radial-gradient(circle, rgba(99,102,241,0.25) 0%, transparent 70%)',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '-80px',
+          right: '-80px',
+          width: '400px',
+          height: '400px',
+          borderRadius: '50%',
+          background:
+            'radial-gradient(circle, rgba(139,92,246,0.25) 0%, transparent 70%)',
         }}
       />
 
@@ -53,8 +53,8 @@ export default function Image() {
           alignItems: 'center',
           gap: '8px',
           padding: '6px 16px',
-          background: 'rgba(255,255,255,0.15)',
-          border: '1px solid rgba(255,255,255,0.25)',
+          background: 'rgba(99,102,241,0.15)',
+          border: '1px solid rgba(99,102,241,0.3)',
           borderRadius: '999px',
           marginBottom: '28px',
         }}
@@ -62,60 +62,46 @@ export default function Image() {
         <span
           style={{
             fontSize: '14px',
-            color: '#ffffff',
+            color: '#a5b4fc',
             fontWeight: 700,
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
             fontFamily: 'sans-serif',
           }}
         >
-          📚 Music Education
+          🎵 AI Music Discovery
         </span>
       </div>
 
-      {/* Wordmark */}
+      {/* Title */}
       <div
         style={{
-          fontSize: '32px',
-          fontWeight: 700,
-          color: 'rgba(255,255,255,0.75)',
-          fontFamily: 'sans-serif',
-          letterSpacing: '0.02em',
-          marginBottom: '8px',
-        }}
-      >
-        Flemoji
-      </div>
-
-      {/* Main title */}
-      <div
-        style={{
-          fontSize: '72px',
+          fontSize: '80px',
           fontWeight: 900,
           color: '#ffffff',
-          letterSpacing: '-0.03em',
+          letterSpacing: '-0.04em',
           lineHeight: 1.05,
           fontFamily: 'sans-serif',
           textAlign: 'center',
         }}
       >
-        Learn
+        Flemoji
       </div>
 
       {/* Subtitle */}
       <div
         style={{
           marginTop: '20px',
-          fontSize: '26px',
+          fontSize: '28px',
           fontWeight: 400,
-          color: 'rgba(219,234,254,0.85)',
+          color: 'rgba(165,180,252,0.85)',
           fontFamily: 'sans-serif',
           textAlign: 'center',
-          maxWidth: '680px',
+          maxWidth: '700px',
           lineHeight: 1.4,
         }}
       >
-        Music Industry Guides for Independent South African Artists
+        AI-Powered South African Music Discovery
       </div>
 
       {/* Bottom URL */}
@@ -124,11 +110,11 @@ export default function Image() {
           position: 'absolute',
           bottom: '36px',
           fontSize: '18px',
-          color: 'rgba(255,255,255,0.45)',
+          color: 'rgba(148,163,184,0.6)',
           fontFamily: 'sans-serif',
         }}
       >
-        flemoji.com/learn
+        flemoji.com
       </div>
     </div>
   );

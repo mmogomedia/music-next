@@ -1,5 +1,7 @@
 import {
   slugify,
+  isReservedSlug,
+  assertSlugAvailable,
   calculateReadTime,
   getClusters,
   createCluster,
@@ -698,5 +700,31 @@ describe('publishArticle', () => {
         }),
       })
     );
+  });
+});
+
+// ─── Reserved root slugs ─────────────────────────────────────────────────────
+
+describe('reserved root slugs', () => {
+  it('flags slugs that collide with real routes', () => {
+    // Guides render at /:slug, so these would be shadowed by the static route
+    // and permanently unreachable.
+    for (const slug of ['tools', 'learn', 'stream', 'topic', 'artist', 'api']) {
+      expect(isReservedSlug(slug)).toBe(true);
+    }
+  });
+
+  it('is case-insensitive', () => {
+    expect(isReservedSlug('Tools')).toBe(true);
+  });
+
+  it('allows ordinary guide slugs, including ones containing a reserved word', () => {
+    expect(isReservedSlug('how-royalties-work')).toBe(false);
+    expect(isReservedSlug('my-guide-to-tools')).toBe(false);
+  });
+
+  it('assertSlugAvailable throws on a reserved slug and passes otherwise', () => {
+    expect(() => assertSlugAvailable('tools')).toThrow(/reserved URL/i);
+    expect(() => assertSlugAvailable('how-royalties-work')).not.toThrow();
   });
 });

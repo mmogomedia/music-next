@@ -81,7 +81,7 @@ export function ToolShell({
               All tools
             </Link>
             <Link
-              href='/learn'
+              href='/'
               className='text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium'
             >
               Browse all articles →

@@ -1,0 +1,39 @@
+/*
+ * Flemoji Design System — stylesheet entry for the claude.ai/design bundle.
+ *
+ * Compiled by .design-sync/assets/build-css.sh with tailwind.ds.js (the repo's
+ * own tailwind.config.js + the design-sync preview sources), so the emitted
+ * utility vocabulary matches what the Flemoji app itself uses.
+ *
+ * The @font-face rules live in ./fonts.css and are wired via cfg.extraFonts,
+ * which copies the woff2 files into the bundle's fonts/ directory.
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * next/font/google injects these three custom properties onto <html> at runtime
+ * in the Next app. Nothing does that in a static bundle, so tailwind's
+ * fontFamily.sans (['var(--font-inter)', …]) would collapse to its fallback and
+ * every design would render in system-ui. Defining them here is what makes the
+ * brand typography actually apply.
+ */
+:root {
+  --font-inter: 'Inter';
+  --font-poppins: 'Poppins';
+  --font-jetbrains-mono: 'JetBrains Mono';
+
+  /* Brand tokens — mirrors src/app/globals.css :root */
+  --color-primary: #9333ea;
+  --color-secondary: #2563eb;
+  --color-accent: #10b981;
+  --shadow-glow: 0 0 20px rgba(147, 51, 234, 0.3);
+  --shadow-glow-secondary: 0 0 20px rgba(37, 99, 235, 0.3);
+}
+
+html,
+body {
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+}

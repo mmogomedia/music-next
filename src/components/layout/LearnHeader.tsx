@@ -36,6 +36,7 @@ export default function LearnHeader() {
   const navItems = [
     { name: 'Home', href: '/' },
     { name: 'Learn', href: '/learn' },
+    { name: 'Streaming', href: '/stream' },
     { name: 'Tools', href: '/tools' },
   ];
 
@@ -54,7 +55,7 @@ export default function LearnHeader() {
             className='sm:hidden text-gray-600 dark:text-gray-300'
           />
           <NavbarBrand>
-            <Link href='/learn' className='flex items-center gap-3'>
+            <Link href='/' className='flex items-center gap-3'>
               <Image
                 src='/logo_symbol.png'
                 alt='Flemoji symbol'

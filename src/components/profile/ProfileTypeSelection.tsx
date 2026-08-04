@@ -52,7 +52,7 @@ export default function ProfileTypeSelection() {
               width={180}
               height={54}
               priority
-              className='h-9 w-auto'
+              className='h-9 w-auto dark:brightness-0 dark:invert'
             />
           </Link>
         </div>

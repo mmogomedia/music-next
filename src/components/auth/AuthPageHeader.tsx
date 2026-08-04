@@ -11,7 +11,7 @@ export default function AuthPageHeader() {
           width={200}
           height={60}
           priority
-          className='h-10 w-auto mx-auto'
+          className='h-10 w-auto mx-auto dark:brightness-0 dark:invert'
         />
       </Link>
     </div>

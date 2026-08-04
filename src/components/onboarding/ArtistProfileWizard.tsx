@@ -246,7 +246,7 @@ export default function ArtistProfileWizard() {
                   width={140}
                   height={42}
                   priority
-                  className='h-8 w-auto'
+                  className='h-8 w-auto dark:brightness-0 dark:invert'
                 />
               </Link>
               <div>

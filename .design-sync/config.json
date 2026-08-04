@@ -1,0 +1,52 @@
+{
+  "projectId": "8f0b70d3-cc5b-4594-87bc-cc65f04b1375",
+  "shape": "package",
+  "pkg": "flemoji-next",
+  "globalName": "FlemojiUI",
+  "srcDir": "src",
+  "tsconfig": "tsconfig.json",
+  "cssEntry": ".design-sync/assets/ds.compiled.css",
+  "extraFonts": [".design-sync/assets/fonts.css"],
+  "guidelinesGlob": [],
+  "readmeHeader": ".design-sync/conventions.md",
+  "overrides": {
+    "FImage": {
+      "cardMode": "column"
+    },
+    "FSection": {
+      "cardMode": "column",
+      "viewport": "1400x760"
+    },
+    "FModal": {
+      "cardMode": "single",
+      "primaryStory": "Default",
+      "viewport": "760x560"
+    }
+  },
+  "componentSrcMap": {
+    "FButton": "src/components/ui/FButton.tsx",
+    "FCard": "src/components/ui/FCard.tsx",
+    "FBadge": "src/components/ui/FBadge.tsx",
+    "FChip": "src/components/ui/FChip.tsx",
+    "FStat": "src/components/ui/FStat.tsx",
+    "StatCard": "src/components/ui/StatCard.tsx",
+    "FEmptyState": "src/components/ui/FEmptyState.tsx",
+    "FPageHeader": "src/components/ui/FPageHeader.tsx",
+    "FSection": "src/components/ui/FSection.tsx",
+    "FDivider": "src/components/ui/FDivider.tsx",
+    "FSpinner": "src/components/ui/FSpinner.tsx",
+    "FAvatar": "src/components/ui/FAvatar.tsx",
+    "FInput": "src/components/ui/FInput.tsx",
+    "FTextarea": "src/components/ui/FTextarea.tsx",
+    "FSelect": "src/components/ui/FSelect.tsx",
+    "FImage": "src/components/ui/FImage.tsx",
+    "FModal": "src/components/shared/FlemojiModal.tsx",
+    "FCardSkeleton": null,
+    "StatCardSkeleton": null,
+    "SelectItem": null,
+    "ModalContent": null,
+    "ModalHeader": null,
+    "ModalBody": null,
+    "ModalFooter": null
+  }
+}

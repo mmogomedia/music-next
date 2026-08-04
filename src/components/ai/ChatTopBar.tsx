@@ -26,7 +26,7 @@ interface ChatTopBarProps {
 const mobileTabs = [
   { key: 'timeline' as ViewType, label: 'Timeline', icon: ClockIcon },
   { key: 'streaming' as ViewType, label: 'Streaming', icon: SparklesIcon },
-  { key: 'learn', label: 'Learn', href: '/learn', icon: BookOpenIcon },
+  { key: 'learn', label: 'Learn', href: '/', icon: BookOpenIcon },
 ] as const;
 
 // Overflow menu items (3-dot)
@@ -54,7 +54,7 @@ const desktopViewButtons = [
 ] as const;
 
 const desktopLinkButtons = [
-  { href: '/learn', label: 'Learn', icon: BookOpenIcon },
+  { href: '/', label: 'Learn', icon: BookOpenIcon },
   { href: '/tools', label: 'Tools', icon: WrenchScrewdriverIcon },
 ] as const;
 

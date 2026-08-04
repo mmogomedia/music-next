@@ -101,10 +101,10 @@ export async function generateMetadata({
       ...article.targetKeywords,
     ].join(', ');
 
-    const canonicalUrl = absoluteUrl(`/learn/${slug}`);
+    const canonicalUrl = absoluteUrl(`/${slug}`);
     const ogImageUrl = article.coverImageUrl
       ? constructFileUrl(article.coverImageUrl)
-      : absoluteUrl('/learn/opengraph-image');
+      : absoluteUrl('/opengraph-image');
 
     return {
       title: `${title} | Flemoji Learn`,
@@ -158,7 +158,9 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
   const allSorted = [...(pillar ? [pillar] : []), ...spokes];
 
   const ctaHeadline = article.ctaText || 'Grow your music career with Flemoji';
-  const ctaHref = article.ctaLink || '/';
+  // Default CTA sends readers into the streaming app, which now lives at
+  // /stream — `/` is the Learn hub they're already reading.
+  const ctaHref = article.ctaLink || '/stream';
   const headings = extractHeadings(article.body);
   const hasInternalLinks = article.internalLinkArticles.length > 0;
 
@@ -170,7 +172,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
 
   const ogImageUrl = article.coverImageUrl
     ? constructFileUrl(article.coverImageUrl)
-    : absoluteUrl('/learn/opengraph-image');
+    : absoluteUrl('/opengraph-image');
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -194,7 +196,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': absoluteUrl(`/learn/${article.slug}`),
+      '@id': absoluteUrl(`/${article.slug}`),
     },
     keywords: article.targetKeywords.join(', '),
     timeRequired: `PT${article.readTime}M`,
@@ -204,7 +206,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
       isPartOf: {
         '@type': 'WebPageElement',
         name: article.cluster.name,
-        url: `${SITE_URL}/learn?cluster=${article.cluster.id}`,
+        url: `${SITE_URL}/?cluster=${article.cluster.id}`,
       },
     }),
   };
@@ -238,20 +240,13 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
           <div className='absolute inset-x-0 bottom-0 max-w-7xl mx-auto px-4 sm:px-6 pb-8'>
             <nav className='flex items-center gap-1.5 text-[11px] text-white/50 mb-3'>
               <Link href='/' className='hover:text-white/80 transition-colors'>
-                Home
-              </Link>
-              <span>/</span>
-              <Link
-                href='/learn'
-                className='hover:text-white/80 transition-colors'
-              >
                 Learn
               </Link>
               {article.cluster && (
                 <>
                   <span>/</span>
                   <Link
-                    href={`/learn?cluster=${article.cluster.id}`}
+                    href={`/?cluster=${article.cluster.id}`}
                     className='hover:text-white/80 transition-colors'
                   >
                     {article.cluster.name}
@@ -324,20 +319,13 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
           <div className='relative max-w-7xl mx-auto px-4 sm:px-6'>
             <nav className='flex items-center gap-1.5 text-[11px] text-white/50 mb-4'>
               <Link href='/' className='hover:text-white/80 transition-colors'>
-                Home
-              </Link>
-              <span>/</span>
-              <Link
-                href='/learn'
-                className='hover:text-white/80 transition-colors'
-              >
                 Learn
               </Link>
               {article.cluster && (
                 <>
                   <span>/</span>
                   <Link
-                    href={`/learn?cluster=${article.cluster.id}`}
+                    href={`/?cluster=${article.cluster.id}`}
                     className='hover:text-white/80 transition-colors'
                   >
                     {article.cluster.name}
@@ -383,7 +371,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
             <aside className='hidden lg:block w-56 xl:w-60 flex-shrink-0'>
               <div className='sticky top-20 space-y-5'>
                 <Link
-                  href='/learn'
+                  href='/'
                   className='flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors'
                 >
                   <svg
@@ -416,7 +404,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
                       return (
                         <li key={a.id}>
                           <Link
-                            href={`/learn/${a.slug}`}
+                            href={`/${a.slug}`}
                             className={`flex items-start gap-2.5 px-2.5 py-2 rounded-lg text-xs leading-snug transition-colors ${
                               isCurrent
                                 ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 font-semibold'
@@ -526,7 +514,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
                   {article.internalLinkArticles.map(linked => (
                     <Link
                       key={linked.slug}
-                      href={`/learn/${linked.slug}`}
+                      href={`/${linked.slug}`}
                       className='group flex flex-col p-4 bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700 rounded-2xl hover:border-purple-200 dark:hover:border-purple-700 hover:shadow-md transition-all duration-200'
                     >
                       <p className='text-sm font-semibold text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 leading-snug transition-colors'>
@@ -551,7 +539,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
               <div className='mt-10 pt-8 border-t border-gray-100 dark:border-slate-800 grid grid-cols-2 gap-4'>
                 {prevArticle ? (
                   <Link
-                    href={`/learn/${prevArticle.slug}`}
+                    href={`/${prevArticle.slug}`}
                     className='group flex flex-col p-4 bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700 rounded-2xl hover:border-purple-200 dark:hover:border-purple-700 transition-colors'
                   >
                     <span className='text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 flex items-center gap-1'>
@@ -580,7 +568,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
 
                 {nextArticle ? (
                   <Link
-                    href={`/learn/${nextArticle.slug}`}
+                    href={`/${nextArticle.slug}`}
                     className='group flex flex-col p-4 bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700 rounded-2xl hover:border-purple-200 dark:hover:border-purple-700 transition-colors text-right'
                   >
                     <span className='text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 flex items-center justify-end gap-1'>

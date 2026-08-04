@@ -66,7 +66,7 @@ describe('searchArticlesTool.invoke', () => {
     expect(parsed.count).toBe(2);
     expect(parsed.articles).toHaveLength(2);
     expect(parsed.articles[0].title).toBe('How CAPASSO Works');
-    expect(parsed.articles[0].url).toBe('/learn/how-capasso-works');
+    expect(parsed.articles[0].url).toBe('/how-capasso-works');
     expect(parsed.articles[0].readTime).toBe(4);
   });
 

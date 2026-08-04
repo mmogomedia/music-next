@@ -229,3 +229,21 @@ body {
     opacity: 1;
   }
 }
+
+/* ── Landing page: live-stream equaliser bars ─────────────────────────────── */
+/* Driven purely by CSS so the stream bar stays a Server Component.            */
+@keyframes eq {
+  0% {
+    transform: scaleY(0.2);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eq-bar {
+    animation: none !important;
+    transform: scaleY(0.6);
+  }
+}
