@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { logger } from '@/lib/utils/logger';
 import { getArticles } from '@/lib/services/article-service';
 import { MusicService } from '@/lib/services/music-service';
 import { getAllTools } from '@/lib/tools/registry';
@@ -26,11 +27,37 @@ export const metadata: Metadata = {
   alternates: { canonical: absoluteUrl('/') },
 };
 
+/**
+ * Fetch a landing-page section's data, degrading to a fallback instead of
+ * throwing.
+ *
+ * `/` is the most important URL on the site and every section here is
+ * decorative-if-empty — each one already renders an empty state. Letting a
+ * database problem bubble up turns the whole homepage into a 500, which is a
+ * far worse outcome than a section rendering empty. This is not hypothetical:
+ * the preview database is not migrated (migrate-deploy.mjs is production-only
+ * by design), so `prisma.article.findMany()` fails with P2022 and took the
+ * entire page down.
+ */
+async function safely<T>(label: string, load: () => Promise<T>, fallback: T) {
+  try {
+    return await load();
+  } catch (error) {
+    logger.error(`[landing] ${label} failed — rendering without it`, error);
+    return fallback;
+  }
+}
+
 /** The marketing landing page. The Learn directory lives at `/learn`. */
 export default async function HomePage() {
   const [{ articles }, tracks] = await Promise.all([
-    getArticles({ status: 'PUBLISHED', limit: 5 }),
-    MusicService.getFeaturedTracks(5),
+    safely('guides', () => getArticles({ status: 'PUBLISHED', limit: 5 }), {
+      articles: [],
+      total: 0,
+      page: 1,
+      pages: 0,
+    }),
+    safely('featured tracks', () => MusicService.getFeaturedTracks(5), []),
   ]);
 
   // Lead with the cluster pillar when there is one — it's the "start here" read.
