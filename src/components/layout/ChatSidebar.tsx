@@ -118,7 +118,7 @@ export default function ChatSidebar() {
         {/* Learn sub-items (always visible as quick links) */}
         <div className='ml-6 pl-3 border-l border-gray-100 dark:border-slate-800 space-y-0.5 py-1'>
           <Link
-            href='/?cluster='
+            href='/learn?view=grid&cluster='
             className='flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors'
           >
             <span className='w-1 h-1 rounded-full bg-current flex-shrink-0' />
