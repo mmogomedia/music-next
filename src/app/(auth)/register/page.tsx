@@ -1,5 +1,7 @@
 'use client';
 
+import { trackEvent } from '@/lib/analytics/events';
+
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
@@ -88,6 +90,7 @@ export default function RegisterPage() {
         return;
       }
 
+      trackEvent({ name: 'sign_up', params: { method: 'credentials' } });
       setOk(true);
       setTimeout(() => router.push('/login?registered=true'), 2000);
     } catch (err) {
@@ -300,7 +303,10 @@ export default function RegisterPage() {
             variant='bordered'
             size='md'
             className='w-full border-2 border-gray-300 hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 hover:scale-105 font-semibold text-gray-700'
-            onPress={() => signIn('google', { callbackUrl: '/' })}
+            onPress={() => {
+              trackEvent({ name: 'sign_up', params: { method: 'google' } });
+              signIn('google', { callbackUrl: '/stream' });
+            }}
           >
             Continue with Google
           </Button>
