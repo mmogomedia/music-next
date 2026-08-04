@@ -2,6 +2,11 @@
 .claude/
 .cursor/
 
+# Claude Design sync inputs — generated bundles (compiled CSS, subset fonts,
+# preview HTML). Not hand-authored, so formatting them is meaningless and
+# `prettier --check .` fails CI on them.
+.design-sync/
+
 # Plan / spec markdown docs at repo root (prose; not subject to prettier wrap)
 PICASITE_MCP_INTEGRATION_PLAN.md
 FLEMOJI_MCP_V2_PLAN.md

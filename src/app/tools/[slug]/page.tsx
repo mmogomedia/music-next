@@ -232,7 +232,7 @@ export default async function ToolPage({ params }: ToolPageProps) {
               {relatedArticles.map(article => (
                 <li key={article.id}>
                   <Link
-                    href={`/learn/${article.slug}`}
+                    href={`/${article.slug}`}
                     className='flex items-start justify-between gap-4 px-5 py-4 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors group'
                   >
                     <div className='flex-1 min-w-0'>
@@ -277,7 +277,7 @@ export default async function ToolPage({ params }: ToolPageProps) {
             All tools
           </Link>
           <Link
-            href='/learn'
+            href='/'
             className='text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline'
           >
             Browse all articles →

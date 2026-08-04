@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
+import { absoluteUrl } from '@/lib/utils/site-url';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy - Flemoji',
   description: 'Privacy Policy for Flemoji Music Streaming Platform',
+  alternates: { canonical: absoluteUrl('/privacy') },
 };
 
 export default function PrivacyPage() {
@@ -22,7 +24,7 @@ export default function PrivacyPage() {
                 width={200}
                 height={60}
                 priority
-                className='h-12 w-auto mx-auto'
+                className='h-12 w-auto mx-auto dark:brightness-0 dark:invert'
               />
             </Link>
           </div>

@@ -1,4 +1,11 @@
+import type { Metadata } from 'next';
 import AIChat from '@/components/ai/AIChat';
+
+// Internal development harness — must never be indexed. It was crawlable and
+// indexable until this was added.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default function AITestPage() {
   return (

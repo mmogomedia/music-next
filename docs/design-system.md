@@ -99,6 +99,47 @@ These were previously used arbitrarily and must **not** be introduced:
 - **Online status dots**: `emerald-500` (universally understood)
 - **Count badges on header**: `primary` (purple) — not semantic colors
 
+### Exception: the marketing landing page
+
+The landing page at `/` (`src/app/page.tsx` + `src/components/home/`) runs its
+own palette and is **not** governed by the rules above. It is a marketing
+surface, not product chrome: it leads with a full-bleed blue→purple→magenta
+brand gradient (`#3B4FE4 → #6C3AF0 → #A21CEA`) and uses purple as a field
+rather than sparingly.
+
+- Tokens live in `src/components/home/tokens.ts` — change colours there, not
+  in the section components.
+- Type is **Plus Jakarta Sans** (`font-jakarta`), not Inter/Poppins.
+- The "no standalone `blue-*`" rule does not apply to the brand gradient; blue
+  only ever appears as a gradient stop, never as a flat accent.
+- Everything else on the page (headers, article cards, dashboard links) still
+  follows the main system.
+
+Source of truth for the layout is the Claude Design project _"Landing page
+redesign: three directions"_ → `Flemoji Landing Page.dc.html`.
+
+### Logo assets
+
+| File                     | Size     | Alpha   | Use                                      |
+| ------------------------ | -------- | ------- | ---------------------------------------- |
+| `public/main_logo.png`   | 1200×500 | ✅ RGBA | The wordmark. Default choice.            |
+| `public/logo_symbol.png` | 375×375  | ✅ RGBA | Flame mark only — tight spaces, favicons |
+
+`main_logo.png` previously shipped as **opaque RGB with a baked-in white
+background**, which rendered as a white block on every dark surface. It was
+replaced with the transparent version (2026-08-04).
+
+**Because it is now transparent, the dark wordmark is invisible on dark
+backgrounds unless you invert it.** Every `<Image src='/main_logo.png'>` must
+carry one of:
+
+- `dark:brightness-0 dark:invert` — surfaces that follow the theme (headers,
+  footers, sidebars, auth pages). This is the default.
+- `brightness-0 invert` (unconditional) — surfaces that are _always_ dark, i.e.
+  the purple gradient heroes on `/learn`, `/topic/[slug]` and `/tools`.
+
+There is no third option: a bare `className` with no invert is a bug.
+
 ---
 
 ## 4. Component Library (`src/components/ui/`)
@@ -435,7 +476,10 @@ All icons are from `@heroicons/react/24/outline` (default) or `@heroicons/react/
 - Timeline components (`src/components/timeline/`)
 - Chat components (`src/components/ai/`)
 - Auth forms (`src/components/auth/`)
-- Public pages (`src/app/learn/`, `src/app/tools/`, landing)
+- Public pages (`src/app/tools/`, the Learn directory in
+  `src/components/learn/`). The landing page was rebuilt from a Claude Design
+  handoff and now owns its own palette — see "Exception: the marketing landing
+  page" in section 3.
 - `src/components/shared/FlemojiModal.tsx` — only re-export, never modify
 - Admin dashboard components (`src/components/dashboard/admin/`)
 

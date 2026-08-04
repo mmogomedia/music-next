@@ -40,7 +40,7 @@ export default function Header() {
       { name: 'Browse', href: '/browse' },
       { name: 'Artists', href: '/artists' },
       { name: 'Playlists', href: '/playlists' },
-      { name: 'Learn', href: '/learn' },
+      { name: 'Learn', href: '/' },
       { name: 'Tools', href: '/tools' },
     ],
     []
@@ -75,7 +75,7 @@ export default function Header() {
               width={220}
               height={60}
               priority
-              className='h-12 w-auto hidden lg:block'
+              className='h-12 w-auto hidden lg:block dark:brightness-0 dark:invert'
             />
           </Link>
         </NavbarBrand>

@@ -31,6 +31,64 @@ export function calculateReadTime(markdown: string): number {
 /**
  * Generate a URL-safe slug from a title string.
  */
+/**
+ * Slugs an article may not take.
+ *
+ * Guides live at the site root (`/:slug`). Next.js always prefers a static
+ * segment over a dynamic one, so an article slugged `tools` would be shadowed
+ * forever by the real /tools page — permanently unreachable, while sitemap.ts
+ * still submitted it to Google and emitted `/tools` twice. There is no way to
+ * detect this at read time; it has to be blocked when the slug is written.
+ *
+ * Keep in sync with the top-level directories in `src/app/`.
+ */
+export const RESERVED_ROOT_SLUGS = new Set([
+  'admin',
+  'ai-test',
+  'api',
+  'articles',
+  'artist',
+  'artist-profile',
+  'dashboard',
+  'favicon.ico',
+  'forgot-password',
+  'league',
+  'learn',
+  'login',
+  'manifest.json',
+  'opengraph-image',
+  'privacy',
+  'profile',
+  'pulse',
+  'quick',
+  'register',
+  'reset-password',
+  'robots.txt',
+  'sitemap.xml',
+  'smart',
+  'stream',
+  'submissions',
+  'terms',
+  'timeline',
+  'tools',
+  'topic',
+  'unauthorized',
+  'verify-email',
+]);
+
+export function isReservedSlug(slug: string): boolean {
+  return RESERVED_ROOT_SLUGS.has(slug.toLowerCase());
+}
+
+/** Throws if the slug would be shadowed by a real route. */
+export function assertSlugAvailable(slug: string): void {
+  if (isReservedSlug(slug)) {
+    throw new Error(
+      `"${slug}" is a reserved URL on this site — an article with this slug would never be reachable at /${slug}. Choose a different slug.`
+    );
+  }
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -334,6 +392,7 @@ export async function createArticle(
   authorId: string
 ): Promise<Article> {
   const slug = data.slug || slugify(data.title);
+  assertSlugAvailable(slug);
   const readTime = calculateReadTime(data.body);
 
   const article = await prisma.article.create({
@@ -436,6 +495,9 @@ export async function updateArticle(
     if (!data.slug) updateData.slug = slugify(data.title);
   }
   if (data.slug !== undefined) updateData.slug = data.slug;
+  if (typeof updateData.slug === 'string') {
+    assertSlugAvailable(updateData.slug);
+  }
   if (data.body !== undefined) {
     updateData.body = data.body;
     updateData.readTime = calculateReadTime(data.body);

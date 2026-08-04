@@ -42,11 +42,11 @@ export async function generateMetadata({
   return {
     title,
     description,
-    alternates: { canonical: absoluteUrl(`/learn/topic/${cluster.slug}`) },
+    alternates: { canonical: absoluteUrl(`/topic/${cluster.slug}`) },
     openGraph: {
       title,
       description,
-      url: absoluteUrl(`/learn/topic/${cluster.slug}`),
+      url: absoluteUrl(`/topic/${cluster.slug}`),
       siteName: 'Flemoji',
       type: 'website',
     },
@@ -123,7 +123,7 @@ function SingleTopicView({
     <div>
       {/* Back link */}
       <Link
-        href='/learn'
+        href='/'
         className='inline-flex items-center gap-1.5 text-sm text-gray-400 dark:text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors mb-8'
       >
         <svg
@@ -170,7 +170,7 @@ function SingleTopicView({
       {/* Pillar article — featured */}
       {pillar && (
         <Link
-          href={`/learn/${pillar.slug}`}
+          href={`/${pillar.slug}`}
           className='group flex flex-col sm:flex-row gap-0 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-purple-500/5 hover:border-purple-200 dark:hover:border-purple-700 transition-all duration-300 mb-6'
         >
           {/* Cover */}
@@ -237,7 +237,7 @@ function SingleTopicView({
               return (
                 <Link
                   key={spoke.id}
-                  href={`/learn/${spoke.slug}`}
+                  href={`/${spoke.slug}`}
                   className='group flex gap-4 p-4 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl hover:shadow-md hover:border-purple-200 dark:hover:border-purple-700 transition-all duration-200'
                 >
                   {/* Thumbnail */}
@@ -320,7 +320,7 @@ export default async function TopicPage({
           <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-8'>
             <div className='max-w-xl'>
               <div className='mb-6'>
-                <Link href='/learn'>
+                <Link href='/'>
                   <Image
                     src='/main_logo.png'
                     alt='Flemoji'
@@ -375,7 +375,7 @@ export default async function TopicPage({
               style={{ scrollbarWidth: 'none' }}
             >
               <Link
-                href='/learn'
+                href='/'
                 className='flex-shrink-0 px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10'
               >
                 ← All topics
@@ -388,7 +388,7 @@ export default async function TopicPage({
                   <span key={c.id}>
                     {hasArticles ? (
                       <Link
-                        href={`/learn/topic/${c.slug}`}
+                        href={`/topic/${c.slug}`}
                         className={`flex-shrink-0 block px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
                           isActive
                             ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400'

@@ -1,5 +1,7 @@
 'use client';
 
+import { trackEvent } from '@/lib/analytics/events';
+
 import React, { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import {
@@ -96,6 +98,7 @@ export default function SignInForm({
       }
 
       if (res?.ok) {
+        trackEvent({ name: 'login', params: { method: 'credentials' } });
         if (onSuccess) {
           onSuccess();
         } else {

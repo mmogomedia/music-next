@@ -891,7 +891,7 @@ function RightPanel({
             {linkedArticles.map(article => (
               <li key={article.id}>
                 <Link
-                  href={`/learn/${article.slug}`}
+                  href={`/${article.slug}`}
                   className='flex items-start justify-between gap-3 px-4 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors group'
                 >
                   <div className='flex-1 min-w-0'>

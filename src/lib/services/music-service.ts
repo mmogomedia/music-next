@@ -536,6 +536,25 @@ export class MusicService {
    * @param id - Track ID
    * @returns Track with artist information or null
    */
+  /**
+   * Most-played public tracks, for the landing page's streaming strip.
+   *
+   * @param limit - How many tracks to return
+   * @returns Public tracks ordered by play count, newest first as a tiebreak
+   */
+  static async getFeaturedTracks(
+    limit: number = 5
+  ): Promise<TrackWithArtist[]> {
+    const tracks = await prisma.track.findMany({
+      where: { isPublic: true },
+      include: { artistProfile: true },
+      orderBy: [{ playCount: 'desc' }, { createdAt: 'desc' }],
+      take: limit,
+    });
+
+    return tracks.map(track => this.transformTrack(track));
+  }
+
   static async getTrackById(id: string): Promise<TrackWithArtist | null> {
     const track = await prisma.track.findUnique({
       where: { id },
