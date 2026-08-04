@@ -24,3 +24,8 @@ tsconfig.tsbuildinfo
 
 # MCP docs index (generated at build/CI from rules/*.md by scripts/generate-mcp-docs-index.mjs)
 src/lib/mcp/docs-index.generated.json
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
