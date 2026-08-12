@@ -3,9 +3,9 @@
  * Verifies that all timeline tables, enums, and relations are working correctly
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function testTimelineDatabase() {
   console.log('🧪 Testing Timeline Database Models...\n');

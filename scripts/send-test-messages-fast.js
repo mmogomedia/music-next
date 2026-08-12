@@ -6,10 +6,10 @@
  * Send Test Messages (Fast) - Send messages with minimal delays
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 require('dotenv').config({ path: '.env.local' });
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const testMessages = [
   'I love amapiano music',

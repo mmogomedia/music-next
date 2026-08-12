@@ -19,7 +19,7 @@
 
 /* eslint-disable no-console */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 const readline = require('readline');
 
 const DATABASE_URL_PROD = process.env.DATABASE_URL_PROD;
@@ -57,21 +57,9 @@ if (!DATABASE_URL_DEV) {
 }
 
 // Create Prisma clients for both databases
-const prismaProd = new PrismaClient({
-  datasources: {
-    db: {
-      url: DATABASE_URL_PROD,
-    },
-  },
-});
+const prismaProd = createPrismaClient(DATABASE_URL_PROD);
 
-const prismaDev = new PrismaClient({
-  datasources: {
-    db: {
-      url: DATABASE_URL_DEV,
-    },
-  },
-});
+const prismaDev = createPrismaClient(DATABASE_URL_DEV);
 
 // Tables to skip (sensitive or not needed)
 const SKIP_TABLES = [

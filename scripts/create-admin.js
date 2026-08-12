@@ -11,11 +11,11 @@
  *   node scripts/create-admin.js --email admin@yourdomain.com --password securepassword
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 const bcrypt = require('bcryptjs');
 const readline = require('readline');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // Default admin credentials
 const DEFAULT_ADMIN = {

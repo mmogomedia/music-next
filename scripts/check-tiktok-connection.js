@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function checkTikTokConnection() {
   try {

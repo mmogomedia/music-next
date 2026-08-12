@@ -3,10 +3,10 @@
  * Run with: npx ts-node --compiler-options '{"module":"CommonJS"}' scripts/seed-demo-accounts.ts
  */
 
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from './lib/prisma';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   const password = await bcrypt.hash('Demo1234!', 12);

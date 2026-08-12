@@ -12,7 +12,7 @@
 
 /* eslint-disable no-console */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
 const DATABASE_URL_PROD = process.env.DATABASE_URL_PROD;
 
@@ -34,13 +34,7 @@ if (!DATABASE_URL_PROD) {
 }
 
 // Create Prisma client for production database
-const prismaProd = new PrismaClient({
-  datasources: {
-    db: {
-      url: DATABASE_URL_PROD,
-    },
-  },
-});
+const prismaProd = createPrismaClient(DATABASE_URL_PROD);
 
 const defaultRules = [
   // Required (20%)

@@ -4,9 +4,9 @@
  */
 /* eslint-disable no-console */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 const bcrypt = require('bcryptjs');
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function createClaimTestUser() {
   console.log(

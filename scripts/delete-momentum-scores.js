@@ -5,9 +5,9 @@
  * Momentum calculation is not yet implemented, so we're cleaning up any existing data
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function deleteMomentumScores() {
   try {
