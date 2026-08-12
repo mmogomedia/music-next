@@ -1,14 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ['@prisma/client'],
-  // Lint is gated by CI (`yarn check-all` = typecheck + next lint + prettier
-  // --check) on every PR. Don't ALSO run ESLint inside `next build`: on a fresh
-  // Vercel install the build-integrated eslint-plugin-prettier disagrees with
-  // the pinned prettier 3.6.2 on union-type formatting and fails the deploy on
-  // pure formatting (works locally + CI stays green). tsc still runs.
-  eslint: {
-    ignoreDuringBuilds: true,
+  // Next 16 makes Turbopack the default bundler for `next dev` AND `next build`.
+  // Turbopack infers the workspace root from lockfiles, and this repo ships both
+  // package-lock.json and yarn.lock (yarn is the real package manager), so the
+  // inference can silently walk up to a parent directory and root the build
+  // outside the project. Pin it explicitly.
+  turbopack: {
+    root: import.meta.dirname,
   },
+  // NOTE (Next 16): the `eslint` config option was REMOVED, and `next build` no
+  // longer runs ESLint at all — so the old `eslint.ignoreDuringBuilds: true`
+  // escape hatch is both unsupported and unnecessary. Linting stays gated by CI
+  // (`yarn check-all`), which now calls the ESLint CLI directly because the
+  // `next lint` command was also removed in 16.
   // Optimize images
   images: {
     remotePatterns: [
