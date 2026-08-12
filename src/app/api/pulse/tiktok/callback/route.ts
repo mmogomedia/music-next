@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     const error = searchParams.get('error');
 
     // Log all callback parameters for debugging
-    // eslint-disable-next-line no-console
+
     console.error('TikTok callback received:', {
       hasCode: !!code,
       hasState: !!state,

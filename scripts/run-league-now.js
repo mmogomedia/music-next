@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-/* global Map, Set */
 /**
  * Run the league immediately (creates LeagueRun + LeagueEntry snapshots).
  * Respects tier ordering and prevents overlap between tiers.
@@ -8,9 +6,9 @@
  *   dotenv -e .env.local -- node scripts/run-league-now.js
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 function bandStateFor(score, minScore, maxScore) {
   if (score < minScore) return 'BELOW_RANGE';

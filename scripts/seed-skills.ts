@@ -1,8 +1,6 @@
-/* eslint-disable no-console */
+import { createPrismaClient } from './lib/prisma';
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // Common artist skills with slugs
 const SKILLS = [

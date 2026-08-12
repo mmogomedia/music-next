@@ -166,6 +166,11 @@ export default function RootLayout({
     <html
       lang='en'
       suppressHydrationWarning
+      // globals.css sets `scroll-behavior: smooth` on <html>. Next.js 15 silently
+      // overrode that during route transitions so navigations jumped to the top
+      // instantly; Next.js 16 no longer does unless this attribute is present.
+      // Without it every route change smooth-scrolls, which reads as a UX regression.
+      data-scroll-behavior='smooth'
       className={`dark ${inter.variable} ${poppins.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`}
     >
       <head>

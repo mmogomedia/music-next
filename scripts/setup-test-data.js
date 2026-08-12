@@ -2,9 +2,9 @@
  * Setup test data for stats system testing
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function setupTestData() {
   try {

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Simulate league movement by creating NEW eligibility score rows for demo artists,
  * with slight random changes to score + component scores.
@@ -14,9 +13,9 @@
  *   STEP_MAX=6
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));

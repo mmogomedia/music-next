@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-env node */
 
 /**
  * Seed Timeline Demo Data
@@ -10,11 +9,9 @@
  *   node scripts/seed-timeline-demo.js
  */
 
-/* eslint-disable no-console */
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function seedTimelineDemo() {
   console.log('🌱 Seeding timeline demo data...\n');

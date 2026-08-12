@@ -71,7 +71,6 @@ export default function DetailsStep({
         setCities([]);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.country]);
 
   // Update cities when province changes
@@ -94,7 +93,6 @@ export default function DetailsStep({
         setCities([]);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.province]);
 
   const toggleSkill = (skillId: string) => {

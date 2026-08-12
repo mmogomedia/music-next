@@ -1,8 +1,136 @@
+/* ---------------------------------------------------------------------------
+ * Tailwind v4 (CSS-first). The theme that used to live in tailwind.config.js
+ * is now the @theme blocks below; `content` is now @source; `plugins` are now
+ * @plugin; `darkMode: 'class'` is now @custom-variant.
+ *
+ * Every @import must come before any other rule (CSS spec — v3's PostCSS was
+ * lenient about this, Lightning CSS is not), so the landing-page stylesheet
+ * that used to be imported mid-file is hoisted here. TWO independent things
+ * now enforce that ordering: Lightning CSS (v4's engine) and Turbopack (the
+ * default bundler from Next 16). The old webpack + PostCSS pipeline silently
+ * tolerated the late @import, which is why it survived this long. Cascade
+ * order is
+ * unaffected: both files are unlayered, and unlayered CSS always beats
+ * Tailwind's @layer'd utilities, so the globals-level `.glass` /
+ * `.text-gradient` / `.animate-float` still win over landing.css exactly as
+ * they did under v3.
+ * ------------------------------------------------------------------------ */
 @import '@bprogress/core/css';
+/* Landing Page Styles — hoisted here from ~40 lines down the file. */
+@import '../styles/landing.css';
+@import 'tailwindcss' source(none);
+
+/* Was `plugins: [heroui(), require('@tailwindcss/typography')]`. */
+@plugin '../../hero.ts';
+@plugin '@tailwindcss/typography';
+
+/* Was `content: [...]`. Kept byte-for-byte equivalent to the v3 globs (paths
+ * are relative to this file) so the generated utility set does not change.
+ * `source(none)` above disables v4's automatic project-wide detection, which
+ * would otherwise scan files v3 never looked at. */
+@source '../pages/**/*.{js,ts,jsx,tsx,mdx}';
+@source '../components/**/*.{js,ts,jsx,tsx,mdx}';
+@source '../app/**/*.{js,ts,jsx,tsx,mdx}';
+@source '../../node_modules/@heroui/react/dist/**/*.{js,ts,jsx,tsx}';
+@source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+
+/* Was `darkMode: 'class'`. Matches v3's `.dark &` semantics. */
+@custom-variant dark (&:is(.dark *));
+
+/* Was `theme.extend.colors`, `.boxShadow`, `.screens`. */
+@theme {
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6; /* Mid blue */
+  --color-primary-600: #2563eb; /* Main primary - blue-600 */
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+  --color-primary-950: #172554;
+  --color-primary: #2563eb; /* was colors.primary.DEFAULT */
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary-50: #faf5ff;
+  --color-secondary-100: #f3e8ff;
+  --color-secondary-200: #e9d5ff;
+  --color-secondary-300: #d8b4fe;
+  --color-secondary-400: #c084fc;
+  --color-secondary-500: #a855f7; /* Mid purple */
+  --color-secondary-600: #9333ea; /* Main secondary - purple-600 */
+  --color-secondary-700: #7e22ce;
+  --color-secondary-800: #6b21a8;
+  --color-secondary-900: #581c87;
+  --color-secondary-950: #3b0764;
+  --color-secondary: #9333ea; /* was colors.secondary.DEFAULT */
+  --color-secondary-foreground: #ffffff;
+
+  --shadow-glow: 0 0 20px rgba(37, 99, 235, 0.3);
+  --shadow-glow-secondary: 0 0 20px rgba(147, 51, 234, 0.3);
+
+  /* was `screens` */
+  --breakpoint-xs: 475px;
+  --breakpoint-3xl: 1920px;
+}
+
+/* Was `theme.extend.fontFamily`. These reference the CSS variables emitted by
+ * next/font in layout.tsx, and two of them (--font-poppins, --font-jakarta)
+ * share a name with the theme key. A plain @theme block would emit
+ * `--font-poppins: var(--font-poppins), sans-serif` into :root — a circular
+ * reference that resolves to nothing. `@theme inline` substitutes the value
+ * straight into the utility instead of declaring the variable, which is both
+ * what v3 did and the only correct form here. */
+@theme inline {
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+  --font-poppins: var(--font-poppins), sans-serif;
+  --font-jakarta: var(--font-jakarta), var(--font-inter), sans-serif;
+}
+
+/* ---------------------------------------------------------------------------
+ * v3 preflight compatibility.
+ *
+ * v4 changed three preflight defaults. Each one is invisible in a diff and
+ * visible on every page, and each affects far too many call sites to fix by
+ * editing components (548 bare `border` + 255 directional `border-t/b/x/y`
+ * across 131 files alone), so they are restored here instead.
+ * ------------------------------------------------------------------------ */
+@layer base {
+  /* v3 reset every element's border-color to gray-200; v4 leaves it at
+   * currentColor, so any `border` without a companion `border-<color>` would
+   * suddenly draw in the element's text colour. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  /* v3 coloured placeholders gray-400; v4 uses currentColor at 50% opacity. */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  /* v3 gave buttons `cursor: pointer`; v4 defers to the browser default
+   * (`cursor: default`). */
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
 
 /* Custom BProgress Styling */
 .bprogress .bar {
-  background: #9333ea !important; /* Purple-600 matching primary token */
+  /* purple-600 — this is the SECONDARY token, not primary. The old comment here
+   * claimed it matched primary, which was part of the swapped-token confusion
+   * resolved above (primary is blue #2563eb). Left purple deliberately: this is
+   * what the loading bar has always rendered, and repainting it is a visual
+   * change, not a Tailwind v4 migration. Worth a product decision separately. */
+  background: #9333ea !important;
   height: 3px !important;
   z-index: 9999 !important;
 }
@@ -12,10 +140,6 @@
     0 0 10px #9333ea,
     0 0 5px #9333ea !important;
 }
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 /* Hide scrollbars while preserving scroll functionality */
 .no-scrollbar {
@@ -38,17 +162,19 @@
   }
 }
 
-/* Landing Page Styles */
-@import '../styles/landing.css';
-
-/* CSS Custom Properties from Design System */
-:root {
-  --color-primary: #9333ea;
-  --color-secondary: #2563eb;
-  --color-accent: #10b981;
-  --shadow-glow: 0 0 20px rgba(147, 51, 234, 0.3);
-  --shadow-glow-secondary: 0 0 20px rgba(37, 99, 235, 0.3);
-}
+/* A `:root` block here used to redeclare `--color-primary`/`--color-secondary`
+ * and the two `--shadow-glow*` values with primary and secondary SWAPPED
+ * relative to tailwind.config.js. It was inert under v3 (the config was the
+ * source of truth and nothing reads these variables), but `--color-*` IS
+ * Tailwind's theme namespace in v4 — unlayered, it would have overridden
+ * @theme and silently repainted every `bg-primary` / `text-primary` in the app
+ * purple.
+ *
+ * Resolved deliberately rather than mechanically: PRIMARY IS BLUE (#2563eb),
+ * secondary purple (#9333ea) — the values tailwind.config.js compiled for the
+ * life of the v3 setup. The block is removed rather than renamed; the rejected
+ * values are in history if ever needed. Do not reintroduce `--color-*` in a
+ * plain `:root` — put theme values in `@theme` above. */
 
 html,
 body {

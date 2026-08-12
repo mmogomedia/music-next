@@ -7,9 +7,9 @@
  * Usage: node scripts/resolve-failed-migration.js
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function resolveFailedMigration() {
   try {

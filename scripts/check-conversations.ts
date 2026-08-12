@@ -6,9 +6,9 @@
  * Usage: yarn tsx scripts/check-conversations.ts [userId]
  */
 
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from './lib/prisma';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function checkConversations(userId?: string) {
   console.log('🔍 Checking AI Conversations in Database...\n');

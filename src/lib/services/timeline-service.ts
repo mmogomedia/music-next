@@ -1172,7 +1172,7 @@ export class TimelineService {
     >,
     userId?: string
   ): Promise<number> {
-    let score = 0;
+    let score: number;
 
     // Base engagement score (weighted)
     const engagementScore =

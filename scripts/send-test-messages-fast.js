@@ -1,15 +1,13 @@
 #!/usr/bin/env node
-/* eslint-env node */
-/* global globalThis, Promise */
 
 /**
  * Send Test Messages (Fast) - Send messages with minimal delays
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 require('dotenv').config({ path: '.env.local' });
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const testMessages = [
   'I love amapiano music',
@@ -55,7 +53,6 @@ async function sendMessage(userId, conversationId, message) {
     let hasComplete = false;
     let done = false;
 
-    // eslint-disable-next-line no-constant-condition
     while (!done) {
       const result = await reader.read();
       done = result.done;

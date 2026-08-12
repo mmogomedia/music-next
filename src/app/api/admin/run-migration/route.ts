@@ -40,7 +40,6 @@ export async function POST(_request: NextRequest) {
       output: output.split('\n').slice(-20), // Last 20 lines
     });
   } catch (error: any) {
-    // eslint-disable-next-line no-console
     console.error('Migration error:', error);
     return NextResponse.json(
       {

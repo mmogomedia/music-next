@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from './lib/prisma';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // Genres for testing
 const GENRES = [

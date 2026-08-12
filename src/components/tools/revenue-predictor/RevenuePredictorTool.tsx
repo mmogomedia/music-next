@@ -607,7 +607,6 @@ export default function RevenuePredictorTool() {
   // Reset saved badge when inputs change
   useEffect(() => {
     if (saveState === 'saved') setSaveState('idle');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streams, zarRate]);
 
   const saveEstimate = useCallback(async () => {

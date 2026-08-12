@@ -7,10 +7,10 @@
  *   node scripts/verify-memory-system.js [userId]
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 require('dotenv').config({ path: '.env.local' });
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function verifyMemorySystem(userId = null) {
   console.log('\n🔍 Verifying Memory System\n');

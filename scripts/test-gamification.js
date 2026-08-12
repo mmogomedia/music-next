@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-env node */
 
 /**
  * Test Gamification System
@@ -7,9 +6,7 @@
  * Tests that completion calculation, saving, and retrieval work correctly
  */
 
-/* eslint-disable no-console */
-
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -18,7 +15,7 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // Test data - a track with various completion levels
 const testTracks = [

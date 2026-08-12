@@ -1,3 +1,11 @@
+// This page renders HeroUI's <Button as={Link}>, which passes a COMPONENT
+// (a function) as a prop. From a Server Component that now fails the build in
+// Next 16 / React 19.2 with "Functions cannot be passed directly to Client
+// Components", breaking prerender of /_not-found and /_global-error. Every other
+// `as={Link}` call site in this repo is already a client component; this one was
+// the sole exception.
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@heroui/react';
 

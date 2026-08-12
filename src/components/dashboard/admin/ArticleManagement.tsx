@@ -180,34 +180,41 @@ function HelpBlock({ children }: { children: React.ReactNode }) {
 
 // ── Full article writing guide ────────────────────────────────────────────────
 
+/**
+ * Hoisted to module scope on purpose.
+ *
+ * Declared inside ArticleHelpGuide, this became a new component type on every
+ * render, so React remounted all nine sections instead of updating them. It
+ * closes over nothing — num, title and children are all props.
+ */
+function GuideSection({
+  num,
+  title,
+  children,
+}: {
+  num: number;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className='space-y-2'>
+      <div className='flex items-center gap-2'>
+        <span className='w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0'>
+          {num}
+        </span>
+        <h3 className='text-sm font-semibold text-gray-900 dark:text-white'>
+          {title}
+        </h3>
+      </div>
+      <div className='ml-7 space-y-1.5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed'>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 // eslint-disable-next-line no-unused-vars
 function ArticleHelpGuide() {
-  function GuideSection({
-    num,
-    title,
-    children,
-  }: {
-    num: number;
-    title: string;
-    children: React.ReactNode;
-  }) {
-    return (
-      <div className='space-y-2'>
-        <div className='flex items-center gap-2'>
-          <span className='w-5 h-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0'>
-            {num}
-          </span>
-          <h3 className='text-sm font-semibold text-gray-900 dark:text-white'>
-            {title}
-          </h3>
-        </div>
-        <div className='ml-7 space-y-1.5 text-xs text-gray-600 dark:text-gray-400 leading-relaxed'>
-          {children}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className='space-y-6'>
       <div className='p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl text-xs text-blue-700 dark:text-blue-300 leading-relaxed'>
@@ -627,7 +634,6 @@ function ArticleForm({
     } catch {
       /* ignore corrupt data */
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Debounced autosave — fires 5 s after the last field change
@@ -658,7 +664,6 @@ function ArticleForm({
     return () => {
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     title,
     slug,
@@ -719,7 +724,6 @@ function ArticleForm({
     await onSave(buildData());
     localStorage.removeItem(DRAFT_KEY);
     setLastSavedAt(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     onSave,
     DRAFT_KEY,

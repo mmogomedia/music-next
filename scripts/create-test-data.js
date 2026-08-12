@@ -2,11 +2,10 @@
  * Script to create test users and demo artist profiles for testing
  * Run with: node scripts/create-test-data.js
  */
-/* eslint-disable no-console */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 const bcrypt = require('bcryptjs');
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const testUsers = [
   {

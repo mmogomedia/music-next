@@ -110,6 +110,26 @@ export default async function ToolPage({ params }: ToolPageProps) {
     keywords: tool.features.join(', '),
   };
 
+  /**
+   * BreadcrumbList mirroring the visible breadcrumb below (Home / Tools /
+   * <tool>). Google requires the markup to match what the user sees, so if
+   * that <nav> changes, change this too.
+   */
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { name: 'Home', item: absoluteUrl('/') },
+      { name: 'Tools', item: absoluteUrl('/tools') },
+      { name: tool.name, item: absoluteUrl(`/tools/${slug}`) },
+    ].map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: crumb.item,
+    })),
+  };
+
   // ── Fullscreen layout (e.g. Split Sheet) ──────────────────────────────────
   if (tool.fullscreen) {
     return (
@@ -134,6 +154,12 @@ export default async function ToolPage({ params }: ToolPageProps) {
       <script
         type='application/ld+json'
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
+      {/* Only the standard layout renders a visible breadcrumb — the
+          fullscreen layout above deliberately omits both. */}
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
       <LearnHeader />
 

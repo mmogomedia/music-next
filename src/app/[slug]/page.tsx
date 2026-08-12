@@ -206,9 +206,40 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
       isPartOf: {
         '@type': 'WebPageElement',
         name: article.cluster.name,
-        url: `${SITE_URL}/?cluster=${article.cluster.id}`,
+        url: `${SITE_URL}/learn?view=grid&cluster=${article.cluster.id}`,
       },
     }),
+  };
+
+  /**
+   * BreadcrumbList — makes the trail eligible to replace the raw URL in search
+   * results, and is the enhancement Search Console reports on.
+   *
+   * Google requires this to mirror the breadcrumb the user actually sees, so
+   * the items below are built from the same values as the visible <nav>: Learn
+   * → cluster (when the article has one) → the article itself. Change one and
+   * you must change the other.
+   */
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { name: 'Learn', item: absoluteUrl('/learn') },
+      ...(article.cluster
+        ? [
+            {
+              name: article.cluster.name,
+              item: `${SITE_URL}/learn?view=grid&cluster=${article.cluster.id}`,
+            },
+          ]
+        : []),
+      { name: article.title, item: absoluteUrl(`/${article.slug}`) },
+    ].map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      item: crumb.item,
+    })),
   };
 
   return (
@@ -217,6 +248,10 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
       <script
         type='application/ld+json'
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
+      />
+      <script
+        type='application/ld+json'
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
       <ReadingProgress />
       <LearnHeader />
@@ -239,14 +274,17 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
           {/* Overlay content */}
           <div className='absolute inset-x-0 bottom-0 max-w-7xl mx-auto px-4 sm:px-6 pb-8'>
             <nav className='flex items-center gap-1.5 text-[11px] text-white/50 mb-3'>
-              <Link href='/' className='hover:text-white/80 transition-colors'>
+              <Link
+                href='/learn'
+                className='hover:text-white/80 transition-colors'
+              >
                 Learn
               </Link>
               {article.cluster && (
                 <>
                   <span>/</span>
                   <Link
-                    href={`/?cluster=${article.cluster.id}`}
+                    href={`/learn?view=grid&cluster=${article.cluster.id}`}
                     className='hover:text-white/80 transition-colors'
                   >
                     {article.cluster.name}
@@ -318,14 +356,17 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
           />
           <div className='relative max-w-7xl mx-auto px-4 sm:px-6'>
             <nav className='flex items-center gap-1.5 text-[11px] text-white/50 mb-4'>
-              <Link href='/' className='hover:text-white/80 transition-colors'>
+              <Link
+                href='/learn'
+                className='hover:text-white/80 transition-colors'
+              >
                 Learn
               </Link>
               {article.cluster && (
                 <>
                   <span>/</span>
                   <Link
-                    href={`/?cluster=${article.cluster.id}`}
+                    href={`/learn?view=grid&cluster=${article.cluster.id}`}
                     className='hover:text-white/80 transition-colors'
                   >
                     {article.cluster.name}
@@ -371,7 +412,7 @@ export default async function LearnArticlePage({ params }: LearnPageProps) {
             <aside className='hidden lg:block w-56 xl:w-60 flex-shrink-0'>
               <div className='sticky top-20 space-y-5'>
                 <Link
-                  href='/'
+                  href='/learn'
                   className='flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors'
                 >
                   <svg

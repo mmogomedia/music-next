@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Seed demo data for the PULSE³ League:
  * - Creates demo ArtistProfiles (no Users required)
@@ -8,9 +7,9 @@
  *   dotenv -e .env.local -- node scripts/seed-league-demo.js
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));

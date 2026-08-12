@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-env node */
 
 /**
  * Check League Status in Production Database
@@ -10,9 +9,7 @@
  *   DATABASE_URL_PROD="postgresql://..." node scripts/check-league-status-prod.js
  */
 
-/* eslint-disable no-console */
-
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
 const DATABASE_URL_PROD = process.env.DATABASE_URL_PROD;
 
@@ -33,13 +30,7 @@ if (!DATABASE_URL_PROD) {
   process.exit(1);
 }
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: DATABASE_URL_PROD,
-    },
-  },
-});
+const prisma = createPrismaClient(DATABASE_URL_PROD);
 
 async function main() {
   console.log('\n🔍 Checking League Status in Production Database\n');

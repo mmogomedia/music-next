@@ -1,6 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const SOUTH_AFRICAN_PROVINCES = [
   'Western Cape',

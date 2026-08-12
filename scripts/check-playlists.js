@@ -1,14 +1,12 @@
 #!/usr/bin/env node
 
-/* eslint-disable no-console */
-
 // Load environment variables from .env.production if it exists
 const envFile = process.env.ENV_FILE || '.env.production';
 require('dotenv').config({ path: envFile });
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function checkPlaylists() {
   try {

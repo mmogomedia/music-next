@@ -50,33 +50,10 @@ export function PlaylistGridRenderer({
     PlaylistWithTracks[]
   >([]);
 
-  // Initialize playlists state - first playlist expanded by default
-  useEffect(() => {
-    setPlaylistsWithTracks(
-      playlists.map((playlist, index) => {
-        const playlistData = playlist as any;
-        const coverImage =
-          playlistData.coverImage || playlistData.coverImageUrl || undefined;
-
-        return {
-          id: playlist.id,
-          name: playlist.name,
-          description: playlist.description || undefined,
-          trackCount: playlist.trackCount || 0,
-          coverImage,
-          tracks: [],
-          isLoading: index === 0, // Load tracks for first playlist immediately
-          isExpanded: index === 0, // First playlist expanded by default
-        };
-      })
-    );
-
-    // Auto-fetch tracks for the first playlist
-    if (playlists.length > 0) {
-      fetchPlaylistTracks(playlists[0].id);
-    }
-  }, [playlists]);
-
+  // Declared ABOVE the effect that calls it on purpose: React Compiler
+  // reports "cannot access variable before it is declared" when a callback
+  // is defined below its use, and the old order also hid a stale-closure
+  // risk because the effect omits it from the dep array.
   // Fetch tracks for a playlist
   const fetchPlaylistTracks = useCallback(
     async (playlistId: string): Promise<Track[]> => {
@@ -152,6 +129,33 @@ export function PlaylistGridRenderer({
     },
     []
   );
+
+  // Initialize playlists state - first playlist expanded by default
+  useEffect(() => {
+    setPlaylistsWithTracks(
+      playlists.map((playlist, index) => {
+        const playlistData = playlist as any;
+        const coverImage =
+          playlistData.coverImage || playlistData.coverImageUrl || undefined;
+
+        return {
+          id: playlist.id,
+          name: playlist.name,
+          description: playlist.description || undefined,
+          trackCount: playlist.trackCount || 0,
+          coverImage,
+          tracks: [],
+          isLoading: index === 0, // Load tracks for first playlist immediately
+          isExpanded: index === 0, // First playlist expanded by default
+        };
+      })
+    );
+
+    // Auto-fetch tracks for the first playlist
+    if (playlists.length > 0) {
+      fetchPlaylistTracks(playlists[0].id);
+    }
+  }, [playlists]);
 
   const togglePlaylist = (playlistId: string) => {
     setPlaylistsWithTracks(prev =>

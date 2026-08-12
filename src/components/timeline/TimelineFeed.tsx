@@ -109,18 +109,19 @@ export default function TimelineFeed({
 
   // Track the most recent post ID from the current feed view as baseline
   // Only set once when feed finishes initial load, with a small delay to ensure stability
+  // `baselinePostId` is the single source of truth for "the stream has a
+  // baseline". There used to be a `hasInitializedStream` ref alongside it, set
+  // in the same block as this state and then READ DURING RENDER to compute
+  // `streamEnabled` — which only worked by accident, because the setState that
+  // accompanied it happened to trigger the re-render that made the ref look
+  // current. Ref writes do not schedule renders, so that value could go stale.
+  // The ref carried no information this state does not.
   const [baselinePostId, setBaselinePostId] = useState<string | null>(null);
-  const hasInitializedStream = useRef(false);
 
   // Set baseline post ID once when feed finishes initial load
   // Use the post with the most recent publishedAt, not just posts[0] (which might be sorted by relevance)
   useEffect(() => {
-    if (
-      !loading &&
-      posts.length > 0 &&
-      !baselinePostId &&
-      !hasInitializedStream.current
-    ) {
+    if (!loading && posts.length > 0 && !baselinePostId) {
       // Delay setting baseline to ensure feed is stable
       const timer = setTimeout(() => {
         if (posts.length > 0) {
@@ -144,7 +145,6 @@ export default function TimelineFeed({
               mostRecentPost.publishedAt
             );
             setBaselinePostId(baselineId);
-            hasInitializedStream.current = true;
           }
         }
       }, 1000); // 1 second delay to ensure feed is fully loaded
@@ -155,17 +155,12 @@ export default function TimelineFeed({
 
   // Real-time feed updates via SSE - pass most recent post ID to avoid counting existing posts
   // Only connect when we have a stable baseline
-  const streamEnabled =
-    !loading &&
-    posts.length > 0 &&
-    !!baselinePostId &&
-    hasInitializedStream.current; // Only enable after baseline is set
+  const streamEnabled = !loading && posts.length > 0 && !!baselinePostId; // baseline is set
 
   logger.info('[TimelineFeed] Stream enabled check:', {
     loading,
     postsLength: posts.length,
     baselinePostId,
-    hasInitializedStream: hasInitializedStream.current,
     streamEnabled,
   });
 
@@ -305,7 +300,6 @@ export default function TimelineFeed({
       await Promise.all([fetchFeaturedContent(), fetchPosts(null, false)]);
     };
     fetchInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
   // Listen for refresh events (e.g., when a new post is created)
@@ -335,7 +329,6 @@ export default function TimelineFeed({
       prevFilters.current = currentFilters;
       fetchPosts(null, false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFilter, selectedGenre, sortBy]); // Re-fetch when filters change
 
   // Infinite scroll observer
