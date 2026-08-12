@@ -9,6 +9,7 @@
 
 import { prisma } from '@/lib/db';
 import { constructFileUrl } from '@/lib/url-utils';
+import { toVectorLiteral } from '@/lib/utils/pgvector';
 import type { Track, ArtistProfile } from '@prisma/client';
 
 /**
@@ -422,6 +423,9 @@ export class MusicService {
     // Lazy import to avoid build-time errors (OpenAI client is lazy-init)
     const { embedText } = await import('@/lib/ai/track-embedding-service');
     const queryVec = await embedText(query);
+    // pgvector text literal — a raw JS array does not survive the Prisma 7
+    // driver adapter. See lib/utils/pgvector.ts.
+    const queryVecLiteral = toVectorLiteral(queryVec);
 
     // Build optional genre sub-clause
     // We do a two-step approach: raw SQL for IDs, then Prisma for full rows.
@@ -467,35 +471,35 @@ export class MusicService {
       if (resolvedGenreId) {
         rows = await prisma.$queryRaw<RawRow[]>`
           SELECT id,
-                 1 - (embedding <=> ${queryVec}::vector(1536)) AS similarity
+                 1 - (embedding <=> ${queryVecLiteral}::vector(1536)) AS similarity
           FROM "tracks"
           WHERE embedding IS NOT NULL
             AND "isPublic" = true
             AND "genreId" = ${resolvedGenreId}
-          ORDER BY embedding <=> ${queryVec}::vector(1536)
+          ORDER BY embedding <=> ${queryVecLiteral}::vector(1536)
           LIMIT ${fetchLimit}
         `;
       } else {
         // Fallback: genre string match
         rows = await prisma.$queryRaw<RawRow[]>`
           SELECT id,
-                 1 - (embedding <=> ${queryVec}::vector(1536)) AS similarity
+                 1 - (embedding <=> ${queryVecLiteral}::vector(1536)) AS similarity
           FROM "tracks"
           WHERE embedding IS NOT NULL
             AND "isPublic" = true
             AND genre ILIKE ${`%${genre}%`}
-          ORDER BY embedding <=> ${queryVec}::vector(1536)
+          ORDER BY embedding <=> ${queryVecLiteral}::vector(1536)
           LIMIT ${fetchLimit}
         `;
       }
     } else {
       rows = await prisma.$queryRaw<RawRow[]>`
         SELECT id,
-               1 - (embedding <=> ${queryVec}::vector(1536)) AS similarity
+               1 - (embedding <=> ${queryVecLiteral}::vector(1536)) AS similarity
         FROM "tracks"
         WHERE embedding IS NOT NULL
           AND "isPublic" = true
-        ORDER BY embedding <=> ${queryVec}::vector(1536)
+        ORDER BY embedding <=> ${queryVecLiteral}::vector(1536)
         LIMIT ${fetchLimit}
       `;
     }

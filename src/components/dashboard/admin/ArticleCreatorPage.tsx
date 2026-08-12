@@ -30,7 +30,7 @@ import type {
 } from '@/types/articles';
 import { getAllTools } from '@/lib/tools/registry';
 import { parseArticleMd } from '@/lib/utils/parse-article-md';
-import { slugify } from '@/lib/services/article-service';
+import { slugify } from '@/lib/utils/article-slug';
 import { useImageUpload } from '@/lib/image-upload';
 import { constructFileUrl } from '@/lib/url-utils';
 

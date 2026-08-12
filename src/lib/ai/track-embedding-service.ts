@@ -8,6 +8,7 @@
  */
 
 import { prisma } from '@/lib/db';
+import { toVectorLiteral } from '@/lib/utils/pgvector';
 import { OpenAIEmbeddingAdapter } from './memory/presets/openai-embedding-adapter';
 import type { Track } from '@prisma/client';
 
@@ -119,12 +120,13 @@ export async function storeTrackEmbedding(
   trackId: string,
   embedding: number[]
 ): Promise<void> {
-  // Prisma raw template literal — embedding is passed as a JS array which
-  // Prisma serialises as a PostgreSQL array literal, then cast to vector(1536).
+  // The embedding is passed as a pgvector TEXT literal ("[0.1,0.2,...]"), not as
+  // a JS array: under Prisma 7's driver adapter a JS array serialises to
+  // '{"0.1","0.2"}', which pgvector rejects. See lib/utils/pgvector.ts.
   await prisma.$executeRaw`
     UPDATE "tracks"
     SET
-      embedding = ${embedding}::vector(1536),
+      embedding = ${toVectorLiteral(embedding)}::vector(1536),
       "embeddingUpdatedAt" = NOW()
     WHERE id = ${trackId}
   `;

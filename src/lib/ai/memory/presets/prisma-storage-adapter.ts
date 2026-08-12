@@ -1,4 +1,5 @@
 import type { PrismaClient, ChatType as PrismaChatType } from '@prisma/client';
+import { toVectorLiteral } from '@/lib/utils/pgvector';
 import type {
   IStorageAdapter,
   StoredMessage,
@@ -207,7 +208,7 @@ export class PrismaStorageAdapter implements IStorageAdapter {
         ${p.conversationId},
         ${p.userId},
         ${p.summary},
-        ${p.embedding}::vector(1536),
+        ${toVectorLiteral(p.embedding)}::vector(1536),
         ${p.importance},
         ${p.messageCount},
         ${p.startTime},
@@ -221,6 +222,7 @@ export class PrismaStorageAdapter implements IStorageAdapter {
     limit: number;
     minImportance: number;
   }): Promise<EmbeddingSearchResult[]> {
+    const queryVecLiteral = toVectorLiteral(p.queryEmbedding);
     const results = await this.prisma.$queryRaw<
       Array<{
         id: string;
@@ -235,14 +237,14 @@ export class PrismaStorageAdapter implements IStorageAdapter {
         id,
         summary,
         importance,
-        1 - (embedding <=> ${p.queryEmbedding}::vector(1536)) as similarity,
+        1 - (embedding <=> ${queryVecLiteral}::vector(1536)) as similarity,
         "startTime" as start_time,
         "endTime" as end_time
       FROM conversation_embeddings
       WHERE "userId" = ${p.userId}
         AND importance >= ${p.minImportance}
       ORDER BY
-        embedding <=> ${p.queryEmbedding}::vector(1536)
+        embedding <=> ${queryVecLiteral}::vector(1536)
       LIMIT ${p.limit}
     `;
 
