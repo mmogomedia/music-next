@@ -42,7 +42,20 @@ CREATE INDEX "artist_profile_skills_artistProfileId_idx" ON "artist_profile_skil
 CREATE INDEX "artist_profile_skills_skillId_idx" ON "artist_profile_skills"("skillId");
 
 -- AddForeignKey
-ALTER TABLE "artist_profile_skills" ADD CONSTRAINT "artist_profile_skills_artistProfileId_fkey" FOREIGN KEY ("artistProfileId") REFERENCES "artist_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- GUARDED: "artist_profiles" is created by 20250909183449_add_playlist_system,
+-- which sorts AFTER this migration, so on a fresh replay the table does not
+-- exist yet and this FK aborted the whole chain. Existing databases already
+-- applied this migration and never re-run it. Fresh databases get the FK from
+-- 20250909190000_repair_out_of_order_schema once the table exists.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_name = 'artist_profiles'
+    ) THEN
+        ALTER TABLE "artist_profile_skills" ADD CONSTRAINT "artist_profile_skills_artistProfileId_fkey" FOREIGN KEY ("artistProfileId") REFERENCES "artist_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
 -- AddForeignKey
 ALTER TABLE "artist_profile_skills" ADD CONSTRAINT "artist_profile_skills_skillId_fkey" FOREIGN KEY ("skillId") REFERENCES "skills"("id") ON DELETE CASCADE ON UPDATE CASCADE;

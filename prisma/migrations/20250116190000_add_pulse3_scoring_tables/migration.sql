@@ -94,13 +94,65 @@ CREATE INDEX "pulse_platform_data_platform_idx" ON "pulse_platform_data"("platfo
 CREATE INDEX "pulse_platform_data_fetchedAt_idx" ON "pulse_platform_data"("fetchedAt");
 
 -- AddForeignKey
-ALTER TABLE "pulse_eligibility_scores" ADD CONSTRAINT "pulse_eligibility_scores_artistProfileId_fkey" FOREIGN KEY ("artistProfileId") REFERENCES "artist_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- GUARDED: "artist_profiles" is created by 20250909183449_add_playlist_system,
+-- which sorts AFTER this migration, so on a fresh replay the table does not
+-- exist yet and this FK aborted the whole chain. Existing databases already
+-- applied this migration and never re-run it. Fresh databases get the FK from
+-- 20250909190000_repair_out_of_order_schema once the table exists.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_name = 'artist_profiles'
+    ) THEN
+        ALTER TABLE "pulse_eligibility_scores" ADD CONSTRAINT "pulse_eligibility_scores_artistProfileId_fkey" FOREIGN KEY ("artistProfileId") REFERENCES "artist_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "pulse_momentum_scores" ADD CONSTRAINT "pulse_momentum_scores_artistProfileId_fkey" FOREIGN KEY ("artistProfileId") REFERENCES "artist_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- GUARDED: "artist_profiles" is created by 20250909183449_add_playlist_system,
+-- which sorts AFTER this migration, so on a fresh replay the table does not
+-- exist yet and this FK aborted the whole chain. Existing databases already
+-- applied this migration and never re-run it. Fresh databases get the FK from
+-- 20250909190000_repair_out_of_order_schema once the table exists.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_name = 'artist_profiles'
+    ) THEN
+        ALTER TABLE "pulse_momentum_scores" ADD CONSTRAINT "pulse_momentum_scores_artistProfileId_fkey" FOREIGN KEY ("artistProfileId") REFERENCES "artist_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "pulse_monitoring_status" ADD CONSTRAINT "pulse_monitoring_status_artistProfileId_fkey" FOREIGN KEY ("artistProfileId") REFERENCES "artist_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- GUARDED: "artist_profiles" is created by 20250909183449_add_playlist_system,
+-- which sorts AFTER this migration, so on a fresh replay the table does not
+-- exist yet and this FK aborted the whole chain. Existing databases already
+-- applied this migration and never re-run it. Fresh databases get the FK from
+-- 20250909190000_repair_out_of_order_schema once the table exists.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_name = 'artist_profiles'
+    ) THEN
+        ALTER TABLE "pulse_monitoring_status" ADD CONSTRAINT "pulse_monitoring_status_artistProfileId_fkey" FOREIGN KEY ("artistProfileId") REFERENCES "artist_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "pulse_platform_data" ADD CONSTRAINT "pulse_platform_data_artistProfileId_fkey" FOREIGN KEY ("artistProfileId") REFERENCES "artist_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- GUARDED: "artist_profiles" is created by 20250909183449_add_playlist_system,
+-- which sorts AFTER this migration, so on a fresh replay the table does not
+-- exist yet and this FK aborted the whole chain. Existing databases already
+-- applied this migration and never re-run it. Fresh databases get the FK from
+-- 20250909190000_repair_out_of_order_schema once the table exists.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_name = 'artist_profiles'
+    ) THEN
+        ALTER TABLE "pulse_platform_data" ADD CONSTRAINT "pulse_platform_data_artistProfileId_fkey" FOREIGN KEY ("artistProfileId") REFERENCES "artist_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    END IF;
+END $$;
