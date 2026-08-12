@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-/* eslint-disable no-console */
-
 /**
  * Dedicated script to ensure the production database has a secure admin account.
  *

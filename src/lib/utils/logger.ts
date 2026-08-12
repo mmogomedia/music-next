@@ -38,34 +38,30 @@ class Logger {
 
   log(...args: unknown[]): void {
     if (this.shouldLog('log')) {
-      // eslint-disable-next-line no-console
       console.log(...args);
     }
   }
 
   info(...args: unknown[]): void {
     if (this.shouldLog('info')) {
-      // eslint-disable-next-line no-console
       console.info(...args);
     }
   }
 
   warn(...args: unknown[]): void {
     if (this.shouldLog('warn')) {
-      // eslint-disable-next-line no-console
       console.warn(...args);
     }
   }
 
   error(...args: unknown[]): void {
     // Always log errors, regardless of environment
-    // eslint-disable-next-line no-console
+
     console.error(...args);
   }
 
   debug(...args: unknown[]): void {
     if (this.config.enableDebug && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-console
       console.log('🔍 [DEBUG]', ...args);
     }
   }

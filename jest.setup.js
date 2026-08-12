@@ -7,7 +7,6 @@ global.TextDecoder = TextDecoder;
 
 // Simple Request/Response mocks for API route tests
 // These are minimal implementations that work with Next.js API routes
-/* eslint-env jest */
 if (typeof global.Request === 'undefined') {
   global.Request = class Request {
     constructor(input, init = {}) {
@@ -25,7 +24,7 @@ if (typeof global.Request === 'undefined') {
         enumerable: true,
       });
       this.method = init.method || 'GET';
-      // eslint-disable-next-line no-undef
+
       this.headers = new Map();
       if (init.headers) {
         Object.entries(init.headers).forEach(([key, value]) => {
@@ -54,7 +53,7 @@ if (typeof global.Request === 'undefined') {
       this.body = body;
       this.status = init.status || 200;
       this.statusText = init.statusText || 'OK';
-      // eslint-disable-next-line no-undef
+
       this.headers = new Map();
       if (init.headers) {
         Object.entries(init.headers).forEach(([key, value]) => {

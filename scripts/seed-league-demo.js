@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Seed demo data for the PULSE³ League:
  * - Creates demo ArtistProfiles (no Users required)

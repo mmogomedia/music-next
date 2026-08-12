@@ -227,7 +227,6 @@ const AIChat = React.forwardRef<AIChatHandle, AIChatProps>(
           let buffer = '';
           let chatResponse: ChatResponse | null = null;
 
-          // eslint-disable-next-line no-constant-condition
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;

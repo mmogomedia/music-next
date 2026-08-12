@@ -1,13 +1,10 @@
 #!/usr/bin/env node
-/* eslint-env node */
 
 /**
  * Test Gamification System
  *
  * Tests that completion calculation, saving, and retrieval work correctly
  */
-
-/* eslint-disable no-console */
 
 const { createPrismaClient } = require('./lib/prisma.cjs');
 

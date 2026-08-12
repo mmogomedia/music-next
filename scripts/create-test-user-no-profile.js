@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 const { createPrismaClient } = require('./lib/prisma.cjs');
 const bcrypt = require('bcryptjs');
 

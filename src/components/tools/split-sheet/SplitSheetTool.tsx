@@ -541,7 +541,6 @@ function RightPanel({
     if (fetched.current) return;
     fetched.current = true;
     loadLinked();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Manage mode
@@ -1716,7 +1715,6 @@ export default function SplitSheetTool() {
   // Reset save state on content change
   useEffect(() => {
     if (saveState === 'saved') setSaveState('idle');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [songTitle, songDate, masterCollabs, publishingCollabs]);
 
   const headerActions = (

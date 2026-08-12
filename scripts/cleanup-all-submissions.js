@@ -1,4 +1,3 @@
-/* eslint-env node */
 const { createPrismaClient } = require('./lib/prisma.cjs');
 
 const prisma = createPrismaClient();
@@ -8,7 +7,7 @@ async function cleanupAllSubmissions() {
     console.log('🧹 Starting cleanup of all submissions...');
 
     // Get counts before cleanup
-    // eslint-disable-next-line no-undef
+
     const [playlistSubmissionsCount, playlistTracksCount] = await Promise.all([
       prisma.playlistSubmission.count(),
       prisma.playlistTrack.count(),
@@ -66,7 +65,7 @@ async function cleanupAllSubmissions() {
     });
 
     // Verify cleanup
-    // eslint-disable-next-line no-undef
+
     const [finalSubmissionsCount, finalTracksCount] = await Promise.all([
       prisma.playlistSubmission.count(),
       prisma.playlistTrack.count(),

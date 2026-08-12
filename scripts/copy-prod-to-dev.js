@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-/* eslint-env node */
-/* global Promise */
 
 /**
  * Copy Production Data to Development Database
@@ -16,8 +14,6 @@
  *   export DATABASE_URL_DEV="postgresql://..."
  *   node scripts/copy-prod-to-dev.js
  */
-
-/* eslint-disable no-console */
 
 const { createPrismaClient } = require('./lib/prisma.cjs');
 const readline = require('readline');

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 /**
  * Simulate league movement by creating NEW eligibility score rows for demo artists,
  * with slight random changes to score + component scores.

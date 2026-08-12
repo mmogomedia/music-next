@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     let counter = 1;
 
     // Ensure slug is unique
-    // eslint-disable-next-line no-constant-condition
+
     while (true) {
       const slugExists = await prisma.artistProfile.findUnique({
         where: { slug },

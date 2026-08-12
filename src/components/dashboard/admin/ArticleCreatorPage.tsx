@@ -457,7 +457,6 @@ function LinkedContentPanel({
       .catch(() => {})
       .finally(() => setLoading(false));
     // onChange intentionally excluded — only run on articleId change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [articleId]);
 
   const toggle = async (slug: string) => {
@@ -745,7 +744,6 @@ export default function ArticleCreatorPage({
       fields.excerpt,
       fields.coverImageUrl,
       fields.clusterRole,
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     ]
   );
 
@@ -870,7 +868,6 @@ export default function ArticleCreatorPage({
         const decoder = new TextDecoder();
         let buffer = '';
 
-        // eslint-disable-next-line no-constant-condition
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;

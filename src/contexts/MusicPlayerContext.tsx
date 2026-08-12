@@ -181,7 +181,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         const currentIndex = queueIndexRef.current;
         const isShuffle = shuffleRef.current;
 
-        let nextIdx: number | null = null;
+        let nextIdx: number | null;
         if (currentQueue.length === 0) {
           nextIdx = null;
         } else if (isShuffle && currentQueue.length > 1) {
@@ -253,7 +253,7 @@ export function MusicPlayerProvider({ children }: MusicPlayerProviderProps) {
         const isShuffle = shuffleRef.current;
         const repeat = repeatModeRef.current;
 
-        let nextIdx: number | null = null;
+        let nextIdx: number | null;
         if (currentQueue.length === 0) {
           nextIdx = null;
         } else if (isShuffle && currentQueue.length > 1) {

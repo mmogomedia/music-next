@@ -138,7 +138,7 @@ export function useStats(options: UseStatsOptions = {}) {
         trackPlayEnd(currentTrackRef.current, undefined, true);
       }
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   return {
     sessionId,
