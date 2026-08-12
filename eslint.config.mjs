@@ -215,15 +215,25 @@ export default [
 
       // DEFERRED — real work, sized and understood. NOT a blanket punt.
       //
-      //   immutability (37). 36 are "Cannot access variable before it is
-      //   declared": a useCallback declared BELOW the useEffect that calls it
-      //   (e.g. playlist-grid-renderer.tsx — effect at :54, callback at :81).
-      //   It works at runtime because effect bodies run after render, so this
-      //   is compiler analysis rather than a live bug — but it also hides a
-      //   stale-closure risk, since those effects omit the callback from their
-      //   deps and `exhaustive-deps` is off here. Fix is mechanical (hoist the
-      //   declaration above its first use) but spans 28 files, and callbacks
-      //   that reference each other need ordering care. The 37th is a genuine
+      //   immutability (36 remaining, was 37). All but one are "Cannot access
+      //   variable before it is declared": a useCallback declared BELOW the
+      //   useEffect that calls it. It works at runtime because effect bodies
+      //   run after render, so this is compiler analysis rather than a live bug
+      //   — but it also hides a stale-closure risk, since those effects omit
+      //   the callback from their deps and `exhaustive-deps` is off here.
+      //
+      //   THE RECIPE IS PROVEN, one file is done as the worked example:
+      //   playlist-grid-renderer.tsx had the effect at :54 calling a callback
+      //   declared at :81. Moving the whole `useCallback` block above the
+      //   effect cleared it (37 -> 36) with tsc still clean. Check the
+      //   callback's dep array first — that one had `[]`, so it depended on no
+      //   state and could move freely; a callback with deps must stay below
+      //   whatever it closes over.
+      //
+      //   27 files remain. It is deliberately NOT automated: each needs its own
+      //   block boundaries identified, and callbacks that reference each other
+      //   need ordering care, so a blind sweep risks introducing real TDZ
+      //   errors in place of a compiler warning. The 37th finding is a genuine
       //   "This value cannot be modified".
       //
       //   set-state-in-effect (51). All "calling setState synchronously within
