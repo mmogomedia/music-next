@@ -152,7 +152,7 @@ export default function ArtistProfileCard({
             className='object-cover rounded-t-lg'
             referrerPolicy='no-referrer'
           />
-          <div className='absolute inset-0 bg-black bg-opacity-20 rounded-t-lg' />
+          <div className='absolute inset-0 bg-black/20 rounded-t-lg' />
         </div>
       )}
 
