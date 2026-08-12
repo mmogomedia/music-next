@@ -14,10 +14,10 @@
  *   - add_track_embedding migration applied (20260228000000_add_track_embedding)
  */
 
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from './lib/prisma.mjs';
 import { OpenAI } from 'openai';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const BATCH_SIZE = 20;

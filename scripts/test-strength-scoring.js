@@ -3,9 +3,9 @@
  * This script tests the complete strength scoring pipeline
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function testStrengthScoring() {
   console.log('🧪 Testing Artist Strength Scoring System...\n');

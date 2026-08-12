@@ -3,9 +3,9 @@
  * Tests event collection, aggregation, and analytics
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function testStatsSystem() {
   console.log('🧪 Testing Stats System...\n');

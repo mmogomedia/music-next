@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { createPrismaClient } from './lib/prisma';
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function verifyTracks() {
   const tracks = await prisma.track.findMany({

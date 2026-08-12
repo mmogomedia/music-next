@@ -15,7 +15,7 @@
  *   DATABASE_URL="postgresql://..." node scripts/enable-pgvector.js
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
 // Get DATABASE_URL from environment or Vercel CLI
 function getDatabaseUrl() {
@@ -91,13 +91,7 @@ async function enablePgvector(databaseUrl) {
   console.log(`Database: ${maskedUrl}\n`);
 
   // Create Prisma client with the database URL
-  const prisma = new PrismaClient({
-    datasources: {
-      db: {
-        url: databaseUrl,
-      },
-    },
-  });
+  const prisma = createPrismaClient(databaseUrl);
 
   try {
     // Check if extension already exists

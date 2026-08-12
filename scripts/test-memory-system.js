@@ -14,7 +14,7 @@
  *   - A test user in the database
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 // Use native fetch (Node 18+) or undici
 let fetch;
 try {
@@ -29,7 +29,7 @@ try {
   fetch = require('node-fetch');
 }
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // Test messages that should trigger different memory features
 const testMessages = [

@@ -7,11 +7,11 @@
  *   node scripts/reset-password.js <email> [password]
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function resetPassword() {
   try {

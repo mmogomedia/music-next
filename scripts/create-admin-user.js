@@ -16,11 +16,11 @@
  * stored securely after execution.
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'tatenda@flemoji.com';
 const ADMIN_NAME = process.env.ADMIN_NAME || 'Flemoji Admin';

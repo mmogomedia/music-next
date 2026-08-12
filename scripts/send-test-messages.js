@@ -9,10 +9,10 @@
  *   node scripts/send-test-messages.js
  */
 
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 require('dotenv').config({ path: '.env.local' });
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // Test messages that should trigger different memory features
 const testMessages = [

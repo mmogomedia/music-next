@@ -9,7 +9,7 @@
  */
 
 /* eslint-disable no-console */
-const { PrismaClient } = require('@prisma/client');
+const { createPrismaClient } = require('./lib/prisma.cjs');
 
 const DATABASE_URL = process.env.DATABASE_URL;
 
@@ -18,7 +18,7 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // Import the calculation logic (simplified version)
 function isFieldCompleted(field, value) {
