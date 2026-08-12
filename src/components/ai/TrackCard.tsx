@@ -114,6 +114,43 @@ interface TrackCardProps {
   onShowStats?: (_track: Track) => void;
 }
 
+/**
+ * Hoisted to module scope on purpose.
+ *
+ * This used to be declared INSIDE TrackCard, which makes it a brand-new
+ * component type on every render — React then unmounts and remounts the whole
+ * button subtree instead of updating it, discarding DOM state (focus, active
+ * styles, any in-flight transition). It closes over nothing from TrackCard;
+ * every value it uses arrives as a prop, so hoisting is behaviour-preserving.
+ */
+function ActionButton({
+  icon: Icon,
+  label,
+  onClick,
+  disabled,
+}: {
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  label: string;
+  onClick: React.MouseEventHandler<HTMLButtonElement>;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type='button'
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={`h-8 w-full flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
+        disabled
+          ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+      }`}
+    >
+      <Icon className='w-3.5 h-3.5' />
+    </button>
+  );
+}
+
 export default function TrackCard({
   track,
   onPlay,
@@ -269,32 +306,6 @@ export default function TrackCard({
     }
     alert(stats.join('\n'));
   };
-
-  const ActionButton = ({
-    icon: Icon,
-    label,
-    onClick,
-    disabled,
-  }: {
-    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-    label: string;
-    onClick: React.MouseEventHandler<HTMLButtonElement>;
-    disabled?: boolean;
-  }) => (
-    <button
-      type='button'
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      className={`h-8 w-full flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
-        disabled
-          ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
-          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
-      }`}
-    >
-      <Icon className='w-3.5 h-3.5' />
-    </button>
-  );
 
   const buildActionHandler =
     (callback: () => void) => (event: React.MouseEvent<HTMLButtonElement>) => {
