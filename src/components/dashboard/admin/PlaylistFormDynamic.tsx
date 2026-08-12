@@ -180,7 +180,6 @@ export default function PlaylistFormDynamic({
         fetchAllTracks();
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, trackSearch]);
 
   const handleImageUpload = async (

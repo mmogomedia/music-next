@@ -46,12 +46,12 @@ async function main() {
 main()
   .then(async () => {
     await prisma.$disconnect();
-    // eslint-disable-next-line no-process-exit
+
     process.exit(0);
   })
   .catch(async e => {
     console.error(e);
     await prisma.$disconnect();
-    // eslint-disable-next-line no-process-exit
+
     process.exit(1);
   });

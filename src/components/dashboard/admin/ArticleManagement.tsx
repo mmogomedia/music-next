@@ -627,7 +627,6 @@ function ArticleForm({
     } catch {
       /* ignore corrupt data */
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Debounced autosave — fires 5 s after the last field change
@@ -658,7 +657,6 @@ function ArticleForm({
     return () => {
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     title,
     slug,
@@ -719,7 +717,6 @@ function ArticleForm({
     await onSave(buildData());
     localStorage.removeItem(DRAFT_KEY);
     setLastSavedAt(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     onSave,
     DRAFT_KEY,

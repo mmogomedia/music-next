@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-env node */
 
 /**
  * Seed League Tiers in Production Database
@@ -13,8 +12,6 @@
  *   export DATABASE_URL_PROD="postgresql://..."
  *   node scripts/seed-league-tiers-prod.js
  */
-
-/* eslint-disable no-console */
 
 const { createPrismaClient } = require('./lib/prisma.cjs');
 

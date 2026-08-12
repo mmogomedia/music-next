@@ -284,7 +284,6 @@ export default function RecentConversations({
       setLoading(true);
     }
     // Only re-run when status or session user id changes, not when fetchConversations changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, session?.user?.id, chatType]);
 
   const handleDeleteClick = (conversationId: string) => {

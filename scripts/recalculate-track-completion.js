@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-env node */
 
 /**
  * Recalculate Track Completion for All Tracks
@@ -8,7 +7,6 @@
  * Uses the new dynamic calculation based on database rules
  */
 
-/* eslint-disable no-console */
 const { createPrismaClient } = require('./lib/prisma.cjs');
 
 const DATABASE_URL = process.env.DATABASE_URL;

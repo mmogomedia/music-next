@@ -136,7 +136,6 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
         cancelAnimationFrame(animationFrame);
       };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast.duration, toast.id]); // Only depend on toast properties, not handleRemove
 
   const getToastConfig = () => {

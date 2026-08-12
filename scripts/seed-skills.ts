@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 import { createPrismaClient } from './lib/prisma';
 
 const prisma = createPrismaClient();

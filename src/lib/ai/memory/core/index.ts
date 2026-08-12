@@ -33,10 +33,10 @@ export interface MemorySystemConfig {
 
 class ConsoleLogger implements ILogger {
   error(message: string, ...args: unknown[]): void {
-    console.error(message, ...args); // eslint-disable-line no-console
+    console.error(message, ...args);
   }
   warn(message: string, ...args: unknown[]): void {
-    console.warn(message, ...args); // eslint-disable-line no-console
+    console.warn(message, ...args);
   }
   info(message: string, ...args: unknown[]): void {
     console.error(message, ...args); // console.log banned in ESLint

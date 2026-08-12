@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-/* global Map, Set */
 /**
  * Run the league immediately (creates LeagueRun + LeagueEntry snapshots).
  * Respects tier ordering and prevents overlap between tiers.

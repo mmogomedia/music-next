@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-/* eslint-env node */
-/* global Set */
 
 /**
  * Check Production Gamification Rules
@@ -10,8 +8,6 @@
  * Usage:
  *   DATABASE_URL_PROD="postgresql://..." node scripts/check-prod-gamification.js
  */
-
-/* eslint-disable no-console */
 
 const { createPrismaClient } = require('./lib/prisma.cjs');
 

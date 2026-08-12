@@ -126,7 +126,7 @@ export async function PUT(request: NextRequest) {
       // Check for uniqueness and add suffix if needed
       let slug = baseSlug;
       let counter = 1;
-      // eslint-disable-next-line no-constant-condition
+
       while (true) {
         const existing = await prisma.track.findFirst({
           where: { uniqueUrl: slug },

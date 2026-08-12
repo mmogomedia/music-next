@@ -1,4 +1,3 @@
-/* global Promise */
 /**
  * Test script to verify AI improvements
  * Tests each quick action and monitors tool calls
@@ -71,7 +70,6 @@ async function testMessage(test) {
     let agent = null;
     let finalMessage = null;
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;

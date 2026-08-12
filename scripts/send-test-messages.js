@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-/* eslint-env node */
-/* global globalThis, Promise */
 
 /**
  * Send Test Messages - Send 10 messages to test memory system
@@ -95,7 +93,6 @@ async function sendMessage(
     let hasComplete = false;
     let done = false;
 
-    // eslint-disable-next-line no-constant-condition
     while (!done) {
       const result = await reader.read();
       done = result.done;

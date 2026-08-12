@@ -2,7 +2,6 @@
  * Script to create a new test user and demo artist for claim testing
  * Run with: node scripts/create-claim-test-user.js
  */
-/* eslint-disable no-console */
 
 const { createPrismaClient } = require('./lib/prisma.cjs');
 const bcrypt = require('bcryptjs');

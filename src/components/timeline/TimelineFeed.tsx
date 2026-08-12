@@ -305,7 +305,6 @@ export default function TimelineFeed({
       await Promise.all([fetchFeaturedContent(), fetchPosts(null, false)]);
     };
     fetchInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount
 
   // Listen for refresh events (e.g., when a new post is created)
@@ -335,7 +334,6 @@ export default function TimelineFeed({
       prevFilters.current = currentFilters;
       fetchPosts(null, false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFilter, selectedGenre, sortBy]); // Re-fetch when filters change
 
   // Infinite scroll observer

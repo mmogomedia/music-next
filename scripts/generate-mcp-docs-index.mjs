@@ -83,7 +83,7 @@ function extractSummary(text) {
     .replace(/\s+/g, ' ')
     .trim();
   if (summary.length > SUMMARY_MAX) {
-    summary = summary.slice(0, SUMMARY_MAX - 1).trimEnd() + '…';
+    summary = `${summary.slice(0, SUMMARY_MAX - 1).trimEnd()}…`;
   }
   return summary;
 }
@@ -92,7 +92,7 @@ function extractSummary(text) {
 function collectFiles() {
   const files = [];
 
-  let ruleEntries = [];
+  let ruleEntries;
   try {
     ruleEntries = fs.readdirSync(RULES_DIR, { withFileTypes: true });
   } catch {
@@ -152,7 +152,7 @@ function main() {
   };
 
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
-  fs.writeFileSync(OUT, JSON.stringify(payload) + '\n');
+  fs.writeFileSync(OUT, `${JSON.stringify(payload)}\n`);
 
   console.log(
     `[mcp-docs-index] ${sections.length} sections from ${files.length} files → ${rel(OUT)}`
