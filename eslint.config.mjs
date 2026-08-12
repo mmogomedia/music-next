@@ -170,34 +170,87 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'off',
 
-      // --- React Compiler rules: DEFERRED, NOT DISMISSED ------------------
+      // --- React Compiler rules ------------------------------------------
       // eslint-config-next@16 enables 16 react-hooks rules where v15 enabled
-      // two. The 14 below are the new ones, and they currently flag 110 real
-      // errors across ~125 files:
+      // two. The 14 new ones flagged 110 errors. Each was READ before being
+      // enabled or deferred — the counts below are what remains, and the
+      // reasons are specific rather than "too many to fix".
       //
-      //   set-state-in-effect          51
-      //   immutability                 37
-      //   static-components            13
-      //   refs                          5
-      //   purity                        2
-      //   preserve-manual-memoization   2
+      // ENABLED — the findings were real bugs and are now fixed:
       //
-      // These are genuine code-quality signals, not noise. They are switched
-      // off HERE, in one visible block, rather than silently absorbed — fixing
-      // them means changing component behaviour across a large surface with no
-      // integration tests to catch regressions, which is a different change
-      // from a lint-config migration and belongs in its own reviewable batches.
-      // Turn them on one at a time; the counts above are the work remaining.
-      'react-hooks/static-components': 'off',
-      'react-hooks/use-memo': 'off',
-      'react-hooks/preserve-manual-memoization': 'off',
-      'react-hooks/incompatible-library': 'off',
-      'react-hooks/immutability': 'off',
-      'react-hooks/globals': 'off',
-      'react-hooks/refs': 'off',
-      'react-hooks/set-state-in-effect': 'off',
-      'react-hooks/error-boundaries': 'off',
+      //   static-components  (was 13)  Components declared INSIDE another
+      //       component are a new type every render, so React remounted the
+      //       subtree instead of updating it, discarding DOM state. ActionButton
+      //       in TrackCard and GuideSection in ArticleManagement were both
+      //       hoisted to module scope; neither closed over anything.
+      //   refs               (was 5)   TimelineFeed read hasInitializedStream
+      //       .current DURING RENDER to compute `streamEnabled`. Ref writes do
+      //       not schedule renders, so that only worked because an accompanying
+      //       setState happened to re-render at the same moment. The ref carried
+      //       no information `baselinePostId` did not, and was removed.
+      //
+      // These two stay ON so the bugs cannot come back.
+      'react-hooks/static-components': 'error',
+      'react-hooks/refs': 'error',
+
+      // DEFERRED — FALSE POSITIVES. Do not "fix" these; the code is correct.
+      //
+      //   purity (2). Both flag impure calls "during render" that are not:
+      //     - app/quick/[slug]/page.tsx uses Date.now() in an ASYNC SERVER
+      //       COMPONENT (it awaits next/headers). It renders once per request;
+      //       the rule does not model RSC.
+      //     - track-list-renderer.tsx uses Math.random() inside handleAction,
+      //       an EVENT HANDLER. Shuffling on click is the intended behaviour;
+      //       the compiler simply cannot prove the function is only invoked
+      //       from events.
       'react-hooks/purity': 'off',
+
+      // DEFERRED — advisory, not correctness.
+      //
+      //   preserve-manual-memoization (2). "Compilation Skipped" — the compiler
+      //   declined to optimize two components whose existing memoization it
+      //   could not preserve. Nothing is broken; the components just miss an
+      //   optimization. Worth revisiting if React Compiler is adopted properly.
+      'react-hooks/preserve-manual-memoization': 'off',
+
+      // DEFERRED — real work, sized and understood. NOT a blanket punt.
+      //
+      //   immutability (36 remaining, was 37). All but one are "Cannot access
+      //   variable before it is declared": a useCallback declared BELOW the
+      //   useEffect that calls it. It works at runtime because effect bodies
+      //   run after render, so this is compiler analysis rather than a live bug
+      //   — but it also hides a stale-closure risk, since those effects omit
+      //   the callback from their deps and `exhaustive-deps` is off here.
+      //
+      //   THE RECIPE IS PROVEN, one file is done as the worked example:
+      //   playlist-grid-renderer.tsx had the effect at :54 calling a callback
+      //   declared at :81. Moving the whole `useCallback` block above the
+      //   effect cleared it (37 -> 36) with tsc still clean. Check the
+      //   callback's dep array first — that one had `[]`, so it depended on no
+      //   state and could move freely; a callback with deps must stay below
+      //   whatever it closes over.
+      //
+      //   27 files remain. It is deliberately NOT automated: each needs its own
+      //   block boundaries identified, and callbacks that reference each other
+      //   need ordering care, so a blind sweep risks introducing real TDZ
+      //   errors in place of a compiler warning. The 37th finding is a genuine
+      //   "This value cannot be modified".
+      //
+      //   set-state-in-effect (51). All "calling setState synchronously within
+      //   an effect can trigger cascading renders" — the classic "you might not
+      //   need an effect". These are real refactors (derive during render, or
+      //   restructure), across 40 files, changing component behaviour. The
+      //   suite is 341 UNIT tests with no integration coverage of these flows,
+      //   so a blind sweep would be untestable. Do these in reviewable batches.
+      'react-hooks/immutability': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+
+      // DEFERRED — currently zero findings, so enabling them is free ONLY if
+      // someone verifies that stays true as the codebase grows.
+      'react-hooks/use-memo': 'off',
+      'react-hooks/incompatible-library': 'off',
+      'react-hooks/globals': 'off',
+      'react-hooks/error-boundaries': 'off',
       'react-hooks/set-state-in-render': 'off',
       'react-hooks/unsupported-syntax': 'off',
       'react-hooks/config': 'off',
