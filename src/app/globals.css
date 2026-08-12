@@ -1,4 +1,9 @@
 @import '@bprogress/core/css';
+/* Landing Page Styles. MUST stay up here with the other @import rules: the CSS
+   spec requires @import to precede all other rules, and Turbopack (the default
+   bundler from Next 16) enforces that where the old webpack pipeline silently
+   tolerated a late @import. This used to sit ~40 lines down, after real rules. */
+@import '../styles/landing.css';
 
 /* Custom BProgress Styling */
 .bprogress .bar {
@@ -37,9 +42,6 @@
     transform: translateY(0);
   }
 }
-
-/* Landing Page Styles */
-@import '../styles/landing.css';
 
 /* CSS Custom Properties from Design System */
 :root {
