@@ -9,6 +9,8 @@
 
 import { prisma } from '@/lib/db';
 import { setToolLinksForArticle } from '@/lib/services/graph-service';
+import { slugify } from '@/lib/utils/article-slug';
+import { toVectorLiteral } from '@/lib/utils/pgvector';
 import type {
   Article,
   ArticleCluster,
@@ -89,15 +91,10 @@ export function assertSlugAvailable(slug: string): void {
   }
 }
 
-export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .trim()
-    .replace(/[\s_]+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, 80);
-}
+// Re-exported so every existing `import { slugify } from '@/lib/services/article-service'`
+// keeps working. The implementation lives in a pure module so client components
+// can import it without pulling in Prisma and the pg driver — see lib/utils/article-slug.ts.
+export { slugify };
 
 // ─── Embedding helpers ───────────────────────────────────────────────────────
 
@@ -124,7 +121,7 @@ async function storeArticleEmbedding(
 ): Promise<void> {
   await prisma.$executeRaw`
     UPDATE "articles"
-    SET embedding = ${embedding}::vector(1536), "embeddingUpdatedAt" = NOW()
+    SET embedding = ${toVectorLiteral(embedding)}::vector(1536), "embeddingUpdatedAt" = NOW()
     WHERE id = ${articleId}
   `;
 }
@@ -662,11 +659,12 @@ export async function searchArticlesBySemantic(
   const queryVec = await embedText(query);
 
   type RawRow = { id: string; similarity: number };
+  const queryVecLiteral = toVectorLiteral(queryVec);
   let rows = await prisma.$queryRaw<RawRow[]>`
-    SELECT id, 1 - (embedding <=> ${queryVec}::vector(1536)) AS similarity
+    SELECT id, 1 - (embedding <=> ${queryVecLiteral}::vector(1536)) AS similarity
     FROM "articles"
     WHERE embedding IS NOT NULL AND status = 'PUBLISHED'
-    ORDER BY embedding <=> ${queryVec}::vector(1536)
+    ORDER BY embedding <=> ${queryVecLiteral}::vector(1536)
     LIMIT ${fetchLimit}
   `;
 

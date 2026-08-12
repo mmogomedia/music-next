@@ -2,10 +2,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Prisma 7: connection URLs live in `prisma.config.ts`, not here.
+// Runtime connections come from the driver adapter passed to `new PrismaClient()`
+// (see src/lib/db.ts); Migrate/introspect read `datasource.url` from the config file.
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
+  provider = "postgresql"
 }
 
 model Account {
