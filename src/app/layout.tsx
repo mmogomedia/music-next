@@ -132,8 +132,8 @@ export async function generateMetadata(): Promise<Metadata> {
       'dns-prefetch':
         'https://asset.flemoji.com, https://audio.flemoji.com, https://profile-images.flemoji.com',
       'apple-mobile-web-app-title': 'Flemoji',
-      // Required by Meta's Sharing Debugger; see FB_APP_ID above.
-      'fb:app_id': FB_APP_ID,
+      // fb:app_id is NOT here on purpose — `other` only ever emits `name=`,
+      // and Meta's crawler reads `property=`. It is rendered in <head> below.
     },
   };
 }
@@ -187,6 +187,12 @@ export default function RootLayout({
       className={`dark ${inter.variable} ${poppins.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`}
     >
       <head>
+        {/*
+          Meta's crawler reads `property=`, not `name=`. Next's `metadata.other`
+          can only emit `name=`, which the Sharing Debugger ignores — so this one
+          tag is rendered by hand rather than through the Metadata API.
+        */}
+        <meta property='fb:app_id' content={FB_APP_ID} />
         <script
           type='application/ld+json'
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(websiteJsonLd) }}
