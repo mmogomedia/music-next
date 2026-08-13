@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-  const lastUpdated = '2025-01-24';
+  const lastUpdated = '2026-08-13';
 
   return (
     <div className='min-h-screen bg-white dark:bg-white'>
@@ -139,10 +139,18 @@ export default function PrivacyPage() {
               </li>
               <li>
                 <a
+                  href='#government-requests'
+                  className='text-blue-600 dark:text-blue-600 hover:underline'
+                >
+                  12. Government & Law Enforcement Requests
+                </a>
+              </li>
+              <li>
+                <a
                   href='#contact'
                   className='text-blue-600 dark:text-blue-600 hover:underline'
                 >
-                  12. Contact & Complaints
+                  13. Contact & Complaints
                 </a>
               </li>
             </ul>
@@ -571,9 +579,69 @@ export default function PrivacyPage() {
               </p>
             </section>
 
+            <section id='government-requests' className='mb-8'>
+              <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-gray-900'>
+                12. Government & Law Enforcement Requests
+              </h2>
+              <p className='text-gray-700 dark:text-gray-700 mb-4'>
+                From time to time a government body, regulator or law
+                enforcement agency may ask us to disclose personal information
+                about our users. We treat every such request as an exception
+                rather than a routine disclosure, and we apply the following
+                process to all of them.
+              </p>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-gray-900'>
+                12.1 Review of legality
+              </h3>
+              <p className='text-gray-700 dark:text-gray-700 mb-4'>
+                We review every request for its legal validity before disclosing
+                anything. We check that the request comes from an authority
+                empowered to make it, that it cites a lawful basis, and that it
+                is properly served. We do not disclose personal information on
+                the strength of an informal request.
+              </p>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-gray-900'>
+                12.2 Challenging unlawful requests
+              </h3>
+              <p className='text-gray-700 dark:text-gray-700 mb-4'>
+                Where we consider a request to be unlawful, overbroad, or made
+                without proper authority, we will refuse it and, where
+                appropriate, challenge it through the available legal channels.
+                We will seek clarification or narrowing of a request before
+                complying with it.
+              </p>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-gray-900'>
+                12.3 Data minimisation
+              </h3>
+              <p className='text-gray-700 dark:text-gray-700 mb-4'>
+                When we are legally obliged to comply, we disclose only the
+                minimum information necessary to satisfy the specific request.
+                We do not provide entire records, adjacent accounts or
+                additional data that has not been asked for.
+              </p>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-gray-900'>
+                12.4 Documentation
+              </h3>
+              <p className='text-gray-700 dark:text-gray-700 mb-4'>
+                We keep a record of each request we receive, including the
+                authority that made it, the legal basis cited, the information
+                disclosed or withheld, the reasoning behind that decision, and
+                the people involved in making it.
+              </p>
+              <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-gray-900'>
+                12.5 Notifying you
+              </h3>
+              <p className='text-gray-700 dark:text-gray-700 mb-4'>
+                Where we are permitted to do so by law, we will notify affected
+                users of a request for their personal information before
+                disclosing it, so that they have the opportunity to seek their
+                own legal advice.
+              </p>
+            </section>
+
             <section id='contact' className='mb-8'>
               <h2 className='text-2xl font-bold mb-4 text-gray-900 dark:text-gray-900'>
-                12. Contact & Complaints
+                13. Contact & Complaints
               </h2>
               <p className='text-gray-700 dark:text-gray-700 mb-4'>
                 If you have questions, concerns, or wish to exercise your rights
@@ -612,7 +680,7 @@ export default function PrivacyPage() {
                 </p>
               </div>
               <h3 className='text-xl font-semibold mb-3 text-gray-900 dark:text-gray-900'>
-                12.1 Complaints
+                13.1 Complaints
               </h3>
               <p className='text-gray-700 dark:text-gray-700 mb-4'>
                 If you are not satisfied with how we handle your personal
