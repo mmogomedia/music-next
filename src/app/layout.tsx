@@ -65,6 +65,17 @@ const GA_MEASUREMENT_ID =
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? 'G-19MJR1SM8W';
 
 /**
+ * Meta app id, emitted as `fb:app_id`. Meta's Sharing Debugger flags its
+ * absence as a warning on every URL of this site.
+ *
+ * It is a public identifier and an Open Graph annotation only — it attributes
+ * link-share insights to the app and calls no Meta API, loads no SDK and sends
+ * no user data. Not a secret, but env-overridable so a fork can point at its
+ * own app rather than inheriting ours.
+ */
+const FB_APP_ID = process.env.NEXT_PUBLIC_FB_APP_ID ?? '614423292296479';
+
+/**
  * Only send analytics from the real production deployment.
  *
  * Without this the GA tag fired on localhost and on every Vercel preview,
@@ -121,6 +132,8 @@ export async function generateMetadata(): Promise<Metadata> {
       'dns-prefetch':
         'https://asset.flemoji.com, https://audio.flemoji.com, https://profile-images.flemoji.com',
       'apple-mobile-web-app-title': 'Flemoji',
+      // Required by Meta's Sharing Debugger; see FB_APP_ID above.
+      'fb:app_id': FB_APP_ID,
     },
   };
 }
