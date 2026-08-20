@@ -18,14 +18,19 @@
  * a delete, not a rewrite.
  */
 
-export type ArticleStatus = "idea" | "draft" | "staged" | "published" | "archived";
-export type ClusterRole = "pillar" | "spoke";
+export type ArticleStatus =
+  | 'idea'
+  | 'draft'
+  | 'staged'
+  | 'published'
+  | 'archived';
+export type ClusterRole = 'pillar' | 'spoke';
 export type Provenance =
-  | "unknown"
-  | "human"
-  | "ai_assisted"
-  | "ai_generated"
-  | "ai_generated_human_reviewed";
+  | 'unknown'
+  | 'human'
+  | 'ai_assisted'
+  | 'ai_generated'
+  | 'ai_generated_human_reviewed';
 
 export interface ArticleReference {
   url: string;
@@ -52,9 +57,9 @@ export interface FlemojiArticleRow {
   ctaLink: string | null;
   clusterId: string | null;
   /** Non-null in the source, WITH a SPOKE default — see mapClusterRole. */
-  clusterRole: "PILLAR" | "SPOKE";
+  clusterRole: 'PILLAR' | 'SPOKE';
   readTime: number;
-  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   publishedAt: Date | null;
   scheduledAt: Date | null;
   socialImages: unknown;
@@ -112,10 +117,12 @@ export interface MappedArticle {
  */
 export function mapClusterRole(row: FlemojiArticleRow): ClusterRole | null {
   if (!row.clusterId) return null;
-  return row.clusterRole === "PILLAR" ? "pillar" : "spoke";
+  return row.clusterRole === 'PILLAR' ? 'pillar' : 'spoke';
 }
 
-export function mapCluster(row: FlemojiArticleRow): { slug: string; role: ClusterRole } | null {
+export function mapCluster(
+  row: FlemojiArticleRow
+): { slug: string; role: ClusterRole } | null {
   const role = mapClusterRole(row);
   if (!role || !row.clusterSlug) return null;
   return { slug: row.clusterSlug, role };
@@ -135,14 +142,14 @@ export function mapCluster(row: FlemojiArticleRow): { slug: string; role: Cluste
  */
 export function mapStatus(row: FlemojiArticleRow): ArticleStatus {
   switch (row.status) {
-    case "PUBLISHED":
-      return "published";
-    case "ARCHIVED":
-      return "archived";
-    case "DRAFT":
-      return "draft";
+    case 'PUBLISHED':
+      return 'published';
+    case 'ARCHIVED':
+      return 'archived';
+    case 'DRAFT':
+      return 'draft';
     default:
-      return "draft";
+      return 'draft';
   }
 }
 
@@ -156,7 +163,7 @@ export function mapStatus(row: FlemojiArticleRow): ArticleStatus {
  * than an empty one.
  */
 export function mapProvenance(_row: FlemojiArticleRow): Provenance {
-  return "unknown";
+  return 'unknown';
 }
 
 /**
@@ -166,18 +173,20 @@ export function mapProvenance(_row: FlemojiArticleRow): Provenance {
  * that cannot be followed is not a citation, and carrying it would put a
  * broken "Sources" row on a published page.
  */
-export function mapReferences(row: FlemojiArticleRow): ArticleReference[] | null {
+export function mapReferences(
+  row: FlemojiArticleRow
+): ArticleReference[] | null {
   if (!Array.isArray(row.references)) return null;
   const out: ArticleReference[] = [];
   for (const raw of row.references) {
-    if (typeof raw !== "object" || raw === null) continue;
+    if (typeof raw !== 'object' || raw === null) continue;
     const r = raw as Record<string, unknown>;
-    if (typeof r.url !== "string" || r.url.trim() === "") continue;
+    if (typeof r.url !== 'string' || r.url.trim() === '') continue;
     const ref: ArticleReference = { url: r.url };
-    if (typeof r.title === "string") ref.title = r.title;
-    if (typeof r.snippet === "string") ref.snippet = r.snippet;
-    if (typeof r.accessedAt === "string") ref.accessedAt = r.accessedAt;
-    if (typeof r.source === "string") ref.source = r.source;
+    if (typeof r.title === 'string') ref.title = r.title;
+    if (typeof r.snippet === 'string') ref.snippet = r.snippet;
+    if (typeof r.accessedAt === 'string') ref.accessedAt = r.accessedAt;
+    if (typeof r.source === 'string') ref.source = r.source;
     out.push(ref);
   }
   return out.length ? out : null;
@@ -210,7 +219,8 @@ export function mapExtras(row: FlemojiArticleRow): Record<string, unknown> {
   if (row.toolSlugs.length) flemoji.toolSlugs = [...row.toolSlugs];
   if (row.timelinePostId) flemoji.timelinePostId = row.timelinePostId;
   if (row.socialImages != null) flemoji.socialImages = row.socialImages;
-  if (row.embeddingUpdatedAt) flemoji.embeddingUpdatedAt = row.embeddingUpdatedAt.toISOString();
+  if (row.embeddingUpdatedAt)
+    flemoji.embeddingUpdatedAt = row.embeddingUpdatedAt.toISOString();
   return Object.keys(flemoji).length ? { flemoji } : {};
 }
 
