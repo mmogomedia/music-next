@@ -11,7 +11,10 @@ import {
 import { logger } from '@/lib/utils/logger';
 import type { SSEEvent, SSEEventEmitter } from '@/lib/ai/sse-event-emitter';
 import type { RunnableConfig } from '@langchain/core/runnables';
-import { uuid7 as uuidv7 } from 'langsmith';
+// langsmith@0.3.x no longer re-exports uuid7. The `uuid` package is already
+// a dependency here and ships v7, so the trace id keeps its time-ordered
+// semantics — a v4 would sort randomly and make traces unorderable by id.
+import { v7 as uuidv7 } from 'uuid';
 import { traceable } from 'langsmith/traceable';
 
 export const dynamic = 'force-dynamic';

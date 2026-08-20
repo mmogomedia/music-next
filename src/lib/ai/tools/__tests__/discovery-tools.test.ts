@@ -36,6 +36,27 @@ import {
 } from '@/lib/services';
 import { constructFileUrl } from '@/lib/url-utils';
 
+/**
+ * langchain 1.x widened `tool.func()` to `string | AsyncGenerator<…>` so a
+ * tool can stream its result. None of the discovery tools do, and that is
+ * what these tests assume every time they `JSON.parse` the return value.
+ *
+ * Narrowed through here rather than cast at 29 call sites: a cast would let
+ * a tool that STARTS streaming reach `JSON.parse` as "[object AsyncGenerator]"
+ * and fail as a confusing parse error far from the cause. This throws at the
+ * boundary and names the actual change.
+ */
+function toolText(
+  result: string | AsyncGenerator<unknown, string, unknown>
+): string {
+  if (typeof result !== 'string') {
+    throw new Error(
+      'tool returned a stream; these tests expect one JSON string'
+    );
+  }
+  return result;
+}
+
 // Mock services
 jest.mock('@/lib/services', () => ({
   MusicService: {
@@ -112,7 +133,7 @@ describe('Discovery Tools', () => {
         orderBy: 'recent',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.tracks).toHaveLength(1);
       expect(parsed.tracks[0]).toMatchObject({
         id: 'track-1',
@@ -198,7 +219,7 @@ describe('Discovery Tools', () => {
         query: 'test',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Failed to search tracks');
       expect(parsed.tracks).toEqual([]);
       expect(parsed.count).toBe(0);
@@ -221,7 +242,7 @@ describe('Discovery Tools', () => {
         query: 'test',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.tracks[0].attributes).toEqual([]);
       expect(parsed.tracks[0].mood).toEqual([]);
       expect(parsed.tracks[0].downloadCount).toBe(0);
@@ -254,7 +275,7 @@ describe('Discovery Tools', () => {
         trackId: 'track-1',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.track).toMatchObject({
         id: 'track-1',
         title: 'Test Track',
@@ -277,7 +298,7 @@ describe('Discovery Tools', () => {
         trackId: 'non-existent',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.track).toBeNull();
     });
 
@@ -290,7 +311,7 @@ describe('Discovery Tools', () => {
         trackId: 'track-1',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Failed to get track');
       expect(parsed.track).toBeNull();
     });
@@ -334,7 +355,7 @@ describe('Discovery Tools', () => {
         playlistId: 'playlist-1',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.playlist).toMatchObject({
         id: 'playlist-1',
         name: 'Test Playlist',
@@ -372,7 +393,7 @@ describe('Discovery Tools', () => {
         playlistId: 'playlist-1',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.playlist.tracks).toHaveLength(15);
       expect(parsed.playlist.trackCount).toBe(15);
     });
@@ -384,7 +405,7 @@ describe('Discovery Tools', () => {
         playlistId: 'non-existent',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Playlist not found');
       expect(parsed.playlist).toBeNull();
     });
@@ -398,7 +419,7 @@ describe('Discovery Tools', () => {
         playlistId: 'playlist-1',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Failed to get playlist');
       expect(parsed.playlist).toBeNull();
     });
@@ -439,7 +460,7 @@ describe('Discovery Tools', () => {
         artistIdentifier: 'test-artist',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.artist).toMatchObject({
         id: 'artist-1',
         artistName: 'Test Artist',
@@ -473,7 +494,7 @@ describe('Discovery Tools', () => {
         artistIdentifier: 'test-artist',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.artist.tracks).toHaveLength(10);
     });
 
@@ -484,7 +505,7 @@ describe('Discovery Tools', () => {
         artistIdentifier: 'non-existent',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.artist).toBeNull();
     });
 
@@ -497,7 +518,7 @@ describe('Discovery Tools', () => {
         artistIdentifier: 'test-artist',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Failed to get artist');
       expect(parsed.artist).toBeNull();
     });
@@ -528,7 +549,7 @@ describe('Discovery Tools', () => {
         limit: 10,
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.playlists).toHaveLength(2);
       expect(parsed.playlists[0]).toMatchObject({
         id: 'playlist-1',
@@ -565,7 +586,7 @@ describe('Discovery Tools', () => {
 
       const result = await getTopChartsTool.func({});
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Failed to get top charts');
       expect(parsed.playlists).toEqual([]);
       expect(parsed.count).toBe(0);
@@ -591,7 +612,7 @@ describe('Discovery Tools', () => {
         limit: 10,
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.playlists).toHaveLength(1);
       expect(parsed.playlists[0]).toMatchObject({
         id: 'playlist-1',
@@ -609,7 +630,7 @@ describe('Discovery Tools', () => {
 
       const result = await getFeaturedPlaylistsTool.func({});
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Failed to get featured playlists');
       expect(parsed.playlists).toEqual([]);
       expect(parsed.count).toBe(0);
@@ -648,7 +669,7 @@ describe('Discovery Tools', () => {
         limit: 20,
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.tracks).toHaveLength(1);
       expect(parsed.tracks[0]).toMatchObject({
         id: 'track-1',
@@ -672,7 +693,7 @@ describe('Discovery Tools', () => {
       ]);
 
       const result = await getTrendingTracksTool.func({});
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
 
       expect(constructFileUrl).toHaveBeenCalledWith('audio/trending.mp3');
       expect(parsed.tracks[0].fileUrl).toBe(
@@ -697,7 +718,7 @@ describe('Discovery Tools', () => {
 
       const result = await getTrendingTracksTool.func({});
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Failed to get trending tracks');
       expect(parsed.tracks).toEqual([]);
       expect(parsed.count).toBe(0);
@@ -724,7 +745,7 @@ describe('Discovery Tools', () => {
         limit: 20,
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.playlists).toHaveLength(1);
       expect(parsed.playlists[0]).toMatchObject({
         id: 'playlist-1',
@@ -762,7 +783,7 @@ describe('Discovery Tools', () => {
         genre: 'Amapiano',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Failed to get playlists by genre');
       expect(parsed.playlists).toEqual([]);
       expect(parsed.count).toBe(0);
@@ -789,7 +810,7 @@ describe('Discovery Tools', () => {
         limit: 20,
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.playlists).toHaveLength(1);
       expect(parsed.playlists[0]).toMatchObject({
         id: 'playlist-1',
@@ -813,7 +834,7 @@ describe('Discovery Tools', () => {
         province: 'Gauteng',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Failed to get playlists by province');
       expect(parsed.playlists).toEqual([]);
       expect(parsed.count).toBe(0);
@@ -856,7 +877,7 @@ describe('Discovery Tools', () => {
         limit: 20,
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.tracks).toHaveLength(1);
       expect(parsed.tracks[0]).toMatchObject({
         id: 'track-1',
@@ -899,7 +920,7 @@ describe('Discovery Tools', () => {
         genre: 'Amapiano',
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Failed to get tracks by genre');
       expect(parsed.tracks).toEqual([]);
       expect(parsed.count).toBe(0);
@@ -941,7 +962,7 @@ describe('Discovery Tools', () => {
         includeInactive: false,
       });
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.genres).toHaveLength(2);
       expect(parsed.genres[0]).toMatchObject({
         id: 'genre-1',
@@ -1005,7 +1026,7 @@ describe('Discovery Tools', () => {
 
       const result = await getGenresTool.func({});
 
-      const parsed = JSON.parse(result);
+      const parsed = JSON.parse(toolText(result));
       expect(parsed.error).toBe('Failed to get genres');
       expect(parsed.genres).toEqual([]);
       expect(parsed.count).toBe(0);
