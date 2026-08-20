@@ -77,7 +77,7 @@ export default async function HomePage() {
   return (
     <div className='min-h-screen bg-white font-jakarta dark:bg-slate-900'>
       <LearnHeader />
-      <HomeHero />
+      <HomeHero tracks={streamTracks} />
       <HomeLearnSection featured={featured} rest={rest} />
       <HomeToolsSection tools={getAllTools()} />
       <HomeStreamSection tracks={streamTracks} />
