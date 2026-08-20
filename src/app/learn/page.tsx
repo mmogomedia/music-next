@@ -61,7 +61,7 @@ export default async function LearnPage({
           page,
           limit: 12,
         })
-      : getArticles({ status: 'PUBLISHED', limit: 1 }), // hub: only need total
+      : getArticles({ status: 'PUBLISHED', limit: 3 }), // hub: 3 latest for the Latest section
     getClusters(),
     getServerSession(authOptions),
   ]);
