@@ -28,6 +28,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@anthropic-ai/sdk@npm:^0.115.0":
+  version: 0.115.0
+  resolution: "@anthropic-ai/sdk@npm:0.115.0"
+  dependencies:
+    json-schema-to-ts: "npm:^3.1.1"
+    standardwebhooks: "npm:^1.0.0"
+  peerDependencies:
+    zod: ^3.25.0 || ^4.0.0
+  peerDependenciesMeta:
+    zod:
+      optional: true
+  bin:
+    anthropic-ai-sdk: bin/cli
+  checksum: 10c0/5e3a43257be0079975cc9a1816748e07e3b16f3e0af4c78e483978c61be47a76e24409327e0fd3c3d7d35e0505d673df51bd60b205aa0a50ae8ac8370525484c
+  languageName: node
+  linkType: hard
+
 "@anthropic-ai/sdk@npm:^0.63.0":
   version: 0.63.1
   resolution: "@anthropic-ai/sdk@npm:0.63.1"
@@ -41,22 +58,6 @@ __metadata:
   bin:
     anthropic-ai-sdk: bin/cli
   checksum: 10c0/483a2cda3fd4d4bd498d97dd84f946b45e5c2e69457feda70ece72fcf89199ca81ba4e4dde31f15ccd3b7c0d524d5a19ed915b56893863a1cdbf2957155f6876
-  languageName: node
-  linkType: hard
-
-"@anthropic-ai/sdk@npm:^0.65.0":
-  version: 0.65.0
-  resolution: "@anthropic-ai/sdk@npm:0.65.0"
-  dependencies:
-    json-schema-to-ts: "npm:^3.1.1"
-  peerDependencies:
-    zod: ^3.25.0 || ^4.0.0
-  peerDependenciesMeta:
-    zod:
-      optional: true
-  bin:
-    anthropic-ai-sdk: bin/cli
-  checksum: 10c0/81af18015c00c88fded154e7b862442645c72cc106b73e9f0ec70aff3d653ef24a518c5baea86ca31fd87c09350079a8f55f75e9259c461e29ee14dc69ebefab
   languageName: node
   linkType: hard
 
@@ -3872,15 +3873,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@langchain/anthropic@npm:^0.3.33":
-  version: 0.3.33
-  resolution: "@langchain/anthropic@npm:0.3.33"
+"@langchain/anthropic@npm:^1.5.6":
+  version: 1.5.7
+  resolution: "@langchain/anthropic@npm:1.5.7"
   dependencies:
-    "@anthropic-ai/sdk": "npm:^0.65.0"
-    fast-xml-parser: "npm:^4.4.1"
+    "@anthropic-ai/sdk": "npm:^0.115.0"
+    zod: "npm:^3.25.76 || ^4"
   peerDependencies:
-    "@langchain/core": ">=0.3.58 <0.4.0"
-  checksum: 10c0/cd528e8b92f4f4a800df4843c362deec0dc2a125cf7a5b85caafbdd20e1dd92148197cee049770a518a754cb538df9bc014b246cb801d38cb85635f734e4cade
+    "@langchain/core": ^1.2.9
+  checksum: 10c0/5f9c6ee78777d2e9f03ed256b5425f27e68cf5e8940fcdbf44839790d815584c39f6002cb1b1d6d11725cdfe5e0f58d59ca75fd8d0d134b4f1ce49358efb3b2e
   languageName: node
   linkType: hard
 
@@ -10812,17 +10813,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-xml-parser@npm:^4.4.1":
-  version: 4.5.3
-  resolution: "fast-xml-parser@npm:4.5.3"
-  dependencies:
-    strnum: "npm:^1.1.1"
-  bin:
-    fxparser: src/cli/cli.js
-  checksum: 10c0/bf9ccadacfadc95f6e3f0e7882a380a7f219cf0a6f96575149f02cb62bf44c3b7f0daee75b8ff3847bcfd7fbcb201e402c71045936c265cf6d94b141ec4e9327
-  languageName: node
-  linkType: hard
-
 "fastestsmallesttextencoderdecoder@npm:^1.0.22":
   version: 1.0.22
   resolution: "fastestsmallesttextencoderdecoder@npm:1.0.22"
@@ -10992,7 +10982,7 @@ __metadata:
     "@heroui/react": "npm:^2.4.5"
     "@heroui/system": "npm:^2.4.5"
     "@heroui/theme": "npm:^2.4.21"
-    "@langchain/anthropic": "npm:^0.3.33"
+    "@langchain/anthropic": "npm:^1.5.6"
     "@langchain/core": "npm:^1.0.2"
     "@langchain/google-genai": "npm:^1.0.0"
     "@langchain/openai": "npm:^1.0.0"
@@ -16569,6 +16559,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"standardwebhooks@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "standardwebhooks@npm:1.0.0"
+  dependencies:
+    "@stablelib/base64": "npm:^1.0.0"
+    fast-sha256: "npm:^1.3.0"
+  checksum: 10c0/aee097d0f3c05172c19b80df1ed9596a2ce92f8956957650d0bbe47c2ca6d36515796b51d523333cb4a48c889b2ab130d789e7879e14975c4381bc7a61274327
+  languageName: node
+  linkType: hard
+
 "statuses@npm:^2.0.1, statuses@npm:^2.0.2, statuses@npm:~2.0.2":
   version: 2.0.2
   resolution: "statuses@npm:2.0.2"
@@ -16795,13 +16795,6 @@ __metadata:
   version: 3.1.1
   resolution: "strip-json-comments@npm:3.1.1"
   checksum: 10c0/9681a6257b925a7fa0f285851c0e613cc934a50661fa7bb41ca9cbbff89686bb4a0ee366e6ecedc4daafd01e83eee0720111ab294366fe7c185e935475ebcecd
-  languageName: node
-  linkType: hard
-
-"strnum@npm:^1.1.1":
-  version: 1.1.2
-  resolution: "strnum@npm:1.1.2"
-  checksum: 10c0/a0fce2498fa3c64ce64a40dada41beb91cabe3caefa910e467dc0518ef2ebd7e4d10f8c2202a6104f1410254cae245066c0e94e2521fb4061a5cb41831952392
   languageName: node
   linkType: hard
 
