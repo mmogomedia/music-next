@@ -8,26 +8,12 @@
  */
 
 import type { RoutingDecision } from './agents/router-agent';
-
-// Lazy import to ensure prisma is initialized (cached)
-let prismaInstance: any = null;
-
-function getPrisma() {
-  if (!prismaInstance) {
-    try {
-      // Use require with resolved path for better Next.js compatibility
-      const dbModule = require('@/lib/db');
-      prismaInstance = dbModule.prisma;
-      if (!prismaInstance) {
-        throw new Error('Prisma client not initialized');
-      }
-    } catch (error) {
-      console.error('Failed to load Prisma client:', error);
-      throw error;
-    }
-  }
-  return prismaInstance;
-}
+// Static import, like the other 182 call sites. The old lazy
+// `require('@/lib/db')` resolved to an interop wrapper under Turbopack's
+// production bundle, so `.prisma` was undefined and every decision was
+// dropped with "Prisma client not initialized". `db.ts` does not dial on
+// import (the pg pool is lazy), so there was nothing to defer.
+import { prisma } from '@/lib/db';
 
 /**
  * Routing method used
@@ -65,7 +51,7 @@ export async function logRoutingDecision(
 ): Promise<void> {
   try {
     // Persist to database
-    const prismaClient = getPrisma();
+    const prismaClient = prisma;
     await prismaClient.routingDecisionLog.create({
       data: {
         userId: params.userId,
@@ -125,7 +111,7 @@ export async function getRoutingStatistics(params?: {
     }
 
     // Get all routing decisions matching filters
-    const prismaClient = getPrisma();
+    const prismaClient = prisma;
     const decisions = await prismaClient.routingDecisionLog.findMany({
       where,
       select: {
